@@ -28,6 +28,7 @@ let settings = Object.assign({
   accent: '',             // '' = theme default; otherwise a hex like '#5b9eff'
   language: 'en',
   defaultFolder: '',
+  dlFormat: 'opus',       // yt-dlp --audio-format: opus | mp3 | flac | m4a | wav
   scanSubdirs: true,
   healthCheck: false,
   reports: false,
@@ -49,6 +50,8 @@ let settings = Object.assign({
   surfaceAlpha: 100,         // % opacity of sidebar/playbar/cards over the image
 }, JSON.parse(localStorage.getItem(LS.settings) || '{}'));
 let recents = JSON.parse(localStorage.getItem(LS.recents) || '[]');
+// Format names are the same in every language, so they stay out of the i18n tables.
+const DL_FORMAT_LABELS = { opus: 'Opus', mp3: 'MP3', flac: 'FLAC', m4a: 'M4A', wav: 'WAV' };
 
 // ── Discord Rich Presence ──
 // Paste your Discord Application Client ID here (https://discord.com/developers
@@ -605,7 +608,7 @@ const I18N = {
     'downloads.yt.col.channel': 'Channel',
     'downloads.yt.col.duration': 'Dur.',
     'downloads.yt.idle.title': 'Find a track on YouTube',
-    'downloads.yt.idle.text': 'Enter a name — a list of downloadable mp3 files will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.',
+    'downloads.yt.idle.text': 'Enter a name — a list of downloadable tracks will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.',
     'downloads.yt.searching': 'Searching: "{q}"…',
     'downloads.yt.empty': 'Nothing found for "{q}".',
     'downloads.yt.error': 'Search error: {e}',
@@ -691,6 +694,9 @@ const I18N = {
     'setting.showDownloadsDesc': 'Adds a section to the sidebar for downloading tracks by URL.',
     'setting.showParserBrowser': 'Show the browser window while parsing',
     'setting.showParserBrowserDesc': 'Useful for signing in to Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.',
+    'setting.dlFormat': 'Download format',
+    'setting.dlFormatDesc': 'Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick mp3 if a device of yours cannot play it.',
+    'downloads.noFolder': 'Pick a default folder first — downloads are filed into it by artist and album.',
     'setting.showTrending': 'Show the “Trending” tab',
     'setting.showTrendingDesc': 'A section with YouTube Music charts by country and one-click downloads. Requires the internet.',
     'section.system': 'System',
@@ -1095,7 +1101,7 @@ const I18N = {
     'downloads.yt.col.channel': 'Kanal',
     'downloads.yt.col.duration': 'Dauer',
     'downloads.yt.idle.title': 'Titel auf YouTube finden',
-    'downloads.yt.idle.text': 'Gib einen Namen ein — unten erscheint eine Liste herunterladbarer mp3-Dateien. Dateien werden im Standardordner (falls in den Einstellungen festgelegt) oder in „Audex Downloads" gespeichert und zur Bibliothek hinzugefügt.',
+    'downloads.yt.idle.text': 'Gib einen Namen ein — unten erscheint eine Liste herunterladbarer Titel. Dateien werden im Standardordner (falls in den Einstellungen festgelegt) oder in „Audex Downloads" gespeichert und zur Bibliothek hinzugefügt.',
     'downloads.yt.searching': 'Suche: „{q}"…',
     'downloads.yt.empty': 'Nichts gefunden zu „{q}".',
     'downloads.yt.error': 'Suchfehler: {e}',
@@ -1181,6 +1187,9 @@ const I18N = {
     'setting.showDownloadsDesc': 'Öffnet einen Bereich in der Seitenleiste zum Herunterladen von Titeln per URL.',
     'setting.showParserBrowser': 'Browserfenster beim Parsen anzeigen',
     'setting.showParserBrowserDesc': 'Nützlich, um sich beim ersten Start bei Spotify anzumelden, ein Captcha zu lösen oder zu sehen, wo der Parser hängengeblieben ist. Ausschalten, damit der Browser unsichtbar im Hintergrund läuft.',
+    'setting.dlFormat': 'Downloadformat',
+    'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle mp3, wenn eines deiner Geräte es nicht abspielen kann.',
+    'downloads.noFolder': 'Wähle zuerst einen Standardordner — Downloads werden dort nach Interpret und Album einsortiert.',
     'setting.showTrending': 'Registerkarte „Im Trend“ anzeigen',
     'setting.showTrendingDesc': 'Ein Bereich mit YouTube-Music-Charts nach Ländern und Downloads mit einem Klick. Benötigt Internet.',
     'section.system': 'System',
@@ -1585,7 +1594,7 @@ const I18N = {
     'downloads.yt.col.channel': 'Chaîne',
     'downloads.yt.col.duration': 'Durée',
     'downloads.yt.idle.title': 'Trouvez une piste sur YouTube',
-    'downloads.yt.idle.text': "Entrez un nom — la liste des mp3 téléchargeables apparaîtra ci-dessous. Les fichiers sont enregistrés dans votre dossier par défaut (s'il est défini dans les paramètres) ou dans « Audex Downloads », et ajoutés à votre bibliothèque.",
+    'downloads.yt.idle.text': "Entrez un nom — la liste des pistes téléchargeables apparaîtra ci-dessous. Les fichiers sont enregistrés dans votre dossier par défaut (s'il est défini dans les paramètres) ou dans « Audex Downloads », et ajoutés à votre bibliothèque.",
     'downloads.yt.searching': 'Recherche : « {q} »…',
     'downloads.yt.empty': 'Aucun résultat pour « {q} ».',
     'downloads.yt.error': 'Erreur de recherche : {e}',
@@ -1671,6 +1680,9 @@ const I18N = {
     'setting.showDownloadsDesc': 'Ajoute une section à la barre latérale pour télécharger des pistes par URL.',
     'setting.showParserBrowser': "Afficher la fenêtre du navigateur pendant l'analyse",
     'setting.showParserBrowserDesc': "Utile pour se connecter à Spotify au premier lancement, résoudre un captcha ou voir où l'analyseur s'est bloqué. Désactivez pour exécuter le navigateur silencieusement en arrière-plan.",
+    'setting.dlFormat': 'Format de téléchargement',
+    'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez mp3 si un de vos appareils ne le lit pas.',
+    'downloads.noFolder': 'Choisissez d’abord un dossier par défaut — les téléchargements y sont classés par artiste et album.',
     'setting.showTrending': 'Afficher l’onglet « Tendances »',
     'setting.showTrendingDesc': 'Une section avec les classements YouTube Music par pays et des téléchargements en un clic. Nécessite Internet.',
     'section.system': 'Système',
@@ -1941,7 +1953,7 @@ const I18N = {
     'issue.transcode.title': 'Підозра на перекодування',
     'issue.transcode.desc': 'Бітрейт заявлено високим, але спектр обривається рано — імовірно, перекодовано з низької якості.',
     'issue.lowbitrate.title': 'Низький бітрейт (< 192 кбіт/с)',
-    'issue.lowbitrate.desc': 'Файли 128 кбіт/с і нижче. Можна замінити на кращі версії.',
+    'issue.lowbitrate.desc': 'Файли 192 кбіт/с і нижче. Можна замінити на кращі версії.',
     'issue.nocover.title': 'Без обкладинки',
     'issue.nocover.desc': 'Треки без вбудованого зображення альбому.',
     'issue.tags.title': 'Неповні теги',
@@ -2075,7 +2087,7 @@ const I18N = {
     'downloads.yt.col.channel': 'Канал',
     'downloads.yt.col.duration': 'Трив.',
     'downloads.yt.idle.title': 'Знайдіть трек на YouTube',
-    'downloads.yt.idle.text': 'Введіть назву — нижче з\'явиться список mp3, доступних для завантаження. Файли зберігаються в теку за замовчуванням (якщо її задано в налаштуваннях) або в «Audex Downloads», і додаються до бібліотеки.',
+    'downloads.yt.idle.text': 'Введіть назву — нижче з\'явиться список треків, доступних для завантаження. Файли зберігаються в теку за замовчуванням (якщо її задано в налаштуваннях) або в «Audex Downloads», і додаються до бібліотеки.',
     'downloads.yt.searching': 'Шукаю: «{q}»…',
     'downloads.yt.empty': 'Нічого не знайдено за запитом «{q}».',
     'downloads.yt.error': 'Помилка пошуку: {e}',
@@ -2161,6 +2173,9 @@ const I18N = {
     'setting.showDownloadsDesc': 'Відкриє в боковому меню розділ для завантаження треків за посиланням.',
     'setting.showParserBrowser': 'Показувати вікно браузера під час парсингу',
     'setting.showParserBrowserDesc': 'Потрібно, щоб увійти в Spotify при першому запуску, пройти капчу або побачити, на чому парсер спіткнувся. Якщо вимкнути — браузер запуститься у фоні і вікно не з\'явиться.',
+    'setting.dlFormat': 'Формат завантаження',
+    'setting.dlFormatDesc': 'Файли зберігаються як {тека за замовчуванням}/{виконавець}/{альбом}/{виконавець} - {трек}. Opus дає найкращу якість на мегабайт; обери mp3, якщо якийсь із твоїх пристроїв його не програє.',
+    'downloads.noFolder': 'Спершу обери теку за замовчуванням — завантаження розкладаються в ній за виконавцем і альбомом.',
     'setting.showTrending': 'Показати вкладку «У тренді»',
     'setting.showTrendingDesc': 'Розділ із чартами YouTube Music за країнами та завантаженням у один клік. Потребує інтернету.',
     'section.system': 'Система',
@@ -3359,6 +3374,33 @@ async function loadTrending(force) {
   }
 }
 
+// Every download in the app goes through these two, so the target folder and
+// the audio format are decided in exactly one place. Without a default folder
+// there is nowhere sensible to file {artist}/{album}, so ask for one first and
+// abort if the user closes the picker.
+async function ensureDownloadArgs(args) {
+  if (!settings.defaultFolder) {
+    const folder = await window.electronAPI.chooseFolder();
+    if (!folder) return null;
+    settings.defaultFolder = folder;
+    saveSettings();
+    renderSettings();
+  }
+  return { ...args, targetDir: settings.defaultFolder, format: settings.dlFormat };
+}
+
+async function ytDownload(args) {
+  const full = await ensureDownloadArgs(args);
+  if (!full) return { success: false, error: tr('downloads.noFolder') };
+  return window.electronAPI.ytDownload(full);
+}
+
+async function ytDownloadByQuery(args) {
+  const full = await ensureDownloadArgs(args);
+  if (!full) return { success: false, error: tr('downloads.noFolder') };
+  return window.electronAPI.ytDownloadByQuery(full);
+}
+
 async function downloadTrendingTrack(idx, btn) {
   const t = trTracks[idx];
   if (!t || !btn || btn.disabled) return;
@@ -3386,11 +3428,11 @@ async function downloadTrendingTrack(idx, btn) {
 
   const name = t.artist ? `${t.artist} - ${t.title}` : t.title;
   try {
-    let res = await window.electronAPI.ytDownload({
+    let res = await ytDownload({
       videoId: t.id,
       url: t.url,
       suggestedName: name,
-      targetDir: settings.defaultFolder || '',
+      artist: t.artist || '',
     });
 
     // Charts list the official video, which is often blocked in some countries
@@ -3400,11 +3442,11 @@ async function downloadTrendingTrack(idx, btn) {
     if (res && !res.success && (res.reason === 'geo' || res.reason === 'unavailable') && t.title) {
       setTrStatus(tr('trending.tryingAlt', { t: t.title }));
       const query = t.artist ? `${t.artist} ${t.title}` : t.title;
-      res = await window.electronAPI.ytDownloadByQuery({
+      res = await ytDownloadByQuery({
         query,
         suggestedName: name,
+        artist: t.artist || '',
         requestId: 'tr-' + t.id,
-        targetDir: settings.defaultFolder || '',
       });
       if (res && res.success) {
         trActiveDownloads.delete(t.id);
@@ -3623,11 +3665,10 @@ async function downloadYtResult(idx, btn) {
   ytActiveDownloads.set(r.id, { rowEl, btnEl: null });
 
   try {
-    const res = await window.electronAPI.ytDownload({
+    const res = await ytDownload({
       videoId: r.id,
       url: r.url,
       suggestedName: r.title,
-      targetDir: settings.defaultFolder || '',
     });
     ytActiveDownloads.delete(r.id);
     if (!res || !res.success) {
@@ -3810,7 +3851,7 @@ async function downloadYtmTrack(idx, btn) {
   const suggestedName = t.artist ? `${t.artist} - ${t.title}` : t.title;
 
   try {
-    const res = await window.electronAPI.ytDownload({ videoId: t.id, url: t.url, suggestedName, requestId, targetDir: settings.defaultFolder || '' });
+    const res = await ytDownload({ videoId: t.id, url: t.url, suggestedName, artist: t.artist || '', requestId });
     ytmActiveDownloads.delete(requestId);
     if (!res || !res.success) {
       restoreYtmDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
@@ -4070,7 +4111,7 @@ async function downloadSpTrack(idx, btn) {
   const suggestedName = `${t.artist} - ${t.title}`;
 
   try {
-    const res = await window.electronAPI.ytDownloadByQuery({ query, suggestedName, requestId, targetDir: settings.defaultFolder || '' });
+    const res = await ytDownloadByQuery({ query, suggestedName, artist: t.artist || '', requestId });
     spActiveDownloads.delete(requestId);
     if (!res || !res.success) {
       restoreSpDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
@@ -4329,20 +4370,20 @@ async function processQueueItem(item) {
     let res;
     if (item.source === 'youtube' && (item.videoId || item.url)) {
       // YouTube items have a concrete video id — download that exact video.
-      res = await window.electronAPI.ytDownload({
+      res = await ytDownload({
         videoId: item.videoId,
         url: item.url,
         suggestedName: item.suggestedName,
+        artist: item.artist || '',
         requestId: item.requestId,
-        targetDir: settings.defaultFolder || '',
       });
     } else {
       // Spotify (and any text-only source) goes through ytsearch1: by query.
-      res = await window.electronAPI.ytDownloadByQuery({
+      res = await ytDownloadByQuery({
         query: item.query,
         suggestedName: item.suggestedName,
+        artist: item.artist || '',
         requestId: item.requestId,
-        targetDir: settings.defaultFolder || '',
       });
     }
     queueByRequestId.delete(item.requestId);
@@ -8222,6 +8263,12 @@ function renderSettings() {
   refreshHwAccelToggle();
   // Folder
   $('default-folder-path').textContent = settings.defaultFolder || tr('placeholder.noFolder');
+  // Download format combobox
+  const fmtCurrent = $('dlfmt-current');
+  if (fmtCurrent) fmtCurrent.textContent = DL_FORMAT_LABELS[settings.dlFormat] || DL_FORMAT_LABELS.opus;
+  document.querySelectorAll('#dlfmt-select .select-opt').forEach(o => {
+    o.classList.toggle('active', o.dataset.dlfmt === settings.dlFormat);
+  });
   // Language — labels stay in their native language regardless of currentLang.
   const lblMap = { en: 'English', de: 'Deutsch', fr: 'Français', uk: 'Українська' };
   $('lang-current').textContent = lblMap[settings.language] || lblMap.en;
@@ -8498,6 +8545,25 @@ const scaleReset = $('scale-reset');
 if (scaleDec) scaleDec.addEventListener('click', () => nudgeUiScale(-1));
 if (scaleInc) scaleInc.addEventListener('click', () => nudgeUiScale(1));
 if (scaleReset) scaleReset.addEventListener('click', () => setUiScale(1));
+const dlfmtSelect = $('dlfmt-select');
+if (dlfmtSelect) {
+  dlfmtSelect.querySelector('.select-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    dlfmtSelect.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#dlfmt-select')) dlfmtSelect.classList.remove('open');
+  });
+  dlfmtSelect.querySelectorAll('.select-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      settings.dlFormat = o.dataset.dlfmt;
+      saveSettings();
+      dlfmtSelect.classList.remove('open');
+      renderSettings();
+    });
+  });
+}
+
 const langSelect = $('lang-select');
 langSelect.querySelector('.select-btn').addEventListener('click', e => {
   e.stopPropagation();

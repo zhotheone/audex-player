@@ -653,7 +653,7 @@
           <div id="dl-yt-empty" class="empty-block show">
             <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-download"/></svg></div>
             <div class="empty-title-lg" data-i18n="downloads.yt.idle.title">Find a track on YouTube</div>
-            <div class="empty-text" data-i18n="downloads.yt.idle.text">Enter a name — a list of downloadable mp3 files will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.</div>
+            <div class="empty-text" data-i18n="downloads.yt.idle.text">Enter a name — a list of downloadable tracks will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.</div>
           </div>
         </div>
 
@@ -1237,6 +1237,25 @@
           <span data-i18n="section.downloads">Download from the internet</span>
         </div>
         <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.dlFormat">Download format</div>
+              <div class="setting-desc" data-i18n="setting.dlFormatDesc">Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick mp3 if a device of yours cannot play it.</div>
+            </div>
+            <div class="select" id="dlfmt-select">
+              <button class="select-btn">
+                <span id="dlfmt-current">Opus</span>
+                <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="select-menu">
+                <div class="select-opt" data-dlfmt="opus">Opus</div>
+                <div class="select-opt" data-dlfmt="mp3">MP3</div>
+                <div class="select-opt" data-dlfmt="flac">FLAC</div>
+                <div class="select-opt" data-dlfmt="m4a">M4A</div>
+                <div class="select-opt" data-dlfmt="wav">WAV</div>
+              </div>
+            </div>
+          </div>
           <div class="setting-row">
             <div class="setting-text">
               <div class="setting-label" data-i18n="setting.showTrending">Show the “Trending” tab</div>

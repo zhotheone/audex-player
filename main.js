@@ -7,7 +7,6 @@ const https = require('https');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
 const musicMetadata = require('music-metadata');
-const NodeID3 = require('node-id3');
 
 app.setName('Audex');
 
@@ -134,7 +133,7 @@ ipcMain.handle('hotkeys:registerGlobal', (event, list) => {
 // Leaving a grab behind would keep the combo dead for the rest of the session.
 app.on('will-quit', clearGlobalHotkeys);
 
-const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']);
+const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.opus', '.flac', '.m4a', '.aac']);
 
 function scanDir(dirPath) {
   let results = [];
@@ -571,7 +570,7 @@ ipcMain.handle('appearance:clearBackground', async () => {
 ipcMain.handle('dialog:openFiles', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openFile', 'multiSelections', 'openDirectory'],
-    filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'] }]
+    filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'opus', 'flac', 'm4a', 'aac'] }]
   });
   if (canceled) return [];
 
@@ -708,9 +707,24 @@ ipcMain.handle('covers:load', async (_event, paths) => {
   return result;
 });
 
+// Ogg/Opus keeps no duration in its header — it lives in the granule position of
+// the very last page, so without this music-metadata stops after the tags and
+// leaves duration, and the bitrate derived from it, undefined. Everything the UI
+// shows for a track (length, bitrate, quality tier) then reads as zero.
+const PARSE_OPTS = { duration: true };
+
 ipcMain.handle('music:parseMetadata', async (event, filePath) => {
   try {
-    const metadata = await musicMetadata.parseFile(filePath);
+    // A malformed embedded picture (common in Ogg/Opus, where the cover is a
+    // base64 Vorbis comment) throws out of the whole parse. Losing the artwork
+    // is fine; losing artist/album/duration with it is not — so retry without
+    // covers before giving up on the file.
+    let metadata;
+    try {
+      metadata = await musicMetadata.parseFile(filePath, PARSE_OPTS);
+    } catch (err) {
+      metadata = await musicMetadata.parseFile(filePath, { ...PARSE_OPTS, skipCovers: true });
+    }
     let coverBase64 = null;
     let coverFormat = null;
 
@@ -765,27 +779,62 @@ ipcMain.handle('audio:readFile', async (event, filePath) => {
   return await fs.promises.readFile(filePath);
 });
 
-ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
-  if (path.extname(filePath).toLowerCase() !== '.mp3') {
-    return { success: false, error: 'Tag writing is only supported for MP3' };
+function runFfmpeg(ffmpeg, args) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(ffmpeg, args);
+    let stderr = '';
+    proc.stderr.on('data', d => { stderr += d.toString(); });
+    proc.on('error', reject);
+    proc.on('close', code => {
+      if (code === 0) resolve();
+      else reject(new Error(stderr.trim().split('\n').slice(-3).join(' ') || `ffmpeg exited with ${code}`));
+    });
+  });
+}
+
+// Tags are rewritten by remuxing through ffmpeg rather than with a format-specific
+// tag library: "-map 0 -c copy" carries every stream over byte-for-byte (embedded
+// cover art included) and ffmpeg maps these generic keys onto whatever the
+// container actually stores — ID3 frames for mp3, Vorbis comments for opus/flac,
+// iTunes atoms for m4a. Like the trimmer, it writes a temp file and only then
+// moves it into place, so an interrupted run can't truncate the original.
+const FFMPEG_TAG_KEYS = {
+  title: 'title',
+  artist: 'artist',
+  album: 'album',
+  albumArtist: 'album_artist',
+  year: 'date',
+  genre: 'genre',
+  trackNo: 'track',
+  discNo: 'disc',
+  comment: 'comment',
+};
+
+function ffmpegTagArgs(filePath, tmpPath, tags) {
+  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', filePath, '-map', '0', '-c', 'copy', '-map_metadata', '0'];
+  for (const [key, ffKey] of Object.entries(FFMPEG_TAG_KEYS)) {
+    if (tags && tags[key] !== undefined) args.push('-metadata', `${ffKey}=${String(tags[key])}`);
   }
+  if (path.extname(filePath).toLowerCase() === '.mp3') args.push('-id3v2_version', '3');
+  args.push(tmpPath);
+  return args;
+}
+
+ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
+  if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'File not found' };
+  const ffmpeg = resolveBundledFfmpeg();
+  if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
+
+  const tmpPath = path.join(path.dirname(filePath), `.audex-tags-${Date.now()}${path.extname(filePath)}`);
+  const args = ffmpegTagArgs(filePath, tmpPath, tags);
+
   try {
-    const id3Tags = {
-      title: tags.title,
-      artist: tags.artist,
-      album: tags.album,
-      performerInfo: tags.albumArtist || undefined,
-      year: tags.year ? String(tags.year) : undefined,
-      genre: tags.genre || undefined,
-      trackNumber: tags.trackNo || undefined,
-      partOfSet: tags.discNo || undefined,
-      comment: tags.comment ? { language: 'eng', text: tags.comment } : undefined,
-    };
-    Object.keys(id3Tags).forEach(k => id3Tags[k] === undefined && delete id3Tags[k]);
-    const ok = NodeID3.update(id3Tags, filePath);
-    return { success: !!ok };
+    await runFfmpeg(ffmpeg, args);
+    await fs.promises.rename(tmpPath, filePath);
+    return { success: true };
   } catch (err) {
-    return { success: false, error: String(err) };
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
+    return { success: false, error: String((err && err.message) || err) };
   }
 });
 
@@ -928,6 +977,39 @@ ipcMain.handle('update:check', async () => {
 // Fades require re-encoding, so those go through libmp3lame at 320k CBR.
 // Output is always written to a temp file first and only then moved into place,
 // so an interrupted run can never truncate the user's original.
+// Re-encode bitrate per container: libopus refuses anything above 256k (and is
+// transparent well below it), lossless formats take none at all. Everything
+// else gets the old 320k.
+const REENCODE_BITRATE = { '.opus': '192k', '.flac': '', '.wav': '' };
+
+function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain }) {
+  const ext = path.extname(src).toLowerCase();
+  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(start), '-i', src, '-t', String(dur)];
+  // Any filter (fade or gain) rules out the stream copy and forces a re-encode.
+  if (fadeIn > 0 || fadeOut > 0 || gain !== 0) {
+    const filters = [];
+    // Gain first, so the fades shape the already-scaled signal and always end
+    // at true silence.
+    if (gain !== 0) filters.push(`volume=${gain}dB`);
+    if (fadeIn > 0) filters.push(`afade=t=in:st=0:d=${fadeIn}`);
+    if (fadeOut > 0) filters.push(`afade=t=out:st=${Math.max(0, dur - fadeOut)}:d=${fadeOut}`);
+    // No explicit codec: ffmpeg picks the container's default encoder, so an
+    // opus cut stays opus and a flac cut stays lossless flac. Naming libmp3lame
+    // here would put MP3 frames inside whatever extension the source had.
+    args.push('-af', filters.join(','));
+    const bitrate = ext in REENCODE_BITRATE ? REENCODE_BITRATE[ext] : '320k';
+    if (bitrate) args.push('-b:a', bitrate);
+  } else {
+    args.push('-c', 'copy');
+  }
+  // Carry cover art and tags over to the cut file. -id3v2_version belongs to the
+  // mp3 muxer only; handing it to the opus or flac muxer aborts the whole run.
+  args.push('-map_metadata', '0');
+  if (ext === '.mp3') args.push('-id3v2_version', '3');
+  args.push(tmpPath);
+  return args;
+}
+
 ipcMain.handle('audio:trim', async (event, payload) => {
   const src = payload && payload.filePath ? String(payload.filePath) : '';
   const start = Math.max(0, Number(payload && payload.start) || 0);
@@ -960,33 +1042,10 @@ ipcMain.handle('audio:trim', async (event, payload) => {
   }
   const tmpPath = path.join(dir, `.audex-trim-${Date.now()}${ext}`);
 
-  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(start), '-i', src, '-t', String(dur)];
-  // Any filter (fade or gain) rules out the stream copy and forces a re-encode.
-  if (fadeIn > 0 || fadeOut > 0 || gain !== 0) {
-    const filters = [];
-    // Gain first, so the fades shape the already-scaled signal and always end
-    // at true silence.
-    if (gain !== 0) filters.push(`volume=${gain}dB`);
-    if (fadeIn > 0) filters.push(`afade=t=in:st=0:d=${fadeIn}`);
-    if (fadeOut > 0) filters.push(`afade=t=out:st=${Math.max(0, dur - fadeOut)}:d=${fadeOut}`);
-    args.push('-af', filters.join(','), '-c:a', 'libmp3lame', '-b:a', '320k');
-  } else {
-    args.push('-c', 'copy');
-  }
-  // Carry cover art and tags over to the cut file.
-  args.push('-map_metadata', '0', '-id3v2_version', '3', tmpPath);
+  const args = ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain });
 
   try {
-    await new Promise((resolve, reject) => {
-      const proc = spawn(ffmpeg, args);
-      let stderr = '';
-      proc.stderr.on('data', d => { stderr += d.toString(); });
-      proc.on('error', reject);
-      proc.on('close', code => {
-        if (code === 0) resolve();
-        else reject(new Error(stderr.trim().split('\n').slice(-3).join(' ') || `ffmpeg exited with ${code}`));
-      });
-    });
+    await runFfmpeg(ffmpeg, args);
     await fs.promises.rename(tmpPath, outPath);
     return { success: true, filePath: outPath, overwritten: overwrite };
   } catch (err) {
@@ -1242,7 +1301,10 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
 });
 
 function sanitizeFsName(name) {
-  return String(name || '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim().slice(0, 180);
+  const s = String(name || '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim().slice(0, 180);
+  // "." and ".." survive the character filter and would climb out of the target
+  // directory — album/artist tags come from remote metadata, so this matters.
+  return /^\.+$/.test(s) ? '' : s;
 }
 
 function streamYtDlp(args, { onProgress, onPhase, timeoutMs } = {}) {
@@ -1321,13 +1383,48 @@ function classifyYtDlpError(text) {
   return '';
 }
 
-ipcMain.handle('downloads:ytDownload', async (event, payload) => {
-  const { videoId, url, suggestedName, targetDir } = payload || {};
-  if (!videoId && !url) return { success: false, error: 'No video id' };
+// Formats yt-dlp can extract to where the container extension equals the format
+// name — the fallback file scan and the final rename both rely on that.
+const AUDIO_FORMATS = new Set(['opus', 'mp3', 'flac', 'm4a', 'wav']);
+const THUMBNAIL_FORMATS = new Set(['opus', 'mp3', 'flac', 'm4a']);
+// When the source stream already uses the target codec, yt-dlp only remuxes it
+// (-c copy) and the audio comes out bit-identical to what YouTube served. Asking
+// for such a stream first makes that the normal case instead of a coincidence:
+// picking by bitrate alone can land on the AAC stream and force a transcode.
+// Nothing to prefer for mp3/flac/wav — YouTube never serves those.
+const SOURCE_CODEC_FILTER = { opus: '[acodec=opus]', m4a: '[acodec^=mp4a]' };
+// Marks the one stdout line carrying the finished file's path and album, so it
+// can't be confused with anything else yt-dlp prints.
+const META_TAG = '[audexmeta]';
 
+// yt-dlp lands the file under a temp name in the root of the downloads dir;
+// this moves it to {dir}/{artist}/{album}/{artist} - {title}.{ext}. Artist and
+// title come from the renderer (parsed off the source page, far more reliable
+// than YouTube's own metadata); the album only exists in yt-dlp's metadata.
+// Missing segments are skipped rather than filled with "Unknown" — a flat file
+// is easier to fix later than a wrongly-named folder.
+function placeDownload(filePath, downloadsDir, { artist, album, suggestedName, format }) {
+  const base = sanitizeFsName(suggestedName || path.basename(filePath, path.extname(filePath)));
+  if (!base) return filePath;
+  const dir = path.join(downloadsDir, ...[artist, album].map(sanitizeFsName).filter(Boolean));
+  const targetPath = path.join(dir, base + '.' + format);
+  if (targetPath === filePath) return filePath;
+  fs.mkdirSync(dir, { recursive: true });
+  // Already downloaded before — keep the existing copy, drop the new one.
+  if (fs.existsSync(targetPath)) {
+    try { fs.unlinkSync(filePath); } catch (_) {}
+    return targetPath;
+  }
+  fs.renameSync(filePath, targetPath);
+  return targetPath;
+}
+
+// Both download entry points differ only in what they hand yt-dlp: a concrete
+// video URL, or a "ytsearch1:…" query.
+async function runYtDownload(event, payload, target) {
+  const { videoId, url, suggestedName, artist, requestId, targetDir } = payload || {};
+  const format = AUDIO_FORMATS.has(payload && payload.format) ? payload.format : 'opus';
   const downloadsDir = resolveDownloadsDir(targetDir);
-
-  const target = url || `https://www.youtube.com/watch?v=${videoId}`;
   const outPattern = path.join(downloadsDir, '%(title)s [%(id)s].%(ext)s');
 
   const args = [
@@ -1337,21 +1434,22 @@ ipcMain.handle('downloads:ytDownload', async (event, payload) => {
     '--newline',
     '--progress-template', '[dlprog] %(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
     '--extract-audio',
-    '--audio-format', 'mp3',
+    '--audio-format', format,
     '--audio-quality', '0',
-    '--embed-thumbnail',
     '--add-metadata',
     '--output', outPattern,
-    '--print', 'after_move:filepath',
+    '--print', `after_move:${META_TAG}%(artist|)s\t%(album|)s\t%(filepath)s`,
     target,
   ];
+  if (THUMBNAIL_FORMATS.has(format)) args.push('--embed-thumbnail');
+  if (SOURCE_CODEC_FILTER[format]) args.push('-f', `bestaudio${SOURCE_CODEC_FILTER[format]}/bestaudio/best`);
   const ffmpeg = resolveBundledFfmpeg();
   if (ffmpeg) args.push('--ffmpeg-location', ffmpeg);
 
   const sendProgress = (data) => {
     try {
       if (event && event.sender && !event.sender.isDestroyed()) {
-        event.sender.send('downloads:ytProgress', { videoId, url, requestId: payload && payload.requestId, ...data });
+        event.sender.send('downloads:ytProgress', { videoId, url, requestId, ...data });
       }
     } catch (_) {}
   };
@@ -1370,14 +1468,16 @@ ipcMain.handle('downloads:ytDownload', async (event, payload) => {
     return { success: false, error: errLine, reason: classifyYtDlpError(stderr || stdout) };
   }
 
-  let filePath = stdout.split('\n')
-    .map(l => l.trim())
-    .filter(l => l && (l.startsWith('/') || /^[A-Za-z]:\\/.test(l)))
-    .pop() || '';
+  // artist \t album \t path — the path goes last so a stray tab in it can't
+  // shift the fields, and the renderer's artist wins over yt-dlp's when both exist.
+  const meta = (stdout.split('\n').map(l => l.trim()).filter(l => l.startsWith(META_TAG)).pop() || '').slice(META_TAG.length).split('\t');
+  const album = meta.length >= 3 ? meta[1] : '';
+  let filePath = meta.length >= 3 ? meta.slice(2).join('\t') : '';
+  const folderArtist = artist || (meta.length >= 3 ? meta[0] : '');
   if (!filePath || !fs.existsSync(filePath)) {
     try {
       const files = fs.readdirSync(downloadsDir)
-        .filter(f => f.toLowerCase().endsWith('.mp3') && (videoId ? f.includes(`[${videoId}]`) : true))
+        .filter(f => f.toLowerCase().endsWith('.' + format) && (videoId ? f.includes(`[${videoId}]`) : true))
         .map(f => ({ f, m: fs.statSync(path.join(downloadsDir, f)).mtimeMs }))
         .sort((a, b) => b.m - a.m);
       if (files.length) filePath = path.join(downloadsDir, files[0].f);
@@ -1387,102 +1487,27 @@ ipcMain.handle('downloads:ytDownload', async (event, payload) => {
     return { success: false, error: 'Downloaded file not found' };
   }
 
-  if (suggestedName) {
-    try {
-      const safe = sanitizeFsName(suggestedName) + '.mp3';
-      const targetPath = path.join(downloadsDir, safe);
-      if (targetPath !== filePath && !fs.existsSync(targetPath)) {
-        fs.renameSync(filePath, targetPath);
-        filePath = targetPath;
-      }
-    } catch (_) { /* keep original name */ }
-  }
+  try {
+    filePath = placeDownload(filePath, downloadsDir, { artist: folderArtist, album, suggestedName, format });
+  } catch (_) { /* keep the file where yt-dlp left it */ }
 
   return { success: true, filePath, downloadsDir };
+}
+
+ipcMain.handle('downloads:ytDownload', async (event, payload) => {
+  const { videoId, url } = payload || {};
+  if (!videoId && !url) return { success: false, error: 'No video id' };
+  return runYtDownload(event, payload, url || `https://www.youtube.com/watch?v=${videoId}`);
+});
+
+ipcMain.handle('downloads:ytDownloadByQuery', async (event, payload) => {
+  const query = String((payload && payload.query) || '').trim();
+  if (!query) return { success: false, error: 'Empty query' };
+  return runYtDownload(event, payload, `ytsearch1:${query}`);
 });
 
 ipcMain.handle('downloads:getDir', async (event, payload) => {
   return resolveDownloadsDir(payload && payload.targetDir);
-});
-
-ipcMain.handle('downloads:ytDownloadByQuery', async (event, payload) => {
-  const { query, suggestedName, requestId, targetDir } = payload || {};
-  if (!query || !String(query).trim()) return { success: false, error: 'Empty query' };
-
-  const downloadsDir = resolveDownloadsDir(targetDir);
-
-  const target = `ytsearch1:${String(query).trim()}`;
-  const outPattern = path.join(downloadsDir, '%(title)s [%(id)s].%(ext)s');
-
-  const args = [
-    '--no-playlist',
-    '--no-warnings',
-    '--no-quiet',
-    '--newline',
-    '--progress-template', '[dlprog] %(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
-    '--extract-audio',
-    '--audio-format', 'mp3',
-    '--audio-quality', '0',
-    '--embed-thumbnail',
-    '--add-metadata',
-    '--output', outPattern,
-    '--print', 'after_move:filepath',
-    target,
-  ];
-  const ffmpeg = resolveBundledFfmpeg();
-  if (ffmpeg) args.push('--ffmpeg-location', ffmpeg);
-
-  const sendProgress = (data) => {
-    try {
-      if (event && event.sender && !event.sender.isDestroyed()) {
-        event.sender.send('downloads:ytProgress', { requestId, ...data });
-      }
-    } catch (_) {}
-  };
-
-  const { code, stdout, stderr, spawnError } = await streamYtDlp(args, {
-    timeoutMs: 5 * 60 * 1000,
-    onProgress: (p) => sendProgress(p),
-    onPhase: (phase) => sendProgress({ phase }),
-  });
-
-  if (spawnError) {
-    return { success: false, error: 'yt-dlp not found. Install it: pip install -U yt-dlp' };
-  }
-  if (code !== 0) {
-    const errLine = (stderr.trim().split('\n').pop() || stdout.trim().split('\n').pop() || 'yt-dlp failed').slice(0, 300);
-    return { success: false, error: errLine, reason: classifyYtDlpError(stderr || stdout) };
-  }
-
-  let filePath = stdout.split('\n')
-    .map(l => l.trim())
-    .filter(l => l && (l.startsWith('/') || /^[A-Za-z]:\\/.test(l)))
-    .pop() || '';
-  if (!filePath || !fs.existsSync(filePath)) {
-    try {
-      const files = fs.readdirSync(downloadsDir)
-        .filter(f => f.toLowerCase().endsWith('.mp3'))
-        .map(f => ({ f, m: fs.statSync(path.join(downloadsDir, f)).mtimeMs }))
-        .sort((a, b) => b.m - a.m);
-      if (files.length) filePath = path.join(downloadsDir, files[0].f);
-    } catch (_) {}
-  }
-  if (!filePath || !fs.existsSync(filePath)) {
-    return { success: false, error: 'Downloaded file not found' };
-  }
-
-  if (suggestedName) {
-    try {
-      const safe = sanitizeFsName(suggestedName) + '.mp3';
-      const targetPath = path.join(downloadsDir, safe);
-      if (targetPath !== filePath && !fs.existsSync(targetPath)) {
-        fs.renameSync(filePath, targetPath);
-        filePath = targetPath;
-      }
-    } catch (_) { /* keep original name */ }
-  }
-
-  return { success: true, filePath, downloadsDir };
 });
 
 // ── Shared Puppeteer helpers ─────────────────────────────────────────────────

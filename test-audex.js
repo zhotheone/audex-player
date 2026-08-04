@@ -1,0 +1,117 @@
+// Checks for the two file-touching rules that are easy to get silently wrong:
+// where a download is filed, and whether a tag write survives a round trip in
+// every container we support. main.js requires electron, so its pure helpers are
+// sliced out of the source (every top-level function there ends on a line that
+// is just "}").
+// Run: node test-audex.js
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const assert = require('assert');
+const { execFileSync } = require('child_process');
+
+const src = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
+const grab = (name) => {
+  const start = src.indexOf(`function ${name}(`);
+  assert.ok(start > 0, `${name} not found in main.js`);
+  const end = src.indexOf('\n}\n', start);
+  assert.ok(end > start, `${name} has no top-level end in main.js`);
+  return src.slice(start, end + 3);
+};
+const grabConst = (name) => {
+  const start = src.indexOf(`const ${name} = {`);
+  assert.ok(start > 0, `${name} not found in main.js`);
+  return src.slice(start, src.indexOf(';\n', start) + 2); // object literals here have no inner semicolons
+};
+const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, PARSE_OPTS } = new Function('fs', 'path',
+  grab('sanitizeFsName') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('ffmpegTagArgs') +
+  grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') +
+  'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, PARSE_OPTS };')(fs, path);
+
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audex-dl-'));
+const drop = (name) => {
+  const p = path.join(dir, name);
+  fs.writeFileSync(p, 'x');
+  return p;
+};
+
+// Full tags → artist/album/name.
+let out = placeDownload(drop('raw [abc].opus'), dir,
+  { artist: 'Boards of Canada', album: 'Geogaddi', suggestedName: 'Boards of Canada - Dawn Chorus', format: 'opus' });
+assert.strictEqual(out, path.join(dir, 'Boards of Canada', 'Geogaddi', 'Boards of Canada - Dawn Chorus.opus'));
+assert.ok(fs.existsSync(out) && !fs.existsSync(path.join(dir, 'raw [abc].opus')));
+
+// No album → one level less, not an "Unknown Album" folder.
+out = placeDownload(drop('raw2 [def].mp3'), dir,
+  { artist: 'Aphex Twin', album: '', suggestedName: 'Aphex Twin - Xtal', format: 'mp3' });
+assert.strictEqual(out, path.join(dir, 'Aphex Twin', 'Aphex Twin - Xtal.mp3'));
+
+// Separators and traversal in remote metadata stay inside the downloads dir.
+out = placeDownload(drop('raw3 [ghi].opus'), dir,
+  { artist: 'AC/DC', album: '..', suggestedName: '../../etc/passwd', format: 'opus' });
+assert.ok(out.startsWith(dir + path.sep), `escaped the downloads dir: ${out}`);
+assert.strictEqual(out, path.join(dir, 'AC_DC', '.._.._etc_passwd.opus'));
+
+// Downloading the same track twice keeps the first copy and drops the new file.
+const dupe = drop('raw4 [jkl].opus');
+out = placeDownload(dupe, dir,
+  { artist: 'Aphex Twin', album: '', suggestedName: 'Aphex Twin - Xtal', format: 'mp3' });
+assert.strictEqual(out, path.join(dir, 'Aphex Twin', 'Aphex Twin - Xtal.mp3'));
+assert.ok(!fs.existsSync(dupe), 'duplicate download was left behind');
+
+// Nothing to name it by → leave the file where yt-dlp put it.
+const unnamed = drop('raw5 [mno].opus');
+assert.strictEqual(placeDownload(unnamed, dir, { artist: '', album: '', suggestedName: '...', format: 'opus' }), unnamed);
+
+// ── Tag writing: one ffmpeg remux path for every container ───────────────────
+// A one-second tone per format, tagged, then read back with the same library the
+// app indexes with. Catches the muxer-specific traps: mp3-only flags handed to
+// the opus muxer, or tags silently dropped by a container that has no slot.
+const ffmpeg = require('ffmpeg-static');
+const mm = require('music-metadata');
+
+const tags = {
+  title: 'Dawn Chorus', artist: 'Boards of Canada', album: 'Geogaddi',
+  albumArtist: 'Boards of Canada', year: '2002', genre: 'IDM',
+  trackNo: '7', discNo: '1', comment: 'round trip',
+};
+
+(async () => {
+  for (const ext of ['.mp3', '.opus', '.flac', '.m4a']) {
+    const file = path.join(dir, 'tone' + ext);
+    execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',
+      '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', file]);
+
+    const tmp = path.join(dir, '.tmp' + ext);
+    execFileSync(ffmpeg, ffmpegTagArgs(file, tmp, tags));
+    fs.renameSync(tmp, file);
+
+    const { common } = await mm.parseFile(file);
+    assert.strictEqual(common.title, tags.title, `title lost in ${ext}`);
+    assert.strictEqual(common.artist, tags.artist, `artist lost in ${ext}`);
+    assert.strictEqual(common.album, tags.album, `album lost in ${ext}`);
+    assert.strictEqual(String(common.year || ''), tags.year, `year lost in ${ext}`);
+    assert.strictEqual(String(common.track.no || ''), tags.trackNo, `track lost in ${ext}`);
+
+    // A trim with fades re-encodes: the cut must stay in the source's own codec,
+    // at a bitrate that codec accepts (libopus caps out at 256k).
+    const cut = path.join(dir, 'cut' + ext);
+    execFileSync(ffmpeg, ffmpegTrimArgs(file, cut, { start: 0.2, dur: 0.5, fadeIn: 0.1, fadeOut: 0.1, gain: -3 }));
+    const cutFmt = (await mm.parseFile(cut)).format;
+    assert.strictEqual(cutFmt.container, (await mm.parseFile(file)).format.container, `container changed by trim in ${ext}`);
+    assert.ok(cutFmt.duration > 0, `empty trim output for ${ext}`);
+  }
+
+  // Ogg/Opus only reveals its length on the last page, so a header-only parse
+  // returns no duration and no bitrate. Needs a file long enough that the parser
+  // would stop early without PARSE_OPTS — a one-second tone gets read whole.
+  const long = path.join(dir, 'long.opus');
+  execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:duration=300', '-c:a', 'libopus', long]);
+  const longFmt = (await mm.parseFile(long, PARSE_OPTS)).format;
+  assert.ok(longFmt.duration > 299, `opus duration missing: ${longFmt.duration}`);
+  assert.ok(longFmt.bitrate > 0, `opus bitrate missing: ${longFmt.bitrate}`);
+
+  fs.rmSync(dir, { recursive: true, force: true });
+  console.log('ok');
+})();
