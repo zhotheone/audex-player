@@ -201,12 +201,12 @@ function createWindow() {
     try { fs.writeFileSync(gpuMarkerPath, '1'); } catch (_) { /* ignore */ }
     const choice = dialog.showMessageBoxSync(mainWindow, {
       type: 'warning',
-      buttons: ['Перезапустить', 'Подождать'],
+      buttons: ['Restart', 'Wait'],
       defaultId: 0,
       cancelId: 1,
-      title: 'Audex не отвечает',
-      message: 'Похоже, приложение зависло из-за графического ускорения.',
-      detail: 'Перезапустить с отключённым аппаратным ускорением? Это часто помогает на Windows.',
+      title: 'Audex is not responding',
+      message: 'The app looks frozen because of hardware acceleration.',
+      detail: 'Restart with hardware acceleration disabled? This often helps on Windows.',
     });
     if (choice === 0) {
       isQuitting = true;
@@ -265,41 +265,41 @@ function buildTrayMenu() {
 
   const nowPlayingLabel = hasTrack
     ? truncate(`${title}${artist ? ' — ' + artist : ''}`, 60)
-    : 'Сейчас ничего не играет';
+    : 'Nothing is playing';
 
   return Menu.buildFromTemplate([
     { label: nowPlayingLabel, enabled: false },
     { type: 'separator' },
     {
-      label: !hasTrack ? 'Воспроизвести' : (isPlaying ? 'Пауза' : 'Воспроизвести'),
+      label: !hasTrack ? 'Play' : (isPlaying ? 'Pause' : 'Play'),
       enabled: hasTrack || true, // even with no track, triggers "play first track"
       click: () => sendTrayCommand('playPause'),
     },
     {
-      label: 'Предыдущий трек',
+      label: 'Previous track',
       enabled: hasTrack,
       click: () => sendTrayCommand('prev'),
     },
     {
-      label: 'Следующий трек',
+      label: 'Next track',
       enabled: hasTrack,
       click: () => sendTrayCommand('next'),
     },
     {
-      label: isFavorite ? 'Убрать из избранного' : 'В избранное',
+      label: isFavorite ? 'Remove from favourites' : 'Add to favourites',
       enabled: hasTrack,
       click: () => sendTrayCommand('toggleFavorite'),
     },
     { type: 'separator' },
-    { label: 'Открыть Audex', click: () => showMainWindow() },
+    { label: 'Open Audex', click: () => showMainWindow() },
     {
-      label: 'Скрыть окно',
+      label: 'Hide window',
       enabled: !!(mainWindow && mainWindow.isVisible()),
       click: () => { if (mainWindow && mainWindow.isVisible()) mainWindow.hide(); },
     },
     { type: 'separator' },
     {
-      label: 'Выход',
+      label: 'Quit',
       click: () => { isQuitting = true; app.quit(); },
     },
   ]);
@@ -426,7 +426,6 @@ ipcMain.handle('window:setPortrait', async (event, payload) => {
 const TRENDING_CHARTS = {
   // Per-country "Top 100 Songs" — YouTube Music's official charts channel.
   global:  'PL4fGSI1pDJn6puJdseH2Rt9sMvt9E2M4i',
-  russia:  'PL4fGSI1pDJn5C8dBiYt0BTREyCHbZ47qc',
   ukraine: 'PL4fGSI1pDJn4E_HoW5HB-w5vFPkYfo3dB',
   usa:     'PL4fGSI1pDJn6O1LS0XSdF3RyO0Rq_LDeI',
   uk:      'PL4fGSI1pDJn6_f5P3MnzXg9l3GDfnSlXa',
@@ -461,7 +460,6 @@ const TRENDING_NOISE = new RegExp(
     'official\\s*(?:music\\s*)?video', 'official\\s*audio', 'official\\s*visuali[sz]er',
     'music\\s*video', 'video\\s*premiere[^)\\]]*', 'visuali[sz]er',
     'lyrics?(?:\\s*video)?', 'mood\\s*video', 'clip\\s*officiel',
-    'премьера\\s*клипа', 'премьера\\s*песни', 'официальный\\s*клип', 'клип',
   ].join('|') + ')\\s*[)\\]]\\s*', 'gi');
 function splitTrendingTitle(raw) {
   let s = String(raw || '').replace(TRENDING_NOISE, ' ').trim();
@@ -769,7 +767,7 @@ ipcMain.handle('audio:readFile', async (event, filePath) => {
 
 ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
   if (path.extname(filePath).toLowerCase() !== '.mp3') {
-    return { success: false, error: 'Запись тегов поддерживается только для MP3' };
+    return { success: false, error: 'Tag writing is only supported for MP3' };
   }
   try {
     const id3Tags = {
@@ -832,12 +830,12 @@ ipcMain.handle('app:setHardwareAcceleration', async (event, enabled) => {
   }
   const choice = dialog.showMessageBoxSync(mainWindow, {
     type: 'question',
-    buttons: ['Перезапустить', 'Позже'],
+    buttons: ['Restart', 'Later'],
     defaultId: 0,
     cancelId: 1,
-    title: 'Требуется перезапуск',
-    message: 'Изменение применится после перезапуска приложения.',
-    detail: 'Перезапустить Audex сейчас?',
+    title: 'Restart required',
+    message: 'The change takes effect after the app restarts.',
+    detail: 'Restart Audex now?',
   });
   if (choice === 0) {
     isQuitting = true;
@@ -941,11 +939,11 @@ ipcMain.handle('audio:trim', async (event, payload) => {
   const gain = Math.max(-40, Math.min(40, Number(payload && payload.gain) || 0));
   const overwrite = !!(payload && payload.overwrite);
 
-  if (!src || !fs.existsSync(src)) return { success: false, error: 'Файл не найден' };
-  if (!(end > start)) return { success: false, error: 'Конец должен быть больше начала' };
+  if (!src || !fs.existsSync(src)) return { success: false, error: 'File not found' };
+  if (!(end > start)) return { success: false, error: 'End must be greater than start' };
 
   const ffmpeg = resolveBundledFfmpeg();
-  if (!ffmpeg) return { success: false, error: 'ffmpeg не найден' };
+  if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
 
   const dir = path.dirname(src);
   const ext = path.extname(src);
@@ -956,9 +954,9 @@ ipcMain.handle('audio:trim', async (event, payload) => {
   if (overwrite) {
     outPath = src;
   } else {
-    outPath = path.join(dir, `${base} (обрезано)${ext}`);
+    outPath = path.join(dir, `${base} (trimmed)${ext}`);
     let n = 2;
-    while (fs.existsSync(outPath)) outPath = path.join(dir, `${base} (обрезано ${n++})${ext}`);
+    while (fs.existsSync(outPath)) outPath = path.join(dir, `${base} (trimmed ${n++})${ext}`);
   }
   const tmpPath = path.join(dir, `.audex-trim-${Date.now()}${ext}`);
 
@@ -1151,7 +1149,7 @@ ipcMain.handle('downloads:ytSearch', async (event, query, count) => {
 
 // ── YouTube Music parser ──────────────────────────────────────────────────────
 // Enumerates an album / single / artist page on music.youtube.com into a flat
-// track list via yt-dlp's --flat-playlist. Unlike the Yandex parser this needs
+// track list via yt-dlp's --flat-playlist. Unlike the Spotify parser this needs
 // no browser/login/captcha: yt-dlp's youtube:tab extractor reads these URLs
 // directly. Downloading each track reuses the existing downloads:ytDownload
 // handler (by video id), so the MP3 gets its thumbnail + tags embedded just like
@@ -1487,9 +1485,8 @@ ipcMain.handle('downloads:ytDownloadByQuery', async (event, payload) => {
   return { success: true, filePath, downloadsDir };
 });
 
-// ── Yandex Music playlist parser (Puppeteer) ──────────────────────────────────
-
-let yandexBrowser = null;
+// ── Shared Puppeteer helpers ─────────────────────────────────────────────────
+// Bundled-Chromium resolution and duration parsing, shared with the Spotify parser.
 
 function resolveBundledChromium() {
   const bundleRoot = app.isPackaged
@@ -1526,57 +1523,6 @@ function resolveBundledChromium() {
   try { return require('puppeteer').executablePath(); } catch (_) { return null; }
 }
 
-const AD_SELECTORS = [
-  "[class*='ads-banner__close']",
-  "[class*='ad-close']",
-  "[class*='AdClose']",
-  "[class*='popup__close']",
-  "[class*='Modal__close']",
-  "[class*='modal__close']",
-  "button[aria-label='Закрыть']",
-  "button[aria-label='Close']",
-  "[class*='notification__close']",
-  "[class*='PromoMobile'] button",
-  "[class*='promo-mobile__close']",
-  "[class*='banner__close']",
-  "[class*='advert'] button",
-];
-
-const TITLE_SELECTORS = [
-  "[class*='d-track__title']",
-  "[class*='TrackTitle']",
-  "[class*='track__name']",
-  "[class*='Track__name']",
-  "[class*='trackName']",
-  "[class*='title_']",
-  "a[class*='d-track']",
-];
-const ARTIST_SELECTORS = [
-  "[class*='d-track__artists']",
-  "a[href*='/artist/']",
-  "[class*='TrackArtists']",
-  "[class*='track__artists']",
-  "[class*='artists_']",
-];
-const DURATION_SELECTORS = [
-  "[class*='TrackDuration']",
-  "[class*='track__duration']",
-  "[class*='duration_']",
-  "[class*='d-track__duration']",
-  "time",
-];
-const COVER_SELECTORS = [
-  "[class*='Album_cover'] img",
-  "[class*='album-art'] img",
-  "[class*='CoverImage'] img",
-  "[class*='cover'] img",
-  "[class*='Cover'] img",
-  "[class*='artwork'] img",
-  "img[src*='avatars.yandex.net']",
-  "img[src*='music-content']",
-];
-const TRACK_SEL = "[class*='CommonTrack_root']";
-
 function durationToSeconds(dur) {
   if (!dur) return 0;
   const parts = String(dur).trim().split(/[:.]/);
@@ -1587,235 +1533,12 @@ function durationToSeconds(dur) {
   return 0;
 }
 
-async function closeAds(page) {
-  for (const sel of AD_SELECTORS) {
-    try {
-      const handles = await page.$$(sel);
-      for (const h of handles) {
-        try {
-          await h.click({ delay: 30 }).catch(async () => {
-            await page.evaluate((el) => el.click(), h);
-          });
-          await new Promise(r => setTimeout(r, 200));
-        } catch (_) {}
-      }
-    } catch (_) {}
-  }
-  try { await page.keyboard.press('Escape'); } catch (_) {}
-}
-
-async function extractTracksFromDom(page) {
-  return await page.evaluate(({ TRACK_SEL, TITLE_SELECTORS, ARTIST_SELECTORS, DURATION_SELECTORS, COVER_SELECTORS }) => {
-    function findText(el, selectors) {
-      for (const sel of selectors) {
-        const nodes = el.querySelectorAll(sel);
-        const texts = [];
-        nodes.forEach(n => { const t = (n.textContent || '').trim(); if (t) texts.push(t); });
-        if (texts.length) return texts.join(' & ');
-      }
-      return '';
-    }
-    function findCover(el) {
-      for (const sel of COVER_SELECTORS) {
-        const imgs = el.querySelectorAll(sel);
-        for (const img of imgs) {
-          const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
-          if (src && src.includes('avatars')) {
-            return src.replace(/\/\d+x\d+$/, '/1000x1000').replace(/\/%%$/, '/1000x1000');
-          }
-        }
-      }
-      return '';
-    }
-    function viaAria(el) {
-      const btn = el.querySelector("[class*='playButtonCell'] [aria-label]");
-      const label = btn ? (btn.getAttribute('aria-label') || '') : '';
-      const m = label.match(/\.\s*(.+?)\s*[–—]\s*(.+)$/);
-      if (m) return { title: m[2].trim(), artist: m[1].trim() };
-      return { title: label.trim(), artist: '' };
-    }
-    // On album pages, Yandex hides the artist column for tracks by the album's main
-    // artist. Collect artist links that live OUTSIDE any track row — those belong to
-    // the album/playlist header and serve as a fallback.
-    function getAlbumArtist() {
-      const trackRoots = Array.from(document.querySelectorAll(TRACK_SEL));
-      const links = Array.from(document.querySelectorAll("a[href*='/artist/']"));
-      const names = [];
-      for (const a of links) {
-        if (trackRoots.some(root => root.contains(a))) continue;
-        const t = (a.textContent || '').trim();
-        if (t && !names.includes(t)) names.push(t);
-      }
-      return names.join(' & ');
-    }
-    const albumArtist = getAlbumArtist();
-    const out = [];
-    const els = document.querySelectorAll(TRACK_SEL);
-    els.forEach(el => {
-      let title = findText(el, TITLE_SELECTORS);
-      let artist = findText(el, ARTIST_SELECTORS);
-      let dur = findText(el, DURATION_SELECTORS);
-      if (!title) {
-        const a = viaAria(el);
-        title = a.title;
-        if (!artist) artist = a.artist;
-      }
-      if (!title) title = (el.getAttribute('data-title') || '').trim();
-      if (dur && !/\d:\d/.test(dur)) dur = '';
-      if (!title) return;
-      if (!artist && albumArtist) artist = albumArtist;
-      out.push({
-        title,
-        artist: artist || '—',
-        duration: dur || '—',
-        cover_url: findCover(el),
-      });
-    });
-    return out;
-  }, { TRACK_SEL, TITLE_SELECTORS, ARTIST_SELECTORS, DURATION_SELECTORS, COVER_SELECTORS });
-}
-
-ipcMain.handle('yandex:parsePlaylist', async (event, payload) => {
-  const url = (payload && payload.url) ? String(payload.url).trim() : '';
-  const showBrowser = !payload || payload.showBrowser !== false;
-  if (!url || !/^https?:\/\/music\.yandex\./i.test(url)) {
-    return { success: false, error: 'Invalid Yandex Music URL' };
-  }
-
-  const send = (data) => {
-    try {
-      if (event && event.sender && !event.sender.isDestroyed()) {
-        event.sender.send('yandex:parseProgress', data);
-      }
-    } catch (_) {}
-  };
-
-  let puppeteer;
-  try { puppeteer = require('puppeteer'); } catch (err) {
-    return { success: false, error: 'puppeteer not installed' };
-  }
-
-  const executablePath = resolveBundledChromium();
-  if (!executablePath || !fs.existsSync(executablePath)) {
-    return { success: false, error: 'Bundled Chromium not found. Run "npm install puppeteer" before packaging.' };
-  }
-
-  const userDataDir = path.join(app.getPath('userData'), 'yandex-profile');
-  try { fs.mkdirSync(userDataDir, { recursive: true }); } catch (_) {}
-
-  send({ phase: 'launching', message: showBrowser ? 'Запуск браузера…' : 'Запускаем парсер…' });
-
-  try {
-    yandexBrowser = await puppeteer.launch({
-      executablePath,
-      headless: !showBrowser,
-      userDataDir,
-      args: [
-        '--no-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-notifications',
-        ...(showBrowser ? ['--window-size=1440,900'] : []),
-      ],
-      defaultViewport: showBrowser ? null : { width: 1440, height: 900 },
-    });
-  } catch (err) {
-    return { success: false, error: 'Failed to launch Chromium: ' + String(err).slice(0, 200) };
-  }
-
-  const collected = new Map();
-
-  try {
-    const pages = await yandexBrowser.pages();
-    const page = pages[0] || await yandexBrowser.newPage();
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
-
-    send({ phase: 'loading', message: 'Открываем плейлист…' });
-    try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    } catch (navErr) {
-      // Heavy SPAs (Yandex Music) sometimes never fully fire DOMContentLoaded —
-      // continue anyway, the later "wait for tracks" loop is the real gate.
-      send({ phase: 'loading', message: 'Страница грузится дольше обычного, продолжаем…' });
-    }
-    await new Promise(r => setTimeout(r, 2500));
-
-    send({ phase: 'loading', message: 'Закрываем рекламу…' });
-    for (let i = 0; i < 3; i++) {
-      await closeAds(page);
-      await new Promise(r => setTimeout(r, 600));
-    }
-
-    send({
-      phase: 'loading',
-      message: showBrowser
-        ? 'Ждём загрузку треков (вход в Яндекс — в окне браузера, если нужно)…'
-        : 'Ждём загрузку треков…',
-    });
-    const deadline = Date.now() + 90_000;
-    let appeared = false;
-    while (Date.now() < deadline) {
-      await closeAds(page);
-      const count = await page.$$eval(TRACK_SEL, els => els.length).catch(() => 0);
-      if (count > 0) { appeared = true; break; }
-      await new Promise(r => setTimeout(r, 1500));
-    }
-    if (!appeared) throw new Error('Tracks did not appear (login or wrong URL?)');
-
-    send({ phase: 'scrolling', message: 'Собираем треки…', total: 0 });
-
-    let noNew = 0;
-    const SCROLL_RETRIES = 6;
-    while (noNew < SCROLL_RETRIES) {
-      await closeAds(page);
-      const tracks = await extractTracksFromDom(page);
-      let added = 0;
-      for (const t of tracks) {
-        const key = `${t.title}|${t.artist}`;
-        if (!collected.has(key)) {
-          collected.set(key, { ...t, index: collected.size + 1, duration_sec: durationToSeconds(t.duration) });
-          added++;
-        }
-      }
-      if (added === 0) noNew++; else noNew = 0;
-      send({
-        phase: 'scrolling',
-        message: 'Собираем треки…',
-        total: collected.size,
-        added,
-        tracks: Array.from(collected.values()),
-      });
-      try {
-        await page.evaluate((sel) => {
-          const els = document.querySelectorAll(sel);
-          if (els.length) els[els.length - 1].scrollIntoView({ block: 'center' });
-        }, TRACK_SEL);
-      } catch (_) {
-        await page.evaluate(() => window.scrollBy(0, 600));
-      }
-      await new Promise(r => setTimeout(r, 1500));
-    }
-
-    const tracks = Array.from(collected.values());
-    send({ phase: 'done', message: `Готово — ${tracks.length} треков`, total: tracks.length, tracks });
-    return { success: true, tracks };
-  } catch (err) {
-    const msg = String(err && err.message || err).slice(0, 300);
-    send({ phase: 'error', message: msg });
-    return { success: false, error: msg, tracks: Array.from(collected.values()) };
-  } finally {
-    try { if (yandexBrowser) await yandexBrowser.close(); } catch (_) {}
-    yandexBrowser = null;
-  }
-});
-
 // ── Spotify playlist parser (Puppeteer) ───────────────────────────────────────
-// Same machinery as the Yandex parser (bundled Chromium, scroll-and-collect over
-// a virtualized list), but with Spotify-specific extraction: open.spotify.com
+// Puppeteer + bundled Chromium, scroll-and-collect over a virtualized list, with
+// Spotify-specific extraction: open.spotify.com
 // uses hashed class names, so rows are located via data-testid attributes and
 // href patterns instead of class fragments. Spotify has no yt-dlp extractor, so
-// downloading goes through ytsearch1:"artist title" like Yandex tracks do.
+// downloading goes through ytsearch1:"artist title".
 
 let spotifyBrowser = null;
 
@@ -1942,7 +1665,7 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
   const userDataDir = path.join(app.getPath('userData'), 'spotify-profile');
   try { fs.mkdirSync(userDataDir, { recursive: true }); } catch (_) {}
 
-  send({ phase: 'launching', message: showBrowser ? 'Запуск браузера…' : 'Запускаем парсер…' });
+  send({ phase: 'launching', message: showBrowser ? 'Launching browser…' : 'Starting the parser…' });
 
   try {
     spotifyBrowser = await puppeteer.launch({
@@ -1970,13 +1693,13 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
       Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
     });
 
-    send({ phase: 'loading', message: 'Открываем страницу…' });
+    send({ phase: 'loading', message: 'Opening the page…' });
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
     } catch (navErr) {
-      // Same rationale as the Yandex parser: the "wait for tracks" loop below is
+      // The "wait for tracks" loop below is
       // the real gate, DOMContentLoaded on heavy SPAs is unreliable.
-      send({ phase: 'loading', message: 'Страница грузится дольше обычного, продолжаем…' });
+      send({ phase: 'loading', message: 'The page is loading slower than usual, continuing…' });
     }
     await new Promise(r => setTimeout(r, 2500));
 
@@ -1985,8 +1708,8 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     send({
       phase: 'loading',
       message: showBrowser
-        ? 'Ждём загрузку треков (вход в Spotify — в окне браузера, если нужно)…'
-        : 'Ждём загрузку треков…',
+        ? 'Waiting for tracks (sign in to Spotify in the browser window if needed)…'
+        : 'Waiting for tracks…',
     });
     const deadline = Date.now() + 90_000;
     let appeared = false;
@@ -1998,7 +1721,7 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     }
     if (!appeared) throw new Error('Tracks did not appear (private playlist or wrong URL?)');
 
-    send({ phase: 'scrolling', message: 'Собираем треки…', total: 0 });
+    send({ phase: 'scrolling', message: 'Collecting tracks…', total: 0 });
 
     let noNew = 0;
     const SCROLL_RETRIES = 6;
@@ -2015,7 +1738,7 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
       if (added === 0) noNew++; else noNew = 0;
       send({
         phase: 'scrolling',
-        message: 'Собираем треки…',
+        message: 'Collecting tracks…',
         total: collected.size,
         added,
         tracks: Array.from(collected.values()),
@@ -2036,7 +1759,7 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     }
 
     const tracks = Array.from(collected.values());
-    send({ phase: 'done', message: `Готово — ${tracks.length} треков`, total: tracks.length, tracks });
+    send({ phase: 'done', message: `Done — ${tracks.length} tracks`, total: tracks.length, tracks });
     return { success: true, tracks };
   } catch (err) {
     const msg = String(err && err.message || err).slice(0, 300);
@@ -2045,220 +1768,6 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
   } finally {
     try { if (spotifyBrowser) await spotifyBrowser.close(); } catch (_) {}
     spotifyBrowser = null;
-  }
-});
-
-// ── VK (ВКонтакте) parser ───────────────────────────────────────────────────
-// Mirrors the Spotify parser: Puppeteer + bundled Chromium with a persistent
-// vk-profile (music requires login — the user signs in once in the visible
-// browser window and the session survives restarts). Only the track list is
-// scraped; audio itself is downloaded via the shared ytsearch1: queue.
-let vkBrowser = null;
-// `.audio_row` is the long-standing VK web-player row; the bracketed variants
-// cover the newer React (VKUI) markup in case VK finishes migrating.
-const VK_TRACK_SEL = '.audio_row, [data-testid="audio_row"], [class*="AudioRow__root"]';
-
-async function extractVkTracksFromDom(page) {
-  return await page.evaluate((TRACK_SEL) => {
-    const textOf = (el) => el ? (el.textContent || '').trim() : '';
-    function firstText(row, sels) {
-      for (const s of sels) {
-        const t = textOf(row.querySelector(s));
-        if (t) return t;
-      }
-      return '';
-    }
-    function coverOf(row) {
-      const el = row.querySelector('.audio_row__cover, [class*="AudioRow__cover"], [class*="__cover"]');
-      if (el) {
-        const bg = (getComputedStyle(el).backgroundImage || '');
-        const m = bg.match(/url\(["']?(.+?)["']?\)/);
-        if (m && !/^data:/.test(m[1])) return m[1];
-      }
-      const img = row.querySelector('img');
-      const src = img ? (img.currentSrc || img.src || '') : '';
-      return /^data:/.test(src) ? '' : src;
-    }
-    const out = [];
-    document.querySelectorAll(TRACK_SEL).forEach(row => {
-      const title = firstText(row, [
-        '.audio_row__title_inner',
-        '.audio_row__title a',
-        '[data-testid="audio_row_title"]',
-        '[class*="AudioRowTitle"]',
-      ]);
-      if (!title) return;
-
-      let artist = '';
-      const perfLinks = row.querySelectorAll('.audio_row__performers a');
-      if (perfLinks.length) {
-        const names = [];
-        perfLinks.forEach(a => {
-          const t = textOf(a);
-          if (t && !names.includes(t)) names.push(t);
-        });
-        artist = names.join(' & ');
-      }
-      if (!artist) {
-        artist = firstText(row, [
-          '.audio_row__performers',
-          '[class*="AudioRowSubtitle"]',
-          '[class*="performer"]',
-        ]);
-      }
-
-      let dur = '';
-      const durText = textOf(row.querySelector('.audio_row__duration, [class*="duration"]'));
-      if (/^\d+:\d{2}$/.test(durText)) dur = durText;
-      if (!dur) {
-        row.querySelectorAll('div,span').forEach(d => {
-          if (dur) return;
-          const t = textOf(d);
-          if (/^\d+:\d{2}$/.test(t) && d.childElementCount === 0) dur = t;
-        });
-      }
-
-      out.push({
-        title,
-        artist: artist || '—',
-        duration: dur || '—',
-        cover_url: coverOf(row),
-      });
-    });
-    return out;
-  }, VK_TRACK_SEL);
-}
-
-ipcMain.handle('vk:parsePlaylist', async (event, payload) => {
-  const url = (payload && payload.url) ? String(payload.url).trim() : '';
-  const showBrowser = !payload || payload.showBrowser !== false;
-  if (!url || !/^https?:\/\/(m\.)?vk\.(com|ru)\//i.test(url)) {
-    return { success: false, error: 'Invalid VK URL' };
-  }
-
-  const send = (data) => {
-    try {
-      if (event && event.sender && !event.sender.isDestroyed()) {
-        event.sender.send('vk:parseProgress', data);
-      }
-    } catch (_) {}
-  };
-
-  let puppeteer;
-  try { puppeteer = require('puppeteer'); } catch (err) {
-    return { success: false, error: 'puppeteer not installed' };
-  }
-
-  const executablePath = resolveBundledChromium();
-  if (!executablePath || !fs.existsSync(executablePath)) {
-    return { success: false, error: 'Bundled Chromium not found. Run "npm install puppeteer" before packaging.' };
-  }
-
-  const userDataDir = path.join(app.getPath('userData'), 'vk-profile');
-  try { fs.mkdirSync(userDataDir, { recursive: true }); } catch (_) {}
-
-  send({ phase: 'launching', message: showBrowser ? 'Запуск браузера…' : 'Запускаем парсер…' });
-
-  try {
-    vkBrowser = await puppeteer.launch({
-      executablePath,
-      headless: !showBrowser,
-      userDataDir,
-      args: [
-        '--no-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-notifications',
-        ...(showBrowser ? ['--window-size=1440,900'] : []),
-      ],
-      defaultViewport: showBrowser ? null : { width: 1440, height: 900 },
-    });
-  } catch (err) {
-    return { success: false, error: 'Failed to launch Chromium: ' + String(err).slice(0, 200) };
-  }
-
-  const collected = new Map();
-
-  try {
-    const pages = await vkBrowser.pages();
-    const page = pages[0] || await vkBrowser.newPage();
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
-
-    send({ phase: 'loading', message: 'Открываем страницу…' });
-    try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    } catch (navErr) {
-      // Same rationale as the Yandex/Spotify parsers: the "wait for tracks"
-      // loop below is the real gate, DOMContentLoaded is unreliable on SPAs.
-      send({ phase: 'loading', message: 'Страница грузится дольше обычного, продолжаем…' });
-    }
-    await new Promise(r => setTimeout(r, 2500));
-
-    send({
-      phase: 'loading',
-      message: showBrowser
-        ? 'Ждём загрузку треков (вход во ВКонтакте — в окне браузера, если нужно)…'
-        : 'Ждём загрузку треков…',
-    });
-    // Long deadline on purpose: the first run typically includes a manual login.
-    const deadline = Date.now() + 180_000;
-    let appeared = false;
-    while (Date.now() < deadline) {
-      const count = await page.$$eval(VK_TRACK_SEL, els => els.length).catch(() => 0);
-      if (count > 0) { appeared = true; break; }
-      await new Promise(r => setTimeout(r, 1500));
-    }
-    if (!appeared) throw new Error('Треки не появились (нужен вход, приватный плейлист или неверная ссылка?)');
-
-    send({ phase: 'scrolling', message: 'Собираем треки…', total: 0 });
-
-    let noNew = 0;
-    const SCROLL_RETRIES = 6;
-    while (noNew < SCROLL_RETRIES) {
-      const tracks = await extractVkTracksFromDom(page);
-      let added = 0;
-      for (const t of tracks) {
-        const key = `${t.title}|${t.artist}`;
-        if (!collected.has(key)) {
-          collected.set(key, { ...t, index: collected.size + 1, duration_sec: durationToSeconds(t.duration) });
-          added++;
-        }
-      }
-      if (added === 0) noNew++; else noNew = 0;
-      send({
-        phase: 'scrolling',
-        message: 'Собираем треки…',
-        total: collected.size,
-        added,
-        tracks: Array.from(collected.values()),
-      });
-      try {
-        // VK paginates with a "Show more" button in the legacy markup and
-        // infinite scroll in the newer one — handle both.
-        await page.evaluate((sel) => {
-          const more = document.querySelector('.audio_showmore, .show_more, [class*="ShowMore"]');
-          if (more && more.offsetParent !== null) { more.click(); return; }
-          const els = document.querySelectorAll(sel);
-          if (els.length) { els[els.length - 1].scrollIntoView({ block: 'center' }); return; }
-          window.scrollBy(0, 600);
-        }, VK_TRACK_SEL);
-      } catch (_) {
-        await page.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
-      }
-      await new Promise(r => setTimeout(r, 1500));
-    }
-
-    const tracks = Array.from(collected.values());
-    send({ phase: 'done', message: `Готово — ${tracks.length} треков`, total: tracks.length, tracks });
-    return { success: true, tracks };
-  } catch (err) {
-    const msg = String(err && err.message || err).slice(0, 300);
-    send({ phase: 'error', message: msg });
-    return { success: false, error: msg, tracks: Array.from(collected.values()) };
-  } finally {
-    try { if (vkBrowser) await vkBrowser.close(); } catch (_) {}
-    vkBrowser = null;
   }
 });
 
@@ -2309,7 +1818,7 @@ function discordConnectSocket(paths) {
   return new Promise((resolve, reject) => {
     let idx = 0;
     const tryNext = () => {
-      if (idx >= paths.length) { reject(new Error('Discord не запущен (IPC-сокет не найден)')); return; }
+      if (idx >= paths.length) { reject(new Error('Discord is not running (IPC socket not found)')); return; }
       const p = paths[idx++];
       const sock = net.createConnection(p);
       sock.once('connect', () => { sock.removeAllListeners('error'); resolve(sock); });
@@ -2354,7 +1863,7 @@ function notifyDiscordStatus() {
 }
 
 async function discordConnect(clientId) {
-  if (!clientId) throw new Error('Не задан Discord Client ID');
+  if (!clientId) throw new Error('Discord Client ID is not set');
   if (discordSock && discordReady && discordClientId === clientId) return discordUser;
   discordTeardown();
   discordClientId = clientId;
@@ -2365,7 +1874,7 @@ async function discordConnect(clientId) {
   sock.on('error', () => { /* 'close' fires right after and handles cleanup */ });
   return await new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      if (!discordReady) { discordReadyResolve = null; discordTeardown(); reject(new Error('Discord не ответил (таймаут рукопожатия)')); }
+      if (!discordReady) { discordReadyResolve = null; discordTeardown(); reject(new Error('Discord did not respond (handshake timeout)')); }
     }, 8000);
     discordReadyResolve = (u) => { clearTimeout(timer); resolve(u); };
     try { sock.write(discordEncode(DISCORD_OP.HANDSHAKE, { v: 1, client_id: clientId })); }

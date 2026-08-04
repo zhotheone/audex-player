@@ -27,7 +27,7 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 - **It's yours.** Point it at a folder and it just works — offline, forever. Nothing is uploaded anywhere.
 - **It's quick.** Thousands of tracks scroll without a stutter — the list is virtualized and every cover is cached to disk after the first scan.
 - **It looks good.** Nine themes, any accent color you like, your own wallpaper behind the interface.
-- **It fills the gaps.** Missing a track? Search YouTube, paste a Spotify or Yandex playlist, or grab what's charting today — without leaving the app.
+- **It fills the gaps.** Missing a track? Search YouTube, paste a Spotify playlist, or grab what's charting today — without leaving the app.
 - **It respects you.** Your listening stats are computed on your device and never leave it.
 
 ---
@@ -99,8 +99,8 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 
 - **YouTube** — search and download by query, with cover art and metadata embedded automatically.
 - **YouTube Music** — paste an album, single or artist link and parse the full track list.
-- **Spotify**, **Yandex Music** and **VK** — parse playlists and albums, then download them through the shared queue.
-- **Trending** — YouTube Music charts for 9 countries and 13 genres, downloadable in one click.
+- **Spotify** — parse playlists and albums, then download them through the shared queue.
+- **Trending** — YouTube Music charts for 8 countries and 13 genres, downloadable in one click.
 - **Download queue** with live progress; queue state survives restarts.
 - Choose where new tracks land, or let them go to a dedicated `Audex Downloads` folder.
 
@@ -109,7 +109,7 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 <details open>
 <summary><b>🎨 Interface</b></summary>
 
-- **Five languages** — English, Russian, German, French, Ukrainian.
+- **Four languages** — English, German, French, Ukrainian.
 - **Nine themes** and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
 - **UI scale** and a **responsive layout** that adapts to narrow windows.

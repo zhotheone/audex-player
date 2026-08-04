@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <title>Audex</title>
@@ -106,11 +106,11 @@
     <div id="update-banner" class="update-banner" hidden>
       <svg class="i update-banner-icon" width="18" height="18"><use href="#i-download"/></svg>
       <div class="update-banner-text">
-        <span class="update-banner-title" data-i18n="update.available">Доступно обновление</span>
+        <span class="update-banner-title" data-i18n="update.available">Update available</span>
         <span class="update-banner-version" id="update-banner-version"></span>
       </div>
-      <button class="update-banner-btn" id="update-download-btn" data-i18n="update.download">Скачать</button>
-      <button class="update-banner-close" id="update-close-btn" data-i18n-title="update.dismiss" title="Закрыть">
+      <button class="update-banner-btn" id="update-download-btn" data-i18n="update.download">Download</button>
+      <button class="update-banner-close" id="update-close-btn" data-i18n-title="update.dismiss" title="Dismiss">
         <svg class="i" width="16" height="16"><use href="#i-close"/></svg>
       </button>
     </div>
@@ -129,66 +129,66 @@
       <nav class="nav-menu">
         <a href="#" class="nav-item active" data-view="library">
           <svg class="i" width="14" height="14"><use href="#i-library"/></svg>
-          <span data-i18n="nav.library">Библиотека</span>
+          <span data-i18n="nav.library">Library</span>
           <span class="nav-meta" id="count-library">0</span>
         </a>
         <a href="#" class="nav-item nav-trending" data-view="trending" id="nav-trending">
           <svg class="i" width="14" height="14"><use href="#i-sparkle"/></svg>
-          <span data-i18n="nav.trending">В тренде</span>
+          <span data-i18n="nav.trending">Trending</span>
         </a>
         <a href="#" class="nav-item" data-view="artists">
           <svg class="i" width="14" height="14"><use href="#i-mic"/></svg>
-          <span data-i18n="nav.artists">Исполнители</span>
+          <span data-i18n="nav.artists">Artists</span>
           <span class="nav-meta" id="count-artists">0</span>
         </a>
         <a href="#" class="nav-item" data-view="playlists">
           <svg class="i" width="14" height="14"><use href="#i-list"/></svg>
-          <span data-i18n="nav.playlists">Плейлисты</span>
+          <span data-i18n="nav.playlists">Playlists</span>
           <span class="nav-meta" id="count-playlists">0</span>
         </a>
         <a href="#" class="nav-item" data-view="favorites">
           <svg class="i" width="14" height="14"><use href="#i-heart"/></svg>
-          <span data-i18n="nav.favorites">Избранное</span>
+          <span data-i18n="nav.favorites">Favorites</span>
           <span class="nav-meta" id="count-favorites">0</span>
         </a>
         <a href="#" class="nav-item" data-view="report" id="nav-report" hidden>
           <svg class="i" width="14" height="14"><use href="#i-report"/></svg>
-          <span data-i18n="nav.report">Отчёт</span>
+          <span data-i18n="nav.report">Report</span>
         </a>
         <a href="#" class="nav-item" data-view="health" id="nav-health" hidden>
           <svg class="i" width="14" height="14"><use href="#i-shield"/></svg>
-          <span data-i18n="nav.health">Состояние</span>
+          <span data-i18n="nav.health">Health</span>
         </a>
         <a href="#" class="nav-item" data-view="editor" id="nav-editor" hidden>
           <svg class="i" width="14" height="14"><use href="#i-scissors"/></svg>
-          <span data-i18n="nav.editor">Редактор</span>
+          <span data-i18n="nav.editor">Editor</span>
         </a>
         <a href="#" class="nav-item nav-downloads" data-view="downloads" id="nav-downloads" hidden>
           <svg class="i" width="14" height="14"><use href="#i-download"/></svg>
-          <span data-i18n="nav.downloads">Загрузки</span>
+          <span data-i18n="nav.downloads">Downloads</span>
         </a>
         <a href="#" class="nav-item nav-search" data-action="open-palette">
           <span class="nav-search-icon">
             <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
           </span>
-          <span data-i18n="nav.search">Поиск</span>
+          <span data-i18n="nav.search">Search</span>
           <span class="nav-shortcut nav-search-shortcut">⌘K</span>
         </a>
       </nav>
 
       <div class="nav-section recents">
-        <div class="nav-label" data-i18n="nav.recents">Недавнее</div>
+        <div class="nav-label" data-i18n="nav.recents">Recent</div>
         <div id="recents-list"></div>
       </div>
 
       <div class="sidebar-actions">
         <button id="btn-add-files" class="btn-primary">
           <svg class="i" width="13" height="13"><use href="#i-plus"/></svg>
-          <span data-i18n="nav.openFiles">Открыть файлы</span>
+          <span data-i18n="nav.openFiles">Open files</span>
         </button>
         <a href="#" class="nav-item nav-settings" data-action="open-settings">
           <svg class="i" width="14" height="14"><use href="#i-settings"/></svg>
-          <span data-i18n="nav.settings">Настройки</span>
+          <span data-i18n="nav.settings">Settings</span>
         </a>
       </div>
     </aside>
@@ -199,39 +199,39 @@
       <section id="view-library" class="view-section active">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.library">Библиотека</span>
-            <span class="crumb-count" id="library-count-label">0 треков</span>
+            <span class="crumb-item active" data-i18n="nav.library">Library</span>
+            <span class="crumb-count" id="library-count-label">0 tracks</span>
           </div>
           <div class="searchbox">
             <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" placeholder="Поиск…" data-i18n-placeholder="search.placeholder" id="library-search">
+            <input type="text" placeholder="Search…" data-i18n-placeholder="search.placeholder" id="library-search">
             <span class="kbd">⌘K</span>
           </div>
         </header>
 
         <div class="filters">
-          <button class="chip active" data-filter="all" data-i18n="filter.all">Все</button>
-          <button class="chip" data-filter="recent" data-i18n="filter.recent">Недавно добавленные</button>
-          <button class="chip" data-filter="favorites" data-i18n="filter.favorites">Только избранное</button>
-          <button class="chip" id="btn-select-mode" data-i18n="select.enter">Выбрать</button>
+          <button class="chip active" data-filter="all" data-i18n="filter.all">All</button>
+          <button class="chip" data-filter="recent" data-i18n="filter.recent">Recently added</button>
+          <button class="chip" data-filter="favorites" data-i18n="filter.favorites">Favorites only</button>
+          <button class="chip" id="btn-select-mode" data-i18n="select.enter">Select</button>
           <div class="sort-right">
-            <span data-i18n="sort.label">Сортировка:</span>
+            <span data-i18n="sort.label">Sort:</span>
             <div class="sort-select" id="sort-select">
               <button class="sort-btn" type="button">
-                <span id="sort-label" data-i18n="sort.dateDesc">Дата добавления ↓</span>
+                <span id="sort-label" data-i18n="sort.dateDesc">Date added ↓</span>
                 <svg class="i" width="10" height="10"><use href="#i-chevron-down"/></svg>
               </button>
               <div class="sort-menu">
-                <div class="sort-opt" data-sort="date-desc" data-i18n="sort.dateDesc">Дата добавления ↓</div>
-                <div class="sort-opt" data-sort="date-asc" data-i18n="sort.dateAsc">Дата добавления ↑</div>
-                <div class="sort-opt" data-sort="title-asc" data-i18n="sort.titleAsc">Название А→Я</div>
-                <div class="sort-opt" data-sort="title-desc" data-i18n="sort.titleDesc">Название Я→А</div>
-                <div class="sort-opt" data-sort="artist-asc" data-i18n="sort.artistAsc">Исполнитель А→Я</div>
-                <div class="sort-opt" data-sort="artist-desc" data-i18n="sort.artistDesc">Исполнитель Я→А</div>
-                <div class="sort-opt" data-sort="duration-asc" data-i18n="sort.durationAsc">Длительность ↑</div>
-                <div class="sort-opt" data-sort="duration-desc" data-i18n="sort.durationDesc">Длительность ↓</div>
+                <div class="sort-opt" data-sort="date-desc" data-i18n="sort.dateDesc">Date added ↓</div>
+                <div class="sort-opt" data-sort="date-asc" data-i18n="sort.dateAsc">Date added ↑</div>
+                <div class="sort-opt" data-sort="title-asc" data-i18n="sort.titleAsc">Title A→Z</div>
+                <div class="sort-opt" data-sort="title-desc" data-i18n="sort.titleDesc">Title Z→A</div>
+                <div class="sort-opt" data-sort="artist-asc" data-i18n="sort.artistAsc">Artist A→Z</div>
+                <div class="sort-opt" data-sort="artist-desc" data-i18n="sort.artistDesc">Artist Z→A</div>
+                <div class="sort-opt" data-sort="duration-asc" data-i18n="sort.durationAsc">Duration ↑</div>
+                <div class="sort-opt" data-sort="duration-desc" data-i18n="sort.durationDesc">Duration ↓</div>
               </div>
             </div>
           </div>
@@ -239,37 +239,37 @@
 
         <div class="quality-note">
           <svg class="i" width="11" height="11"><use href="#i-activity"/></svg>
-          <span data-i18n="quality.note">Бейдж качества у каждого трека · </span><span class="quality-note-amber" data-i18n="quality.noteAmber">янтарный = подозрительная перекодировка</span>
+          <span data-i18n="quality.note">A quality badge on every track · </span><span class="quality-note-amber" data-i18n="quality.noteAmber">amber = suspicious transcode</span>
         </div>
 
         <div id="library-select-bar" class="select-bar" hidden>
           <span id="select-count-label"></span>
-          <button type="button" id="btn-select-all" class="select-bar-btn" data-i18n="select.all">Выбрать все</button>
-          <button type="button" id="btn-delete-selected" class="select-bar-btn danger" data-i18n="btn.delete">Удалить</button>
-          <button type="button" id="btn-cancel-select" class="select-bar-btn" data-i18n="btn.cancel">Отмена</button>
+          <button type="button" id="btn-select-all" class="select-bar-btn" data-i18n="select.all">Select all</button>
+          <button type="button" id="btn-delete-selected" class="select-bar-btn danger" data-i18n="btn.delete">Delete</button>
+          <button type="button" id="btn-cancel-select" class="select-bar-btn" data-i18n="btn.cancel">Cancel</button>
         </div>
 
         <div id="library-health-filter" class="health-filter-bar" hidden>
           <svg class="i" width="12" height="12"><use href="#i-shield"/></svg>
           <span id="library-health-filter-label"></span>
-          <button type="button" id="library-health-filter-clear" class="health-filter-clear" data-i18n="health.clearFilter">Сбросить</button>
+          <button type="button" id="library-health-filter-clear" class="health-filter-clear" data-i18n="health.clearFilter">Clear</button>
         </div>
 
         <div class="track-table">
           <div class="thead">
             <div>#</div>
-            <div data-i18n="table.title">Название</div>
-            <div data-i18n="table.artist">Исполнитель</div>
-            <div data-i18n="table.album">Альбом</div>
-            <div data-i18n="table.quality">Качество</div>
-            <div class="ta-right" data-i18n="table.time">Время</div>
+            <div data-i18n="table.title">Title</div>
+            <div data-i18n="table.artist">Artist</div>
+            <div data-i18n="table.album">Album</div>
+            <div data-i18n="table.quality">Quality</div>
+            <div class="ta-right" data-i18n="table.time">Time</div>
             <div></div>
           </div>
           <div class="tbody" id="library-list"></div>
           <div class="empty-state" id="library-empty">
             <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-library"/></svg></div>
-            <div class="empty-title" data-i18n="empty.library.title">Библиотека пуста</div>
-            <div class="empty-text" data-i18n="empty.library.text">Открой файлы или папку, чтобы начать.</div>
+            <div class="empty-title" data-i18n="empty.library.title">Library is empty</div>
+            <div class="empty-text" data-i18n="empty.library.text">Open files or a folder to get started.</div>
           </div>
         </div>
       </section>
@@ -278,28 +278,28 @@
       <section id="view-playlists" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.playlists">Плейлисты</span>
-            <span class="crumb-count" id="playlists-count-label">0 плейлистов</span>
+            <span class="crumb-item active" data-i18n="nav.playlists">Playlists</span>
+            <span class="crumb-count" id="playlists-count-label">0 playlists</span>
           </div>
         </header>
 
         <div class="row-actions">
           <button class="btn-solid" id="btn-new-playlist">
             <svg class="i" width="13" height="13"><use href="#i-plus"/></svg>
-            <span data-i18n="btn.newPlaylist">Новый плейлист</span>
+            <span data-i18n="btn.newPlaylist">New playlist</span>
           </button>
         </div>
 
         <div class="playlists-grid" id="playlists-grid"></div>
         <div class="empty-block" id="playlists-empty">
           <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-list"/></svg></div>
-          <div class="empty-title-lg" data-i18n="empty.playlists.title">Плейлистов пока нет</div>
-          <div class="empty-text" data-i18n="empty.playlists.text">Создай свой первый плейлист — собери треки по настроению, времени дня или альбому.</div>
+          <div class="empty-title-lg" data-i18n="empty.playlists.title">No playlists yet</div>
+          <div class="empty-text" data-i18n="empty.playlists.text">Create your first playlist — gather tracks by mood, time of day, or album.</div>
           <button class="btn-solid" id="btn-new-playlist-empty">
             <svg class="i" width="13" height="13"><use href="#i-plus"/></svg>
-            <span data-i18n="btn.newPlaylist">Новый плейлист</span>
+            <span data-i18n="btn.newPlaylist">New playlist</span>
           </button>
         </div>
       </section>
@@ -308,9 +308,9 @@
       <section id="view-playlist-detail" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item link" data-view="playlists" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item link" data-view="playlists" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item link" data-view="playlists" data-i18n="nav.playlists">Плейлисты</span>
+            <span class="crumb-item link" data-view="playlists" data-i18n="nav.playlists">Playlists</span>
             <span class="crumb-sep">/</span>
             <span class="crumb-item active" id="pl-detail-crumb"></span>
           </div>
@@ -319,19 +319,19 @@
         <div class="pl-hero">
           <div class="pl-hero-cover" id="pl-hero-cover"><span id="pl-hero-letter"></span></div>
           <div class="pl-hero-body">
-            <div class="pl-eyebrow" data-i18n="eyebrow.playlist">Плейлист</div>
+            <div class="pl-eyebrow" data-i18n="eyebrow.playlist">Playlist</div>
             <div class="pl-title" id="pl-detail-title"></div>
             <div class="pl-meta" id="pl-detail-meta"></div>
             <div class="pl-actions">
               <button class="btn-solid" id="btn-pl-play">
                 <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                <span data-i18n="btn.playAll">Играть всё</span>
+                <span data-i18n="btn.playAll">Play all</span>
               </button>
               <button class="btn-ghost" id="btn-pl-shuffle">
                 <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-                <span data-i18n="btn.shuffle">Перемешать</span>
+                <span data-i18n="btn.shuffle">Shuffle</span>
               </button>
-              <button class="btn-ghost icon-only" id="btn-pl-delete" title="Удалить плейлист" data-i18n-title="btn.deletePlaylist">
+              <button class="btn-ghost icon-only" id="btn-pl-delete" title="Delete playlist" data-i18n-title="btn.deletePlaylist">
                 <svg class="i" width="14" height="14"><use href="#i-trash"/></svg>
               </button>
             </div>
@@ -341,11 +341,11 @@
         <div class="track-table">
           <div class="thead">
             <div>#</div>
-            <div data-i18n="table.title">Название</div>
-            <div data-i18n="table.artist">Исполнитель</div>
-            <div data-i18n="table.album">Альбом</div>
-            <div data-i18n="table.quality">Качество</div>
-            <div class="ta-right" data-i18n="table.time">Время</div>
+            <div data-i18n="table.title">Title</div>
+            <div data-i18n="table.artist">Artist</div>
+            <div data-i18n="table.album">Album</div>
+            <div data-i18n="table.quality">Quality</div>
+            <div class="ta-right" data-i18n="table.time">Time</div>
             <div></div>
           </div>
           <div class="tbody" id="pl-detail-list"></div>
@@ -356,25 +356,25 @@
       <section id="view-artists" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.artists">Исполнители</span>
-            <span class="crumb-count" id="artists-count-label">0 исполнителей</span>
+            <span class="crumb-item active" data-i18n="nav.artists">Artists</span>
+            <span class="crumb-count" id="artists-count-label">0 artists</span>
           </div>
           <div class="searchbox">
             <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" placeholder="Поиск исполнителя…" data-i18n-placeholder="search.artistPlaceholder" id="artists-search">
+            <input type="text" placeholder="Search artist…" data-i18n-placeholder="search.artistPlaceholder" id="artists-search">
           </div>
         </header>
 
         <div class="filters">
-          <button class="chip active" data-artists-sort="alpha" data-i18n="sort.alpha">По алфавиту</button>
-          <button class="chip" data-artists-sort="tracks" data-i18n="sort.byTracks">По числу треков</button>
-          <button class="chip" data-artists-sort="recent" data-i18n="sort.recent">Недавно добавленные</button>
+          <button class="chip active" data-artists-sort="alpha" data-i18n="sort.alpha">Alphabetical</button>
+          <button class="chip" data-artists-sort="tracks" data-i18n="sort.byTracks">By track count</button>
+          <button class="chip" data-artists-sort="recent" data-i18n="sort.recent">Recently added</button>
           <div class="auto-chip-wrap">
             <span class="auto-chip">
               <svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg>
-              <span data-i18n="autoChip.artists">Список собирается автоматически из библиотеки</span>
+              <span data-i18n="autoChip.artists">List is built automatically from your library</span>
             </span>
           </div>
         </div>
@@ -382,8 +382,8 @@
         <div class="artists-grid" id="artists-grid"></div>
         <div class="empty-state" id="artists-empty">
           <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-mic"/></svg></div>
-          <div class="empty-title" data-i18n="empty.artists.title">Исполнителей пока нет</div>
-          <div class="empty-text" data-i18n="empty.artists.text">Добавь треки в библиотеку, чтобы увидеть здесь список исполнителей.</div>
+          <div class="empty-title" data-i18n="empty.artists.title">No artists yet</div>
+          <div class="empty-text" data-i18n="empty.artists.text">Add tracks to the library to see artists here.</div>
         </div>
       </section>
 
@@ -391,32 +391,32 @@
       <section id="view-artist-detail" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item link" data-view="artists" data-i18n="nav.artists">Исполнители</span>
+            <span class="crumb-item link" data-view="artists" data-i18n="nav.artists">Artists</span>
             <span class="crumb-sep">/</span>
             <span class="crumb-item active" id="artist-detail-crumb"></span>
           </div>
           <div class="searchbox">
             <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" placeholder="Поиск трека…" data-i18n-placeholder="search.trackPlaceholder" id="artist-detail-search">
+            <input type="text" placeholder="Search track…" data-i18n-placeholder="search.trackPlaceholder" id="artist-detail-search">
           </div>
         </header>
 
         <div class="artist-hero">
           <div class="artist-hero-avatar" id="artist-hero-avatar"><span id="artist-hero-letter"></span></div>
           <div class="artist-hero-body">
-            <div class="pl-eyebrow" data-i18n="eyebrow.artist">Исполнитель</div>
+            <div class="pl-eyebrow" data-i18n="eyebrow.artist">Artist</div>
             <div class="pl-title" id="artist-detail-title"></div>
             <div class="pl-meta" id="artist-detail-meta"></div>
             <div class="pl-actions">
               <button class="btn-solid" id="btn-artist-play">
                 <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                <span data-i18n="btn.playAll">Играть всё</span>
+                <span data-i18n="btn.playAll">Play all</span>
               </button>
               <button class="btn-ghost" id="btn-artist-shuffle">
                 <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-                <span data-i18n="btn.shuffle">Перемешать</span>
+                <span data-i18n="btn.shuffle">Shuffle</span>
               </button>
             </div>
           </div>
@@ -429,33 +429,33 @@
       <section id="view-favorites" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.favorites">Избранное</span>
-            <span class="crumb-count" id="favorites-count-label">0 треков</span>
+            <span class="crumb-item active" data-i18n="nav.favorites">Favorites</span>
+            <span class="crumb-count" id="favorites-count-label">0 tracks</span>
           </div>
         </header>
 
         <div class="hint-pill">
           <svg class="i" width="11" height="11"><use href="#i-heart-filled"/></svg>
-          <span data-i18n="hint.favorites">Сохранённые треки появляются здесь</span>
+          <span data-i18n="hint.favorites">Saved tracks appear here</span>
         </div>
 
         <div class="track-table">
           <div class="thead">
             <div>#</div>
-            <div data-i18n="table.title">Название</div>
-            <div data-i18n="table.artist">Исполнитель</div>
-            <div data-i18n="table.album">Альбом</div>
-            <div data-i18n="table.quality">Качество</div>
-            <div class="ta-right" data-i18n="table.time">Время</div>
+            <div data-i18n="table.title">Title</div>
+            <div data-i18n="table.artist">Artist</div>
+            <div data-i18n="table.album">Album</div>
+            <div data-i18n="table.quality">Quality</div>
+            <div class="ta-right" data-i18n="table.time">Time</div>
             <div></div>
           </div>
           <div class="tbody" id="favorites-list"></div>
           <div class="empty-state" id="favorites-empty">
             <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-heart"/></svg></div>
-            <div class="empty-title" data-i18n="empty.favorites.title">Нет избранных треков</div>
-            <div class="empty-text" data-i18n="empty.favorites.text">Нажми сердечко на любом треке, чтобы добавить его сюда.</div>
+            <div class="empty-title" data-i18n="empty.favorites.title">No favorite tracks</div>
+            <div class="empty-text" data-i18n="empty.favorites.text">Click the heart on any track to add it here.</div>
           </div>
         </div>
       </section>
@@ -464,13 +464,13 @@
       <section id="view-report" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.report">Отчёт</span>
+            <span class="crumb-item active" data-i18n="nav.report">Report</span>
           </div>
           <div class="report-privacy">
             <svg class="i" width="12" height="12"><use href="#i-lock"/></svg>
-            <span data-i18n="report.onDevice">Считается на устройстве</span>
+            <span data-i18n="report.onDevice">Computed on this device</span>
           </div>
         </header>
         <div id="report-content"></div>
@@ -480,15 +480,15 @@
       <section id="view-health" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item link" data-view="library" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item link" data-view="library" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="health.crumb">Состояние библиотеки</span>
+            <span class="crumb-item active" data-i18n="health.crumb">Library health</span>
           </div>
           <div class="health-topbar-right">
             <span class="health-lastscan" id="health-lastscan"></span>
             <button class="btn-primary" id="health-rescan-btn">
               <svg class="i" width="13" height="13"><use href="#i-shield"/></svg>
-              <span data-i18n="health.rescan">Пересканировать</span>
+              <span data-i18n="health.rescan">Rescan</span>
             </button>
           </div>
         </header>
@@ -499,20 +499,20 @@
       <section id="view-editor" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item link" data-view="library" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item link" data-view="library" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.editor">Редактор</span>
+            <span class="crumb-item active" data-i18n="nav.editor">Editor</span>
           </div>
           <button class="btn-primary" id="ed-pick-btn">
             <svg class="i" width="13" height="13"><use href="#i-library"/></svg>
-            <span data-i18n="editor.pick">Выбрать трек</span>
+            <span data-i18n="editor.pick">Choose track</span>
           </button>
         </header>
 
         <div id="ed-empty" class="empty-block show">
           <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-scissors"/></svg></div>
-          <div class="empty-title-lg" data-i18n="editor.empty.title">Обрезка треков</div>
-          <div class="empty-text" data-i18n="editor.empty.text">Выберите трек, отметьте начало и конец фрагмента на волне и сохраните его отдельным файлом. Оригинал остаётся нетронутым, если не выбрать перезапись.</div>
+          <div class="empty-title-lg" data-i18n="editor.empty.title">Trim tracks</div>
+          <div class="empty-text" data-i18n="editor.empty.text">Pick a track, mark the start and end of a fragment on the waveform, and save it as a separate file. The original stays untouched unless you enable overwrite.</div>
         </div>
 
         <div id="ed-workspace" hidden>
@@ -539,49 +539,49 @@
 
           <div class="ed-controls">
             <div class="ed-field">
-              <label class="ed-label" for="ed-start" data-i18n="editor.start">Начало</label>
+              <label class="ed-label" for="ed-start" data-i18n="editor.start">Start</label>
               <input type="text" id="ed-start" class="ed-time-input" inputmode="decimal" placeholder="0:00.0">
             </div>
             <div class="ed-field">
-              <label class="ed-label" for="ed-end" data-i18n="editor.end">Конец</label>
+              <label class="ed-label" for="ed-end" data-i18n="editor.end">End</label>
               <input type="text" id="ed-end" class="ed-time-input" inputmode="decimal" placeholder="0:00.0">
             </div>
             <div class="ed-field">
-              <span class="ed-label" data-i18n="editor.selection">Длительность фрагмента</span>
+              <span class="ed-label" data-i18n="editor.selection">Fragment length</span>
               <div class="ed-duration" id="ed-duration">0:00.0</div>
             </div>
             <div class="ed-field ed-field-actions">
               <button class="btn-ghost" id="ed-preview-btn">
                 <svg class="i" width="13" height="13"><use href="#i-play"/></svg>
-                <span id="ed-preview-label" data-i18n="editor.preview">Прослушать фрагмент</span>
+                <span id="ed-preview-label" data-i18n="editor.preview">Preview fragment</span>
               </button>
-              <button class="btn-ghost" id="ed-reset-btn" data-i18n="editor.reset">Сбросить</button>
+              <button class="btn-ghost" id="ed-reset-btn" data-i18n="editor.reset">Reset</button>
             </div>
           </div>
 
           <div class="ed-options">
             <div class="ed-opt-row">
-              <label class="ed-label" for="ed-fade-in" data-i18n="editor.fadeIn">Нарастание, с</label>
+              <label class="ed-label" for="ed-fade-in" data-i18n="editor.fadeIn">Fade in, s</label>
               <input type="number" id="ed-fade-in" class="ed-num-input" min="0" max="10" step="0.1" value="0">
             </div>
             <div class="ed-opt-row">
-              <label class="ed-label" for="ed-fade-out" data-i18n="editor.fadeOut">Затухание, с</label>
+              <label class="ed-label" for="ed-fade-out" data-i18n="editor.fadeOut">Fade out, s</label>
               <input type="number" id="ed-fade-out" class="ed-num-input" min="0" max="10" step="0.1" value="0">
             </div>
-            <div class="ed-opt-row ed-opt-gain" title="Минус — тише, плюс — громче. 0 дБ — без изменений." data-i18n-title="editor.gainHint">
-              <label class="ed-label" for="ed-gain" data-i18n="editor.gain">Громкость, дБ</label>
+            <div class="ed-opt-row ed-opt-gain" title="Minus is quieter, plus is louder. 0 dB leaves it unchanged." data-i18n-title="editor.gainHint">
+              <label class="ed-label" for="ed-gain" data-i18n="editor.gain">Volume, dB</label>
               <div class="ed-gain-ctl">
                 <input type="range" id="ed-gain" class="ed-gain-range" min="-24" max="24" step="0.5" value="0">
                 <output class="ed-gain-val" id="ed-gain-val">0 dB</output>
-                <button type="button" class="ed-gain-reset" id="ed-gain-reset" title="Сбросить" data-i18n-title="editor.reset">0</button>
+                <button type="button" class="ed-gain-reset" id="ed-gain-reset" title="Reset" data-i18n-title="editor.reset">0</button>
               </div>
               <!-- Clipping warning, filled by JS when the boost exceeds headroom. -->
               <div class="ed-gain-warn" id="ed-gain-warn" hidden></div>
             </div>
             <div class="ed-opt-row ed-opt-overwrite">
               <div class="setting-text">
-                <div class="setting-label" data-i18n="editor.overwrite">Перезаписать оригинал</div>
-                <div class="setting-desc" data-i18n="editor.overwriteDesc">По умолчанию рядом создаётся новый файл «— (обрезано)». Включите, чтобы заменить исходный файл.</div>
+                <div class="setting-label" data-i18n="editor.overwrite">Overwrite original</div>
+                <div class="setting-desc" data-i18n="editor.overwriteDesc">By default a new “— (trimmed)” file is created next to it. Enable to replace the source file.</div>
               </div>
               <button class="toggle" id="ed-overwrite-toggle"><div class="toggle-knob"></div></button>
             </div>
@@ -591,7 +591,7 @@
             <div id="ed-status" class="dl-status" hidden></div>
             <button class="btn-primary" id="ed-save-btn">
               <svg class="i" width="13" height="13"><use href="#i-scissors"/></svg>
-              <span data-i18n="editor.save">Обрезать и сохранить</span>
+              <span data-i18n="editor.save">Trim and save</span>
             </button>
           </div>
         </div>
@@ -600,17 +600,17 @@
       <section id="view-downloads" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item" data-i18n="crumb.collection">Коллекция</span>
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item active" data-i18n="nav.downloads">Загрузки</span>
+            <span class="crumb-item active" data-i18n="nav.downloads">Downloads</span>
           </div>
         </header>
 
         <div class="dl-tabs" role="tablist">
-          <button type="button" class="dl-tab is-active" data-dl-tab="internet" role="tab" aria-selected="true" data-i18n="downloads.tab.internet">Из интернета</button>
-          <button type="button" class="dl-tab" data-dl-tab="parsing" role="tab" aria-selected="false" data-i18n="downloads.tab.parsing">Парсинг</button>
+          <button type="button" class="dl-tab is-active" data-dl-tab="internet" role="tab" aria-selected="true" data-i18n="downloads.tab.internet">From the internet</button>
+          <button type="button" class="dl-tab" data-dl-tab="parsing" role="tab" aria-selected="false" data-i18n="downloads.tab.parsing">Parsing</button>
           <button type="button" class="dl-tab" data-dl-tab="queue" role="tab" aria-selected="false">
-            <span data-i18n="downloads.tab.queue">Очередь</span>
+            <span data-i18n="downloads.tab.queue">Queue</span>
             <span class="dl-tab-count" id="dl-queue-tab-count" hidden>0</span>
           </button>
         </div>
@@ -620,94 +620,50 @@
             <div class="dl-search-row">
               <label class="dl-search-field" for="dl-yt-query">
                 <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-                <input type="text" id="dl-yt-query" class="dl-search-input" data-i18n-placeholder="downloads.yt.placeholder" placeholder="Название трека или «исполнитель — трек»">
+                <input type="text" id="dl-yt-query" class="dl-search-input" data-i18n-placeholder="downloads.yt.placeholder" placeholder="Track name or &quot;artist — track&quot;">
               </label>
               <button type="button" id="dl-yt-search-btn" class="dl-search-btn">
                 <svg class="i" width="12" height="12"><use href="#i-search"/></svg>
-                <span data-i18n="downloads.yt.search">Найти</span>
+                <span data-i18n="downloads.yt.search">Search</span>
               </button>
             </div>
-            <div class="dl-search-hint" data-i18n="downloads.yt.hint">Поиск по YouTube · показывает несколько вариантов, чтобы выбрать нужный.</div>
+            <div class="dl-search-hint" data-i18n="downloads.yt.hint">YouTube search · shows multiple options so you can pick the right one.</div>
           </div>
 
           <div id="dl-yt-status" class="dl-status" hidden></div>
 
-          <button type="button" id="dl-yt-queue-all" class="dl-search-btn dl-search-btn-secondary dl-ym-queue-all" hidden>
+          <button type="button" id="dl-yt-queue-all" class="dl-search-btn dl-search-btn-secondary dl-queue-all" hidden>
             <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-            <span data-i18n="downloads.queue.addAll">Все треки в очередь</span>
+            <span data-i18n="downloads.queue.addAll">Queue all tracks</span>
           </button>
 
           <div id="dl-yt-results" class="dl-results" hidden>
             <div class="dl-results-head">
               <div class="dl-col-thumb"></div>
-              <div class="dl-col-title" data-i18n="downloads.yt.col.title">Название</div>
-              <div class="dl-col-channel" data-i18n="downloads.yt.col.channel">Канал</div>
-              <div class="dl-col-duration" data-i18n="downloads.yt.col.duration">Длит.</div>
+              <div class="dl-col-title" data-i18n="downloads.yt.col.title">Title</div>
+              <div class="dl-col-channel" data-i18n="downloads.yt.col.channel">Channel</div>
+              <div class="dl-col-duration" data-i18n="downloads.yt.col.duration">Dur.</div>
               <div class="dl-col-action"></div>
             </div>
             <div id="dl-yt-rows" class="dl-results-body"></div>
           </div>
 
-          <div id="dl-yt-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">После скачивания, возможно, потребуется вручную поправить MP3-теги (название, исполнитель, обложка) через контекстное меню трека.</div>
+          <div id="dl-yt-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">After downloading, you may need to manually fix the MP3 tags (title, artist, cover) via the track context menu.</div>
 
           <div id="dl-yt-empty" class="empty-block show">
             <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-download"/></svg></div>
-            <div class="empty-title-lg" data-i18n="downloads.yt.idle.title">Найдите трек на YouTube</div>
-            <div class="empty-text" data-i18n="downloads.yt.idle.text">Введите название — внизу появится список mp3, доступных для скачивания. Файлы сохраняются в папку «Audex Downloads» и автоматически добавляются в библиотеку.</div>
+            <div class="empty-title-lg" data-i18n="downloads.yt.idle.title">Find a track on YouTube</div>
+            <div class="empty-text" data-i18n="downloads.yt.idle.text">Enter a name — a list of downloadable mp3 files will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.</div>
           </div>
         </div>
 
         <div class="dl-pane" data-dl-pane="parsing" hidden>
           <div class="dl-subtabs" role="tablist">
-            <button type="button" class="dl-subtab is-active" data-dl-subtab="yandex" role="tab" aria-selected="true" data-i18n="downloads.parsing.subtab.yandex">Яндекс.Музыка</button>
-            <button type="button" class="dl-subtab" data-dl-subtab="ytmusic" role="tab" aria-selected="false" data-i18n="downloads.parsing.subtab.ytmusic">YouTube Music</button>
+            <button type="button" class="dl-subtab is-active" data-dl-subtab="ytmusic" role="tab" aria-selected="true" data-i18n="downloads.parsing.subtab.ytmusic">YouTube Music</button>
             <button type="button" class="dl-subtab" data-dl-subtab="spotify" role="tab" aria-selected="false" data-i18n="downloads.parsing.subtab.spotify">Spotify</button>
-            <button type="button" class="dl-subtab" data-dl-subtab="vk" role="tab" aria-selected="false" data-i18n="downloads.parsing.subtab.vk">ВКонтакте</button>
           </div>
 
-          <div class="dl-subpane" data-dl-subpane="yandex">
-            <div class="dl-search">
-              <div class="dl-search-row">
-                <label class="dl-search-field" for="dl-ym-url">
-                  <svg class="i" width="13" height="13"><use href="#i-link"/></svg>
-                  <input type="text" id="dl-ym-url" class="dl-search-input" data-i18n-placeholder="downloads.parsing.urlPlaceholder" placeholder="https://music.yandex.ru/playlists/…">
-                </label>
-                <button type="button" id="dl-ym-parse-btn" class="dl-search-btn">
-                  <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                  <span data-i18n="downloads.parsing.start">Парсить</span>
-                </button>
-              </div>
-              <div class="dl-search-hint" data-i18n="downloads.parsing.hint">Вставьте ссылку на плейлист или альбом. Парсер работает в фоне.</div>
-            </div>
-
-            <div id="dl-ym-status" class="dl-status" hidden></div>
-
-            <button type="button" id="dl-ym-queue-all" class="dl-search-btn dl-search-btn-secondary dl-ym-queue-all" hidden>
-              <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-              <span data-i18n="downloads.queue.addAll">Все треки в очередь</span>
-            </button>
-
-            <div id="dl-ym-results" class="dl-results" hidden>
-              <div class="dl-results-head dl-results-head-ym">
-                <div class="dl-col-num">#</div>
-                <div class="dl-col-artist" data-i18n="downloads.parsing.col.artist">Исполнитель</div>
-                <div class="dl-col-title" data-i18n="downloads.parsing.col.title">Название</div>
-                <div class="dl-col-duration" data-i18n="downloads.parsing.col.duration">Длит.</div>
-                <div class="dl-col-action"></div>
-              </div>
-              <div id="dl-ym-rows" class="dl-results-body"></div>
-            </div>
-
-            <div id="dl-ym-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">После скачивания, возможно, потребуется вручную поправить MP3-теги (название, исполнитель, обложка) через контекстное меню трека.</div>
-
-            <div id="dl-ym-empty" class="empty-block show">
-              <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-link"/></svg></div>
-              <div class="empty-title-lg" data-i18n="downloads.parsing.idle.title">Парсинг Яндекс.Музыки</div>
-              <div class="empty-text" data-i18n="downloads.parsing.idle.text">Вставьте ссылку на плейлист или альбом из «Яндекс.Музыки». Приложение откроет браузер, соберёт список треков, и вы сможете скачать любой одним кликом.</div>
-            </div>
-          </div>
-
-          <div class="dl-subpane" data-dl-subpane="ytmusic" hidden>
+          <div class="dl-subpane" data-dl-subpane="ytmusic">
             <div class="dl-search">
               <div class="dl-search-row">
                 <label class="dl-search-field" for="dl-ytm-url">
@@ -716,37 +672,37 @@
                 </label>
                 <button type="button" id="dl-ytm-parse-btn" class="dl-search-btn">
                   <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                  <span data-i18n="downloads.parsing.start">Парсить</span>
+                  <span data-i18n="downloads.parsing.start">Parse</span>
                 </button>
               </div>
-              <div class="dl-search-hint" data-i18n="downloads.ytm.hint">Ссылка на альбом, сингл или исполнителя из YouTube Music. Логин и браузер не нужны.</div>
+              <div class="dl-search-hint" data-i18n="downloads.ytm.hint">Link to an album, single, or artist on YouTube Music. No login or browser needed.</div>
             </div>
 
             <div id="dl-ytm-status" class="dl-status" hidden></div>
 
-            <button type="button" id="dl-ytm-queue-all" class="dl-search-btn dl-search-btn-secondary dl-ym-queue-all" hidden>
+            <button type="button" id="dl-ytm-queue-all" class="dl-search-btn dl-search-btn-secondary dl-queue-all" hidden>
               <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-              <span data-i18n="downloads.queue.addAll">Все треки в очередь</span>
+              <span data-i18n="downloads.queue.addAll">Queue all tracks</span>
             </button>
 
             <div id="dl-ytm-results" class="dl-results" hidden>
               <div class="dl-results-head dl-results-head-ym dl-results-head-ytm">
                 <div class="dl-col-num">#</div>
                 <div class="dl-col-cover"></div>
-                <div class="dl-col-artist" data-i18n="downloads.parsing.col.artist">Исполнитель</div>
-                <div class="dl-col-title" data-i18n="downloads.parsing.col.title">Название</div>
-                <div class="dl-col-duration" data-i18n="downloads.parsing.col.duration">Длит.</div>
+                <div class="dl-col-artist" data-i18n="downloads.parsing.col.artist">Artist</div>
+                <div class="dl-col-title" data-i18n="downloads.parsing.col.title">Title</div>
+                <div class="dl-col-duration" data-i18n="downloads.parsing.col.duration">Dur.</div>
                 <div class="dl-col-action"></div>
               </div>
               <div id="dl-ytm-rows" class="dl-results-body"></div>
             </div>
 
-            <div id="dl-ytm-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">После скачивания, возможно, потребуется вручную поправить MP3-теги (название, исполнитель, обложка) через контекстное меню трека.</div>
+            <div id="dl-ytm-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">After downloading, you may need to manually fix the MP3 tags (title, artist, cover) via the track context menu.</div>
 
             <div id="dl-ytm-empty" class="empty-block show">
               <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-link"/></svg></div>
-              <div class="empty-title-lg" data-i18n="downloads.ytm.idle.title">Парсинг YouTube Music</div>
-              <div class="empty-text" data-i18n="downloads.ytm.idle.text">Вставьте ссылку на альбом, сингл или страницу исполнителя из YouTube Music. Приложение соберёт список треков, и вы сможете скачать любой одним кликом.</div>
+              <div class="empty-title-lg" data-i18n="downloads.ytm.idle.title">YouTube Music parsing</div>
+              <div class="empty-text" data-i18n="downloads.ytm.idle.text">Paste a link to an album, single, or artist page from YouTube Music. The app will collect the track list and you can download any of them in one click.</div>
             </div>
           </div>
 
@@ -759,82 +715,40 @@
                 </label>
                 <button type="button" id="dl-sp-parse-btn" class="dl-search-btn">
                   <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                  <span data-i18n="downloads.parsing.start">Парсить</span>
+                  <span data-i18n="downloads.parsing.start">Parse</span>
                 </button>
               </div>
-              <div class="dl-search-hint" data-i18n="downloads.sp.hint">Вставьте ссылку на плейлист, альбом или исполнителя из Spotify. Парсер работает в фоне.</div>
+              <div class="dl-search-hint" data-i18n="downloads.sp.hint">Link to a playlist, album, or artist on Spotify. The parser runs in the background.</div>
             </div>
 
             <div id="dl-sp-status" class="dl-status" hidden></div>
 
-            <button type="button" id="dl-sp-queue-all" class="dl-search-btn dl-search-btn-secondary dl-ym-queue-all" hidden>
+            <button type="button" id="dl-sp-queue-all" class="dl-search-btn dl-search-btn-secondary dl-queue-all" hidden>
               <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-              <span data-i18n="downloads.queue.addAll">Все треки в очередь</span>
+              <span data-i18n="downloads.queue.addAll">Queue all tracks</span>
             </button>
 
             <div id="dl-sp-results" class="dl-results" hidden>
               <div class="dl-results-head dl-results-head-ym dl-results-head-ytm">
                 <div class="dl-col-num">#</div>
                 <div class="dl-col-cover"></div>
-                <div class="dl-col-artist" data-i18n="downloads.parsing.col.artist">Исполнитель</div>
-                <div class="dl-col-title" data-i18n="downloads.parsing.col.title">Название</div>
-                <div class="dl-col-duration" data-i18n="downloads.parsing.col.duration">Длит.</div>
+                <div class="dl-col-artist" data-i18n="downloads.parsing.col.artist">Artist</div>
+                <div class="dl-col-title" data-i18n="downloads.parsing.col.title">Title</div>
+                <div class="dl-col-duration" data-i18n="downloads.parsing.col.duration">Dur.</div>
                 <div class="dl-col-action"></div>
               </div>
               <div id="dl-sp-rows" class="dl-results-body"></div>
             </div>
 
-            <div id="dl-sp-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">После скачивания, возможно, потребуется вручную поправить MP3-теги (название, исполнитель, обложка) через контекстное меню трека.</div>
+            <div id="dl-sp-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">After downloading, you may need to manually fix the MP3 tags (title, artist, cover) via the track context menu.</div>
 
             <div id="dl-sp-empty" class="empty-block show">
               <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-link"/></svg></div>
-              <div class="empty-title-lg" data-i18n="downloads.sp.idle.title">Парсинг Spotify</div>
-              <div class="empty-text" data-i18n="downloads.sp.idle.text">Вставьте ссылку на плейлист или альбом из Spotify. Приложение откроет браузер, соберёт список треков, и вы сможете скачать любой одним кликом.</div>
+              <div class="empty-title-lg" data-i18n="downloads.sp.idle.title">Spotify parsing</div>
+              <div class="empty-text" data-i18n="downloads.sp.idle.text">Paste a playlist or album link from Spotify. The app will open a browser, collect the track list, and let you download any of them in one click.</div>
             </div>
           </div>
 
-          <div class="dl-subpane" data-dl-subpane="vk" hidden>
-            <div class="dl-search">
-              <div class="dl-search-row">
-                <label class="dl-search-field" for="dl-vk-url">
-                  <svg class="i" width="13" height="13"><use href="#i-link"/></svg>
-                  <input type="text" id="dl-vk-url" class="dl-search-input" data-i18n-placeholder="downloads.vk.urlPlaceholder" placeholder="https://vk.com/music/playlist/…">
-                </label>
-                <button type="button" id="dl-vk-parse-btn" class="dl-search-btn">
-                  <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                  <span data-i18n="downloads.parsing.start">Парсить</span>
-                </button>
-              </div>
-              <div class="dl-search-hint" data-i18n="downloads.vk.hint">Ссылка на плейлист или раздел «Моя музыка» из ВКонтакте. Вход выполняется в окне браузера и сохраняется.</div>
-            </div>
-
-            <div id="dl-vk-status" class="dl-status" hidden></div>
-
-            <button type="button" id="dl-vk-queue-all" class="dl-search-btn dl-search-btn-secondary dl-ym-queue-all" hidden>
-              <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-              <span data-i18n="downloads.queue.addAll">Все треки в очередь</span>
-            </button>
-
-            <div id="dl-vk-results" class="dl-results" hidden>
-              <div class="dl-results-head dl-results-head-ym dl-results-head-ytm">
-                <div class="dl-col-num">#</div>
-                <div class="dl-col-cover"></div>
-                <div class="dl-col-artist" data-i18n="downloads.parsing.col.artist">Исполнитель</div>
-                <div class="dl-col-title" data-i18n="downloads.parsing.col.title">Название</div>
-                <div class="dl-col-duration" data-i18n="downloads.parsing.col.duration">Длит.</div>
-                <div class="dl-col-action"></div>
-              </div>
-              <div id="dl-vk-rows" class="dl-results-body"></div>
-            </div>
-
-            <div id="dl-vk-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">После скачивания, возможно, потребуется вручную поправить MP3-теги (название, исполнитель, обложка) через контекстное меню трека.</div>
-
-            <div id="dl-vk-empty" class="empty-block show">
-              <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-link"/></svg></div>
-              <div class="empty-title-lg" data-i18n="downloads.vk.idle.title">Парсинг ВКонтакте</div>
-              <div class="empty-text" data-i18n="downloads.vk.idle.text">Вставьте ссылку на плейлист или свою музыку из ВКонтакте. Приложение откроет браузер (при первом запуске войдите в аккаунт), соберёт список треков, и вы сможете скачать любой одним кликом.</div>
-            </div>
-          </div>
         </div>
 
         <div class="dl-pane" data-dl-pane="queue" hidden>
@@ -843,15 +757,15 @@
             <div class="dl-queue-actions">
               <button type="button" class="dl-search-btn dl-search-btn-secondary" id="dl-queue-pause" hidden>
                 <svg class="i" width="12" height="12"><use href="#i-pause"/></svg>
-                <span id="dl-queue-pause-label" data-i18n="downloads.queue.pause">Пауза</span>
+                <span id="dl-queue-pause-label" data-i18n="downloads.queue.pause">Pause</span>
               </button>
               <button type="button" class="dl-search-btn dl-search-btn-secondary" id="dl-queue-clear-done" hidden>
                 <svg class="i" width="12" height="12"><use href="#i-trash"/></svg>
-                <span data-i18n="downloads.queue.clearDone">Очистить завершённые</span>
+                <span data-i18n="downloads.queue.clearDone">Clear finished</span>
               </button>
               <button type="button" class="dl-search-btn dl-search-btn-secondary" id="dl-queue-clear-all" hidden>
                 <svg class="i" width="12" height="12"><use href="#i-trash"/></svg>
-                <span data-i18n="downloads.queue.clearAll">Очистить всё</span>
+                <span data-i18n="downloads.queue.clearAll">Clear all</span>
               </button>
             </div>
           </div>
@@ -860,8 +774,8 @@
 
           <div id="dl-queue-empty" class="empty-block show">
             <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-download"/></svg></div>
-            <div class="empty-title-lg" data-i18n="downloads.queue.empty.title">Очередь пуста</div>
-            <div class="empty-text" data-i18n="downloads.queue.empty.text">Добавьте треки в очередь со вкладки «Парсинг», и они начнут скачиваться один за другим.</div>
+            <div class="empty-title-lg" data-i18n="downloads.queue.empty.title">Queue is empty</div>
+            <div class="empty-text" data-i18n="downloads.queue.empty.text">Add tracks from the Parsing tab and they will be downloaded one after another.</div>
           </div>
         </div>
       </section>
@@ -870,45 +784,44 @@
       <section id="view-trending" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item active" data-i18n="nav.trending">В тренде</span>
+            <span class="crumb-item active" data-i18n="nav.trending">Trending</span>
           </div>
           <button class="btn-ghost" id="tr-refresh">
             <svg class="i" width="13" height="13"><use href="#i-activity"/></svg>
-            <span data-i18n="trending.refresh">Обновить</span>
+            <span data-i18n="trending.refresh">Refresh</span>
           </button>
         </header>
 
         <div class="tr-head">
           <div class="select tr-select" id="tr-chart-select">
             <button class="select-btn" type="button">
-              <span id="tr-chart-current">Мир</span>
+              <span id="tr-chart-current">Global</span>
               <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
             </button>
             <div class="select-menu tr-select-menu">
-              <div class="select-group" data-i18n="trending.group.countries">Страны</div>
-              <div class="select-opt" data-tr-chart="global" data-i18n="trending.region.global">Мир</div>
-              <div class="select-opt" data-tr-chart="russia" data-i18n="trending.region.russia">Россия</div>
-              <div class="select-opt" data-tr-chart="ukraine" data-i18n="trending.region.ukraine">Украина</div>
-              <div class="select-opt" data-tr-chart="usa" data-i18n="trending.region.usa">США</div>
-              <div class="select-opt" data-tr-chart="uk" data-i18n="trending.region.uk">Британия</div>
-              <div class="select-opt" data-tr-chart="germany" data-i18n="trending.region.germany">Германия</div>
-              <div class="select-opt" data-tr-chart="france" data-i18n="trending.region.france">Франция</div>
-              <div class="select-opt" data-tr-chart="turkey" data-i18n="trending.region.turkey">Турция</div>
-              <div class="select-opt" data-tr-chart="poland" data-i18n="trending.region.poland">Польша</div>
-              <div class="select-group" data-i18n="trending.group.genres">Жанры</div>
-              <div class="select-opt" data-tr-chart="g_pop" data-i18n="trending.genre.pop">Поп</div>
-              <div class="select-opt" data-tr-chart="g_hiphop" data-i18n="trending.genre.hiphop">Хип-хоп</div>
-              <div class="select-opt" data-tr-chart="g_rock" data-i18n="trending.genre.rock">Рок</div>
-              <div class="select-opt" data-tr-chart="g_electronic" data-i18n="trending.genre.electronic">Электроника</div>
-              <div class="select-opt" data-tr-chart="g_phonk" data-i18n="trending.genre.phonk">Фонк</div>
-              <div class="select-opt" data-tr-chart="g_rnb" data-i18n="trending.genre.rnb">R&B</div>
+              <div class="select-group" data-i18n="trending.group.countries">Countries</div>
+              <div class="select-opt" data-tr-chart="global" data-i18n="trending.region.global">Global</div>
+              <div class="select-opt" data-tr-chart="ukraine" data-i18n="trending.region.ukraine">Ukraine</div>
+              <div class="select-opt" data-tr-chart="usa" data-i18n="trending.region.usa">USA</div>
+              <div class="select-opt" data-tr-chart="uk" data-i18n="trending.region.uk">UK</div>
+              <div class="select-opt" data-tr-chart="germany" data-i18n="trending.region.germany">Germany</div>
+              <div class="select-opt" data-tr-chart="france" data-i18n="trending.region.france">France</div>
+              <div class="select-opt" data-tr-chart="turkey" data-i18n="trending.region.turkey">Turkey</div>
+              <div class="select-opt" data-tr-chart="poland" data-i18n="trending.region.poland">Poland</div>
+              <div class="select-group" data-i18n="trending.group.genres">Genres</div>
+              <div class="select-opt" data-tr-chart="g_pop" data-i18n="trending.genre.pop">Pop</div>
+              <div class="select-opt" data-tr-chart="g_hiphop" data-i18n="trending.genre.hiphop">Hip-hop</div>
+              <div class="select-opt" data-tr-chart="g_rock" data-i18n="trending.genre.rock">Rock</div>
+              <div class="select-opt" data-tr-chart="g_electronic" data-i18n="trending.genre.electronic">Electronic</div>
+              <div class="select-opt" data-tr-chart="g_phonk" data-i18n="trending.genre.phonk">Phonk</div>
+              <div class="select-opt" data-tr-chart="g_rnb" data-i18n="trending.genre.rnb">R&amp;B</div>
               <div class="select-opt" data-tr-chart="g_chill" data-i18n="trending.genre.chill">Chill</div>
-              <div class="select-opt" data-tr-chart="g_metal" data-i18n="trending.genre.metal">Метал</div>
-              <div class="select-opt" data-tr-chart="g_latin" data-i18n="trending.genre.latin">Латина</div>
+              <div class="select-opt" data-tr-chart="g_metal" data-i18n="trending.genre.metal">Metal</div>
+              <div class="select-opt" data-tr-chart="g_latin" data-i18n="trending.genre.latin">Latin</div>
               <div class="select-opt" data-tr-chart="g_kpop" data-i18n="trending.genre.kpop">K-pop</div>
-              <div class="select-opt" data-tr-chart="g_jazz" data-i18n="trending.genre.jazz">Джаз</div>
-              <div class="select-opt" data-tr-chart="g_classical" data-i18n="trending.genre.classical">Классика</div>
-              <div class="select-opt" data-tr-chart="g_country" data-i18n="trending.genre.country">Кантри</div>
+              <div class="select-opt" data-tr-chart="g_jazz" data-i18n="trending.genre.jazz">Jazz</div>
+              <div class="select-opt" data-tr-chart="g_classical" data-i18n="trending.genre.classical">Classical</div>
+              <div class="select-opt" data-tr-chart="g_country" data-i18n="trending.genre.country">Country</div>
             </div>
           </div>
           <div class="tr-meta" id="tr-meta"></div>
@@ -925,8 +838,8 @@
 
         <div id="tr-empty" class="empty-block show">
           <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-sparkle"/></svg></div>
-          <div class="empty-title-lg" data-i18n="trending.empty.title">Что сейчас слушают</div>
-          <div class="empty-text" data-i18n="trending.empty.text">Чарты YouTube Music по странам. Выберите регион — и скачивайте треки в один клик.</div>
+          <div class="empty-title-lg" data-i18n="trending.empty.title">What people are listening to</div>
+          <div class="empty-text" data-i18n="trending.empty.text">YouTube Music charts by country and genre. Pick a chart and download tracks in one click.</div>
         </div>
       </section>
 
@@ -940,21 +853,21 @@
         <span class="mini-cover-letter" id="mini-cover-letter"></span>
       </div>
       <div class="mini-info">
-        <div class="mini-title" id="track-title" data-i18n="np.empty.title">Не выбрано</div>
+        <div class="mini-title" id="track-title" data-i18n="np.empty.title">Nothing selected</div>
         <div class="mini-artist" id="track-artist">—</div>
       </div>
-      <button class="btn-ic heart" id="btn-favorite" title="В избранное" data-i18n-title="tooltip.favorite">
+      <button class="btn-ic heart" id="btn-favorite" title="Favorite" data-i18n-title="tooltip.favorite">
         <svg class="i" width="15" height="15"><use href="#i-heart"/></svg>
       </button>
     </div>
 
     <div class="playbar-center">
       <div class="ctrls">
-        <button class="btn-ic" id="btn-shuffle" title="Случайный порядок" data-i18n-title="tooltip.shuffle"><svg class="i" width="14" height="14"><use href="#i-shuffle"/></svg></button>
-        <button class="btn-ic" id="btn-prev" title="Предыдущий" data-i18n-title="tooltip.prev"><svg class="i" width="15" height="15"><use href="#i-prev"/></svg></button>
-        <button class="btn-play" id="btn-play" title="Воспроизведение/Пауза" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="12" height="12"><use href="#i-play"/></svg></button>
-        <button class="btn-ic" id="btn-next" title="Следующий" data-i18n-title="tooltip.next"><svg class="i" width="15" height="15"><use href="#i-next"/></svg></button>
-        <button class="btn-ic" id="btn-repeat" title="Повтор" data-i18n-title="tooltip.repeat"><svg class="i" width="14" height="14"><use href="#i-repeat"/></svg></button>
+        <button class="btn-ic" id="btn-shuffle" title="Shuffle" data-i18n-title="tooltip.shuffle"><svg class="i" width="14" height="14"><use href="#i-shuffle"/></svg></button>
+        <button class="btn-ic" id="btn-prev" title="Previous" data-i18n-title="tooltip.prev"><svg class="i" width="15" height="15"><use href="#i-prev"/></svg></button>
+        <button class="btn-play" id="btn-play" title="Play / Pause" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="12" height="12"><use href="#i-play"/></svg></button>
+        <button class="btn-ic" id="btn-next" title="Next" data-i18n-title="tooltip.next"><svg class="i" width="15" height="15"><use href="#i-next"/></svg></button>
+        <button class="btn-ic" id="btn-repeat" title="Repeat" data-i18n-title="tooltip.repeat"><svg class="i" width="14" height="14"><use href="#i-repeat"/></svg></button>
       </div>
       <div class="progress-row">
         <span class="time" id="time-current">0:00</span>
@@ -964,8 +877,8 @@
     </div>
 
     <div class="playbar-right">
-      <button class="btn-ic" id="btn-fullscreen" title="Полноэкранный" data-i18n-title="tooltip.fullscreen"><svg class="i" width="13" height="13"><use href="#i-expand"/></svg></button>
-      <button class="btn-ic" id="btn-mute" title="Звук" data-i18n-title="tooltip.volume"><svg class="i" width="15" height="15"><use href="#i-volume"/></svg></button>
+      <button class="btn-ic" id="btn-fullscreen" title="Fullscreen" data-i18n-title="tooltip.fullscreen"><svg class="i" width="13" height="13"><use href="#i-expand"/></svg></button>
+      <button class="btn-ic" id="btn-mute" title="Volume" data-i18n-title="tooltip.volume"><svg class="i" width="15" height="15"><use href="#i-volume"/></svg></button>
       <div class="vol-track" id="vol-track">
         <div class="vol-fill" id="vol-fill"></div>
       </div>
@@ -976,15 +889,15 @@
   <div id="fullscreen-overlay" class="fs-overlay">
     <div class="fs-backdrop" id="fs-backdrop"></div>
     <div class="fs-topbar">
-      <button id="btn-close-fullscreen" class="fs-chip" title="Свернуть" data-i18n-title="btn.minimize">
+      <button id="btn-close-fullscreen" class="fs-chip" title="Minimize" data-i18n-title="btn.minimize">
         <svg class="i" width="12" height="12" style="transform:rotate(180deg)"><use href="#i-expand"/></svg>
       </button>
-      <div class="fs-eyebrow"><span data-i18n="fs.nowPlayingFrom">Сейчас играет · из</span> <span style="color:var(--text-strong)" data-i18n="fs.fromLibrary">Библиотеки</span></div>
+      <div class="fs-eyebrow"><span data-i18n="fs.nowPlayingFrom">Now playing · from</span> <span style="color:var(--text-strong)" data-i18n="fs.fromLibrary">Library</span></div>
       <div class="fs-topbar-right">
-        <button class="fs-chip" id="btn-fs-portrait" title="Мобильный режим" data-i18n-title="btn.portrait">
+        <button class="fs-chip" id="btn-fs-portrait" title="Mobile mode" data-i18n-title="btn.portrait">
           <svg class="i" width="13" height="13"><use href="#i-smartphone"/></svg>
         </button>
-        <button class="fs-chip" id="btn-close-fullscreen-x" title="Закрыть" data-i18n-title="btn.close"><svg class="i" width="13" height="13"><use href="#i-close"/></svg></button>
+        <button class="fs-chip" id="btn-close-fullscreen-x" title="Close" data-i18n-title="btn.close"><svg class="i" width="13" height="13"><use href="#i-close"/></svg></button>
       </div>
     </div>
 
@@ -994,7 +907,7 @@
         <div class="fs-info">
           <div class="fs-eyebrow eq-line">
             <span class="equalizer"><span></span><span></span><span></span></span>
-            <span data-i18n="fs.nowPlaying">Сейчас играет</span>
+            <span data-i18n="fs.nowPlaying">Now playing</span>
           </div>
           <div class="fs-title" id="fs-title">Title</div>
           <div class="fs-artist" id="fs-artist">Artist</div>
@@ -1019,16 +932,16 @@
           <div class="fs-secondary">
             <button class="btn-ghost" id="fs-btn-favorite">
               <svg class="i" width="13" height="13"><use href="#i-heart"/></svg>
-              <span id="fs-fav-label" data-i18n="btn.favorite">В избранное</span>
+              <span id="fs-fav-label" data-i18n="btn.favorite">Favorite</span>
             </button>
             <button class="btn-ghost" id="fs-btn-add-playlist">
               <svg class="i" width="13" height="13"><use href="#i-plus"/></svg>
-              <span data-i18n="btn.addToPlaylist">В плейлист</span>
+              <span data-i18n="btn.addToPlaylist">Add to playlist</span>
             </button>
           </div>
 
           <div class="fs-volume">
-            <button class="btn-ic" id="fs-btn-mute" title="Звук" data-i18n-title="tooltip.volume">
+            <button class="btn-ic" id="fs-btn-mute" title="Volume" data-i18n-title="tooltip.volume">
               <svg class="i" width="15" height="15"><use href="#i-volume"/></svg>
             </button>
             <div class="fs-vol-track" id="fs-vol-track">
@@ -1040,8 +953,8 @@
 
       <div class="fs-queue">
         <div class="fs-queue-head">
-          <span data-i18n="fs.queue">Очередь</span>
-          <span class="fs-queue-count" id="fs-queue-count">0 впереди</span>
+          <span data-i18n="fs.queue">Queue</span>
+          <span class="fs-queue-count" id="fs-queue-count">0 ahead</span>
         </div>
         <div id="fs-queue-list"></div>
       </div>
@@ -1053,12 +966,12 @@
     <div class="settings-card">
       <div class="settings-card-head">
         <div class="settings-head">
-          <div class="settings-title" data-i18n="settings.title">Настройки</div>
-          <div class="settings-sub" data-i18n="settings.subtitle">Внешний вид, источники музыки и поведение приложения.</div>
+          <div class="settings-title" data-i18n="settings.title">Settings</div>
+          <div class="settings-sub" data-i18n="settings.subtitle">Appearance, music sources, and app behavior.</div>
         </div>
         <div class="settings-card-head-right">
           <div class="version-tag">Audex 1.2.0</div>
-          <button class="btn-ic" id="btn-close-settings" title="Закрыть" data-i18n-title="btn.close">
+          <button class="btn-ic" id="btn-close-settings" title="Close" data-i18n-title="btn.close">
             <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
           </button>
         </div>
@@ -1067,15 +980,15 @@
       <div class="settings-tabs" id="settings-tabs" role="tablist">
         <button class="settings-tab active" data-tab="appearance" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-sun"/></svg>
-          <span data-i18n="section.appearance">Внешний вид</span>
+          <span data-i18n="section.appearance">Appearance</span>
         </button>
         <button class="settings-tab" data-tab="music" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-library"/></svg>
-          <span data-i18n="section.music">Музыка</span>
+          <span data-i18n="section.music">Music</span>
         </button>
         <button class="settings-tab" data-tab="downloads" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-download"/></svg>
-          <span data-i18n="section.downloads">Скачивание из интернета</span>
+          <span data-i18n="section.downloads">Download from the internet</span>
         </button>
         <button class="settings-tab" data-tab="discord" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-discord"/></svg>
@@ -1083,15 +996,15 @@
         </button>
         <button class="settings-tab" data-tab="hotkeys" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-keyboard"/></svg>
-          <span data-i18n="section.hotkeys">Горячие клавиши</span>
+          <span data-i18n="section.hotkeys">Hotkeys</span>
         </button>
         <button class="settings-tab" data-tab="system" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-monitor"/></svg>
-          <span data-i18n="section.system">Система</span>
+          <span data-i18n="section.system">System</span>
         </button>
         <button class="settings-tab" data-tab="about" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-link"/></svg>
-          <span data-i18n="section.about">О приложении</span>
+          <span data-i18n="section.about">About</span>
         </button>
       </div>
 
@@ -1100,13 +1013,13 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-sun"/></svg>
-          <span data-i18n="section.appearance">Внешний вид</span>
+          <span data-i18n="section.appearance">Appearance</span>
         </div>
         <div class="setting-card setting-card-tight">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.theme">Тема</div>
-              <div class="setting-desc" data-i18n="setting.themeDesc">Цветовая схема приложения.</div>
+              <div class="setting-label" data-i18n="setting.theme">Theme</div>
+              <div class="setting-desc" data-i18n="setting.themeDesc">Application color scheme.</div>
             </div>
             <div class="select" id="theme-select">
               <button class="select-btn">
@@ -1114,9 +1027,9 @@
                 <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
               </button>
               <div class="select-menu">
-                <div class="select-opt" data-theme="dark"><span class="opt-emoji">🌙</span><span data-i18n="theme.dark">Тёмная</span></div>
-                <div class="select-opt" data-theme="light"><span class="opt-emoji">☀️</span><span data-i18n="theme.light">Светлая</span></div>
-                <div class="select-opt" data-theme="system"><span class="opt-emoji">🖥️</span><span data-i18n="theme.system">Системная</span></div>
+                <div class="select-opt" data-theme="dark"><span class="opt-emoji">🌙</span><span data-i18n="theme.dark">Dark</span></div>
+                <div class="select-opt" data-theme="light"><span class="opt-emoji">☀️</span><span data-i18n="theme.light">Light</span></div>
+                <div class="select-opt" data-theme="system"><span class="opt-emoji">🖥️</span><span data-i18n="theme.system">System</span></div>
                 <div class="select-opt" data-theme="nocturne"><span class="opt-emoji">🌌</span><span>Nocturne</span></div>
                 <div class="select-opt" data-theme="terracotta"><span class="opt-emoji">🏺</span><span>Terracotta</span></div>
                 <div class="select-opt" data-theme="forest"><span class="opt-emoji">🌲</span><span>Forest</span></div>
@@ -1131,8 +1044,8 @@
         <div class="setting-card setting-card-tight">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.accent">Цвет акцента</div>
-              <div class="setting-desc" data-i18n="setting.accentDesc">Подсветка активных элементов и текущего трека.</div>
+              <div class="setting-label" data-i18n="setting.accent">Accent color</div>
+              <div class="setting-desc" data-i18n="setting.accentDesc">Highlights active items and the currently playing track.</div>
             </div>
             <div class="accent-palette" id="accent-palette"></div>
           </div>
@@ -1141,8 +1054,8 @@
         <div class="setting-card setting-card-tight">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.uiScale">Масштаб интерфейса</div>
-              <div class="setting-desc" data-i18n="setting.uiScaleDesc">Делает весь интерфейс крупнее или мельче. Применяется сразу.</div>
+              <div class="setting-label" data-i18n="setting.uiScale">Interface scale</div>
+              <div class="setting-desc" data-i18n="setting.uiScaleDesc">Makes the entire UI larger or smaller. Applies instantly.</div>
             </div>
             <div class="scale-stepper">
               <button type="button" class="stepper-btn" id="scale-dec" title="−" aria-label="−">
@@ -1152,7 +1065,7 @@
               <button type="button" class="stepper-btn" id="scale-inc" title="+" aria-label="+">
                 <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
               </button>
-              <button type="button" class="btn-ghost stepper-reset" id="scale-reset" data-i18n="setting.uiScaleReset">Сбросить</button>
+              <button type="button" class="btn-ghost stepper-reset" id="scale-reset" data-i18n="setting.uiScaleReset">Reset</button>
             </div>
           </div>
         </div>
@@ -1161,48 +1074,48 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-image"/></svg>
-          <span data-i18n="section.background">Фон</span>
+          <span data-i18n="section.background">Background</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.bgSource">Фоновое изображение</div>
-              <div class="setting-desc" data-i18n="setting.bgSourceDesc">Своя картинка или обложка текущего трека под интерфейсом.</div>
+              <div class="setting-label" data-i18n="setting.bgSource">Background image</div>
+              <div class="setting-desc" data-i18n="setting.bgSourceDesc">Your own picture, or the current track artwork, behind the interface.</div>
             </div>
             <div class="seg" id="bg-source-seg">
-              <button class="seg-btn" data-bg-source="none" data-i18n="bg.none">Нет</button>
-              <button class="seg-btn" data-bg-source="image" data-i18n="bg.image">Картинка</button>
-              <button class="seg-btn" data-bg-source="cover" data-i18n="bg.cover">Обложка</button>
+              <button class="seg-btn" data-bg-source="none" data-i18n="bg.none">None</button>
+              <button class="seg-btn" data-bg-source="image" data-i18n="bg.image">Image</button>
+              <button class="seg-btn" data-bg-source="cover" data-i18n="bg.cover">Artwork</button>
             </div>
           </div>
           <div class="setting-row" id="bg-file-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.bgFile">Файл</div>
+              <div class="setting-label" data-i18n="setting.bgFile">File</div>
               <div class="setting-path" id="bg-file-name">—</div>
-              <div class="setting-desc" data-i18n="setting.bgFileDesc">Копируется внутрь приложения, поэтому оригинал можно перемещать.</div>
+              <div class="setting-desc" data-i18n="setting.bgFileDesc">Copied into the app, so you can move the original afterwards.</div>
             </div>
             <div class="bg-file-actions">
               <button class="btn-ghost" id="bg-pick-btn">
                 <svg class="i" width="13" height="13"><use href="#i-image"/></svg>
-                <span data-i18n="btn.choose">Выбрать…</span>
+                <span data-i18n="btn.choose">Choose…</span>
               </button>
-              <button class="btn-ghost" id="bg-clear-btn" data-i18n="bg.clear">Убрать</button>
+              <button class="btn-ghost" id="bg-clear-btn" data-i18n="bg.clear">Remove</button>
             </div>
           </div>
           <div class="setting-row" id="bg-fit-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.bgFit">Вписывание</div>
+              <div class="setting-label" data-i18n="setting.bgFit">Fit</div>
             </div>
             <div class="seg" id="bg-fit-seg">
-              <button class="seg-btn" data-bg-fit="cover" data-i18n="bg.fit.cover">Заполнить</button>
-              <button class="seg-btn" data-bg-fit="contain" data-i18n="bg.fit.contain">Целиком</button>
-              <button class="seg-btn" data-bg-fit="center" data-i18n="bg.fit.center">По центру</button>
-              <button class="seg-btn" data-bg-fit="tile" data-i18n="bg.fit.tile">Плитка</button>
+              <button class="seg-btn" data-bg-fit="cover" data-i18n="bg.fit.cover">Fill</button>
+              <button class="seg-btn" data-bg-fit="contain" data-i18n="bg.fit.contain">Whole</button>
+              <button class="seg-btn" data-bg-fit="center" data-i18n="bg.fit.center">Centre</button>
+              <button class="seg-btn" data-bg-fit="tile" data-i18n="bg.fit.tile">Tile</button>
             </div>
           </div>
           <div class="setting-row" id="bg-blur-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.bgBlur">Размытие</div>
+              <div class="setting-label" data-i18n="setting.bgBlur">Blur</div>
             </div>
             <div class="range-ctl">
               <input type="range" id="bg-blur" class="ui-range" min="0" max="60" step="1" value="0">
@@ -1211,8 +1124,8 @@
           </div>
           <div class="setting-row" id="bg-dim-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.bgDim">Затемнение</div>
-              <div class="setting-desc" data-i18n="setting.bgDimDesc">Чем больше, тем читаемее текст поверх картинки.</div>
+              <div class="setting-label" data-i18n="setting.bgDim">Dim</div>
+              <div class="setting-desc" data-i18n="setting.bgDimDesc">The higher it is, the more readable text stays over the picture.</div>
             </div>
             <div class="range-ctl">
               <input type="range" id="bg-dim" class="ui-range" min="0" max="95" step="1" value="35">
@@ -1221,8 +1134,8 @@
           </div>
           <div class="setting-row" id="bg-alpha-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.surfaceAlpha">Непрозрачность панелей</div>
-              <div class="setting-desc" data-i18n="setting.surfaceAlphaDesc">Насколько сквозь боковое меню и панель плеера видно фон.</div>
+              <div class="setting-label" data-i18n="setting.surfaceAlpha">Panel opacity</div>
+              <div class="setting-desc" data-i18n="setting.surfaceAlphaDesc">How much of the background shows through the sidebar and player bar.</div>
             </div>
             <div class="range-ctl">
               <input type="range" id="surface-alpha" class="ui-range" min="20" max="100" step="1" value="100">
@@ -1235,13 +1148,13 @@
       <section class="setting-section">
         <div class="section-label">
           <span class="lang-glyph">文</span>
-          <span data-i18n="section.language">Язык</span>
+          <span data-i18n="section.language">Language</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.uiLanguage">Язык интерфейса</div>
-              <div class="setting-desc" data-i18n="setting.uiLanguageDesc">Применяется сразу.</div>
+              <div class="setting-label" data-i18n="setting.uiLanguage">Interface language</div>
+              <div class="setting-desc" data-i18n="setting.uiLanguageDesc">Applied immediately.</div>
             </div>
             <div class="select" id="lang-select">
               <button class="select-btn">
@@ -1250,7 +1163,6 @@
               </button>
               <div class="select-menu">
                 <div class="select-opt" data-lang="en">English</div>
-                <div class="select-opt" data-lang="ru">Русский</div>
                 <div class="select-opt" data-lang="de">Deutsch</div>
                 <div class="select-opt" data-lang="fr">Français</div>
                 <div class="select-opt" data-lang="uk">Українська</div>
@@ -1265,52 +1177,52 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-library"/></svg>
-          <span data-i18n="section.music">Музыка</span>
+          <span data-i18n="section.music">Music</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.defaultFolder">Папка по умолчанию</div>
+              <div class="setting-label" data-i18n="setting.defaultFolder">Default folder</div>
               <div class="setting-path" id="default-folder-path">—</div>
-              <div class="setting-desc" data-i18n="setting.defaultFolderDesc">Откуда загружать треки при запуске.</div>
+              <div class="setting-desc" data-i18n="setting.defaultFolderDesc">Where to load tracks from on startup.</div>
             </div>
             <button class="btn-ghost" id="btn-choose-default-folder">
               <svg class="i" width="13" height="13"><use href="#i-folder-open"/></svg>
-              <span data-i18n="btn.choose">Выбрать…</span>
+              <span data-i18n="btn.choose">Choose…</span>
             </button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.scanSubdirs">Сканировать подпапки</div>
-              <div class="setting-desc" data-i18n="setting.scanSubdirsDesc">Учитывать вложенные директории при индексации.</div>
+              <div class="setting-label" data-i18n="setting.scanSubdirs">Scan subfolders</div>
+              <div class="setting-desc" data-i18n="setting.scanSubdirsDesc">Include nested directories during indexing.</div>
             </div>
             <button class="toggle" data-setting="scan-subdirs"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.healthCheck">Проверка качества (Health-check)</div>
-              <div class="setting-desc" data-i18n="setting.healthCheckDesc">Раздел «Состояние библиотеки» и столбец «Качество» в списках треков. Выключено — колонка и раздел скрыты полностью.</div>
+              <div class="setting-label" data-i18n="setting.healthCheck">Quality check (Health-check)</div>
+              <div class="setting-desc" data-i18n="setting.healthCheckDesc">The “Library health” section and the “Quality” column in track lists. When off, the column and section are hidden entirely.</div>
             </div>
             <button class="toggle" data-setting="health-check"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.reports">Отчёт о прослушивании</div>
-              <div class="setting-desc" data-i18n="setting.reportsDesc">Раздел «Отчёт» со статистикой прослушивания. Статистика собирается всегда, даже когда раздел скрыт.</div>
+              <div class="setting-label" data-i18n="setting.reports">Listening report</div>
+              <div class="setting-desc" data-i18n="setting.reportsDesc">The “Report” section with listening statistics. Stats are always collected, even while the section is hidden.</div>
             </div>
             <button class="toggle" data-setting="reports"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.editor">Редактор (обрезка треков)</div>
-              <div class="setting-desc" data-i18n="setting.editorDesc">Раздел «Редактор» для обрезки треков: выбираете фрагмент на волне и сохраняете его в новый файл.</div>
+              <div class="setting-label" data-i18n="setting.editor">Editor (track trimming)</div>
+              <div class="setting-desc" data-i18n="setting.editorDesc">The “Editor” section for trimming tracks: pick a fragment on the waveform and save it as a new file.</div>
             </div>
             <button class="toggle" data-setting="editor"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.crossfade">Плавный переход между треками</div>
-              <div class="setting-desc" data-i18n="setting.crossfadeDesc">Треки перетекают друг в друга: конец текущего затихает, пока следующий нарастает. Действует и в конце трека, и при ручном переключении.</div>
+              <div class="setting-label" data-i18n="setting.crossfade">Crossfade between tracks</div>
+              <div class="setting-desc" data-i18n="setting.crossfadeDesc">Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.</div>
             </div>
             <button class="toggle" data-setting="crossfade"><div class="toggle-knob"></div></button>
           </div>
@@ -1322,30 +1234,30 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-download"/></svg>
-          <span data-i18n="section.downloads">Скачивание из интернета</span>
+          <span data-i18n="section.downloads">Download from the internet</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.showTrending">Показать вкладку «В тренде»</div>
-              <div class="setting-desc" data-i18n="setting.showTrendingDesc">Раздел с чартами YouTube Music по странам и скачиванием в один клик. Требует интернета.</div>
+              <div class="setting-label" data-i18n="setting.showTrending">Show the “Trending” tab</div>
+              <div class="setting-desc" data-i18n="setting.showTrendingDesc">A section with YouTube Music charts by country and one-click downloads. Requires the internet.</div>
             </div>
             <button class="toggle" data-setting="trending"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
               <div class="setting-label">
-                <span data-i18n="setting.showDownloads">Показать вкладку «Загрузки»</span>
-                <span class="setting-badge" data-i18n="badge.wip">в разработке</span>
+                <span data-i18n="setting.showDownloads">Show the “Downloads” tab</span>
+                <span class="setting-badge" data-i18n="badge.wip">in development</span>
               </div>
-              <div class="setting-desc" data-i18n="setting.showDownloadsDesc">Откроет в боковом меню раздел для скачивания треков по ссылке.</div>
+              <div class="setting-desc" data-i18n="setting.showDownloadsDesc">Adds a section to the sidebar for downloading tracks by URL.</div>
             </div>
             <button class="toggle" data-setting="downloads"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.showParserBrowser">Показывать окно браузера при парсинге</div>
-              <div class="setting-desc" data-i18n="setting.showParserBrowserDesc">Нужно, чтобы войти в Яндекс при первом запуске, пройти капчу или увидеть, на чём парсер споткнулся. Если выключить — браузер запустится в фоне и окно не появится.</div>
+              <div class="setting-label" data-i18n="setting.showParserBrowser">Show the browser window while parsing</div>
+              <div class="setting-desc" data-i18n="setting.showParserBrowserDesc">Useful for signing in to Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.</div>
             </div>
             <button class="toggle" data-setting="show-parser-browser"><div class="toggle-knob"></div></button>
           </div>
@@ -1357,15 +1269,15 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-keyboard"/></svg>
-          <span data-i18n="section.hotkeys">Горячие клавиши</span>
+          <span data-i18n="section.hotkeys">Hotkeys</span>
         </div>
-        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.intro">Нажмите на сочетание, затем — нужную клавишу или кнопку мыши. Esc — отмена, Backspace — очистить.</div>
-        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.globalNote">Значок монитора включает работу сочетания, когда окно свёрнуто. Нужен модификатор (Ctrl, Alt или Shift); кнопки мыши так не работают.</div>
+        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.intro">Click a shortcut, then press a key or a mouse button. Esc cancels, Backspace clears it.</div>
+        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.globalNote">The monitor icon makes a shortcut work while the window is minimised. It needs a modifier (Ctrl, Alt or Shift); mouse buttons cannot do this.</div>
         <!-- Rows are rendered by renderHotkeys() in renderer.js. -->
         <div class="setting-card" id="hotkeys-list"></div>
         <div class="hotkeys-foot">
-          <div class="setting-desc" data-i18n="hotkeys.escNote">Esc всегда закрывает открытое окно и не переназначается.</div>
-          <button class="btn-ghost" id="hotkeys-reset" data-i18n="hotkeys.resetAll">Сбросить всё</button>
+          <div class="setting-desc" data-i18n="hotkeys.escNote">Esc always closes the topmost window and cannot be rebound.</div>
+          <button class="btn-ghost" id="hotkeys-reset" data-i18n="hotkeys.resetAll">Reset all</button>
         </div>
       </section>
       </div>
@@ -1374,13 +1286,13 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-monitor"/></svg>
-          <span data-i18n="section.system">Система</span>
+          <span data-i18n="section.system">System</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.hardwareAcceleration">Аппаратное ускорение</div>
-              <div class="setting-desc" data-i18n="setting.hardwareAccelerationDesc">Использует видеокарту для отрисовки интерфейса. Если приложение зависает при запуске или работает с артефактами — выключите. Изменение применится после перезапуска.</div>
+              <div class="setting-label" data-i18n="setting.hardwareAcceleration">Hardware acceleration</div>
+              <div class="setting-desc" data-i18n="setting.hardwareAccelerationDesc">Uses the GPU to render the interface. If the app hangs on launch or shows graphical glitches, turn this off. Takes effect after a restart.</div>
             </div>
             <button class="toggle" id="toggle-hwaccel"><div class="toggle-knob"></div></button>
           </div>
@@ -1402,13 +1314,13 @@
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-link"/></svg>
-          <span data-i18n="section.contacts">Контакты</span>
+          <span data-i18n="section.contacts">Contacts</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
               <div class="setting-label" data-i18n="setting.github">GitHub</div>
-              <div class="setting-desc" data-i18n="setting.githubDesc">Исходный код проекта на GitHub.</div>
+              <div class="setting-desc" data-i18n="setting.githubDesc">Project source code on GitHub.</div>
             </div>
             <button class="btn-ghost" data-open-url="https://github.com/MishaSok/audex-player">
               <svg class="i" width="13" height="13"><use href="#i-github"/></svg>
@@ -1418,7 +1330,7 @@
           <div class="setting-row">
             <div class="setting-text">
               <div class="setting-label" data-i18n="setting.telegram">Telegram</div>
-              <div class="setting-desc" data-i18n="setting.telegramDesc">Нашли баг или есть предложение — пишите в Telegram.</div>
+              <div class="setting-desc" data-i18n="setting.telegramDesc">Found a bug or have a suggestion — write on Telegram.</div>
             </div>
             <button class="btn-ghost" data-open-url="https://t.me/JuicexNet">
               <svg class="i" width="13" height="13"><use href="#i-telegram"/></svg>
@@ -1429,11 +1341,11 @@
       </section>
 
       <section class="setting-section">
-        <div class="section-label" data-i18n="section.about">О приложении</div>
+        <div class="section-label" data-i18n="section.about">About</div>
         <div class="setting-card">
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.version">Версия</div>
+              <div class="setting-label" data-i18n="setting.version">Version</div>
               <div class="setting-desc">1.2.0 · Electron · Linux</div>
             </div>
           </div>
@@ -1449,11 +1361,11 @@
   <div id="confirm-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-icon-bad"><svg class="i" width="16" height="16"><use href="#i-close"/></svg></div>
-      <div class="modal-title" id="confirm-title">Удалить трек?</div>
-      <div class="modal-text" id="confirm-text">Трек будет удалён из библиотеки, а файл — перемещён в корзину.</div>
+      <div class="modal-title" id="confirm-title">Delete track?</div>
+      <div class="modal-text" id="confirm-text">The track will be removed from the library and the file moved to the trash.</div>
       <div class="modal-actions">
-        <button id="btn-cancel-delete" class="btn-ghost" data-i18n="btn.cancel">Отмена</button>
-        <button id="btn-confirm-delete" class="btn-danger" data-i18n="btn.delete">Удалить</button>
+        <button id="btn-cancel-delete" class="btn-ghost" data-i18n="btn.cancel">Cancel</button>
+        <button id="btn-confirm-delete" class="btn-danger" data-i18n="btn.delete">Delete</button>
       </div>
     </div>
   </div>
@@ -1461,12 +1373,12 @@
   <!-- New Playlist Modal -->
   <div id="new-playlist-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
-      <div class="modal-title" data-i18n="modal.newPlaylist.title">Новый плейлист</div>
-      <input type="text" class="modal-input" id="new-playlist-name" placeholder="Название плейлиста" data-i18n-placeholder="modal.newPlaylist.namePh">
-      <input type="text" class="modal-input" id="new-playlist-desc" placeholder="Описание (необязательно)" data-i18n-placeholder="modal.newPlaylist.descPh">
+      <div class="modal-title" data-i18n="modal.newPlaylist.title">New playlist</div>
+      <input type="text" class="modal-input" id="new-playlist-name" placeholder="Playlist name" data-i18n-placeholder="modal.newPlaylist.namePh">
+      <input type="text" class="modal-input" id="new-playlist-desc" placeholder="Description (optional)" data-i18n-placeholder="modal.newPlaylist.descPh">
       <div class="modal-actions">
-        <button id="btn-cancel-new-playlist" class="btn-ghost" data-i18n="btn.cancel">Отмена</button>
-        <button id="btn-create-playlist" class="btn-solid" data-i18n="btn.create">Создать</button>
+        <button id="btn-cancel-new-playlist" class="btn-ghost" data-i18n="btn.cancel">Cancel</button>
+        <button id="btn-create-playlist" class="btn-solid" data-i18n="btn.create">Create</button>
       </div>
     </div>
   </div>
@@ -1474,20 +1386,20 @@
   <!-- Edit-playlist Modal -->
   <div id="edit-playlist-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
-      <div class="modal-title" data-i18n="modal.editPlaylist.title">Изменить плейлист</div>
+      <div class="modal-title" data-i18n="modal.editPlaylist.title">Edit playlist</div>
       <div class="pl-avatar-row">
         <div class="pl-avatar-preview" id="edit-playlist-avatar-preview"></div>
         <div class="pl-avatar-btns">
-          <button id="btn-edit-playlist-avatar" class="btn-ghost" data-i18n="modal.editPlaylist.avatarChoose">Выбрать изображение</button>
-          <button id="btn-edit-playlist-avatar-remove" class="btn-ghost" data-i18n="modal.editPlaylist.avatarRemove" hidden>Убрать обложку</button>
+          <button id="btn-edit-playlist-avatar" class="btn-ghost" data-i18n="modal.editPlaylist.avatarChoose">Choose image</button>
+          <button id="btn-edit-playlist-avatar-remove" class="btn-ghost" data-i18n="modal.editPlaylist.avatarRemove" hidden>Remove cover</button>
         </div>
         <input type="file" id="edit-playlist-avatar-file" accept="image/*" hidden>
       </div>
-      <input type="text" class="modal-input" id="edit-playlist-name" placeholder="Название плейлиста" data-i18n-placeholder="modal.newPlaylist.namePh">
-      <input type="text" class="modal-input" id="edit-playlist-desc" placeholder="Описание (необязательно)" data-i18n-placeholder="modal.newPlaylist.descPh">
+      <input type="text" class="modal-input" id="edit-playlist-name" placeholder="Playlist name" data-i18n-placeholder="modal.newPlaylist.namePh">
+      <input type="text" class="modal-input" id="edit-playlist-desc" placeholder="Description (optional)" data-i18n-placeholder="modal.newPlaylist.descPh">
       <div class="modal-actions">
-        <button id="btn-cancel-edit-playlist" class="btn-ghost" data-i18n="btn.cancel">Отмена</button>
-        <button id="btn-save-edit-playlist" class="btn-solid" data-i18n="btn.save">Сохранить</button>
+        <button id="btn-cancel-edit-playlist" class="btn-ghost" data-i18n="btn.cancel">Cancel</button>
+        <button id="btn-save-edit-playlist" class="btn-solid" data-i18n="btn.save">Save</button>
       </div>
     </div>
   </div>
@@ -1495,10 +1407,10 @@
   <!-- Add-to-playlist Modal -->
   <div id="add-to-playlist-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
-      <div class="modal-title" data-i18n="modal.addToPlaylist.title">Добавить в плейлист</div>
+      <div class="modal-title" data-i18n="modal.addToPlaylist.title">Add to playlist</div>
       <div class="select-list" id="add-to-playlist-list"></div>
       <div class="modal-actions">
-        <button id="btn-cancel-add-pl" class="btn-ghost" data-i18n="btn.close">Закрыть</button>
+        <button id="btn-cancel-add-pl" class="btn-ghost" data-i18n="btn.close">Close</button>
       </div>
     </div>
   </div>
@@ -1506,11 +1418,11 @@
   <!-- Editor: track picker -->
   <div id="ed-pick-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
-      <div class="modal-title" data-i18n="editor.pick">Выбрать трек</div>
-      <input type="text" class="modal-input" id="ed-pick-search" data-i18n-placeholder="editor.pickSearch" placeholder="Поиск по названию или исполнителю">
+      <div class="modal-title" data-i18n="editor.pick">Choose track</div>
+      <input type="text" class="modal-input" id="ed-pick-search" data-i18n-placeholder="editor.pickSearch" placeholder="Search by title or artist">
       <div class="select-list" id="ed-pick-list"></div>
       <div class="modal-actions">
-        <button id="ed-pick-cancel" class="btn-ghost" data-i18n="btn.close">Закрыть</button>
+        <button id="ed-pick-cancel" class="btn-ghost" data-i18n="btn.close">Close</button>
       </div>
     </div>
   </div>
@@ -1521,7 +1433,7 @@
       <div class="editor-head">
         <div class="editor-title">
           <svg class="i" width="14" height="14"><use href="#i-edit"/></svg>
-          <span data-i18n="editor.title">Редактировать теги</span>
+          <span data-i18n="editor.title">Edit tags</span>
           <span class="editor-tag">ID3v2.4</span>
         </div>
         <button class="btn-ic" id="btn-close-editor"><svg class="i" width="14" height="14"><use href="#i-close"/></svg></button>
@@ -1529,7 +1441,7 @@
 
       <div class="editor-body">
         <div class="editor-cover-col">
-          <div class="field-label" data-i18n="editor.cover">Обложка</div>
+          <div class="field-label" data-i18n="editor.cover">Cover</div>
           <div class="editor-cover" id="editor-cover">
             <span class="editor-cover-letter" id="editor-cover-letter"></span>
             <div class="editor-cover-tag" id="editor-cover-tag">—</div>
@@ -1538,46 +1450,46 @@
 
         <div class="editor-fields">
           <div class="field">
-            <div class="field-label" data-i18n="editor.field.title">Название</div>
+            <div class="field-label" data-i18n="editor.field.title">Title</div>
             <input type="text" class="field-input" id="md-title">
           </div>
           <div class="field">
-            <div class="field-label" data-i18n="editor.field.artist">Исполнитель</div>
+            <div class="field-label" data-i18n="editor.field.artist">Artist</div>
             <input type="text" class="field-input" id="md-artist">
           </div>
           <div class="field-row">
             <div class="field">
-              <div class="field-label" data-i18n="editor.field.album">Альбом</div>
+              <div class="field-label" data-i18n="editor.field.album">Album</div>
               <input type="text" class="field-input" id="md-album">
             </div>
             <div class="field">
-              <div class="field-label" data-i18n="editor.field.albumArtist">Исп. альбома</div>
+              <div class="field-label" data-i18n="editor.field.albumArtist">Album artist</div>
               <input type="text" class="field-input" id="md-album-artist">
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <div class="field-label" data-i18n="editor.field.year">Год</div>
+              <div class="field-label" data-i18n="editor.field.year">Year</div>
               <input type="text" class="field-input" id="md-year">
             </div>
             <div class="field">
-              <div class="field-label" data-i18n="editor.field.genre">Жанр</div>
+              <div class="field-label" data-i18n="editor.field.genre">Genre</div>
               <input type="text" class="field-input" id="md-genre">
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <div class="field-label" data-i18n="editor.field.trackNo">Трек №</div>
+              <div class="field-label" data-i18n="editor.field.trackNo">Track №</div>
               <input type="text" class="field-input" id="md-track-no">
             </div>
             <div class="field">
-              <div class="field-label" data-i18n="editor.field.discNo">Диск №</div>
+              <div class="field-label" data-i18n="editor.field.discNo">Disc №</div>
               <input type="text" class="field-input" id="md-disc-no">
             </div>
           </div>
           <div class="field">
-            <div class="field-label" data-i18n="editor.field.comment">Комментарий</div>
-            <textarea class="field-input field-textarea" id="md-comment" placeholder="Заметка о треке…" data-i18n-placeholder="editor.commentPh"></textarea>
+            <div class="field-label" data-i18n="editor.field.comment">Comment</div>
+            <textarea class="field-input field-textarea" id="md-comment" placeholder="Note about the track…" data-i18n-placeholder="editor.commentPh"></textarea>
           </div>
         </div>
       </div>
@@ -1586,8 +1498,8 @@
       <div class="editor-foot">
         <div class="editor-foot-status" id="editor-status"></div>
         <div class="editor-foot-actions">
-          <button class="btn-ghost" id="btn-cancel-editor" data-i18n="btn.cancel">Отмена</button>
-          <button class="btn-solid" id="btn-save-editor" data-i18n="btn.save">Сохранить</button>
+          <button class="btn-ghost" id="btn-cancel-editor" data-i18n="btn.cancel">Cancel</button>
+          <button class="btn-solid" id="btn-save-editor" data-i18n="btn.save">Save</button>
         </div>
       </div>
     </div>
@@ -1595,25 +1507,25 @@
 
   <!-- Track Context Menu -->
   <div id="track-context-menu" class="context-menu">
-    <button class="cm-item" data-action="play"><svg class="i" width="11" height="11"><use href="#i-play"/></svg><span data-i18n="cm.play">Играть</span><span class="cm-sh">↵</span></button>
-    <button class="cm-item" data-action="select" id="cm-select" hidden><svg class="i" width="11" height="11"><use href="#i-check"/></svg><span data-i18n="select.enter">Выбрать</span></button>
-    <button class="cm-item" data-action="add-to-playlist"><svg class="i" width="11" height="11"><use href="#i-plus"/></svg><span data-i18n="cm.addToPlaylist">Добавить в плейлист</span></button>
-    <button class="cm-item" data-action="remove-from-playlist" id="cm-remove-from-pl" hidden><svg class="i" width="11" height="11"><use href="#i-close"/></svg><span data-i18n="cm.removeFromPlaylist">Убрать из плейлиста</span></button>
+    <button class="cm-item" data-action="play"><svg class="i" width="11" height="11"><use href="#i-play"/></svg><span data-i18n="cm.play">Play</span><span class="cm-sh">↵</span></button>
+    <button class="cm-item" data-action="select" id="cm-select" hidden><svg class="i" width="11" height="11"><use href="#i-check"/></svg><span data-i18n="select.enter">Select</span></button>
+    <button class="cm-item" data-action="add-to-playlist"><svg class="i" width="11" height="11"><use href="#i-plus"/></svg><span data-i18n="cm.addToPlaylist">Add to playlist</span></button>
+    <button class="cm-item" data-action="remove-from-playlist" id="cm-remove-from-pl" hidden><svg class="i" width="11" height="11"><use href="#i-close"/></svg><span data-i18n="cm.removeFromPlaylist">Remove from playlist</span></button>
     <div class="cm-divider"></div>
-    <button class="cm-item" data-action="favorite"><svg class="i" width="11" height="11"><use href="#i-heart"/></svg><span id="cm-fav-label">В избранное</span><span class="cm-sh">L</span></button>
-    <button class="cm-item" data-action="reveal"><svg class="i" width="11" height="11"><use href="#i-folder"/></svg><span data-i18n="cm.reveal">Показать в папке</span></button>
+    <button class="cm-item" data-action="favorite"><svg class="i" width="11" height="11"><use href="#i-heart"/></svg><span id="cm-fav-label">Favorite</span><span class="cm-sh">L</span></button>
+    <button class="cm-item" data-action="reveal"><svg class="i" width="11" height="11"><use href="#i-folder"/></svg><span data-i18n="cm.reveal">Show in folder</span></button>
     <div class="cm-divider"></div>
-    <button class="cm-item cm-highlight" data-action="edit-tags"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.editTags">Редактировать теги…</span><span class="cm-sh">⌘E</span></button>
-    <button class="cm-item" data-action="trim" id="cm-trim" hidden><svg class="i" width="11" height="11"><use href="#i-scissors"/></svg><span data-i18n="cm.trim">Обрезать трек…</span></button>
+    <button class="cm-item cm-highlight" data-action="edit-tags"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.editTags">Edit tags…</span><span class="cm-sh">⌘E</span></button>
+    <button class="cm-item" data-action="trim" id="cm-trim" hidden><svg class="i" width="11" height="11"><use href="#i-scissors"/></svg><span data-i18n="cm.trim">Trim track…</span></button>
     <div class="cm-divider"></div>
-    <button class="cm-item cm-danger" data-action="delete"><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.delete">Удалить из библиотеки</span><span class="cm-sh">⌫</span></button>
+    <button class="cm-item cm-danger" data-action="delete"><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.delete">Remove from library</span><span class="cm-sh">⌫</span></button>
   </div>
 
   <!-- Playlist Context Menu -->
   <div id="playlist-context-menu" class="context-menu">
-    <button class="cm-item" data-action="edit"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.plEdit">Изменить название и описание…</span></button>
+    <button class="cm-item" data-action="edit"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.plEdit">Edit playlist…</span></button>
     <div class="cm-divider"></div>
-    <button class="cm-item cm-danger" data-action="delete"><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.plDelete">Удалить плейлист</span></button>
+    <button class="cm-item cm-danger" data-action="delete"><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.plDelete">Delete playlist</span></button>
   </div>
 
   <!-- Command Palette (⌘K) -->
@@ -1621,14 +1533,14 @@
     <div class="palette-card">
       <div class="palette-search">
         <svg class="i" width="15" height="15"><use href="#i-search"/></svg>
-        <input id="palette-input" type="text" placeholder="Поиск трека, альбома, действия…" data-i18n-placeholder="palette.placeholder" autocomplete="off">
+        <input id="palette-input" type="text" placeholder="Search tracks, albums, actions…" data-i18n-placeholder="palette.placeholder" autocomplete="off">
         <span class="kbd">ESC</span>
       </div>
       <div class="palette-results" id="palette-results"></div>
       <div class="palette-foot">
-        <span data-i18n="palette.nav">↑↓ навигация</span>
-        <span data-i18n="palette.choose">↵ выбрать</span>
-        <span data-i18n="palette.close">ESC закрыть</span>
+        <span data-i18n="palette.nav">↑↓ navigate</span>
+        <span data-i18n="palette.choose">↵ select</span>
+        <span data-i18n="palette.close">ESC close</span>
       </div>
     </div>
   </div>

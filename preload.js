@@ -31,24 +31,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('downloads:ytProgress', listener);
   },
   getDownloadsDir: (targetDir) => ipcRenderer.invoke('downloads:getDir', { targetDir }),
-  yandexParse: (payload) => ipcRenderer.invoke('yandex:parsePlaylist', payload),
   ytMusicParse: (payload) => ipcRenderer.invoke('downloads:ytMusicParse', payload),
-  onYandexParseProgress: (cb) => {
-    const listener = (_e, data) => cb(data);
-    ipcRenderer.on('yandex:parseProgress', listener);
-    return () => ipcRenderer.removeListener('yandex:parseProgress', listener);
-  },
   spotifyParse: (payload) => ipcRenderer.invoke('spotify:parsePlaylist', payload),
   onSpotifyParseProgress: (cb) => {
     const listener = (_e, data) => cb(data);
     ipcRenderer.on('spotify:parseProgress', listener);
     return () => ipcRenderer.removeListener('spotify:parseProgress', listener);
-  },
-  vkParse: (payload) => ipcRenderer.invoke('vk:parsePlaylist', payload),
-  onVkParseProgress: (cb) => {
-    const listener = (_e, data) => cb(data);
-    ipcRenderer.on('vk:parseProgress', listener);
-    return () => ipcRenderer.removeListener('vk:parseProgress', listener);
   },
   discordConnect: (clientId) => ipcRenderer.invoke('discord:connect', { clientId }),
   discordDisconnect: () => ipcRenderer.invoke('discord:disconnect'),

@@ -1238,35 +1238,35 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .dl-search-btn-secondary:hover { background: var(--active-bg); opacity: 1; }
 
 .dl-results-head-ym,
-.dl-row-ym {
+.dl-row-parse {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.4fr) 70px 160px;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
 }
-.dl-row-ym + .dl-row-ym { border-top: 1px solid var(--border); }
-.dl-row-ym:hover { background: var(--active-bg); }
-.dl-row-ym .num {
+.dl-row-parse + .dl-row-parse { border-top: 1px solid var(--border); }
+.dl-row-parse:hover { background: var(--active-bg); }
+.dl-row-parse .num {
   font-size: 12px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
-.dl-row-ym .artist,
-.dl-row-ym .title {
+.dl-row-parse .artist,
+.dl-row-parse .title {
   font-size: 13px;
   color: var(--text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.dl-row-ym .artist { color: var(--text-muted); }
-.dl-row-ym .duration {
+.dl-row-parse .artist { color: var(--text-muted); }
+.dl-row-parse .duration {
   font-size: 12px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
-.dl-row-ym .action {
+.dl-row-parse .action {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1496,10 +1496,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 
 /* The YM action column needs to fit two buttons now. */
 .dl-results-head-ym,
-.dl-row-ym {
+.dl-row-parse {
   grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.4fr) 70px 240px;
 }
-.dl-row-ym .action { gap: 6px; }
+.dl-row-parse .action { gap: 6px; }
 .dl-queue-btn { padding: 6px 10px; }
 
 /* YouTube Music parser rows carry a cover thumbnail — an extra column after #. */
@@ -1515,7 +1515,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   flex-shrink: 0;
 }
 
-.dl-ym-queue-all {
+.dl-queue-all {
   margin: 0 0 12px;
   background: transparent;
   color: var(--text-strong);
@@ -1523,7 +1523,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 7px 14px;
   font-size: 12px;
 }
-.dl-ym-queue-all:hover { background: var(--active-bg); opacity: 1; }
+.dl-queue-all:hover { background: var(--active-bg); opacity: 1; }
 
 .dl-queue-head {
   display: flex;

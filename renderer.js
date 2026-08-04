@@ -10,10 +10,8 @@ const LS = {
   recents: 'audex-recents',
   updateDismiss: 'audex-update-dismiss',
   ytState: 'audex-dl-yt-state',
-  ymState: 'audex-dl-ym-state',
   ytmState: 'audex-dl-ytm-state',
   spState: 'audex-dl-sp-state',
-  vkState: 'audex-dl-vk-state',
   queue: 'audex-dl-queue',
   wavePeaks: 'audex-wave-peaks',
   playLog: 'audex-play-log',
@@ -74,20 +72,22 @@ const DISCORD_DEFAULTS = {
   privacyPrivate: false,
   buttons: [
     { label: 'GitHub', url: 'https://github.com/MishaSok/audex-player' },
-    { label: 'Найти на YouTube', url: '' },
+    { label: 'Find on YouTube', url: '' },
   ],
 };
 settings.discord = Object.assign({}, DISCORD_DEFAULTS, settings.discord || {});
 if (!Array.isArray(settings.discord.buttons)) settings.discord.buttons = DISCORD_DEFAULTS.buttons.map(b => ({ ...b }));
-// One-time relabel of the old placeholder button to a clear GitHub link. Only
-// matches the exact legacy default, so it never overrides a user's own edits
-// and is idempotent (after relabel it no longer matches).
-(function migrateDiscordGithubButton() {
-  const b0 = settings.discord.buttons[0];
+// One-time relabel of the old Russian-language defaults. Only matches the exact
+// legacy labels, so it never overrides a user's own edits and is idempotent
+// (after relabel neither branch matches again).
+(function migrateDiscordButtonLabels() {
+  const [b0, b1] = settings.discord.buttons;
+  let changed = false;
   if (b0 && b0.label === 'Слушать в Audex' && b0.url === 'https://github.com/MishaSok/audex-player') {
-    b0.label = 'GitHub';
-    saveSettings();
+    b0.label = 'GitHub'; changed = true;
   }
+  if (b1 && b1.label === 'Найти на YouTube') { b1.label = 'Find on YouTube'; changed = true; }
+  if (changed) saveSettings();
 })();
 let discordConnected = false;
 let discordUser = null;
@@ -324,507 +324,6 @@ function saveWavePeaks() {
 // to every language in I18N, then either tag the HTML element with data-i18n
 // or call tr('your.key') in JS.
 const I18N = {
-  ru: {
-    'nav.library': 'Библиотека',
-    'update.available': 'Доступно обновление',
-    'update.download': 'Скачать',
-    'update.dismiss': 'Закрыть',
-    'nav.artists': 'Исполнители',
-    'nav.playlists': 'Плейлисты',
-    'nav.favorites': 'Избранное',
-    'nav.downloads': 'Загрузки',
-    'nav.editor': 'Редактор',
-    'cm.trim': 'Обрезать трек…',
-    'setting.editor': 'Редактор (обрезка треков)',
-    'setting.editorDesc': 'Раздел «Редактор» для обрезки треков: выбираете фрагмент на волне и сохраняете его в новый файл.',
-    'editor.pick': 'Выбрать трек',
-    'editor.pickSearch': 'Поиск по названию или исполнителю',
-    'editor.pickEmpty': 'Ничего не найдено',
-    'editor.empty.title': 'Обрезка треков',
-    'editor.empty.text': 'Выберите трек, отметьте начало и конец фрагмента на волне и сохраните его отдельным файлом. Оригинал остаётся нетронутым, если не выбрать перезапись.',
-    'editor.start': 'Начало',
-    'editor.end': 'Конец',
-    'editor.selection': 'Длительность фрагмента',
-    'editor.preview': 'Прослушать фрагмент',
-    'editor.previewStop': 'Остановить',
-    'editor.reset': 'Сбросить',
-    'editor.fadeIn': 'Нарастание, с',
-    'editor.fadeOut': 'Затухание, с',
-    'editor.gain': 'Громкость, дБ',
-    'editor.gainHint': 'Минус — тише, плюс — громче. 0 дБ — без изменений.',
-    'editor.gainClip': 'Пик превысит 0 дБ на {d} дБ — возможны искажения',
-    'editor.overwrite': 'Перезаписать оригинал',
-    'editor.overwriteDesc': 'По умолчанию рядом создаётся новый файл «— (обрезано)». Включите, чтобы заменить исходный файл.',
-    'editor.save': 'Обрезать и сохранить',
-    'editor.decoding': 'Читаем аудио…',
-    'editor.decodeError': 'Не удалось прочитать аудио',
-    'editor.saving': 'Обрезаем…',
-    'editor.saved': 'Сохранено: {f}',
-    'editor.saveError': 'Ошибка обрезки: {e}',
-    'editor.tooShort': 'Фрагмент слишком короткий',
-    'nav.search': 'Поиск',
-    'nav.recents': 'Недавнее',
-    'nav.openFiles': 'Открыть файлы',
-    'nav.settings': 'Настройки',
-    'nav.trending': 'В тренде',
-    'trending.refresh': 'Обновить',
-    'trending.loading': 'Загружаем чарт…',
-    'trending.error': 'Не удалось загрузить чарт: {e}',
-    'trending.unavailable': 'Недоступно в этой сборке',
-    'trending.count': '{n} треков',
-    'trending.download': 'Скачать',
-    'trending.have': 'В библиотеке',
-    'trending.retry': 'Повторить',
-    'trending.downloadOk': 'Скачано: {t}',
-    'trending.downloadError': 'Ошибка загрузки: {e}',
-    'trending.tryingAlt': 'Трек недоступен напрямую — ищем другой источник для «{t}»…',
-    'trending.downloadOkAlt': 'Скачано из другого источника: {t}',
-    'trending.err.geo': 'Этот трек заблокирован для вашей страны, и найти замену не удалось.',
-    'trending.err.unavailable': 'Видео удалено или недоступно, замену найти не удалось.',
-    'trending.err.signin': 'YouTube требует вход в аккаунт для этого трека.',
-    'trending.err.members': 'Трек доступен только подписчикам канала.',
-    'trending.err.network': 'Нет связи с YouTube. Проверьте подключение.',
-    'trending.offline': 'Нет подключения к интернету. Проверьте соединение и повторите.',
-    'trending.empty.title': 'Что сейчас слушают',
-    'trending.empty.text': 'Чарты YouTube Music по странам и жанрам. Выберите чарт — и скачивайте треки в один клик.',
-    'trending.region.global': 'Мир',
-    'trending.region.russia': 'Россия',
-    'trending.region.ukraine': 'Украина',
-    'trending.region.usa': 'США',
-    'trending.region.uk': 'Британия',
-    'trending.region.germany': 'Германия',
-    'trending.region.france': 'Франция',
-    'trending.region.turkey': 'Турция',
-    'trending.region.poland': 'Польша',
-    'trending.group.countries': 'Страны',
-    'trending.group.genres': 'Жанры',
-    'trending.genre.pop': 'Поп',
-    'trending.genre.hiphop': 'Хип-хоп',
-    'trending.genre.rock': 'Рок',
-    'trending.genre.electronic': 'Электроника',
-    'trending.genre.phonk': 'Фонк',
-    'trending.genre.rnb': 'R&B',
-    'trending.genre.chill': 'Chill',
-    'trending.genre.metal': 'Метал',
-    'trending.genre.latin': 'Латина',
-    'trending.genre.kpop': 'K-pop',
-    'trending.genre.jazz': 'Джаз',
-    'trending.genre.classical': 'Классика',
-    'trending.genre.country': 'Кантри',
-    'nav.report': 'Отчёт',
-    'report.onDevice': 'Считается на устройстве',
-    'report.eyebrow': 'Отчёт о прослушивании',
-    'report.period.day': 'День',
-    'report.period.week': 'Неделя',
-    'report.period.month': 'Месяц',
-    'report.period.year': 'Год',
-    'report.period.all': 'Всё время',
-    'report.allTime': 'За всё время',
-    'report.today': 'Сегодня',
-    'report.thisWeek': 'Эта неделя',
-    'report.listeningTime': 'Время прослушивания',
-    'report.vsPrev': 'к прошлому периоду',
-    'report.tracksPlayed': 'Треков сыграно',
-    'report.artists': 'Исполнителей',
-    'report.added': 'Добавлено в коллекцию',
-    'report.streak': 'Серия прослушиваний',
-    'report.days': 'дней',
-    'report.whenListen': 'Когда ты слушаешь',
-    'report.topArtists': 'Топ-исполнители',
-    'report.topTracks': 'Топ-треки',
-    'report.plays': 'просл.',
-    'report.minUnit': 'мин',
-    'report.hoursUnit': 'часов',
-    'report.hShort': 'ч',
-    'report.mShort': 'м',
-    'report.empty.title': 'Здесь появится твоя статистика',
-    'report.empty.text': 'Слушай музыку — отчёт соберётся из истории прослушивания на этом устройстве.',
-    'table.quality': 'Качество',
-    'quality.kbps': 'кбит/с',
-    'quality.note': 'Бейдж качества у каждого трека · ',
-    'quality.noteAmber': 'янтарный = подозрительная перекодировка',
-    'quality.cutoffMarker': 'срез',
-    'health.khz': 'кГц',
-    'nav.health': 'Состояние',
-    'health.crumb': 'Состояние библиотеки',
-    'health.lastScan': 'Последняя проверка:',
-    'health.never': 'ещё не проверялось',
-    'health.rescan': 'Пересканировать',
-    'health.scanning': 'Проверка {n} из {m}…',
-    'health.scoreLabel': 'Здоровье коллекции',
-    'health.ok': 'в порядке',
-    'health.okLegend': 'в порядке',
-    'health.flaggedLegend': 'требуют внимания',
-    'health.transcodeTitle': 'Похоже на перекодировку',
-    'health.claimed': 'Заявлено',
-    'health.real': 'реально ≈',
-    'health.spectrumCaption': 'Спектр обрывается на {cut} кГц, хотя высокий битрейт держит частоты до ~20 кГц.{lame}',
-    'health.noLame': ' LAME-тег отсутствует.',
-    'health.issuesLabel': 'Найденные проблемы',
-    'health.show': 'Показать',
-    'health.fix': 'Починить',
-    'health.allGood': 'Проблем не найдено',
-    'health.allGoodText': 'Коллекция в отличном состоянии.',
-    'health.noData': 'Запусти проверку, чтобы оценить состояние библиотеки.',
-    'health.analyzing': 'Анализ спектра…',
-    'health.filterNote': 'Результат проверки: {label}',
-    'health.clearFilter': 'Сбросить',
-    'issue.transcode.title': 'Подозрительная перекодировка',
-    'issue.transcode.desc': 'Битрейт заявлен высоким, но спектр обрывается рано — вероятно, перекодировано из низкого качества.',
-    'issue.lowbitrate.title': 'Низкий битрейт (< 192 кбит/с)',
-    'issue.lowbitrate.desc': 'Файлы 128 кбит/с и ниже. Можно заменить на версии получше.',
-    'issue.nocover.title': 'Без обложки',
-    'issue.nocover.desc': 'Треки без встроенного изображения альбома.',
-    'issue.tags.title': 'Неполные теги',
-    'issue.tags.desc': 'Пустые поля исполнителя, альбома или года.',
-    'issue.dupes.title': 'Возможные дубликаты',
-    'issue.dupes.desc': 'Совпадают исполнитель и название при разных файлах.',
-    'section.discord': 'Discord Rich Presence',
-    'discord.subtitle': 'Показывайте друзьям, что вы слушаете, прямо в профиле Discord — с обложкой, таймером и кнопками для перехода к треку.',
-    'discord.statusConnected': 'Подключено',
-    'discord.statusDisconnected': 'Не подключено',
-    'discord.connect': 'Подключить Discord',
-    'discord.disconnect': 'Отключить',
-    'discord.connectHint': 'Свяжите аккаунт, чтобы транслировать прослушивание в профиль.',
-    'discord.sessionActive': 'сессия активна',
-    'discord.connecting': 'Подключение…',
-    'discord.connectError': 'Не удалось подключиться. Убедитесь, что Discord запущен.',
-    'discord.waitingForDiscord': 'Discord не запущен — подключусь автоматически, когда он откроется.',
-    'discord.noClientId': 'Не задан Discord Client ID. Укажите его в DISCORD_CLIENT_ID в renderer.js.',
-    'discord.show': 'Что показывать',
-    'discord.showTitle': 'Название трека',
-    'discord.showTitleDesc': 'Основная строка активности.',
-    'discord.showArtist': 'Исполнитель и альбом',
-    'discord.showArtistDesc': 'Вторая строка под названием.',
-    'discord.showCover': 'Обложка альбома',
-    'discord.showCoverDesc': 'Большое изображение карточки.',
-    'discord.showTimer': 'Таймер трека',
-    'discord.showTimerDesc': 'Прошедшее и общее время с прогрессом.',
-    'discord.showPaused': 'Показывать на паузе',
-    'discord.showPausedDesc': 'Оставлять статус, когда воспроизведение остановлено.',
-    'discord.buttons': 'Кнопки на профиле',
-    'discord.buttonsHint': 'Discord допускает не более двух кнопок в активности. Ссылки должны начинаться с http(s)://',
-    'discord.btnLabel': 'Подпись',
-    'discord.btnUrl': 'Ссылка',
-    'discord.btnLabelPh': 'Текст кнопки',
-    'discord.btnUrlPh': 'https://…',
-    'discord.privacy': 'Приватность',
-    'discord.privacyInvisible': 'Скрывать в режиме «Невидимый»',
-    'discord.privacyInvisibleDesc': 'Не транслировать статус, когда вы оффлайн в Discord.',
-    'discord.privacyPrivate': 'Отключать для приватных плейлистов',
-    'discord.privacyPrivateDesc': 'Треки из закрытых плейлистов не попадут в профиль.',
-    'discord.preview': 'Как видят друзья',
-    'discord.previewListening': 'Слушает Audex',
-    'discord.previewPaused': 'Слушал · на паузе',
-    'discord.previewPlaceholder': 'Статус появится в профиле после подключения Discord',
-    'discord.previewNote': 'Карточка обновляется в реальном времени при смене трека, паузе и перемотке.',
-    'discord.previewOnline': 'В сети',
-    'discord.previewEmptyTrack': 'Ничего не играет',
-    'crumb.collection': 'Коллекция',
-    'search.placeholder': 'Поиск…',
-    'search.artistPlaceholder': 'Поиск исполнителя…',
-    'search.trackPlaceholder': 'Поиск трека…',
-    'filter.all': 'Все',
-    'filter.recent': 'Недавно добавленные',
-    'filter.favorites': 'Только избранное',
-    'sort.label': 'Сортировка:',
-    'sort.dateDesc': 'Дата добавления ↓',
-    'sort.dateAsc': 'Дата добавления ↑',
-    'sort.titleAsc': 'Название А→Я',
-    'sort.titleDesc': 'Название Я→А',
-    'sort.artistAsc': 'Исполнитель А→Я',
-    'sort.artistDesc': 'Исполнитель Я→А',
-    'sort.durationAsc': 'Длительность ↑',
-    'sort.durationDesc': 'Длительность ↓',
-    'sort.alpha': 'По алфавиту',
-    'sort.byTracks': 'По числу треков',
-    'sort.recent': 'Недавно добавленные',
-    'table.title': 'Название',
-    'table.artist': 'Исполнитель',
-    'table.album': 'Альбом',
-    'table.time': 'Время',
-    'empty.library.title': 'Библиотека пуста',
-    'empty.library.text': 'Открой файлы или папку, чтобы начать.',
-    'empty.playlists.title': 'Плейлистов пока нет',
-    'empty.playlists.text': 'Создай свой первый плейлист — собери треки по настроению, времени дня или альбому.',
-    'empty.artists.title': 'Исполнителей пока нет',
-    'empty.artists.text': 'Добавь треки в библиотеку, чтобы увидеть здесь список исполнителей.',
-    'empty.favorites.title': 'Нет избранных треков',
-    'empty.favorites.text': 'Нажми сердечко на любом треке, чтобы добавить его сюда.',
-    'btn.newPlaylist': 'Новый плейлист',
-    'btn.playAll': 'Играть всё',
-    'btn.shuffle': 'Перемешать',
-    'btn.deletePlaylist': 'Удалить плейлист',
-    'btn.choose': 'Выбрать…',
-    'btn.cancel': 'Отмена',
-    'btn.delete': 'Удалить',
-    'select.enter': 'Выбрать',
-    'select.count': 'Выбрано: {n}',
-    'select.all': 'Выбрать все',
-    'modal.deleteTracks.title': 'Удалить выбранные треки?',
-    'modal.deleteTracks.text': '{count} будет удалено из библиотеки, а файлы — перемещены в корзину.',
-    'btn.create': 'Создать',
-    'btn.close': 'Закрыть',
-    'btn.save': 'Сохранить',
-    'btn.minimize': 'Свернуть',
-    'btn.portrait': 'Мобильный режим',
-    'btn.album': 'Альбом',
-    'btn.favorite': 'В избранное',
-    'btn.unfavorite': 'Убрать из избранного',
-    'btn.favoriteOn': 'В избранном',
-    'btn.addToPlaylist': 'В плейлист',
-    'tooltip.favorite': 'В избранное',
-    'tooltip.shuffle': 'Случайный порядок',
-    'tooltip.prev': 'Предыдущий',
-    'tooltip.playPause': 'Воспроизведение/Пауза',
-    'tooltip.next': 'Следующий',
-    'tooltip.repeat': 'Повтор',
-    'tooltip.fullscreen': 'Полноэкранный',
-    'tooltip.volume': 'Звук',
-    'tooltip.wip': 'Раздел находится в разработке',
-    'hint.favorites': 'Сохранённые треки появляются здесь',
-    'eyebrow.playlist': 'Плейлист',
-    'eyebrow.artist': 'Исполнитель',
-    'autoChip.artists': 'Список собирается автоматически из библиотеки',
-    'np.empty.title': 'Не выбрано',
-    'np.empty.artist': '—',
-    'fs.nowPlayingFrom': 'Сейчас играет · из',
-    'fs.fromLibrary': 'Библиотеки',
-    'fs.nowPlaying': 'Сейчас играет',
-    'fs.queue': 'Очередь',
-    'fs.queueAhead': '{n} впереди',
-    'downloads.tab.internet': 'Из интернета',
-    'downloads.tab.parsing': 'Парсинг',
-    'downloads.title': 'Скачивание из интернета',
-    'downloads.subtitle': 'Здесь появится возможность сохранять треки по прямой ссылке. Раздел в разработке.',
-    'downloads.parsing.title': 'Парсинг',
-    'downloads.parsing.subtitle': 'Здесь появится возможность собирать треки парсингом со страниц. Раздел в разработке.',
-    'downloads.yt.placeholder': 'Название трека или «исполнитель — трек»',
-    'downloads.yt.search': 'Найти',
-    'downloads.yt.hint': 'Поиск по YouTube · показывает несколько вариантов, чтобы выбрать нужный.',
-    'downloads.yt.col.title': 'Название',
-    'downloads.yt.col.channel': 'Канал',
-    'downloads.yt.col.duration': 'Длит.',
-    'downloads.yt.idle.title': 'Найдите трек на YouTube',
-    'downloads.yt.idle.text': 'Введите название — внизу появится список mp3, доступных для скачивания. Файлы сохраняются в папку по умолчанию (если она задана в настройках) или в «Audex Downloads», и автоматически добавляются в библиотеку.',
-    'downloads.yt.searching': 'Ищу: «{q}»…',
-    'downloads.yt.empty': 'Ничего не найдено по запросу «{q}».',
-    'downloads.yt.error': 'Ошибка поиска: {e}',
-    'downloads.yt.action.download': 'Скачать',
-    'downloads.yt.action.downloading': 'Загрузка…',
-    'downloads.yt.action.done': 'Готово',
-    'downloads.yt.action.retry': 'Повторить',
-    'downloads.yt.downloadError': 'Не удалось: {e}',
-    'downloads.yt.downloadOk': 'Скачано и добавлено в библиотеку: {t}',
-    'downloads.yt.tagNote': 'После скачивания, возможно, потребуется вручную поправить MP3-теги (название, исполнитель, обложка) через контекстное меню трека.',
-    'downloads.parsing.subtab.yandex': 'Яндекс.Музыка',
-    'downloads.parsing.urlPlaceholder': 'https://music.yandex.ru/playlists/…',
-    'downloads.parsing.start': 'Парсить',
-    'downloads.parsing.hint': 'Вставьте ссылку на плейлист или альбом. Парсер работает в фоне.',
-    'downloads.parsing.col.artist': 'Исполнитель',
-    'downloads.parsing.col.title': 'Название',
-    'downloads.parsing.col.duration': 'Длит.',
-    'downloads.parsing.idle.title': 'Парсинг Яндекс.Музыки',
-    'downloads.parsing.idle.text': 'Вставьте ссылку на плейлист или альбом из «Яндекс.Музыки». Приложение соберёт список треков в фоне, и вы сможете скачать любой одним кликом.',
-    'downloads.parsing.subtab.ytmusic': 'YouTube Music',
-    'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
-    'downloads.ytm.hint': 'Ссылка на альбом, сингл или исполнителя из YouTube Music. Логин и браузер не нужны.',
-    'downloads.ytm.idle.title': 'Парсинг YouTube Music',
-    'downloads.ytm.idle.text': 'Вставьте ссылку на альбом, сингл или страницу исполнителя из YouTube Music. Приложение соберёт список треков, и вы сможете скачать любой одним кликом.',
-    'downloads.parsing.subtab.spotify': 'Spotify',
-    'downloads.sp.urlPlaceholder': 'https://open.spotify.com/playlist/…',
-    'downloads.sp.hint': 'Ссылка на плейлист, альбом или исполнителя из Spotify. Парсер работает в фоне.',
-    'downloads.sp.idle.title': 'Парсинг Spotify',
-    'downloads.sp.idle.text': 'Вставьте ссылку на плейлист или альбом из Spotify. Приложение откроет браузер, соберёт список треков, и вы сможете скачать любой одним кликом.',
-    'downloads.parsing.subtab.vk': 'ВКонтакте',
-    'downloads.vk.urlPlaceholder': 'https://vk.com/music/playlist/…',
-    'downloads.vk.hint': 'Ссылка на плейлист или раздел «Моя музыка» из ВКонтакте. Вход выполняется в окне браузера и сохраняется.',
-    'downloads.vk.idle.title': 'Парсинг ВКонтакте',
-    'downloads.vk.idle.text': 'Вставьте ссылку на плейлист или свою музыку из ВКонтакте. Приложение откроет браузер (при первом запуске войдите в аккаунт), соберёт список треков, и вы сможете скачать любой одним кликом.',
-    'downloads.parsing.starting': 'Запускаем парсер…',
-    'downloads.parsing.done': 'Готово — собрано треков: {n}',
-    'downloads.parsing.error': 'Ошибка парсинга: {e}',
-    'settings.title': 'Настройки',
-    'settings.subtitle': 'Внешний вид, источники музыки и поведение приложения.',
-    'section.appearance': 'Внешний вид',
-    'section.background': 'Фон',
-    'setting.bgSource': 'Фоновое изображение',
-    'setting.bgSourceDesc': 'Своя картинка или обложка текущего трека под интерфейсом.',
-    'bg.none': 'Нет',
-    'bg.image': 'Картинка',
-    'bg.cover': 'Обложка',
-    'setting.bgFile': 'Файл',
-    'setting.bgFileDesc': 'Копируется внутрь приложения, поэтому оригинал можно перемещать.',
-    'bg.noFile': 'Файл не выбран',
-    'bg.clear': 'Убрать',
-    'setting.bgFit': 'Вписывание',
-    'bg.fit.cover': 'Заполнить',
-    'bg.fit.contain': 'Целиком',
-    'bg.fit.center': 'По центру',
-    'bg.fit.tile': 'Плитка',
-    'setting.bgBlur': 'Размытие',
-    'setting.bgDim': 'Затемнение',
-    'setting.bgDimDesc': 'Чем больше, тем читаемее текст поверх картинки.',
-    'setting.surfaceAlpha': 'Непрозрачность панелей',
-    'setting.surfaceAlphaDesc': 'Насколько сквозь боковое меню и панель плеера видно фон.',
-    'section.music': 'Музыка',
-    'section.downloads': 'Скачивание из интернета',
-    'section.language': 'Язык',
-    'section.about': 'О приложении',
-    'section.contacts': 'Контакты',
-    'setting.github': 'GitHub',
-    'setting.githubDesc': 'Исходный код проекта на GitHub.',
-    'setting.telegram': 'Telegram',
-    'setting.telegramDesc': 'Нашли баг или есть предложение — пишите в Telegram.',
-    'theme.dark': 'Тёмная',
-    'theme.light': 'Светлая',
-    'theme.system': 'Системная',
-    'setting.theme': 'Тема',
-    'setting.themeDesc': 'Цветовая схема приложения.',
-    'setting.accent': 'Цвет акцента',
-    'setting.accentDesc': 'Подсветка активных элементов и текущего трека.',
-    'setting.accentDefault': 'По умолчанию',
-    'setting.accentCustom': 'Свой цвет',
-    'setting.defaultFolder': 'Папка по умолчанию',
-    'setting.defaultFolderDesc': 'Откуда загружать треки при запуске.',
-    'setting.uiScale': 'Масштаб интерфейса',
-    'setting.uiScaleDesc': 'Делает весь интерфейс крупнее или мельче. Применяется сразу.',
-    'setting.uiScaleReset': 'Сбросить',
-    'setting.scanSubdirs': 'Сканировать подпапки',
-    'setting.scanSubdirsDesc': 'Учитывать вложенные директории при индексации.',
-    'setting.healthCheck': 'Проверка качества (Health-check)',
-    'setting.healthCheckDesc': 'Раздел «Состояние библиотеки» и столбец «Качество» в списках треков. Выключено — колонка и раздел скрыты полностью.',
-    'setting.reports': 'Отчёт о прослушивании',
-    'setting.reportsDesc': 'Раздел «Отчёт» со статистикой прослушивания. Статистика собирается всегда, даже когда раздел скрыт.',
-    'setting.crossfade': 'Плавный переход между треками',
-    'setting.crossfadeDesc': 'Треки перетекают друг в друга: конец текущего затихает, пока следующий нарастает. Действует и в конце трека, и при ручном переключении.',
-    'setting.showDownloads': 'Показать вкладку «Загрузки»',
-    'setting.showDownloadsDesc': 'Откроет в боковом меню раздел для скачивания треков по ссылке.',
-    'setting.showParserBrowser': 'Показывать окно браузера при парсинге',
-    'setting.showParserBrowserDesc': 'Нужно, чтобы войти в Яндекс или Spotify при первом запуске, пройти капчу или увидеть, на чём парсер споткнулся. Если выключить — браузер запустится в фоне и окно не появится.',
-    'setting.showTrending': 'Показать вкладку «В тренде»',
-    'setting.showTrendingDesc': 'Раздел с чартами YouTube Music по странам и скачиванием в один клик. Требует интернета.',
-    'section.system': 'Система',
-    'section.hotkeys': 'Горячие клавиши',
-    'hotkeys.intro': 'Нажмите на сочетание, затем — нужную клавишу или кнопку мыши. Esc — отмена, Backspace — очистить.',
-    'hotkeys.globalNote': 'Значок монитора включает работу сочетания, когда окно свёрнуто. Нужен модификатор (Ctrl, Alt или Shift); кнопки мыши так не работают.',
-    'hotkeys.escNote': 'Esc всегда закрывает открытое окно и не переназначается.',
-    'hotkeys.resetAll': 'Сбросить всё',
-    'hotkeys.press': 'Нажмите клавиши…',
-    'hotkeys.revert': 'Вернуть по умолчанию',
-    'hotkeys.global': 'Работает, когда окно свёрнуто (глобально в системе)',
-    'hotkeys.globalNeedsMod': 'Для глобальной работы нужен модификатор: Ctrl, Alt или Shift',
-    'hotkeys.globalNoMouse': 'Кнопки мыши не могут работать глобально',
-    'hotkeys.globalUnsupported': 'Эту клавишу нельзя зарегистрировать глобально',
-    'hotkeys.globalFailed': 'Сочетание занято другим приложением',
-    'hotkeys.globalUnavailable': 'Глобальные сочетания недоступны в сессии Wayland. Используйте медиаклавиши — они работают через MPRIS.',
-    'mouse.middle': 'Сред. кнопка',
-    'mouse.back': 'Мышь «Назад»',
-    'mouse.forward': 'Мышь «Вперёд»',
-    'mouse.other': 'Мышь {n}',
-    'hotkey.playPause': 'Воспроизведение / пауза',
-    'hotkey.nextTrack': 'Следующий трек',
-    'hotkey.prevTrack': 'Предыдущий трек',
-    'hotkey.seekForward': 'Перемотать вперёд на 5 с',
-    'hotkey.seekBackward': 'Перемотать назад на 5 с',
-    'hotkey.volumeUp': 'Громче',
-    'hotkey.volumeDown': 'Тише',
-    'hotkey.mute': 'Выключить звук',
-    'hotkey.favorite': 'В избранное',
-    'hotkey.shuffle': 'Случайный порядок',
-    'hotkey.repeat': 'Режим повтора',
-    'hotkey.fullscreen': 'Полноэкранный плеер',
-    'hotkey.palette': 'Командная палитра',
-    'hotkey.editTags': 'Редактировать теги',
-    'hotkey.settings': 'Открыть настройки',
-    'setting.hardwareAcceleration': 'Аппаратное ускорение',
-    'setting.hardwareAccelerationDesc': 'Использует видеокарту для отрисовки интерфейса. Если приложение зависает при запуске или работает с артефактами — выключите. Изменение применится после перезапуска.',
-    'setting.uiLanguage': 'Язык интерфейса',
-    'setting.uiLanguageDesc': 'Применяется сразу.',
-    'setting.version': 'Версия',
-    'badge.wip': 'в разработке',
-    'placeholder.noFolder': '— не выбрана —',
-    'modal.deleteTrack.title': 'Удалить трек?',
-    'modal.deleteTrack.text': 'Трек будет удалён из библиотеки, а файл — перемещён в корзину.',
-    'modal.deleteTrackFull.text': '«{title}» от {artist} будет удалён из библиотеки, а сам файл — перемещён в корзину.',
-    'modal.deletePlaylist.title': 'Удалить плейлист?',
-    'modal.deletePlaylist.text': 'Плейлист «{name}» будет удалён. Треки в библиотеке останутся.',
-    'modal.newPlaylist.title': 'Новый плейлист',
-    'modal.newPlaylist.namePh': 'Название плейлиста',
-    'modal.newPlaylist.descPh': 'Описание (необязательно)',
-    'modal.editPlaylist.title': 'Изменить плейлист',
-    'modal.editPlaylist.avatarChoose': 'Выбрать изображение',
-    'modal.editPlaylist.avatarRemove': 'Убрать обложку',
-    'cm.plEdit': 'Изменить плейлист…',
-    'splash.loading': 'Загрузка интерфейса',
-    'splash.covers': 'Загрузка обложек',
-    'splash.caching': 'Кеширование обложек {n} / {total}',
-    'splash.scanning': 'Сканирование библиотеки',
-    'cm.plDelete': 'Удалить плейлист',
-    'modal.addToPlaylist.title': 'Добавить в плейлист',
-    'modal.addToPlaylist.empty': 'Сначала создай плейлист на вкладке «Плейлисты».',
-    'modal.addToPlaylist.alreadyAdded': 'уже добавлен',
-    'editor.title': 'Редактировать теги',
-    'editor.cover': 'Обложка',
-    'editor.field.title': 'Название',
-    'editor.field.artist': 'Исполнитель',
-    'editor.field.album': 'Альбом',
-    'editor.field.albumArtist': 'Исп. альбома',
-    'editor.field.year': 'Год',
-    'editor.field.genre': 'Жанр',
-    'editor.field.trackNo': 'Трек №',
-    'editor.field.discNo': 'Диск №',
-    'editor.field.comment': 'Комментарий',
-    'editor.commentPh': 'Заметка о треке…',
-    'editor.coverEmbed': 'Встроенная обложка',
-    'editor.noCover': 'Нет обложки',
-    'editor.saving': 'Сохранение…',
-    'editor.saved': 'Сохранено ✓',
-    'editor.errorSave': 'Ошибка сохранения',
-    'cm.play': 'Играть',
-    'cm.addToPlaylist': 'Добавить в плейлист',
-    'cm.removeFromPlaylist': 'Убрать из плейлиста',
-    'cm.reveal': 'Показать в папке',
-    'cm.editTags': 'Редактировать теги…',
-    'cm.delete': 'Удалить из библиотеки',
-    'palette.placeholder': 'Поиск трека, альбома, действия…',
-    'palette.nav': '↑↓ навигация',
-    'palette.choose': '↵ выбрать',
-    'palette.close': 'ESC закрыть',
-    'palette.tracks': 'Треки',
-    'palette.actions': 'Действия',
-    'palette.itemHint': '↵ играть',
-    'palette.empty': 'Ничего не найдено',
-    'palette.action.openFiles': 'Открыть файлы…',
-    'palette.action.gotoSettings': 'Перейти в Настройки',
-    'palette.action.gotoPlaylists': 'Перейти в Плейлисты',
-    'palette.action.gotoFavorites': 'Перейти в Избранное',
-    'label.unknownArtist': 'Неизвестный исполнитель',
-    'label.noAlbum': 'Без альбома',
-    'label.tracksShort': 'тр.',
-    'error.deleteFile': 'Не удалось удалить файл с диска: ',
-    'error.unknown': 'неизвестная ошибка',
-    'downloads.tab.queue': 'Очередь',
-    'downloads.queue.add': 'В очередь',
-    'downloads.queue.queued': 'В очереди',
-    'downloads.queue.addAll': 'Все треки в очередь',
-    'downloads.queue.remove': 'Убрать из очереди',
-    'downloads.queue.clearDone': 'Очистить завершённые',
-    'downloads.queue.clearAll': 'Очистить всё',
-    'downloads.queue.empty.title': 'Очередь пуста',
-    'downloads.queue.empty.text': 'Добавьте треки в очередь со вкладки «Парсинг», и они начнут скачиваться один за другим.',
-    'downloads.queue.status.queued': 'Ожидает',
-    'downloads.queue.status.downloading': 'Скачивается',
-    'downloads.queue.status.done': 'Готово',
-    'downloads.queue.status.error': 'Ошибка',
-    'downloads.queue.stats.downloading': 'качается: {n}',
-    'downloads.queue.stats.queued': 'в очереди: {n}',
-    'downloads.queue.stats.done': 'готово: {n}',
-    'downloads.queue.stats.error': 'ошибок: {n}',
-    'downloads.queue.stats.paused': 'на паузе',
-    'downloads.queue.pause': 'Пауза',
-    'downloads.queue.resume': 'Продолжить',
-  },
   en: {
     'nav.library': 'Library',
     'update.available': 'Update available',
@@ -855,7 +354,7 @@ const I18N = {
     'editor.gainHint': 'Minus is quieter, plus is louder. 0 dB leaves it unchanged.',
     'editor.gainClip': 'Peak will exceed 0 dB by {d} dB — clipping likely',
     'editor.overwrite': 'Overwrite original',
-    'editor.overwriteDesc': 'By default a new “— (обрезано)” file is created next to it. Enable to replace the source file.',
+    'editor.overwriteDesc': 'By default a new “— (trimmed)” file is created next to it. Enable to replace the source file.',
     'editor.save': 'Trim and save',
     'editor.decoding': 'Reading audio…',
     'editor.decodeError': 'Could not read the audio',
@@ -889,7 +388,6 @@ const I18N = {
     'trending.empty.title': 'What people are listening to',
     'trending.empty.text': 'YouTube Music charts by country and genre. Pick a chart and download tracks in one click.',
     'trending.region.global': 'Global',
-    'trending.region.russia': 'Russia',
     'trending.region.ukraine': 'Ukraine',
     'trending.region.usa': 'USA',
     'trending.region.uk': 'UK',
@@ -1118,15 +616,10 @@ const I18N = {
     'downloads.yt.downloadError': 'Failed: {e}',
     'downloads.yt.downloadOk': 'Downloaded and added to library: {t}',
     'downloads.yt.tagNote': 'After downloading, you may need to manually fix the MP3 tags (title, artist, cover) via the track context menu.',
-    'downloads.parsing.subtab.yandex': 'Yandex Music',
-    'downloads.parsing.urlPlaceholder': 'https://music.yandex.com/playlists/…',
     'downloads.parsing.start': 'Parse',
-    'downloads.parsing.hint': 'Paste a playlist or album link. Parsing runs in the background.',
     'downloads.parsing.col.artist': 'Artist',
     'downloads.parsing.col.title': 'Title',
     'downloads.parsing.col.duration': 'Dur.',
-    'downloads.parsing.idle.title': 'Parse Yandex Music',
-    'downloads.parsing.idle.text': 'Paste a playlist or album link from Yandex Music. The app will collect the track list in the background, and let you download any of them in one click.',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
     'downloads.ytm.hint': 'Link to an album, single, or artist on YouTube Music. No login or browser needed.',
@@ -1137,11 +630,6 @@ const I18N = {
     'downloads.sp.hint': 'Link to a playlist, album, or artist on Spotify. The parser runs in the background.',
     'downloads.sp.idle.title': 'Spotify parsing',
     'downloads.sp.idle.text': 'Paste a playlist or album link from Spotify. The app will open a browser, collect the track list, and let you download any of them in one click.',
-    'downloads.parsing.subtab.vk': 'VK',
-    'downloads.vk.urlPlaceholder': 'https://vk.com/music/playlist/…',
-    'downloads.vk.hint': 'Link to a VK playlist or your VK music. You sign in inside the browser window; the login is remembered.',
-    'downloads.vk.idle.title': 'VK parsing',
-    'downloads.vk.idle.text': 'Paste a link to a VK playlist or your music. The app will open a browser (sign in on first run), collect the track list, and let you download any of them in one click.',
     'downloads.parsing.starting': 'Starting parser…',
     'downloads.parsing.done': 'Done — {n} tracks collected',
     'downloads.parsing.error': 'Parsing error: {e}',
@@ -1202,7 +690,7 @@ const I18N = {
     'setting.showDownloads': 'Show the “Downloads” tab',
     'setting.showDownloadsDesc': 'Adds a section to the sidebar for downloading tracks by URL.',
     'setting.showParserBrowser': 'Show the browser window while parsing',
-    'setting.showParserBrowserDesc': 'Useful for signing in to Yandex or Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.',
+    'setting.showParserBrowserDesc': 'Useful for signing in to Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.',
     'setting.showTrending': 'Show the “Trending” tab',
     'setting.showTrendingDesc': 'A section with YouTube Music charts by country and one-click downloads. Requires the internet.',
     'section.system': 'System',
@@ -1356,7 +844,7 @@ const I18N = {
     'editor.gainHint': 'Minus ist leiser, Plus ist lauter. 0 dB lässt sie unverändert.',
     'editor.gainClip': 'Spitze überschreitet 0 dB um {d} dB — Übersteuerung wahrscheinlich',
     'editor.overwrite': 'Original überschreiben',
-    'editor.overwriteDesc': 'Standardmäßig wird daneben eine neue Datei „— (обрезано)“ erstellt. Aktivieren, um die Quelldatei zu ersetzen.',
+    'editor.overwriteDesc': 'Standardmäßig wird daneben eine neue Datei „— (trimmed)“ erstellt. Aktivieren, um die Quelldatei zu ersetzen.',
     'editor.save': 'Zuschneiden und speichern',
     'editor.decoding': 'Audio wird gelesen…',
     'editor.decodeError': 'Audio konnte nicht gelesen werden',
@@ -1390,7 +878,6 @@ const I18N = {
     'trending.empty.title': 'Was gerade gehört wird',
     'trending.empty.text': 'YouTube-Music-Charts nach Ländern und Genres. Chart wählen und Titel mit einem Klick laden.',
     'trending.region.global': 'Global',
-    'trending.region.russia': 'Russland',
     'trending.region.ukraine': 'Ukraine',
     'trending.region.usa': 'USA',
     'trending.region.uk': 'GB',
@@ -1619,15 +1106,10 @@ const I18N = {
     'downloads.yt.downloadError': 'Fehlgeschlagen: {e}',
     'downloads.yt.downloadOk': 'Heruntergeladen und zur Bibliothek hinzugefügt: {t}',
     'downloads.yt.tagNote': 'Nach dem Download müssen die MP3-Tags (Titel, Interpret, Cover) eventuell manuell über das Kontextmenü des Titels angepasst werden.',
-    'downloads.parsing.subtab.yandex': 'Yandex Music',
-    'downloads.parsing.urlPlaceholder': 'https://music.yandex.com/playlists/…',
     'downloads.parsing.start': 'Parsen',
-    'downloads.parsing.hint': 'Fügen Sie einen Playlist- oder Albumlink ein. Der Parser läuft im Hintergrund.',
     'downloads.parsing.col.artist': 'Interpret',
     'downloads.parsing.col.title': 'Titel',
     'downloads.parsing.col.duration': 'Dauer',
-    'downloads.parsing.idle.title': 'Yandex Music parsen',
-    'downloads.parsing.idle.text': 'Füge einen Playlist- oder Album-Link von Yandex Music ein. Die App sammelt die Titelliste im Hintergrund, und du kannst jeden mit einem Klick herunterladen.',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
     'downloads.ytm.hint': 'Link zu einem Album, einer Single oder einem Interpreten auf YouTube Music. Kein Login oder Browser nötig.',
@@ -1638,11 +1120,6 @@ const I18N = {
     'downloads.sp.hint': 'Link zu einer Playlist, einem Album oder einem Interpreten auf Spotify. Der Parser läuft im Hintergrund.',
     'downloads.sp.idle.title': 'Spotify-Parsing',
     'downloads.sp.idle.text': 'Füge einen Playlist- oder Album-Link von Spotify ein. Die App öffnet einen Browser, sammelt die Titelliste, und du kannst jeden Titel mit einem Klick herunterladen.',
-    'downloads.parsing.subtab.vk': 'VK',
-    'downloads.vk.urlPlaceholder': 'https://vk.com/music/playlist/…',
-    'downloads.vk.hint': 'Link zu einer VK-Playlist oder deiner VK-Musik. Die Anmeldung erfolgt im Browserfenster und wird gespeichert.',
-    'downloads.vk.idle.title': 'VK-Parsing',
-    'downloads.vk.idle.text': 'Füge einen Link zu einer VK-Playlist oder deiner Musik ein. Die App öffnet einen Browser (beim ersten Start anmelden), sammelt die Titelliste, und du kannst jeden Titel mit einem Klick herunterladen.',
     'downloads.parsing.starting': 'Parser wird gestartet…',
     'downloads.parsing.done': 'Fertig — {n} Titel gesammelt',
     'downloads.parsing.error': 'Parsing-Fehler: {e}',
@@ -1703,7 +1180,7 @@ const I18N = {
     'setting.showDownloads': 'Tab „Downloads“ anzeigen',
     'setting.showDownloadsDesc': 'Öffnet einen Bereich in der Seitenleiste zum Herunterladen von Titeln per URL.',
     'setting.showParserBrowser': 'Browserfenster beim Parsen anzeigen',
-    'setting.showParserBrowserDesc': 'Nützlich, um sich beim ersten Start bei Yandex oder Spotify anzumelden, ein Captcha zu lösen oder zu sehen, wo der Parser hängengeblieben ist. Ausschalten, damit der Browser unsichtbar im Hintergrund läuft.',
+    'setting.showParserBrowserDesc': 'Nützlich, um sich beim ersten Start bei Spotify anzumelden, ein Captcha zu lösen oder zu sehen, wo der Parser hängengeblieben ist. Ausschalten, damit der Browser unsichtbar im Hintergrund läuft.',
     'setting.showTrending': 'Registerkarte „Im Trend“ anzeigen',
     'setting.showTrendingDesc': 'Ein Bereich mit YouTube-Music-Charts nach Ländern und Downloads mit einem Klick. Benötigt Internet.',
     'section.system': 'System',
@@ -1857,7 +1334,7 @@ const I18N = {
     'editor.gainHint': 'Moins pour baisser, plus pour monter. 0 dB ne change rien.',
     'editor.gainClip': 'Le pic dépassera 0 dB de {d} dB — saturation probable',
     'editor.overwrite': "Écraser l'original",
-    'editor.overwriteDesc': "Par défaut, un nouveau fichier « — (обрезано) » est créé à côté. Activez pour remplacer le fichier source.",
+    'editor.overwriteDesc': "Par défaut, un nouveau fichier « — (trimmed) » est créé à côté. Activez pour remplacer le fichier source.",
     'editor.save': 'Découper et enregistrer',
     'editor.decoding': "Lecture de l'audio…",
     'editor.decodeError': "Impossible de lire l'audio",
@@ -1891,7 +1368,6 @@ const I18N = {
     'trending.empty.title': "Ce que l'on écoute en ce moment",
     'trending.empty.text': 'Classements YouTube Music par pays et par genre. Choisissez un classement et téléchargez en un clic.',
     'trending.region.global': 'Monde',
-    'trending.region.russia': 'Russie',
     'trending.region.ukraine': 'Ukraine',
     'trending.region.usa': 'États-Unis',
     'trending.region.uk': 'R.-U.',
@@ -2120,15 +1596,10 @@ const I18N = {
     'downloads.yt.downloadError': 'Échec : {e}',
     'downloads.yt.downloadOk': 'Téléchargé et ajouté à la bibliothèque : {t}',
     'downloads.yt.tagNote': "Après le téléchargement, il peut être nécessaire de corriger manuellement les tags MP3 (titre, artiste, pochette) via le menu contextuel de la piste.",
-    'downloads.parsing.subtab.yandex': 'Yandex Music',
-    'downloads.parsing.urlPlaceholder': 'https://music.yandex.com/playlists/…',
     'downloads.parsing.start': 'Analyser',
-    'downloads.parsing.hint': "Collez un lien de playlist ou d'album. L'analyse s'exécute en arrière-plan.",
     'downloads.parsing.col.artist': 'Artiste',
     'downloads.parsing.col.title': 'Titre',
     'downloads.parsing.col.duration': 'Durée',
-    'downloads.parsing.idle.title': 'Analyser Yandex Music',
-    'downloads.parsing.idle.text': "Collez un lien de playlist ou d'album depuis Yandex Music. L'app récupérera la liste des pistes en arrière-plan, et vous pourrez en télécharger n'importe laquelle en un clic.",
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
     'downloads.ytm.hint': 'Lien vers un album, un single ou un artiste sur YouTube Music. Aucune connexion ni navigateur requis.',
@@ -2139,11 +1610,6 @@ const I18N = {
     'downloads.sp.hint': "Lien vers une playlist, un album ou un artiste sur Spotify. L'analyseur fonctionne en arrière-plan.",
     'downloads.sp.idle.title': 'Analyse Spotify',
     'downloads.sp.idle.text': "Collez un lien de playlist ou d'album depuis Spotify. L'application ouvrira un navigateur, récupérera la liste des pistes, et vous pourrez en télécharger n'importe laquelle en un clic.",
-    'downloads.parsing.subtab.vk': 'VK',
-    'downloads.vk.urlPlaceholder': 'https://vk.com/music/playlist/…',
-    'downloads.vk.hint': 'Lien vers une playlist VK ou votre musique VK. La connexion se fait dans la fenêtre du navigateur et est mémorisée.',
-    'downloads.vk.idle.title': 'Analyse VK',
-    'downloads.vk.idle.text': "Collez un lien vers une playlist VK ou votre musique. L'application ouvrira un navigateur (connectez-vous au premier lancement), récupérera la liste des pistes, et vous pourrez en télécharger n'importe laquelle en un clic.",
     'downloads.parsing.starting': "Démarrage de l'analyseur…",
     'downloads.parsing.done': 'Terminé — {n} pistes collectées',
     'downloads.parsing.error': "Erreur d'analyse : {e}",
@@ -2204,7 +1670,7 @@ const I18N = {
     'setting.showDownloads': "Afficher l'onglet « Téléchargements »",
     'setting.showDownloadsDesc': 'Ajoute une section à la barre latérale pour télécharger des pistes par URL.',
     'setting.showParserBrowser': "Afficher la fenêtre du navigateur pendant l'analyse",
-    'setting.showParserBrowserDesc': "Utile pour se connecter à Yandex ou Spotify au premier lancement, résoudre un captcha ou voir où l'analyseur s'est bloqué. Désactivez pour exécuter le navigateur silencieusement en arrière-plan.",
+    'setting.showParserBrowserDesc': "Utile pour se connecter à Spotify au premier lancement, résoudre un captcha ou voir où l'analyseur s'est bloqué. Désactivez pour exécuter le navigateur silencieusement en arrière-plan.",
     'setting.showTrending': 'Afficher l’onglet « Tendances »',
     'setting.showTrendingDesc': 'Une section avec les classements YouTube Music par pays et des téléchargements en un clic. Nécessite Internet.',
     'section.system': 'Système',
@@ -2358,7 +1824,7 @@ const I18N = {
     'editor.gainHint': 'Мінус — тихіше, плюс — гучніше. 0 дБ — без змін.',
     'editor.gainClip': 'Пік перевищить 0 дБ на {d} дБ — можливі спотворення',
     'editor.overwrite': 'Перезаписати оригінал',
-    'editor.overwriteDesc': 'Типово поруч створюється новий файл «— (обрезано)». Увімкніть, щоб замінити вихідний файл.',
+    'editor.overwriteDesc': 'Типово поруч створюється новий файл «— (trimmed)». Увімкніть, щоб замінити вихідний файл.',
     'editor.save': 'Обрізати та зберегти',
     'editor.decoding': 'Читаємо аудіо…',
     'editor.decodeError': 'Не вдалося прочитати аудіо',
@@ -2392,7 +1858,6 @@ const I18N = {
     'trending.empty.title': 'Що зараз слухають',
     'trending.empty.text': 'Чарти YouTube Music за країнами та жанрами. Оберіть чарт — і завантажуйте треки одним кліком.',
     'trending.region.global': 'Світ',
-    'trending.region.russia': 'Росія',
     'trending.region.ukraine': 'Україна',
     'trending.region.usa': 'США',
     'trending.region.uk': 'Британія',
@@ -2621,15 +2086,10 @@ const I18N = {
     'downloads.yt.downloadError': 'Не вдалося: {e}',
     'downloads.yt.downloadOk': 'Завантажено і додано до бібліотеки: {t}',
     'downloads.yt.tagNote': 'Після завантаження, можливо, доведеться вручну виправити MP3-теги (назва, виконавець, обкладинка) через контекстне меню треку.',
-    'downloads.parsing.subtab.yandex': 'Яндекс.Музика',
-    'downloads.parsing.urlPlaceholder': 'https://music.yandex.ua/playlists/…',
     'downloads.parsing.start': 'Парсити',
-    'downloads.parsing.hint': 'Вставте посилання на плейлист або альбом. Парсер працює у фоновому режимі.',
     'downloads.parsing.col.artist': 'Виконавець',
     'downloads.parsing.col.title': 'Назва',
     'downloads.parsing.col.duration': 'Трив.',
-    'downloads.parsing.idle.title': 'Парсинг Яндекс.Музики',
-    'downloads.parsing.idle.text': 'Вставте посилання на плейлист або альбом з «Яндекс.Музики». Застосунок збере список треків у фоні, і ви зможете завантажити будь-який одним кліком.',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
     'downloads.ytm.hint': 'Посилання на альбом, сингл або виконавця з YouTube Music. Логін і браузер не потрібні.',
@@ -2640,11 +2100,6 @@ const I18N = {
     'downloads.sp.hint': 'Посилання на плейлист, альбом або виконавця зі Spotify. Парсер працює у фоні.',
     'downloads.sp.idle.title': 'Парсинг Spotify',
     'downloads.sp.idle.text': 'Вставте посилання на плейлист або альбом зі Spotify. Застосунок відкриє браузер, збере список треків, і ви зможете завантажити будь-який одним кліком.',
-    'downloads.parsing.subtab.vk': 'ВКонтакте',
-    'downloads.vk.urlPlaceholder': 'https://vk.com/music/playlist/…',
-    'downloads.vk.hint': 'Посилання на плейлист або розділ «Моя музика» з ВКонтакте. Вхід виконується у вікні браузера і зберігається.',
-    'downloads.vk.idle.title': 'Парсинг ВКонтакте',
-    'downloads.vk.idle.text': 'Вставте посилання на плейлист або свою музику з ВКонтакте. Застосунок відкриє браузер (за першого запуску увійдіть в акаунт), збере список треків, і ви зможете завантажити будь-який одним кліком.',
     'downloads.parsing.starting': 'Запускаємо парсер…',
     'downloads.parsing.done': 'Готово — зібрано треків: {n}',
     'downloads.parsing.error': 'Помилка парсингу: {e}',
@@ -2705,7 +2160,7 @@ const I18N = {
     'setting.showDownloads': 'Показати вкладку «Завантаження»',
     'setting.showDownloadsDesc': 'Відкриє в боковому меню розділ для завантаження треків за посиланням.',
     'setting.showParserBrowser': 'Показувати вікно браузера під час парсингу',
-    'setting.showParserBrowserDesc': 'Потрібно, щоб увійти в Яндекс або Spotify при першому запуску, пройти капчу або побачити, на чому парсер спіткнувся. Якщо вимкнути — браузер запуститься у фоні і вікно не з\'явиться.',
+    'setting.showParserBrowserDesc': 'Потрібно, щоб увійти в Spotify при першому запуску, пройти капчу або побачити, на чому парсер спіткнувся. Якщо вимкнути — браузер запуститься у фоні і вікно не з\'явиться.',
     'setting.showTrending': 'Показати вкладку «У тренді»',
     'setting.showTrendingDesc': 'Розділ із чартами YouTube Music за країнами та завантаженням у один клік. Потребує інтернету.',
     'section.system': 'Система',
@@ -2831,7 +2286,7 @@ const I18N = {
   },
 };
 
-// Slavic-style 3-form plural (ru, uk): n%10==1 && n%100!=11 → one;
+// Slavic-style 3-form plural (uk): n%10==1 && n%100!=11 → one;
 // n%10 in 2..4 && n%100 not in 12..14 → few; else → many.
 function slavicPluralIdx(n) {
   const mod10 = n % 10, mod100 = n % 100;
@@ -2840,14 +2295,8 @@ function slavicPluralIdx(n) {
   return 2;
 }
 // Pluralized noun forms for "tracks/albums/artists/playlists" per language.
-// ru/uk use [one, few, many]; en/de/fr use [one, other].
+// uk uses [one, few, many]; en/de/fr use [one, other].
 const PLURAL_FORMS = {
-  ru: {
-    tracks:    ['трек', 'трека', 'треков'],
-    albums:    ['альбом', 'альбома', 'альбомов'],
-    artists:   ['исполнитель', 'исполнителя', 'исполнителей'],
-    playlists: ['плейлист', 'плейлиста', 'плейлистов'],
-  },
   uk: {
     tracks:    ['трек', 'треки', 'треків'],
     albums:    ['альбом', 'альбоми', 'альбомів'],
@@ -2875,7 +2324,6 @@ const PLURAL_FORMS = {
 };
 // "h X min" / "X min" — total duration formatting.
 const DURATION_UNITS = {
-  ru: { h: 'ч', m: 'мин' },
   uk: { h: 'год', m: 'хв' },
   en: { h: 'h', m: 'min' },
   de: { h: 'h', m: 'Min' },
@@ -2885,9 +2333,9 @@ const DURATION_UNITS = {
 let currentLang = I18N[settings.language] ? settings.language : 'en';
 
 function tr(key, params) {
-  const dict = I18N[currentLang] || I18N.ru;
+  const dict = I18N[currentLang] || I18N.en;
   let s = dict[key];
-  if (s == null) s = I18N.ru[key] != null ? I18N.ru[key] : key;
+  if (s == null) s = I18N.en[key] != null ? I18N.en[key] : key;
   if (params) {
     for (const k in params) s = s.split('{' + k + '}').join(params[k]);
   }
@@ -2895,8 +2343,8 @@ function tr(key, params) {
 }
 
 function plural(kind, n) {
-  const forms = (PLURAL_FORMS[currentLang] || PLURAL_FORMS.ru)[kind];
-  const idx = (currentLang === 'ru' || currentLang === 'uk')
+  const forms = (PLURAL_FORMS[currentLang] || PLURAL_FORMS.en)[kind];
+  const idx = currentLang === 'uk'
     ? slavicPluralIdx(n)
     : (n === 1 ? 0 : 1);
   return forms[idx];
@@ -2904,7 +2352,7 @@ function plural(kind, n) {
 function withCount(kind, n) { return `${n} ${plural(kind, n)}`; }
 
 function applyLanguage(lang) {
-  if (!I18N[lang]) lang = 'ru';
+  if (!I18N[lang]) lang = 'en';
   currentLang = lang;
   document.documentElement.setAttribute('lang', lang);
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -2929,7 +2377,7 @@ function formatTotalDuration(tracks) {
   const total = tracks.reduce((a, t) => a + (t.duration || 0), 0);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
-  const u = DURATION_UNITS[currentLang] || DURATION_UNITS.ru;
+  const u = DURATION_UNITS[currentLang] || DURATION_UNITS.en;
   return h > 0 ? `${h} ${u.h} ${m} ${u.m}` : `${m} ${u.m}`;
 }
 function escapeHtml(s) {
@@ -3746,7 +3194,7 @@ let trLoading = false;
 // chart key -> i18n key for the label shown in the ComboBox button. Kept in sync
 // with the option list in index.html (#tr-chart-select).
 const TR_CHART_LABEL = {
-  global: 'trending.region.global', russia: 'trending.region.russia',
+  global: 'trending.region.global',
   ukraine: 'trending.region.ukraine', usa: 'trending.region.usa',
   uk: 'trending.region.uk', germany: 'trending.region.germany',
   france: 'trending.region.france', turkey: 'trending.region.turkey',
@@ -4230,229 +3678,8 @@ document.querySelectorAll('.dl-subtabs .dl-subtab').forEach(btn => {
   });
 });
 
-// ── Downloads: Yandex Music parsing ──
-let ymParseActive = false;
-let ymTracks = [];
-let ymDownloadReqSeq = 0;
-const ymActiveDownloads = new Map(); // requestId -> rowEl
-
-function setYmStatus(text, kind) {
-  const el = $('dl-ym-status');
-  if (!el) return;
-  el.classList.remove('is-error', 'is-ok');
-  if (!text) { el.hidden = true; el.textContent = ''; return; }
-  if (kind === 'error') el.classList.add('is-error');
-  else if (kind === 'ok') el.classList.add('is-ok');
-  el.hidden = false;
-  el.textContent = text;
-}
-
-function saveYmState() {
-  try {
-    const u = $('dl-ym-url');
-    localStorage.setItem(LS.ymState, JSON.stringify({
-      url: u ? u.value : '',
-      tracks: ymTracks,
-    }));
-  } catch (_) { /* ignore */ }
-}
-
-function renderYmResults(tracks) {
-  ymTracks = tracks || [];
-  saveYmState();
-  const wrap = $('dl-ym-results');
-  const rows = $('dl-ym-rows');
-  const empty = $('dl-ym-empty');
-  const note = $('dl-ym-tag-note');
-  const queueAllBtn = $('dl-ym-queue-all');
-  if (!wrap || !rows) return;
-  if (!ymTracks.length) {
-    wrap.hidden = true;
-    if (note) note.hidden = true;
-    if (empty) empty.classList.add('show');
-    if (queueAllBtn) queueAllBtn.hidden = true;
-    return;
-  }
-  if (empty) empty.classList.remove('show');
-  if (note) note.hidden = false;
-  if (queueAllBtn) {
-    queueAllBtn.hidden = false;
-    queueAllBtn.disabled = ymParseActive;
-  }
-  const disabledAttr = ymParseActive ? ' disabled' : '';
-  rows.innerHTML = ymTracks.map((t, i) => {
-    const queued = isYmTrackInQueue(t);
-    const queuedCls = queued ? ' is-done' : '';
-    const queueDis = ymParseActive || queued ? ' disabled' : '';
-    const queueLabel = queued ? tr('downloads.queue.queued') : tr('downloads.queue.add');
-    return `
-      <div class="dl-row-ym" data-ym-row="${i}">
-        <div class="num">${i + 1}</div>
-        <div class="artist" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
-        <div class="title" title="${escapeHtml(t.title || '')}">${escapeHtml(t.title || '')}</div>
-        <div class="duration">${escapeHtml(t.duration || '')}</div>
-        <div class="action">
-          <button type="button" class="dl-download-btn dl-queue-btn${queuedCls}" data-ym-queue="${i}"${queueDis} title="${escapeHtml(queueLabel)}">
-            <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-            <span>${escapeHtml(queueLabel)}</span>
-          </button>
-          <button type="button" class="dl-download-btn" data-ym-dl="${i}"${disabledAttr}>
-            <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-            <span>${escapeHtml(tr('downloads.yt.action.download'))}</span>
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
-  wrap.hidden = false;
-  rows.querySelectorAll('[data-ym-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-ym-dl'), 10);
-      if (!isNaN(idx)) downloadYmTrack(idx, btn);
-    });
-  });
-  rows.querySelectorAll('[data-ym-queue]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-ym-queue'), 10);
-      if (!isNaN(idx)) enqueueYmTrack(idx);
-    });
-  });
-}
-
-function restoreYmDownloadButton(actionEl, idx, labelKey, cls) {
-  actionEl.innerHTML = `
-    <button type="button" class="dl-download-btn ${cls || ''}" data-ym-dl="${idx}">
-      <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-      <span>${escapeHtml(tr(labelKey))}</span>
-    </button>
-  `;
-  const newBtn = actionEl.querySelector('[data-ym-dl]');
-  if (newBtn) newBtn.addEventListener('click', () => downloadYmTrack(idx, newBtn));
-  return newBtn;
-}
-
-async function downloadYmTrack(idx, btn) {
-  const t = ymTracks[idx];
-  if (!t || !btn) return;
-  if (btn.classList.contains('is-done')) return;
-  const rowEl = btn.closest('.dl-row-ym');
-  if (!rowEl) return;
-  const actionEl = rowEl.querySelector('.action');
-  if (!actionEl) return;
-
-  const requestId = 'ym-' + (++ymDownloadReqSeq);
-  rowEl.dataset.requestId = requestId;
-  actionEl.innerHTML = `
-    <div class="dl-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="dl-progress-bar"><div class="dl-progress-fill"></div></div>
-      <div class="dl-progress-pct">0%</div>
-    </div>
-  `;
-  ymActiveDownloads.set(requestId, rowEl);
-
-  const query = `${t.artist} ${t.title}`.replace(/—/g, '').trim();
-  const suggestedName = `${t.artist} - ${t.title}`;
-
-  try {
-    const res = await window.electronAPI.ytDownloadByQuery({ query, suggestedName, requestId, targetDir: settings.defaultFolder || '' });
-    ymActiveDownloads.delete(requestId);
-    if (!res || !res.success) {
-      restoreYmDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
-      setYmStatus(tr('downloads.yt.downloadError', { e: (res && res.error) || 'unknown' }), 'error');
-      return;
-    }
-    await importPaths([res.filePath]);
-    const doneBtn = restoreYmDownloadButton(actionEl, idx, 'downloads.yt.action.done', 'is-done');
-    if (doneBtn) doneBtn.disabled = true;
-    setYmStatus(tr('downloads.yt.downloadOk', { t: suggestedName }), 'ok');
-  } catch (err) {
-    ymActiveDownloads.delete(requestId);
-    restoreYmDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
-    setYmStatus(tr('downloads.yt.downloadError', { e: String(err) }), 'error');
-  }
-}
-
-if (window.electronAPI && window.electronAPI.onYtDownloadProgress) {
-  // The YT handler is already wired by the YouTube tab; reuse for requestId-based progress too.
-  window.electronAPI.onYtDownloadProgress(({ requestId, phase, percent }) => {
-    if (!requestId) return;
-    const rowEl = ymActiveDownloads.get(requestId);
-    if (!rowEl) return;
-    const fill = rowEl.querySelector('.dl-progress-fill');
-    const pct = rowEl.querySelector('.dl-progress-pct');
-    const wrap = rowEl.querySelector('.dl-progress');
-    if (!fill || !pct || !wrap) return;
-    if (phase === 'postprocess') {
-      wrap.classList.add('is-indeterminate');
-      pct.textContent = '…';
-      return;
-    }
-    if (typeof percent === 'number' && !isNaN(percent)) {
-      wrap.classList.remove('is-indeterminate');
-      fill.style.width = percent.toFixed(1) + '%';
-      pct.textContent = Math.round(percent) + '%';
-    }
-  });
-}
-
-if (window.electronAPI && window.electronAPI.onYandexParseProgress) {
-  window.electronAPI.onYandexParseProgress((data) => {
-    if (!data) return;
-    if (data.message) {
-      const total = typeof data.total === 'number' ? ` · ${data.total}` : '';
-      setYmStatus(data.message + total, data.phase === 'error' ? 'error' : null);
-    }
-    if (Array.isArray(data.tracks)) {
-      renderYmResults(data.tracks);
-    }
-  });
-}
-
-async function runYmParse() {
-  if (ymParseActive) return;
-  const urlEl = $('dl-ym-url');
-  const startBtn = $('dl-ym-parse-btn');
-  if (!urlEl) return;
-  const url = urlEl.value.trim();
-  if (!url) { urlEl.focus(); return; }
-  ymParseActive = true;
-  if (startBtn) startBtn.disabled = true;
-  renderYmResults([]);
-  setYmStatus(tr('downloads.parsing.starting'));
-  try {
-    const res = await window.electronAPI.yandexParse({ url, showBrowser: !!settings.showParserBrowser });
-    if (!res || !res.success) {
-      setYmStatus(tr('downloads.parsing.error', { e: (res && res.error) || 'unknown' }), 'error');
-      if (res && Array.isArray(res.tracks) && res.tracks.length) renderYmResults(res.tracks);
-    } else {
-      setYmStatus(tr('downloads.parsing.done', { n: res.tracks.length }), 'ok');
-      renderYmResults(res.tracks);
-    }
-  } catch (err) {
-    setYmStatus(tr('downloads.parsing.error', { e: String(err) }), 'error');
-  } finally {
-    ymParseActive = false;
-    if (startBtn) startBtn.disabled = false;
-    // Re-render rows so disabled download buttons become clickable now that the
-    // parser is done. ymTracks holds whatever the last progress/result update saw.
-    if (ymTracks && ymTracks.length) renderYmResults(ymTracks);
-  }
-}
-
-(function wireYmControls() {
-  const start = $('dl-ym-parse-btn');
-  const url = $('dl-ym-url');
-  if (start) start.addEventListener('click', runYmParse);
-  if (url) {
-    url.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); runYmParse(); }
-    });
-    url.addEventListener('input', saveYmState);
-  }
-})();
-
 // ── Downloads: YouTube Music parsing ──
-// Mirrors the Yandex parser UI, but enumeration goes through yt-dlp (no browser)
+// Mirrors the Spotify parser UI, but enumeration goes through yt-dlp (no browser)
 // and downloads use the exact video id via the shared 'youtube' queue source, so
 // dedup and progress routing are shared with the YouTube search tab.
 let ytmParseActive = false;
@@ -4515,7 +3742,7 @@ function renderYtmResults(tracks) {
     const queueLabel = queued ? tr('downloads.queue.queued') : tr('downloads.queue.add');
     const coverStyle = t.cover ? `background-image:url('${escapeHtml(t.cover)}')` : '';
     return `
-      <div class="dl-row-ym dl-row-ytm" data-ytm-row="${i}">
+      <div class="dl-row-parse dl-row-ytm" data-ytm-row="${i}">
         <div class="num">${i + 1}</div>
         <div class="cover" style="${coverStyle}"></div>
         <div class="artist" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
@@ -4565,7 +3792,7 @@ async function downloadYtmTrack(idx, btn) {
   const t = ytmTracks[idx];
   if (!t || !btn) return;
   if (btn.classList.contains('is-done')) return;
-  const rowEl = btn.closest('.dl-row-ym');
+  const rowEl = btn.closest('.dl-row-parse');
   if (!rowEl) return;
   const actionEl = rowEl.querySelector('.action');
   if (!actionEl) return;
@@ -4714,7 +3941,7 @@ async function runYtmParse() {
 })();
 
 // ── Downloads: Spotify parsing ──
-// Mirrors the Yandex parser: track lists come from Puppeteer scraping the
+// Track lists come from Puppeteer scraping the
 // Spotify web player, downloads go through ytsearch1: by "artist title" query
 // (Spotify itself serves no downloadable audio). Rows reuse the YTM layout
 // because Spotify pages give us per-track covers.
@@ -4774,7 +4001,7 @@ function renderSpResults(tracks) {
     const queueLabel = queued ? tr('downloads.queue.queued') : tr('downloads.queue.add');
     const coverStyle = t.cover_url ? `background-image:url('${escapeHtml(t.cover_url)}')` : '';
     return `
-      <div class="dl-row-ym dl-row-ytm" data-sp-row="${i}">
+      <div class="dl-row-parse dl-row-ytm" data-sp-row="${i}">
         <div class="num">${i + 1}</div>
         <div class="cover" style="${coverStyle}"></div>
         <div class="artist" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
@@ -4824,7 +4051,7 @@ async function downloadSpTrack(idx, btn) {
   const t = spTracks[idx];
   if (!t || !btn) return;
   if (btn.classList.contains('is-done')) return;
-  const rowEl = btn.closest('.dl-row-ym');
+  const rowEl = btn.closest('.dl-row-parse');
   if (!rowEl) return;
   const actionEl = rowEl.querySelector('.action');
   if (!actionEl) return;
@@ -4898,7 +4125,7 @@ if (window.electronAPI && window.electronAPI.onSpotifyParseProgress) {
 
 function isSpTrackInQueue(t) {
   if (!t) return false;
-  const key = ymTrackKey(t);
+  const key = textTrackKey(t);
   return downloadQueue.some(it => it.source === 'spotify' && it.key === key && it.status !== 'error');
 }
 
@@ -4906,7 +4133,7 @@ function buildQueueItemFromSp(t) {
   return {
     id: 'q-' + (++queueIdSeq),
     source: 'spotify',
-    key: ymTrackKey(t),
+    key: textTrackKey(t),
     artist: t.artist || '',
     title: t.title || '',
     duration: t.duration || '',
@@ -4929,7 +4156,6 @@ function enqueueSpTrack(idx) {
   downloadQueue.push(buildQueueItemFromSp(t));
   renderQueue();
   renderSpResults(spTracks);
-  renderVkResults(vkTracks);
   updateQueueTabBadge();
   startQueueWorker();
 }
@@ -4994,285 +4220,6 @@ async function runSpParse() {
   }
 })();
 
-// ── Downloads: VK (ВКонтакте) parsing ──
-// Mirrors the Spotify section: Puppeteer scrapes the VK web player (login
-// persists in the vk-profile browser profile), downloads go through
-// ytsearch1: by "artist title" query via the shared queue (source 'vk').
-let vkParseActive = false;
-let vkTracks = [];
-let vkDownloadReqSeq = 0;
-const vkActiveDownloads = new Map(); // requestId -> rowEl
-
-function setVkStatus(text, kind) {
-  const el = $('dl-vk-status');
-  if (!el) return;
-  el.classList.remove('is-error', 'is-ok');
-  if (!text) { el.hidden = true; el.textContent = ''; return; }
-  if (kind === 'error') el.classList.add('is-error');
-  else if (kind === 'ok') el.classList.add('is-ok');
-  el.hidden = false;
-  el.textContent = text;
-}
-
-function saveVkState() {
-  try {
-    const u = $('dl-vk-url');
-    localStorage.setItem(LS.vkState, JSON.stringify({
-      url: u ? u.value : '',
-      tracks: vkTracks,
-    }));
-  } catch (_) { /* ignore */ }
-}
-
-function renderVkResults(tracks) {
-  vkTracks = tracks || [];
-  saveVkState();
-  const wrap = $('dl-vk-results');
-  const rows = $('dl-vk-rows');
-  const empty = $('dl-vk-empty');
-  const note = $('dl-vk-tag-note');
-  const queueAllBtn = $('dl-vk-queue-all');
-  if (!wrap || !rows) return;
-  if (!vkTracks.length) {
-    wrap.hidden = true;
-    if (note) note.hidden = true;
-    if (empty) empty.classList.add('show');
-    if (queueAllBtn) queueAllBtn.hidden = true;
-    return;
-  }
-  if (empty) empty.classList.remove('show');
-  if (note) note.hidden = false;
-  if (queueAllBtn) {
-    queueAllBtn.hidden = false;
-    queueAllBtn.disabled = vkParseActive;
-  }
-  const disabledAttr = vkParseActive ? ' disabled' : '';
-  rows.innerHTML = vkTracks.map((t, i) => {
-    const queued = isVkTrackInQueue(t);
-    const queuedCls = queued ? ' is-done' : '';
-    const queueDis = vkParseActive || queued ? ' disabled' : '';
-    const queueLabel = queued ? tr('downloads.queue.queued') : tr('downloads.queue.add');
-    const coverStyle = t.cover_url ? `background-image:url('${escapeHtml(t.cover_url)}')` : '';
-    return `
-      <div class="dl-row-ym dl-row-ytm" data-vk-row="${i}">
-        <div class="num">${i + 1}</div>
-        <div class="cover" style="${coverStyle}"></div>
-        <div class="artist" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
-        <div class="title" title="${escapeHtml(t.title || '')}">${escapeHtml(t.title || '')}</div>
-        <div class="duration">${escapeHtml(t.duration || '')}</div>
-        <div class="action">
-          <button type="button" class="dl-download-btn dl-queue-btn${queuedCls}" data-vk-queue="${i}"${queueDis} title="${escapeHtml(queueLabel)}">
-            <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-            <span>${escapeHtml(queueLabel)}</span>
-          </button>
-          <button type="button" class="dl-download-btn" data-vk-dl="${i}"${disabledAttr}>
-            <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-            <span>${escapeHtml(tr('downloads.yt.action.download'))}</span>
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
-  wrap.hidden = false;
-  rows.querySelectorAll('[data-vk-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-vk-dl'), 10);
-      if (!isNaN(idx)) downloadVkTrack(idx, btn);
-    });
-  });
-  rows.querySelectorAll('[data-vk-queue]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-vk-queue'), 10);
-      if (!isNaN(idx)) enqueueVkTrack(idx);
-    });
-  });
-}
-
-function restoreVkDownloadButton(actionEl, idx, labelKey, cls) {
-  actionEl.innerHTML = `
-    <button type="button" class="dl-download-btn ${cls || ''}" data-vk-dl="${idx}">
-      <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-      <span>${escapeHtml(tr(labelKey))}</span>
-    </button>
-  `;
-  const newBtn = actionEl.querySelector('[data-vk-dl]');
-  if (newBtn) newBtn.addEventListener('click', () => downloadVkTrack(idx, newBtn));
-  return newBtn;
-}
-
-async function downloadVkTrack(idx, btn) {
-  const t = vkTracks[idx];
-  if (!t || !btn) return;
-  if (btn.classList.contains('is-done')) return;
-  const rowEl = btn.closest('.dl-row-ym');
-  if (!rowEl) return;
-  const actionEl = rowEl.querySelector('.action');
-  if (!actionEl) return;
-
-  const requestId = 'vk-' + (++vkDownloadReqSeq);
-  rowEl.dataset.requestId = requestId;
-  actionEl.innerHTML = `
-    <div class="dl-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="dl-progress-bar"><div class="dl-progress-fill"></div></div>
-      <div class="dl-progress-pct">0%</div>
-    </div>
-  `;
-  vkActiveDownloads.set(requestId, rowEl);
-
-  const query = `${t.artist} ${t.title}`.replace(/—/g, '').trim();
-  const suggestedName = `${t.artist} - ${t.title}`;
-
-  try {
-    const res = await window.electronAPI.ytDownloadByQuery({ query, suggestedName, requestId, targetDir: settings.defaultFolder || '' });
-    vkActiveDownloads.delete(requestId);
-    if (!res || !res.success) {
-      restoreVkDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
-      setVkStatus(tr('downloads.yt.downloadError', { e: (res && res.error) || 'unknown' }), 'error');
-      return;
-    }
-    await importPaths([res.filePath]);
-    const doneBtn = restoreVkDownloadButton(actionEl, idx, 'downloads.yt.action.done', 'is-done');
-    if (doneBtn) doneBtn.disabled = true;
-    setVkStatus(tr('downloads.yt.downloadOk', { t: suggestedName }), 'ok');
-  } catch (err) {
-    vkActiveDownloads.delete(requestId);
-    restoreVkDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
-    setVkStatus(tr('downloads.yt.downloadError', { e: String(err) }), 'error');
-  }
-}
-
-if (window.electronAPI && window.electronAPI.onYtDownloadProgress) {
-  window.electronAPI.onYtDownloadProgress(({ requestId, phase, percent }) => {
-    if (!requestId) return;
-    const rowEl = vkActiveDownloads.get(requestId);
-    if (!rowEl) return;
-    const fill = rowEl.querySelector('.dl-progress-fill');
-    const pct = rowEl.querySelector('.dl-progress-pct');
-    const wrap = rowEl.querySelector('.dl-progress');
-    if (!fill || !pct || !wrap) return;
-    if (phase === 'postprocess') {
-      wrap.classList.add('is-indeterminate');
-      pct.textContent = '…';
-      return;
-    }
-    if (typeof percent === 'number' && !isNaN(percent)) {
-      wrap.classList.remove('is-indeterminate');
-      fill.style.width = percent.toFixed(1) + '%';
-      pct.textContent = Math.round(percent) + '%';
-    }
-  });
-}
-
-if (window.electronAPI && window.electronAPI.onVkParseProgress) {
-  window.electronAPI.onVkParseProgress((data) => {
-    if (!data) return;
-    if (data.message) {
-      const total = typeof data.total === 'number' ? ` · ${data.total}` : '';
-      setVkStatus(data.message + total, data.phase === 'error' ? 'error' : null);
-    }
-    if (Array.isArray(data.tracks)) {
-      renderVkResults(data.tracks);
-    }
-  });
-}
-
-function isVkTrackInQueue(t) {
-  if (!t) return false;
-  const key = ymTrackKey(t);
-  return downloadQueue.some(it => it.source === 'vk' && it.key === key && it.status !== 'error');
-}
-
-function buildQueueItemFromVk(t) {
-  return {
-    id: 'q-' + (++queueIdSeq),
-    source: 'vk',
-    key: ymTrackKey(t),
-    artist: t.artist || '',
-    title: t.title || '',
-    duration: t.duration || '',
-    query: `${t.artist || ''} ${t.title || ''}`.replace(/—/g, '').trim(),
-    suggestedName: `${t.artist || ''} - ${t.title || ''}`,
-    videoId: '',
-    url: '',
-    status: 'queued',
-    percent: 0,
-    indeterminate: false,
-    filePath: '',
-    error: '',
-    requestId: '',
-  };
-}
-
-function enqueueVkTrack(idx) {
-  const t = vkTracks[idx];
-  if (!t || isVkTrackInQueue(t)) return;
-  downloadQueue.push(buildQueueItemFromVk(t));
-  renderQueue();
-  renderVkResults(vkTracks);
-  updateQueueTabBadge();
-  startQueueWorker();
-}
-
-function enqueueAllVkTracks() {
-  if (!vkTracks || !vkTracks.length) return;
-  let added = 0;
-  for (const t of vkTracks) {
-    if (isVkTrackInQueue(t)) continue;
-    downloadQueue.push(buildQueueItemFromVk(t));
-    added++;
-  }
-  if (added > 0) {
-    renderQueue();
-    renderVkResults(vkTracks);
-    updateQueueTabBadge();
-    startQueueWorker();
-    activateDlTab('queue');
-  }
-}
-
-async function runVkParse() {
-  if (vkParseActive) return;
-  const urlEl = $('dl-vk-url');
-  const startBtn = $('dl-vk-parse-btn');
-  if (!urlEl) return;
-  const url = urlEl.value.trim();
-  if (!url) { urlEl.focus(); return; }
-  vkParseActive = true;
-  if (startBtn) startBtn.disabled = true;
-  renderVkResults([]);
-  setVkStatus(tr('downloads.parsing.starting'));
-  try {
-    const res = await window.electronAPI.vkParse({ url, showBrowser: !!settings.showParserBrowser });
-    if (!res || !res.success) {
-      setVkStatus(tr('downloads.parsing.error', { e: (res && res.error) || 'unknown' }), 'error');
-      if (res && Array.isArray(res.tracks) && res.tracks.length) renderVkResults(res.tracks);
-    } else {
-      setVkStatus(tr('downloads.parsing.done', { n: res.tracks.length }), 'ok');
-      renderVkResults(res.tracks);
-    }
-  } catch (err) {
-    setVkStatus(tr('downloads.parsing.error', { e: String(err) }), 'error');
-  } finally {
-    vkParseActive = false;
-    if (startBtn) startBtn.disabled = false;
-    if (vkTracks && vkTracks.length) renderVkResults(vkTracks);
-  }
-}
-
-(function wireVkControls() {
-  const start = $('dl-vk-parse-btn');
-  const url = $('dl-vk-url');
-  const queueAll = $('dl-vk-queue-all');
-  if (start) start.addEventListener('click', runVkParse);
-  if (queueAll) queueAll.addEventListener('click', enqueueAllVkTracks);
-  if (url) {
-    url.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); runVkParse(); }
-    });
-    url.addEventListener('input', saveVkState);
-  }
-})();
-
 // ── Downloads: Queue ──
 // In-memory queue (per session). Items move queued → downloading → done|error.
 // One concurrent download keeps things simple and predictable.
@@ -5282,7 +4229,7 @@ let queueWorkerRunning = false;
 let queueIdSeq = 0;
 let queuePaused = false;
 
-function ymTrackKey(t) {
+function textTrackKey(t) {
   return `${(t.artist || '').trim().toLowerCase()}|${(t.title || '').trim().toLowerCase()}`;
 }
 
@@ -5290,37 +4237,10 @@ function ytTrackKey(r) {
   return r && r.id ? `yt:${r.id}` : `yt:${(r && r.url) || ''}`;
 }
 
-function isYmTrackInQueue(t) {
-  if (!t) return false;
-  const key = ymTrackKey(t);
-  return downloadQueue.some(it => it.source === 'yandex' && it.key === key && it.status !== 'error');
-}
-
 function isYtResultInQueue(r) {
   if (!r) return false;
   const key = ytTrackKey(r);
   return downloadQueue.some(it => it.source === 'youtube' && it.key === key && it.status !== 'error');
-}
-
-function buildQueueItemFromYm(t) {
-  return {
-    id: 'q-' + (++queueIdSeq),
-    source: 'yandex',
-    key: ymTrackKey(t),
-    artist: t.artist || '',
-    title: t.title || '',
-    duration: t.duration || '',
-    query: `${t.artist || ''} ${t.title || ''}`.replace(/—/g, '').trim(),
-    suggestedName: `${t.artist || ''} - ${t.title || ''}`,
-    videoId: '',
-    url: '',
-    status: 'queued',          // 'queued' | 'downloading' | 'done' | 'error'
-    percent: 0,
-    indeterminate: false,
-    filePath: '',
-    error: '',
-    requestId: '',
-  };
 }
 
 function buildQueueItemFromYt(r) {
@@ -5342,33 +4262,6 @@ function buildQueueItemFromYt(r) {
     error: '',
     requestId: '',
   };
-}
-
-function enqueueYmTrack(idx) {
-  const t = ymTracks[idx];
-  if (!t || isYmTrackInQueue(t)) return;
-  downloadQueue.push(buildQueueItemFromYm(t));
-  renderQueue();
-  renderYmResults(ymTracks);
-  updateQueueTabBadge();
-  startQueueWorker();
-}
-
-function enqueueAllYmTracks() {
-  if (!ymTracks || !ymTracks.length) return;
-  let added = 0;
-  for (const t of ymTracks) {
-    if (isYmTrackInQueue(t)) continue;
-    downloadQueue.push(buildQueueItemFromYm(t));
-    added++;
-  }
-  if (added > 0) {
-    renderQueue();
-    renderYmResults(ymTracks);
-    updateQueueTabBadge();
-    startQueueWorker();
-    activateDlTab('queue');
-  }
 }
 
 function enqueueYtResult(idx) {
@@ -5444,7 +4337,7 @@ async function processQueueItem(item) {
         targetDir: settings.defaultFolder || '',
       });
     } else {
-      // Yandex (and any text-only source) goes through ytsearch1: by query.
+      // Spotify (and any text-only source) goes through ytsearch1: by query.
       res = await window.electronAPI.ytDownloadByQuery({
         query: item.query,
         suggestedName: item.suggestedName,
@@ -5468,10 +4361,8 @@ async function processQueueItem(item) {
     item.error = String(err);
   }
   renderQueue();
-  renderYmResults(ymTracks);
   renderYtmResults(ytmTracks);
   renderSpResults(spTracks);
-  renderVkResults(vkTracks);
   renderYtResults(ytLastResults);
   updateQueueTabBadge();
 }
@@ -5606,10 +4497,8 @@ function renderQueue() {
       if (item.status === 'downloading') return;
       downloadQueue.splice(idx, 1);
       renderQueue();
-      renderYmResults(ymTracks);
       renderYtmResults(ytmTracks);
       renderSpResults(spTracks);
-      renderVkResults(vkTracks);
       updateQueueTabBadge();
     });
   });
@@ -5700,10 +4589,8 @@ function clearFinishedFromQueue() {
     }
   }
   renderQueue();
-  renderYmResults(ymTracks);
   renderYtmResults(ytmTracks);
   renderSpResults(spTracks);
-  renderVkResults(vkTracks);
   updateQueueTabBadge();
 }
 
@@ -5717,10 +4604,8 @@ function clearAllFromQueue() {
     }
   }
   renderQueue();
-  renderYmResults(ymTracks);
   renderYtmResults(ytmTracks);
   renderSpResults(spTracks);
-  renderVkResults(vkTracks);
   updateQueueTabBadge();
 }
 
@@ -5737,8 +4622,6 @@ function activateDlTab(target) {
 }
 
 (function wireQueueControls() {
-  const queueAll = $('dl-ym-queue-all');
-  if (queueAll) queueAll.addEventListener('click', enqueueAllYmTracks);
   const clearBtn = $('dl-queue-clear-done');
   if (clearBtn) clearBtn.addEventListener('click', clearFinishedFromQueue);
   const clearAllBtn = $('dl-queue-clear-all');
@@ -5762,15 +4645,6 @@ function restoreDownloadsState() {
     }
   } catch (_) { /* ignore */ }
   try {
-    const raw = localStorage.getItem(LS.ymState);
-    if (raw) {
-      const ym = JSON.parse(raw);
-      const urlEl = $('dl-ym-url');
-      if (urlEl && typeof ym.url === 'string') urlEl.value = ym.url;
-      if (Array.isArray(ym.tracks) && ym.tracks.length) renderYmResults(ym.tracks);
-    }
-  } catch (_) { /* ignore */ }
-  try {
     const raw = localStorage.getItem(LS.ytmState);
     if (raw) {
       const ytm = JSON.parse(raw);
@@ -5789,15 +4663,6 @@ function restoreDownloadsState() {
     }
   } catch (_) { /* ignore */ }
   try {
-    const raw = localStorage.getItem(LS.vkState);
-    if (raw) {
-      const vk = JSON.parse(raw);
-      const urlEl = $('dl-vk-url');
-      if (urlEl && typeof vk.url === 'string') urlEl.value = vk.url;
-      if (Array.isArray(vk.tracks) && vk.tracks.length) renderVkResults(vk.tracks);
-    }
-  } catch (_) { /* ignore */ }
-  try {
     const raw = localStorage.getItem(LS.queue);
     if (!raw) return;
     const parsed = JSON.parse(raw);
@@ -5811,7 +4676,7 @@ function restoreDownloadsState() {
       if (m) queueIdSeq = Math.max(queueIdSeq, parseInt(m[1], 10));
       downloadQueue.push({
         id,
-        source: it.source || 'yandex',
+        source: it.source || 'spotify',
         key: it.key || '',
         artist: it.artist || '',
         title: it.title || '',
@@ -5829,11 +4694,9 @@ function restoreDownloadsState() {
       });
     }
     renderQueue();
-    // Re-render result rows so any "В очереди" badges reflect the restored queue.
-    if (ymTracks && ymTracks.length) renderYmResults(ymTracks);
+    // Re-render result rows so any "queued" badges reflect the restored queue.
     if (ytmTracks && ytmTracks.length) renderYtmResults(ytmTracks);
     if (spTracks && spTracks.length) renderSpResults(spTracks);
-    if (vkTracks && vkTracks.length) renderVkResults(vkTracks);
     if (ytLastResults && ytLastResults.length) renderYtResults(ytLastResults);
     updateQueueTabBadge();
     startQueueWorker();
@@ -6067,7 +4930,7 @@ async function analyzeSpectrum(track) {
 // Library-scanning dashboard. Cheap issues (bitrate, missing cover, incomplete
 // tags, duplicates) are computed instantly from Tier-1 metadata every render;
 // the transcode count comes from the cached Tier-2 spectral verdicts and is
-// (re)populated by the on-demand "Пересканировать" scan.
+// (re)populated by the on-demand "Rescan" scan.
 let healthReport = (() => {
   try { return JSON.parse(localStorage.getItem(LS.healthReport) || 'null'); }
   catch (_) { return null; }
@@ -6684,7 +5547,7 @@ function splitArtists(s) {
 }
 
 function artistInitials(name) {
-  const stop = new Set(['the', 'of', 'a', 'an', 'and', 'и']);
+  const stop = new Set(['the', 'of', 'a', 'an', 'and', 'і', 'та']);
   const parts = name.split(/\s+/).filter(p => !stop.has(p.toLowerCase()));
   if (parts.length === 0) return (name[0] || '?').toUpperCase();
   if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
@@ -6726,9 +5589,9 @@ function buildArtistsIndex() {
 
 function sortArtists(arr) {
   const c = arr.slice();
-  if (artistsSort === 'tracks') c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name, 'ru'));
+  if (artistsSort === 'tracks') c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
   else if (artistsSort === 'recent') c.sort((a, b) => b.lastIdx - a.lastIdx);
-  else c.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  else c.sort((a, b) => a.name.localeCompare(b.name));
   return c;
 }
 
@@ -7747,7 +6610,7 @@ function refreshReportIfActive() {
 // ── Listening Report ──────────────────────────────────────────────────────────
 // On-device analytics aggregated live from playLog. Nothing leaves the machine.
 let reportPeriod = 'day';
-const REPORT_LOCALE = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', fr: 'fr-FR', uk: 'uk-UA' };
+const REPORT_LOCALE = { en: 'en-US', de: 'de-DE', fr: 'fr-FR', uk: 'uk-UA' };
 const REPORT_PLAY_SEC = 15;   // a log entry counts as a "play" once listened ≥ this
 const REPORT_STREAK_SEC = 30; // a day counts toward the streak with ≥ this much listening
 
@@ -8876,7 +7739,7 @@ function hkEditCurrentTags() {
 // press (which must not be captured as a binding on its own).
 //
 // Keys are identified by `e.code` (physical position), NOT `e.key`. `e.key` is
-// the produced character and therefore layout-dependent: on a Russian layout
+// the produced character and therefore layout-dependent: on a Cyrillic layout
 // the S key reports 'с', so a binding captured in one layout would silently
 // stop firing after switching to the other. `e.code` stays 'KeyS' either way.
 // The trade-off is that on a non-QWERTY physical layout the displayed letter
@@ -9360,7 +8223,7 @@ function renderSettings() {
   // Folder
   $('default-folder-path').textContent = settings.defaultFolder || tr('placeholder.noFolder');
   // Language — labels stay in their native language regardless of currentLang.
-  const lblMap = { ru: 'Русский', en: 'English', de: 'Deutsch', fr: 'Français', uk: 'Українська' };
+  const lblMap = { en: 'English', de: 'Deutsch', fr: 'Français', uk: 'Українська' };
   $('lang-current').textContent = lblMap[settings.language] || lblMap.en;
   document.querySelectorAll('#lang-select .select-opt').forEach(o => {
     o.classList.toggle('active', o.dataset.lang === settings.language);
@@ -9710,7 +8573,7 @@ function applyReportsVisibility() {
 }
 applyReportsVisibility();
 
-// Toggle for the track-trimming editor: hides the nav item and the "Обрезать"
+// Toggle for the track-trimming editor: hides the nav item and the "Trim"
 // context-menu entry, and redirects away from the view when off.
 function applyEditorVisibility() {
   const navEditor = $('nav-editor');
