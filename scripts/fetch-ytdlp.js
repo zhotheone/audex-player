@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const YTDLP_VERSION = '2026.03.17';
+const YTDLP_VERSION = '2026.07.04';
 
 const ASSET = {
   linux: 'yt-dlp_linux',
