@@ -3965,6 +3965,7 @@ async function downloadYtmTrack(idx, btn) {
       return;
     }
     await importPaths([res.filePath]);
+    await fillPredictedTrackNo(res.filePath, idx + 1);
     const doneBtn = restoreYtmDownloadButton(actionEl, idx, 'downloads.yt.action.done', 'is-done');
     if (doneBtn) doneBtn.disabled = true;
     setYtmStatus(tr('downloads.yt.downloadOk', { t: suggestedName }), 'ok');
@@ -3997,7 +3998,25 @@ if (window.electronAPI && window.electronAPI.onYtDownloadProgress) {
   });
 }
 
-function buildQueueItemFromYtm(t) {
+// yt-dlp's --add-metadata rarely carries a real track-number tag for YouTube
+// sources, but the position on the parsed album/playlist page is a reasonable
+// stand-in. Only fills the tag when the file didn't already come with one, so
+// a real embedded track number (or a later manual edit) is never overwritten.
+async function fillPredictedTrackNo(filePath, predictedNo) {
+  if (!predictedNo) return;
+  const t = trackByPath(filePath);
+  if (!t || t.trackNo) return;
+  try {
+    const res = await window.electronAPI.writeMetadata(filePath, { trackNo: String(predictedNo) });
+    if (res && res.success) {
+      t.trackNo = String(predictedNo);
+      saveLibrary();
+      refreshCurrentViewRows();
+    }
+  } catch (_) { /* leave the tag blank — not worth surfacing an error for a guess */ }
+}
+
+function buildQueueItemFromYtm(t, albumTrackNo) {
   return {
     id: 'q-' + (++queueIdSeq),
     source: 'youtube',
@@ -4015,13 +4034,17 @@ function buildQueueItemFromYtm(t) {
     filePath: '',
     error: '',
     requestId: '',
+    // Position on the parsed album/playlist page — used to fill in a missing
+    // track-number tag after download (see fillPredictedTrackNo). Not set for
+    // queue items from plain YouTube search or Spotify, which have no such order.
+    albumTrackNo,
   };
 }
 
 function enqueueYtmTrack(idx) {
   const t = ytmTracks[idx];
   if (!t || isYtmTrackInQueue(t)) return;
-  downloadQueue.push(buildQueueItemFromYtm(t));
+  downloadQueue.push(buildQueueItemFromYtm(t, idx + 1));
   renderQueue();
   renderYtmResults(ytmTracks);
   updateQueueTabBadge();
@@ -4031,11 +4054,11 @@ function enqueueYtmTrack(idx) {
 function enqueueAllYtmTracks() {
   if (!ytmTracks || !ytmTracks.length) return;
   let added = 0;
-  for (const t of ytmTracks) {
-    if (isYtmTrackInQueue(t)) continue;
-    downloadQueue.push(buildQueueItemFromYtm(t));
+  ytmTracks.forEach((t, i) => {
+    if (isYtmTrackInQueue(t)) return;
+    downloadQueue.push(buildQueueItemFromYtm(t, i + 1));
     added++;
-  }
+  });
   if (added > 0) {
     renderQueue();
     renderYtmResults(ytmTracks);
@@ -4500,7 +4523,10 @@ async function processQueueItem(item) {
       item.status = 'done';
       item.percent = 100;
       item.filePath = res.filePath;
-      try { await importPaths([res.filePath]); } catch (_) { /* ignore */ }
+      try {
+        await importPaths([res.filePath]);
+        if (item.albumTrackNo) await fillPredictedTrackNo(res.filePath, item.albumTrackNo);
+      } catch (_) { /* ignore */ }
     }
   } catch (err) {
     queueByRequestId.delete(item.requestId);
