@@ -129,6 +129,23 @@ const tags = {
     assert.ok(cutMeta.common.picture && cutMeta.common.picture.length, 'cover lost trimming an opus with a cover');
   }
 
+  // Real downloaded .opus files store their vorbis comments on the audio stream, not in
+  // ffmpeg's global metadata slot (music-metadata's own parser doesn't care about that
+  // split, so a synthetic file tagged at the global slot doesn't catch this the way a real
+  // download does). A plain "-metadata title=x" writes the global slot only, which
+  // -map_metadata 0 doesn't feed into, so it silently loses to the stream-level copy of the
+  // old title — ffmpegTagArgs has to target the stream explicitly to actually change anything.
+  {
+    const streamTagged = path.join(dir, 'streamtagged.opus');
+    execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',
+      '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', '-metadata:s:a:0', 'title=Old Title', streamTagged]);
+    assert.strictEqual((await mm.parseFile(streamTagged)).common.title, 'Old Title', 'setup: stream-level title did not stick');
+
+    const retitled = path.join(dir, '.streamtagged-retitled.opus');
+    execFileSync(ffmpeg, ffmpegTagArgs(streamTagged, retitled, tags, null));
+    assert.strictEqual((await mm.parseFile(retitled)).common.title, tags.title, 'a stream-level opus title survived the rewrite unchanged');
+  }
+
   // Ogg/Opus only reveals its length on the last page, so a header-only parse
   // returns no duration and no bitrate. Needs a file long enough that the parser
   // would stop early without PARSE_OPTS — a one-second tone gets read whole.

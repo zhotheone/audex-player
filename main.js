@@ -843,8 +843,13 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
   } else {
     args.push('-map', '0', '-c', 'copy', '-map_metadata', '0');
   }
+  // Ogg/Opus vorbis comments live on the audio stream itself, not the output's global
+  // metadata slot. A plain "-metadata key=value" only sets the global slot, which
+  // -map_metadata 0 above doesn't feed into — the stream-level copy wins and the file
+  // keeps its old tags no matter what gets written here. Target the stream explicitly.
+  const metaFlag = isOggContainer(ext) ? '-metadata:s:a:0' : '-metadata';
   for (const [key, ffKey] of Object.entries(FFMPEG_TAG_KEYS)) {
-    if (tags && tags[key] !== undefined) args.push('-metadata', `${ffKey}=${String(tags[key])}`);
+    if (tags && tags[key] !== undefined) args.push(metaFlag, `${ffKey}=${String(tags[key])}`);
   }
   if (ext === '.mp3') args.push('-id3v2_version', '3');
   args.push(tmpPath);
