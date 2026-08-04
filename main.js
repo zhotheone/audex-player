@@ -810,12 +810,43 @@ const FFMPEG_TAG_KEYS = {
   comment: 'comment',
 };
 
-function ffmpegTagArgs(filePath, tmpPath, tags) {
-  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', filePath, '-map', '0', '-c', 'copy', '-map_metadata', '0'];
+function isOggContainer(ext) {
+  return ext === '.opus' || ext === '.ogg';
+}
+
+// Ogg/Opus stores cover art as a base64 METADATA_BLOCK_PICTURE vorbis comment, not a real
+// stream — but ffmpeg's demuxer fakes an mjpeg "video" stream out of it for playback tooling,
+// and its own ogg muxer then refuses to write that stream back out ("Unsupported codec id in
+// stream 1"). So "-map 0 -c copy" mux-crashes on any .opus/.ogg source that has a cover. The
+// fix is to map only the audio stream and re-inject the picture as a plain vorbis comment via
+// an ffmetadata file (the FLAC/Ogg picture block, all big-endian: type, mime, description,
+// width, height, depth, colors, data).
+function oggCoverMetaFile(tmpPath, picture) {
+  const u32 = (n) => { const b = Buffer.alloc(4); b.writeUInt32BE(n, 0); return b; };
+  const mime = Buffer.from(picture.format, 'utf8');
+  const data = Buffer.from(picture.data);
+  const block = Buffer.concat([
+    u32(3), u32(mime.length), mime, u32(0), u32(0), u32(0), u32(0), u32(0), u32(data.length), data,
+  ]).toString('base64').replace(/=/g, '\\='); // ffmetadata syntax reserves '='
+  const metaPath = tmpPath + '.meta.txt';
+  fs.writeFileSync(metaPath, `;FFMETADATA1\nMETADATA_BLOCK_PICTURE=${block}\n`);
+  return metaPath;
+}
+
+function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
+  const ext = path.extname(filePath).toLowerCase();
+  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', filePath];
+  if (isOggContainer(ext) && picture) {
+    // Both -map_metadata calls apply (later ones add to earlier ones, not replace): the
+    // source's own tags still come from 0, the picture is layered in from the synthetic file.
+    args.push('-i', oggCoverMetaFile(tmpPath, picture), '-map', '0:a', '-map_metadata', '0', '-map_metadata', '1', '-c', 'copy');
+  } else {
+    args.push('-map', '0', '-c', 'copy', '-map_metadata', '0');
+  }
   for (const [key, ffKey] of Object.entries(FFMPEG_TAG_KEYS)) {
     if (tags && tags[key] !== undefined) args.push('-metadata', `${ffKey}=${String(tags[key])}`);
   }
-  if (path.extname(filePath).toLowerCase() === '.mp3') args.push('-id3v2_version', '3');
+  if (ext === '.mp3') args.push('-id3v2_version', '3');
   args.push(tmpPath);
   return args;
 }
@@ -825,8 +856,17 @@ ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
   const ffmpeg = resolveBundledFfmpeg();
   if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
 
-  const tmpPath = path.join(path.dirname(filePath), `.audex-tags-${Date.now()}${path.extname(filePath)}`);
-  const args = ffmpegTagArgs(filePath, tmpPath, tags);
+  const ext = path.extname(filePath).toLowerCase();
+  let picture = null;
+  if (isOggContainer(ext)) {
+    try {
+      const md = await musicMetadata.parseFile(filePath);
+      picture = (md.common.picture && md.common.picture[0]) || null;
+    } catch (_) { /* no cover to preserve, fall back to the plain stream copy */ }
+  }
+
+  const tmpPath = path.join(path.dirname(filePath), `.audex-tags-${Date.now()}${ext}`);
+  const args = ffmpegTagArgs(filePath, tmpPath, tags, picture);
 
   try {
     await runFfmpeg(ffmpeg, args);
@@ -835,6 +875,8 @@ ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
   } catch (err) {
     try { fs.unlinkSync(tmpPath); } catch (_) {}
     return { success: false, error: String((err && err.message) || err) };
+  } finally {
+    if (picture) { try { fs.unlinkSync(tmpPath + '.meta.txt'); } catch (_) {} }
   }
 });
 
@@ -1004,9 +1046,13 @@ ipcMain.handle('update:check', async () => {
 // else gets the old 320k.
 const REENCODE_BITRATE = { '.opus': '192k', '.flac': '', '.wav': '' };
 
-function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain }) {
+function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain, picture }) {
   const ext = path.extname(src).toLowerCase();
   const args = ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(start), '-i', src, '-t', String(dur)];
+  // Ogg/Opus cover art is metadata, not a stream ffmpeg can carry through a trim (see
+  // oggCoverMetaFile above) — feed it back in as a second input instead.
+  const withPicture = isOggContainer(ext) && picture;
+  if (withPicture) args.push('-i', oggCoverMetaFile(tmpPath, picture));
   // Any filter (fade or gain) rules out the stream copy and forces a re-encode.
   if (fadeIn > 0 || fadeOut > 0 || gain !== 0) {
     const filters = [];
@@ -1026,7 +1072,8 @@ function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain }) {
   }
   // Carry cover art and tags over to the cut file. -id3v2_version belongs to the
   // mp3 muxer only; handing it to the opus or flac muxer aborts the whole run.
-  args.push('-map_metadata', '0');
+  if (withPicture) args.push('-map', '0:a', '-map_metadata', '0', '-map_metadata', '1');
+  else args.push('-map_metadata', '0');
   if (ext === '.mp3') args.push('-id3v2_version', '3');
   args.push(tmpPath);
   return args;
@@ -1064,7 +1111,14 @@ ipcMain.handle('audio:trim', async (event, payload) => {
   }
   const tmpPath = path.join(dir, `.audex-trim-${Date.now()}${ext}`);
 
-  const args = ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain });
+  let picture = null;
+  if (isOggContainer(ext.toLowerCase())) {
+    try {
+      const md = await musicMetadata.parseFile(src);
+      picture = (md.common.picture && md.common.picture[0]) || null;
+    } catch (_) { /* no cover to preserve */ }
+  }
+  const args = ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain, picture });
 
   try {
     await runFfmpeg(ffmpeg, args);
@@ -1073,6 +1127,8 @@ ipcMain.handle('audio:trim', async (event, payload) => {
   } catch (err) {
     try { if (fs.existsSync(tmpPath)) await fs.promises.unlink(tmpPath); } catch (_) {}
     return { success: false, error: String(err && err.message || err).slice(0, 300) };
+  } finally {
+    if (picture) { try { fs.unlinkSync(tmpPath + '.meta.txt'); } catch (_) {} }
   }
 });
 

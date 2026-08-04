@@ -23,10 +23,11 @@ const grabConst = (name) => {
   assert.ok(start > 0, `${name} not found in main.js`);
   return src.slice(start, src.indexOf(';\n', start) + 2); // object literals here have no inner semicolons
 };
-const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, PARSE_OPTS } = new Function('fs', 'path',
-  grab('sanitizeFsName') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('ffmpegTagArgs') +
+const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS } = new Function('fs', 'path',
+  grab('sanitizeFsName') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('isOggContainer') +
+  grab('oggCoverMetaFile') + grab('ffmpegTagArgs') +
   grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') +
-  'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, PARSE_OPTS };')(fs, path);
+  'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS };')(fs, path);
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audex-dl-'));
 const drop = (name) => {
@@ -100,6 +101,32 @@ const tags = {
     const cutFmt = (await mm.parseFile(cut)).format;
     assert.strictEqual(cutFmt.container, (await mm.parseFile(file)).format.container, `container changed by trim in ${ext}`);
     assert.ok(cutFmt.duration > 0, `empty trim output for ${ext}`);
+  }
+
+  // .opus cover art lives in a synthetic ffmpeg "video" stream that the ogg muxer can never
+  // write back out — tag-writing and trimming must route it through oggCoverMetaFile instead
+  // of a plain stream copy, or they mux-crash on every downloaded track that has a thumbnail.
+  {
+    const coverFile = path.join(dir, 'cover.jpg');
+    execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',
+      '-f', 'lavfi', '-i', 'color=c=red:s=16x16', '-frames:v', '1', coverFile]);
+    const picture = { format: 'image/jpeg', data: fs.readFileSync(coverFile) };
+
+    const base = path.join(dir, 'covered.opus');
+    execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y',
+      '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1',
+      '-i', oggCoverMetaFile(base, picture), '-map', '0', '-map_metadata', '1', '-c:a', 'libopus', base]);
+
+    const tagged = path.join(dir, '.covered-tagged.opus');
+    execFileSync(ffmpeg, ffmpegTagArgs(base, tagged, tags, picture));
+    const taggedMeta = await mm.parseFile(tagged);
+    assert.strictEqual(taggedMeta.common.title, tags.title, 'title lost writing tags to an opus with a cover');
+    assert.ok(taggedMeta.common.picture && taggedMeta.common.picture.length, 'cover lost writing tags to an opus with a cover');
+
+    const cutCovered = path.join(dir, 'cut-covered.opus');
+    execFileSync(ffmpeg, ffmpegTrimArgs(base, cutCovered, { start: 0.1, dur: 0.5, fadeIn: 0.1, fadeOut: 0, gain: 0, picture }));
+    const cutMeta = await mm.parseFile(cutCovered);
+    assert.ok(cutMeta.common.picture && cutMeta.common.picture.length, 'cover lost trimming an opus with a cover');
   }
 
   // Ogg/Opus only reveals its length on the last page, so a header-only parse
