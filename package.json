@@ -77,7 +77,9 @@
   },
   "keywords": [],
   "author": "Heorhii Litovskyi <zhotheone@gmail.com>",
-  "contributors": [],
+  "contributors": [
+    "Heorhii Litovskyi <zhotheone@gmail.com> (fork maintainer)"
+  ],
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
