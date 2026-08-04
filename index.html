@@ -952,11 +952,11 @@
 
     <div class="playbar-center">
       <div class="ctrls">
-        <button class="btn-ic" id="btn-shuffle" title="Shuffle" data-i18n-title="tooltip.shuffle"><svg class="i" width="14" height="14"><use href="#i-shuffle"/></svg></button>
-        <button class="btn-ic" id="btn-prev" title="Previous" data-i18n-title="tooltip.prev"><svg class="i" width="15" height="15"><use href="#i-prev"/></svg></button>
-        <button class="btn-play" id="btn-play" title="Play / Pause" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="12" height="12"><use href="#i-play"/></svg></button>
-        <button class="btn-ic" id="btn-next" title="Next" data-i18n-title="tooltip.next"><svg class="i" width="15" height="15"><use href="#i-next"/></svg></button>
-        <button class="btn-ic" id="btn-repeat" title="Repeat" data-i18n-title="tooltip.repeat"><svg class="i" width="14" height="14"><use href="#i-repeat"/></svg></button>
+        <button class="btn-ic" id="btn-shuffle" title="Shuffle" data-i18n-title="tooltip.shuffle"><svg class="i" width="16" height="16"><use href="#i-shuffle"/></svg></button>
+        <button class="btn-ic" id="btn-prev" title="Previous" data-i18n-title="tooltip.prev"><svg class="i" width="17" height="17"><use href="#i-prev"/></svg></button>
+        <button class="btn-play" id="btn-play" title="Play / Pause" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="14" height="14"><use href="#i-play"/></svg></button>
+        <button class="btn-ic" id="btn-next" title="Next" data-i18n-title="tooltip.next"><svg class="i" width="17" height="17"><use href="#i-next"/></svg></button>
+        <button class="btn-ic" id="btn-repeat" title="Repeat" data-i18n-title="tooltip.repeat"><svg class="i" width="16" height="16"><use href="#i-repeat"/></svg></button>
       </div>
       <div class="progress-row">
         <span class="time" id="time-current">0:00</span>
@@ -966,6 +966,7 @@
     </div>
 
     <div class="playbar-right">
+      <button class="btn-ic" id="btn-lyrics" title="Lyrics" data-i18n-title="fs.lyrics"><svg class="i" width="15" height="15"><use href="#i-mic"/></svg></button>
       <button class="btn-ic" id="btn-fullscreen" title="Fullscreen" data-i18n-title="tooltip.fullscreen"><svg class="i" width="13" height="13"><use href="#i-expand"/></svg></button>
       <button class="btn-ic" id="btn-mute" title="Volume" data-i18n-title="tooltip.volume"><svg class="i" width="15" height="15"><use href="#i-volume"/></svg></button>
       <div class="vol-track" id="vol-track">
@@ -1337,7 +1338,7 @@
               <div class="setting-label" data-i18n="setting.acoustidKey">AcoustID API key</div>
               <div class="setting-desc" data-i18n="setting.acoustidKeyDesc">Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.</div>
             </div>
-            <input type="text" class="field-input setting-input" id="acoustid-key" spellcheck="false" autocomplete="off" data-i18n-placeholder="setting.acoustidKeyPh" placeholder="Built-in key">
+            <input type="text" class="field-input setting-input" id="acoustid-key" spellcheck="false" autocomplete="off" data-i18n-placeholder="setting.acoustidKeyPh" placeholder="Your API key">
           </div>
         </div>
       </section>
@@ -1454,9 +1455,9 @@
               <div class="setting-label" data-i18n="setting.github">GitHub</div>
               <div class="setting-desc" data-i18n="setting.githubDesc">Project source code on GitHub.</div>
             </div>
-            <button class="btn-ghost" data-open-url="https://github.com/MishaSok/audex-player">
+            <button class="btn-ghost" data-open-url="https://github.com/zhotheone/audex-player">
               <svg class="i" width="13" height="13"><use href="#i-github"/></svg>
-              <span>github.com/MishaSok/audex-player</span>
+              <span>github.com/zhotheone/audex-player</span>
             </button>
           </div>
           <div class="setting-row">

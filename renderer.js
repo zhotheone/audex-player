@@ -65,7 +65,7 @@ const DL_FORMAT_LABELS = { opus: 'Opus', mp3: 'MP3', flac: 'FLAC', m4a: 'M4A', w
 const DISCORD_CLIENT_ID = '1518146518392115271';
 // Public fallback image used as the activity's large_image when iTunes can't
 // resolve an album cover (no match). Served raw from the project repo.
-const AUDEX_LOGO_URL = 'https://raw.githubusercontent.com/MishaSok/audex-player/main/build/icons/512x512.png';
+const AUDEX_LOGO_URL = 'https://raw.githubusercontent.com/zhotheone/audex-player/main/build/icons/512x512.png';
 // Nested Discord prefs (shallow-merge above doesn't deep-merge, so normalize).
 const DISCORD_DEFAULTS = {
   enabled: false,
@@ -77,7 +77,7 @@ const DISCORD_DEFAULTS = {
   privacyInvisible: true,
   privacyPrivate: false,
   buttons: [
-    { label: 'GitHub', url: 'https://github.com/MishaSok/audex-player' },
+    { label: 'GitHub', url: 'https://github.com/zhotheone/audex-player' },
     { label: 'Find on YouTube', url: '' },
   ],
 };
@@ -761,6 +761,8 @@ const I18N = {
     'modal.deleteTrackFull.text': '“{title}” by {artist} will be removed from the library and the file moved to the trash.',
     'modal.deletePlaylist.title': 'Delete playlist?',
     'modal.deletePlaylist.text': 'Playlist “{name}” will be deleted. Tracks remain in the library.',
+    'modal.clearLibrary.title': 'Clear the whole library?',
+    'modal.clearLibrary.text': 'All tracks will be removed from Audex. The files themselves are not touched.',
     'modal.newPlaylist.title': 'New playlist',
     'modal.newPlaylist.namePh': 'Playlist name',
     'modal.newPlaylist.descPh': 'Description (optional)',
@@ -792,10 +794,11 @@ const I18N = {
     'editor.noCover': 'No cover',
     'editor.saving': 'Saving…',
     'editor.idBadKey': 'AcoustID rejected the API key',
+    'editor.idNoKey': 'Add your AcoustID API key in Settings to use Identify',
     'cm.identify': 'Identify via AcoustID…',
     'setting.acoustidKey': 'AcoustID API key',
-    'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.',
-    'setting.acoustidKeyPh': 'Built-in key',
+    'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Required — get your own for free at acoustid.org/api-key.',
+    'setting.acoustidKeyPh': 'Your API key',
     'editor.identify': 'Identify',
     'editor.identifyHint': 'Fingerprint the audio and look the track up on AcoustID',
     'editor.identifying': 'Fingerprinting and looking up…',
@@ -823,6 +826,7 @@ const I18N = {
     'palette.action.gotoSettings': 'Go to Settings',
     'palette.action.gotoPlaylists': 'Go to Playlists',
     'palette.action.gotoFavorites': 'Go to Favorites',
+    'palette.action.clearLibrary': 'Clear library…',
     'label.unknownArtist': 'Unknown artist',
     'label.noAlbum': 'No album',
     'label.tracksShort': 'tr.',
@@ -1278,6 +1282,8 @@ const I18N = {
     'modal.deleteTrackFull.text': '„{title}“ von {artist} wird aus der Bibliothek entfernt und die Datei in den Papierkorb verschoben.',
     'modal.deletePlaylist.title': 'Playlist löschen?',
     'modal.deletePlaylist.text': 'Playlist „{name}“ wird gelöscht. Titel bleiben in der Bibliothek.',
+    'modal.clearLibrary.title': 'Gesamte Bibliothek leeren?',
+    'modal.clearLibrary.text': 'Alle Titel werden aus Audex entfernt. Die Dateien selbst bleiben unangetastet.',
     'modal.newPlaylist.title': 'Neue Playlist',
     'modal.newPlaylist.namePh': 'Playlist-Name',
     'modal.newPlaylist.descPh': 'Beschreibung (optional)',
@@ -1309,10 +1315,11 @@ const I18N = {
     'editor.noCover': 'Kein Cover',
     'editor.saving': 'Speichern…',
     'editor.idBadKey': 'AcoustID hat den API-Schlüssel abgelehnt',
+    'editor.idNoKey': 'Füge deinen AcoustID-API-Schlüssel in den Einstellungen hinzu, um Erkennen zu nutzen',
     'cm.identify': 'Über AcoustID erkennen…',
     'setting.acoustidKey': 'AcoustID-API-Schlüssel',
-    'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Leer lassen für den eingebauten Schlüssel; einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
-    'setting.acoustidKeyPh': 'Eingebauter Schlüssel',
+    'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Erforderlich — einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
+    'setting.acoustidKeyPh': 'Dein API-Schlüssel',
     'editor.identify': 'Erkennen',
     'editor.identifyHint': 'Audio-Fingerabdruck erstellen und den Titel bei AcoustID nachschlagen',
     'editor.identifying': 'Fingerabdruck wird erstellt…',
@@ -1340,6 +1347,7 @@ const I18N = {
     'palette.action.gotoSettings': 'Zu den Einstellungen',
     'palette.action.gotoPlaylists': 'Zu den Playlists',
     'palette.action.gotoFavorites': 'Zu den Favoriten',
+    'palette.action.clearLibrary': 'Bibliothek leeren…',
     'label.unknownArtist': 'Unbekannter Interpret',
     'label.noAlbum': 'Ohne Album',
     'label.tracksShort': 'Tit.',
@@ -1795,6 +1803,8 @@ const I18N = {
     'modal.deleteTrackFull.text': '« {title} » de {artist} sera retirée de la bibliothèque et le fichier déplacé vers la corbeille.',
     'modal.deletePlaylist.title': 'Supprimer la playlist ?',
     'modal.deletePlaylist.text': 'La playlist « {name} » sera supprimée. Les pistes restent dans la bibliothèque.',
+    'modal.clearLibrary.title': 'Vider toute la bibliothèque ?',
+    'modal.clearLibrary.text': "Toutes les pistes seront retirées d'Audex. Les fichiers eux-mêmes ne sont pas touchés.",
     'modal.newPlaylist.title': 'Nouvelle playlist',
     'modal.newPlaylist.namePh': 'Nom de la playlist',
     'modal.newPlaylist.descPh': 'Description (facultatif)',
@@ -1826,10 +1836,11 @@ const I18N = {
     'editor.noCover': 'Pas de pochette',
     'editor.saving': 'Enregistrement…',
     'editor.idBadKey': "AcoustID a refusé la clé API",
+    'editor.idNoKey': "Ajoutez votre clé API AcoustID dans les Paramètres pour utiliser Identifier",
     'cm.identify': 'Identifier via AcoustID…',
     'setting.acoustidKey': 'Clé API AcoustID',
-    'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Laissez vide pour la clé intégrée ; obtenez la vôtre gratuitement sur acoustid.org/api-key.",
-    'setting.acoustidKeyPh': 'Clé intégrée',
+    'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Requise — obtenez la vôtre gratuitement sur acoustid.org/api-key.",
+    'setting.acoustidKeyPh': 'Votre clé API',
     'editor.identify': 'Identifier',
     'editor.identifyHint': "Créer l'empreinte audio et rechercher la piste sur AcoustID",
     'editor.identifying': 'Empreinte et recherche en cours…',
@@ -1857,6 +1868,7 @@ const I18N = {
     'palette.action.gotoSettings': 'Aller aux Paramètres',
     'palette.action.gotoPlaylists': 'Aller aux Playlists',
     'palette.action.gotoFavorites': 'Aller aux Favoris',
+    'palette.action.clearLibrary': 'Vider la bibliothèque…',
     'label.unknownArtist': 'Artiste inconnu',
     'label.noAlbum': 'Sans album',
     'label.tracksShort': 'p.',
@@ -2312,6 +2324,8 @@ const I18N = {
     'modal.deleteTrackFull.text': '«{title}» від {artist} буде вилучено з бібліотеки, а файл — переміщено у смітник.',
     'modal.deletePlaylist.title': 'Видалити плейлист?',
     'modal.deletePlaylist.text': 'Плейлист «{name}» буде вилучено. Треки в бібліотеці залишаться.',
+    'modal.clearLibrary.title': 'Очистити всю бібліотеку?',
+    'modal.clearLibrary.text': 'Усі треки буде вилучено з Audex. Самі файли не постраждають.',
     'modal.newPlaylist.title': 'Новий плейлист',
     'modal.newPlaylist.namePh': 'Назва плейлиста',
     'modal.newPlaylist.descPh': 'Опис (необов\'язково)',
@@ -2343,10 +2357,11 @@ const I18N = {
     'editor.noCover': 'Немає обкладинки',
     'editor.saving': 'Збереження…',
     'editor.idBadKey': 'AcoustID відхилив ключ API',
+    'editor.idNoKey': 'Додайте свій ключ API AcoustID у Налаштуваннях, щоб користуватися Розпізнаванням',
     'cm.identify': 'Розпізнати через AcoustID…',
     'setting.acoustidKey': 'Ключ API AcoustID',
-    'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Залиште порожнім, щоб узяти вбудований ключ; власний можна отримати безкоштовно на acoustid.org/api-key.',
-    'setting.acoustidKeyPh': 'Вбудований ключ',
+    'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Обов’язковий — власний можна отримати безкоштовно на acoustid.org/api-key.',
+    'setting.acoustidKeyPh': 'Твій ключ API',
     'editor.identify': 'Розпізнати',
     'editor.identifyHint': 'Створити аудіовідбиток і знайти трек в AcoustID',
     'editor.identifying': 'Створюємо відбиток і шукаємо…',
@@ -2374,6 +2389,7 @@ const I18N = {
     'palette.action.gotoSettings': 'Перейти в Налаштування',
     'palette.action.gotoPlaylists': 'Перейти в Плейлисти',
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
+    'palette.action.clearLibrary': 'Очистити бібліотеку…',
     'label.unknownArtist': 'Невідомий виконавець',
     'label.noAlbum': 'Без альбому',
     'label.tracksShort': 'тр.',
@@ -6707,6 +6723,7 @@ $('btn-add-files').addEventListener('click', async () => {
 
 async function importPaths(paths) {
   let added = 0;
+  let sinceRefresh = 0;
   for (const p of paths) {
     if (library.some(t => t.path === p)) continue;
     const metadata = await window.electronAPI.parseMetadata(p);
@@ -6714,6 +6731,15 @@ async function importPaths(paths) {
     metadata.addedAt = Date.now();   // for the Listening Report "added to collection" stat
     library.push(metadata);
     added++;
+    sinceRefresh++;
+    // Refresh every 10 tracks instead of once at the end — a folder import can
+    // take a while and the list otherwise looks frozen/empty until it's done.
+    if (sinceRefresh >= 10) {
+      saveLibrary();
+      refreshCurrentViewRows();
+      renderCounts();
+      sinceRefresh = 0;
+    }
   }
   if (added > 0) {
     saveLibrary();
@@ -7421,7 +7447,7 @@ function cancelCoverAnim() {
 }
 
 function openFullscreen() {
-  if (currentTrackIndex < 0 || fsAnimating) return;
+  if (currentTrackIndex < 0 || fsAnimating || portraitAnimating) return;
   const overlay = $('fullscreen-overlay');
   if (overlay.classList.contains('active')) return;
   fsAnimating = true;
@@ -7442,12 +7468,15 @@ function openFullscreen() {
   else done();
 }
 
-function closeFullscreen() {
+async function closeFullscreen() {
   const overlay = $('fullscreen-overlay');
-  if (!overlay.classList.contains('active') || fsAnimating) return;
+  if (!overlay.classList.contains('active') || fsAnimating || portraitAnimating) return;
   // Exiting fullscreen also exits portrait — the rest of the UI has min-width
-  // constraints (sidebar etc.) and looks broken in a phone-sized window.
-  if (portraitMode) setPortraitMode(false);
+  // constraints (sidebar etc.) and looks broken in a phone-sized window. Await
+  // it fully (window resize + cover FLIP) before the overlay itself starts
+  // hiding, or the overlay can go display:none mid-resize and flash the
+  // library underneath.
+  if (portraitMode) await setPortraitMode(false);
   if (fsLyricsOpen) closeFsLyricsPanel();
   fsAnimating = true;
   cancelCoverAnim();
@@ -7667,6 +7696,14 @@ function closeFsLyricsPanel() {
 function toggleFsLyricsPanel() { if (fsLyricsOpen) closeFsLyricsPanel(); else openFsLyricsPanel(); }
 $('btn-fs-lyrics').addEventListener('click', toggleFsLyricsPanel);
 
+// Playbar shortcut: jumps straight to fullscreen + lyrics in one click instead
+// of opening fullscreen first and hunting for the lyrics toggle inside it.
+$('btn-lyrics').addEventListener('click', () => {
+  if (currentTrackIndex < 0) return;
+  if (!$('fullscreen-overlay').classList.contains('active')) openFullscreen();
+  toggleFsLyricsPanel();
+});
+
 function updateFullscreenQueue() {
   const list = $('fs-queue-list');
   list.innerHTML = '';
@@ -7708,6 +7745,7 @@ $('btn-confirm-delete').addEventListener('click', () => {
   if (pendingDelete.kind === 'track') deleteTrack(pendingDelete.payload);
   else if (pendingDelete.kind === 'tracks') deleteTracks(pendingDelete.payload);
   else if (pendingDelete.kind === 'playlist') deletePlaylist(pendingDelete.payload);
+  else if (pendingDelete.kind === 'clear-library') clearLibrary();
   $('confirm-modal').classList.remove('active');
   pendingDelete = null;
 });
@@ -7787,6 +7825,28 @@ function deletePlaylist(id) {
   playlists = playlists.filter(pl => pl.id !== id);
   savePlaylists();
   setView('playlists');
+}
+
+// Clears the app's library index only — unlike deleteTrack(s), it never
+// touches files on disk.
+function clearLibrary() {
+  audio.pause();
+  stopCrossfadeTail();
+  isPlaying = false;
+  currentTrackIndex = -1;
+  library.length = 0;
+  currentQueue = library;
+  favorites = [];
+  recents = [];
+  playlists.forEach(pl => { pl.trackPaths = []; });
+  $('track-title').textContent = tr('np.empty.title');
+  $('track-artist').textContent = '—';
+  updatePlayButtonUI();
+  saveLibrary(); savePlaylists(); saveRecents();
+  setLibrarySelectMode(false); // clears selection and re-renders the library view
+  renderCounts();
+  refreshCurrentViewRows();
+  renderRecents();
 }
 
 // ── New playlist modal ──
@@ -8072,6 +8132,7 @@ $('btn-cancel-editor').addEventListener('click', () => $('metadata-modal').class
 const IDENTIFY_ERR_KEY = {
   noFpcalc: 'editor.idNoFpcalc',
   apiKey: 'editor.idBadKey',
+  noKey: 'editor.idNoKey',
 };
 
 // Identify via AcoustID: fills the fields with what the fingerprint matched but
@@ -8211,6 +8272,7 @@ function renderPaletteResults(query) {
     { label: tr('palette.action.gotoSettings'),    kind: 'goto-settings',   icon: '#i-settings' },
     { label: tr('palette.action.gotoPlaylists'),   kind: 'goto-playlists',  icon: '#i-list' },
     { label: tr('palette.action.gotoFavorites'),   kind: 'goto-favorites',  icon: '#i-heart' },
+    { label: tr('palette.action.clearLibrary'),    kind: 'clear-library',   icon: '#i-trash' },
   ].filter(a => !q || a.label.toLowerCase().includes(q));
   if (actions.length > 0) {
     const lbl = document.createElement('div');
@@ -8260,6 +8322,13 @@ function runPaletteAction(action) {
   else if (action.kind === 'goto-settings') openSettings();
   else if (action.kind === 'goto-playlists') setView('playlists');
   else if (action.kind === 'goto-favorites') setView('favorites');
+  else if (action.kind === 'clear-library') {
+    confirmDelete({
+      kind: 'clear-library',
+      title: tr('modal.clearLibrary.title'),
+      text: tr('modal.clearLibrary.text'),
+    });
+  }
 }
 $('palette-input').addEventListener('input', e => renderPaletteResults(e.target.value));
 $('palette-input').addEventListener('keydown', e => {

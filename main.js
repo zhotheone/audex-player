@@ -967,7 +967,7 @@ ipcMain.handle('app:setHardwareAcceleration', async (event, enabled) => {
 // Polls the GitHub Releases API for the latest published release and compares
 // it to the running version. No auto-install — the renderer shows an in-app
 // banner whose "Download" button opens the release page via shell:openExternal.
-const GITHUB_REPO = 'MishaSok/audex-player';
+const GITHUB_REPO = 'zhotheone/audex-player';
 
 function parseVersion(v) {
   // "v1.1.2" / "1.1.2" / "1.1.2-beta" -> [1, 1, 2]
@@ -2041,8 +2041,8 @@ function httpsGetJson(url) {
 // bundled ffmpeg-static is built without the chromaprint muxer, so it can't
 // stand in). The fingerprint goes to AcoustID, which answers with the
 // MusicBrainz recordings it maps to. This is the only lookup here that needs
-// the network, and it only runs when the user presses Identify.
-const ACOUSTID_API_KEY = 'WdVlfoQTHq';
+// the network, and it only runs when the user presses Identify. Requires the
+// user's own free key from acoustid.org/api-key — no built-in fallback key.
 const ACOUSTID_URL = 'https://api.acoustid.org/v2/lookup';
 
 // The fpcalc shipped inside the app (see scripts/fetch-fpcalc.js and
@@ -2113,13 +2113,15 @@ function acoustidBestMatch(data) {
 
 ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => {
   if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'notFound' };
+  const key = String(apiKey || '').trim();
+  if (!key) return { success: false, error: 'noKey' };
   const { fp, error } = await fingerprintFile(filePath);
   if (error) return { success: false, error: error === 'notFound' ? 'noFpcalc' : 'fingerprint' };
   // A space (not "+") in `meta` — the querystring encoder turns it into the
   // separator the API wants; a literal "+" is escaped to %2B and the whole
   // meta value is silently dropped, so no recordings ever come back.
   const qs = new URLSearchParams({
-    client: String(apiKey || '').trim() || ACOUSTID_API_KEY,
+    client: key,
     duration: String(Math.round(fp.duration)),
     fingerprint: fp.fingerprint,
     meta: 'recordings releasegroups',

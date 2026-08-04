@@ -2487,7 +2487,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 
 /* ─── Playbar ─── */
 .playbar {
-  height: 72px;
+  height: 92px;
   background: var(--panel);
   border-top: 1px solid var(--border);
   display: grid;
@@ -2550,7 +2550,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2572,11 +2572,11 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .ctrls {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 22px;
 }
 .btn-play {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--text-strong);
   color: var(--bg);
@@ -2603,7 +2603,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .progress-track {
   flex: 1;
-  height: 28px;
+  height: 36px;
   position: relative;
   cursor: pointer;
 }

@@ -8,11 +8,11 @@
 
 A fast, beautiful desktop player for the music you actually own — and a one-click way to get more of it.
 
-[![Version](https://img.shields.io/badge/version-1.2.0-e8a33d?style=for-the-badge)](https://github.com/MishaSok/audex-player/releases/latest)
-[![Platforms](https://img.shields.io/badge/Linux%20·%20macOS%20·%20Windows-2b2b2b?style=for-the-badge)](https://github.com/MishaSok/audex-player/releases/latest)
+[![Version](https://img.shields.io/badge/version-dfc5e00-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
+[![Platforms](https://img.shields.io/badge/Linux%20·%20macOS%20·%20Windows-2b2b2b?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![License](https://img.shields.io/badge/MIT-blue?style=for-the-badge)](LICENSE)
 
-### [⬇️  Download the latest release](https://github.com/MishaSok/audex-player/releases/latest)
+### [⬇️  Download the latest release](https://github.com/zhotheone/audex-player/releases/latest)
 
 *Free and open source. No telemetry, no ads, no sign-up.*
 
@@ -147,13 +147,13 @@ Every playback shortcut is rebindable in **Settings → Hotkeys**, and can be ma
 
 ## 📦 Download
 
-Grab the latest build from the [**Releases page**](https://github.com/MishaSok/audex-player/releases/latest):
+Grab the latest build from the [**Releases page**](https://github.com/zhotheone/audex-player/releases/latest):
 
 | Platform | File |
 | --- | --- |
-| **Linux** | `Audex-1.2.0.AppImage` (portable) or `audex-player_1.2.0_amd64.deb` |
-| **macOS** (Apple Silicon) | `Audex-1.2.0-arm64.dmg` |
-| **Windows** | `Audex.Setup.1.2.0.exe` |
+| **Linux** | `Audex-1.3.0.AppImage` (portable) or `audex-player_1.3.0_amd64.deb` |
+| **macOS** (Apple Silicon) | `Audex-1.3.0-arm64.dmg` |
+| **Windows** | `Audex.Setup.1.3.0.exe` |
 
 **Nothing else to install.** `yt-dlp`, `ffmpeg` and Chromium all ship inside the app — downloading and parsing work out of the box.
 
@@ -166,7 +166,7 @@ Grab the latest build from the [**Releases page**](https://github.com/MishaSok/a
 ## 🛠️ Build from source
 
 ```bash
-git clone https://github.com/MishaSok/audex-player.git
+git clone https://github.com/zhotheone/audex-player.git
 cd audex-player
 npm install
 npm start
@@ -190,16 +190,17 @@ macOS and Windows builds are produced by GitHub Actions on tag push.
 
 ## 📬 Contact
 
-Made by **Mikhail Sokov**.
+Originally made by **Mikhail Sokov**. This fork is maintained by **Heorhii Litovskyi**.
 
-- 💬 **Telegram:** [@JuicexNet](https://t.me/JuicexNet) — *found a bug or have an idea? Message me.*
-- 🐙 **GitHub:** [MishaSok/audex-player](https://github.com/MishaSok/audex-player)
-- ✉️ **Email:** mikhail.sokov2006@gmail.com
+- 🐙 **This fork:** [zhotheone/audex-player](https://github.com/zhotheone/audex-player)
+- ✉️ **Email:** zhotheone@gmail.com
+- 🐙 **Upstream project:** [MishaSok/audex-player](https://github.com/MishaSok/audex-player)
+- 💬 **Upstream Telegram:** [@JuicexNet](https://t.me/JuicexNet)
 
 ---
 
 <div align="center">
 
-**[⬇️  Download Audex](https://github.com/MishaSok/audex-player/releases/latest)** · Released under the [MIT License](LICENSE).
+**[⬇️  Download Audex](https://github.com/zhotheone/audex-player/releases/latest)** · Released under the [MIT License](LICENSE).
 
 </div>
