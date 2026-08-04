@@ -113,5 +113,23 @@ const tags = {
   assert.ok(longFmt.bitrate > 0, `opus bitrate missing: ${longFmt.bitrate}`);
 
   fs.rmSync(dir, { recursive: true, force: true });
+
+  // AcoustID picks the highest-scoring recording that actually has a title —
+  // getting the ordering or the untitled-skip wrong silently mistags files.
+  const bestMatch = new Function(grab('acoustidBestMatch') + 'return acoustidBestMatch;')();
+  const m = bestMatch({ results: [
+    { id: 'low', score: 0.3, recordings: [{ title: 'Wrong', artists: [{ name: 'X' }] }] },
+    { id: 'high', score: 0.9, recordings: [
+      { title: null },   // untitled entries are skipped, not treated as a match
+      { title: 'Right', artists: [{ name: 'A' }, { name: 'B' }],
+        releasegroups: [{ title: null }, { title: 'The Album' }] }] },
+  ] });
+  assert.strictEqual(m.title, 'Right', 'best match ignored the higher score');
+  assert.strictEqual(m.artist, 'A & B', 'multi-artist join');
+  assert.strictEqual(m.album, 'The Album', 'album skipped the untitled release group');
+  assert.strictEqual(bestMatch({ results: [] }), null, 'no results -> null');
+  assert.strictEqual(bestMatch({}), null, 'malformed response -> null');
+  assert.strictEqual(bestMatch({ results: [{ id: 'x', score: 1 }] }), null, 'no recordings -> null');
+
   console.log('ok');
 })();

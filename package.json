@@ -1,19 +1,19 @@
 {
   "name": "audex-player",
   "productName": "Audex",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Audex — minimal desktop music player",
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "dist": "electron-builder",
-    "postinstall": "node scripts/fetch-ytdlp.js",
+    "dist": "node scripts/build-info.js && electron-builder",
+    "postinstall": "node scripts/fetch-ytdlp.js && node scripts/fetch-fpcalc.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "build": {
     "appId": "com.audex.player",
     "productName": "Audex",
-    "copyright": "Copyright © 2026 Mikhail Sokov and Sergei",
+    "copyright": "Copyright © 2026 Heorhii Litovskyi",
     "directories": {
       "output": "release"
     },
@@ -25,15 +25,18 @@
       "style.css",
       "LICENSE",
       "package.json",
+      "build-info.json",
       ".puppeteerrc.cjs",
       "build/icon.png",
       "build/icon.svg",
       "chromium-bundle/**",
-      "yt-dlp-bundle/**"
+      "yt-dlp-bundle/**",
+      "fpcalc-bundle/**"
     ],
     "asarUnpack": [
       "chromium-bundle/**",
       "yt-dlp-bundle/**",
+      "fpcalc-bundle/**",
       "node_modules/ffmpeg-static/**"
     ],
     "linux": {
@@ -42,7 +45,7 @@
       "category": "AudioVideo;Audio;Player",
       "synopsis": "Minimal desktop music player",
       "description": "Audex is a minimal local music player built with Electron.",
-      "maintainer": "Mikhail Sokov <mikhail.sokov2006@gmail.com>",
+      "maintainer": "Heorhii Litovskyi <zhotheone@gmail.com>",
       "desktop": {
         "entry": {
           "StartupWMClass": "audex"
@@ -72,11 +75,8 @@
     }
   },
   "keywords": [],
-  "author": "Mikhail Sokov <mikhail.sokov2006@gmail.com>",
-  "contributors": [
-    "Mikhail Sokov <mikhail.sokov2006@gmail.com>",
-    "Sergei <sergeifed2015@gmail.com>"
-  ],
+  "author": "Heorhii Litovskyi <zhotheone@gmail.com>",
+  "contributors": [],
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {

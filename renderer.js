@@ -17,6 +17,7 @@ const LS = {
   playLog: 'audex-play-log',
   qualityCache: 'audex-quality-cache',
   healthReport: 'audex-health-report',
+  session: 'audex-session',
 };
 
 // State
@@ -34,6 +35,8 @@ let settings = Object.assign({
   reports: false,
   editor: false,
   crossfade: false,
+  crossfadeSec: 3,        // 0–10, length of the blend; 0 = instant switch
+  acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
   trending: true,
   showParserBrowser: true,
@@ -688,6 +691,8 @@ const I18N = {
     'setting.healthCheckDesc': 'The “Library health” section and the “Quality” column in track lists. When off, the column and section are hidden entirely.',
     'setting.reports': 'Listening report',
     'setting.reportsDesc': 'The “Report” section with listening statistics. Stats are always collected, even while the section is hidden.',
+    'setting.crossfadeLen': 'Crossfade length',
+    'unit.sec': 's',
     'setting.crossfade': 'Crossfade between tracks',
     'setting.crossfadeDesc': 'Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.',
     'setting.showDownloads': 'Show the “Downloads” tab',
@@ -774,6 +779,18 @@ const I18N = {
     'editor.coverEmbed': 'Embedded cover',
     'editor.noCover': 'No cover',
     'editor.saving': 'Saving…',
+    'editor.idBadKey': 'AcoustID rejected the API key',
+    'cm.identify': 'Identify via AcoustID…',
+    'setting.acoustidKey': 'AcoustID API key',
+    'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.',
+    'setting.acoustidKeyPh': 'Built-in key',
+    'editor.identify': 'Identify',
+    'editor.identifyHint': 'Fingerprint the audio and look the track up on AcoustID',
+    'editor.identifying': 'Fingerprinting and looking up…',
+    'editor.idFilled': 'Match found — review and save',
+    'editor.idNoMatch': 'No match on AcoustID',
+    'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
+    'editor.idFailed': 'Lookup failed',
     'editor.saved': 'Saved ✓',
     'editor.errorSave': 'Save error',
     'cm.play': 'Play',
@@ -1181,6 +1198,8 @@ const I18N = {
     'setting.healthCheckDesc': 'Der Bereich „Bibliothekszustand“ und die Spalte „Qualität“ in den Titellisten. Wenn deaktiviert, sind Spalte und Bereich vollständig ausgeblendet.',
     'setting.reports': 'Hörbericht',
     'setting.reportsDesc': 'Der Bereich „Bericht“ mit Hörstatistiken. Statistiken werden immer erfasst, auch wenn der Bereich ausgeblendet ist.',
+    'setting.crossfadeLen': 'Überblendungsdauer',
+    'unit.sec': 's',
     'setting.crossfade': 'Überblendung zwischen Titeln',
     'setting.crossfadeDesc': 'Titel gehen ineinander über: der aktuelle wird ausgeblendet, während der nächste einsetzt. Gilt sowohl am Titelende als auch beim manuellen Wechseln.',
     'setting.showDownloads': 'Tab „Downloads“ anzeigen',
@@ -1267,6 +1286,18 @@ const I18N = {
     'editor.coverEmbed': 'Eingebettetes Cover',
     'editor.noCover': 'Kein Cover',
     'editor.saving': 'Speichern…',
+    'editor.idBadKey': 'AcoustID hat den API-Schlüssel abgelehnt',
+    'cm.identify': 'Über AcoustID erkennen…',
+    'setting.acoustidKey': 'AcoustID-API-Schlüssel',
+    'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Leer lassen für den eingebauten Schlüssel; einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
+    'setting.acoustidKeyPh': 'Eingebauter Schlüssel',
+    'editor.identify': 'Erkennen',
+    'editor.identifyHint': 'Audio-Fingerabdruck erstellen und den Titel bei AcoustID nachschlagen',
+    'editor.identifying': 'Fingerabdruck wird erstellt…',
+    'editor.idFilled': 'Treffer gefunden — prüfen und speichern',
+    'editor.idNoMatch': 'Kein Treffer bei AcoustID',
+    'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
+    'editor.idFailed': 'Abfrage fehlgeschlagen',
     'editor.saved': 'Gespeichert ✓',
     'editor.errorSave': 'Speicherfehler',
     'cm.play': 'Abspielen',
@@ -1674,6 +1705,8 @@ const I18N = {
     'setting.healthCheckDesc': 'La section « État de la bibliothèque » et la colonne « Qualité » dans les listes de pistes. Désactivé, la colonne et la section sont entièrement masquées.',
     'setting.reports': "Rapport d'écoute",
     'setting.reportsDesc': "La section « Rapport » avec les statistiques d'écoute. Les statistiques sont toujours collectées, même lorsque la section est masquée.",
+    'setting.crossfadeLen': 'Durée du fondu',
+    'unit.sec': 's',
     'setting.crossfade': 'Fondu enchaîné entre les pistes',
     'setting.crossfadeDesc': "Les pistes se fondent l'une dans l'autre : la piste en cours s'estompe pendant que la suivante monte. S'applique en fin de piste comme lors d'un changement manuel.",
     'setting.showDownloads': "Afficher l'onglet « Téléchargements »",
@@ -1760,6 +1793,18 @@ const I18N = {
     'editor.coverEmbed': 'Pochette intégrée',
     'editor.noCover': 'Pas de pochette',
     'editor.saving': 'Enregistrement…',
+    'editor.idBadKey': "AcoustID a refusé la clé API",
+    'cm.identify': 'Identifier via AcoustID…',
+    'setting.acoustidKey': 'Clé API AcoustID',
+    'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Laissez vide pour la clé intégrée ; obtenez la vôtre gratuitement sur acoustid.org/api-key.",
+    'setting.acoustidKeyPh': 'Clé intégrée',
+    'editor.identify': 'Identifier',
+    'editor.identifyHint': "Créer l'empreinte audio et rechercher la piste sur AcoustID",
+    'editor.identifying': 'Empreinte et recherche en cours…',
+    'editor.idFilled': 'Correspondance trouvée — vérifiez puis enregistrez',
+    'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
+    'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
+    'editor.idFailed': 'Échec de la recherche',
     'editor.saved': 'Enregistré ✓',
     'editor.errorSave': "Erreur d'enregistrement",
     'cm.play': 'Lire',
@@ -2167,6 +2212,8 @@ const I18N = {
     'setting.healthCheckDesc': 'Розділ «Стан бібліотеки» та стовпець «Якість» у списках треків. Коли вимкнено — стовпець і розділ повністю приховані.',
     'setting.reports': 'Звіт про прослуховування',
     'setting.reportsDesc': 'Розділ «Звіт» зі статистикою прослуховування. Статистика збирається завжди, навіть коли розділ прихований.',
+    'setting.crossfadeLen': 'Тривалість переходу',
+    'unit.sec': 'с',
     'setting.crossfade': 'Плавний перехід між треками',
     'setting.crossfadeDesc': 'Треки перетікають один в одного: кінець поточного стихає, поки наступний наростає. Діє і в кінці треку, і під час ручного перемикання.',
     'setting.showDownloads': 'Показати вкладку «Завантаження»',
@@ -2253,6 +2300,18 @@ const I18N = {
     'editor.coverEmbed': 'Вбудована обкладинка',
     'editor.noCover': 'Немає обкладинки',
     'editor.saving': 'Збереження…',
+    'editor.idBadKey': 'AcoustID відхилив ключ API',
+    'cm.identify': 'Розпізнати через AcoustID…',
+    'setting.acoustidKey': 'Ключ API AcoustID',
+    'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Залиште порожнім, щоб узяти вбудований ключ; власний можна отримати безкоштовно на acoustid.org/api-key.',
+    'setting.acoustidKeyPh': 'Вбудований ключ',
+    'editor.identify': 'Розпізнати',
+    'editor.identifyHint': 'Створити аудіовідбиток і знайти трек в AcoustID',
+    'editor.identifying': 'Створюємо відбиток і шукаємо…',
+    'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
+    'editor.idNoMatch': 'В AcoustID збігів немає',
+    'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
+    'editor.idFailed': 'Пошук не вдався',
     'editor.saved': 'Збережено ✓',
     'editor.errorSave': 'Помилка збереження',
     'cm.play': 'Грати',
@@ -5860,7 +5919,12 @@ function renderArtistDetail(name) {
 // outgoing track is handed to a transient Audio object that plays only its tail
 // while the main element fades the new track in. That way no existing wiring has
 // to learn about a second element.
-const CROSSFADE_MS = 3000;
+// Read live from settings so a drag of the slider applies to the next switch
+// without a reload. Clamped to the slider's own 0–10 s range.
+function crossfadeMs() {
+  const s = Number(settings.crossfadeSec);
+  return (Number.isFinite(s) ? Math.max(0, Math.min(10, s)) : 3) * 1000;
+}
 let crossfadeTail = null;      // transient Audio playing the outgoing track
 let crossfadeTailTimer = null;
 let crossfadeRampId = null;    // rAF id of the incoming fade-in
@@ -5874,7 +5938,8 @@ function rampVolume(el, to, ms, onDone) {
   const start = performance.now();
   let id = 0;
   const step = (now) => {
-    const k = Math.min(1, (now - start) / ms);
+    // ms === 0 (crossfade length 0) would make this NaN — jump straight to the end.
+    const k = ms > 0 ? Math.min(1, (now - start) / ms) : 1;
     try { el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); } catch (_) {}
     if (k < 1) id = requestAnimationFrame(step);
     else if (onDone) onDone();
@@ -5907,14 +5972,14 @@ function startCrossfadeTail() {
     try { tail.currentTime = pos; } catch (_) {}
     tail.play().then(() => {
       if (crossfadeTail !== tail) { try { tail.pause(); } catch (_) {} return; }
-      rampVolume(tail, 0, CROSSFADE_MS);
+      rampVolume(tail, 0, crossfadeMs());
     }).catch(() => { if (crossfadeTail === tail) stopCrossfadeTail(); });
   }, { once: true });
   tail.src = audio.src;
   // Hard stop so a tail can never outlive its fade (e.g. if the ramp is lost).
   crossfadeTailTimer = setTimeout(() => {
     if (crossfadeTail === tail) stopCrossfadeTail();
-  }, CROSSFADE_MS + 1500);
+  }, crossfadeMs() + 1500);
 }
 
 // ── Playback ──
@@ -5932,7 +5997,7 @@ function playTrackByPath(path, queue) {
   audio.src = 'file://' + track.path;
   if (fade) {
     audio.volume = 0;
-    crossfadeRampId = rampVolume(audio, targetVolume, CROSSFADE_MS, () => { crossfadeRampId = null; });
+    crossfadeRampId = rampVolume(audio, targetVolume, crossfadeMs(), () => { crossfadeRampId = null; });
   } else {
     audio.volume = targetVolume;
   }
@@ -5946,8 +6011,46 @@ function playTrackByPath(path, queue) {
   refreshPlayingHighlight();
 }
 
+// ── Session ──
+// recents[0] already survived a restart, but only as "which track was loaded" —
+// position, shuffle, repeat and volume were lost. This keeps the rest of it.
+// Written on a 5 s throttle while playing (so a crash costs at most 5 s of
+// position) and forced on pause and on window teardown, which also covers
+// closing to tray, where no unload event fires.
+let lastSessionSave = 0;
+function saveSession(force) {
+  const now = Date.now();
+  if (!force && now - lastSessionSave < 5000) return;
+  lastSessionSave = now;
+  try {
+    const track = library[currentTrackIndex];
+    localStorage.setItem(LS.session, JSON.stringify({
+      path: track ? track.path : '',
+      position: Number(audio.currentTime) || 0,
+      shuffle: isShuffle,
+      repeat: repeatMode,
+      volume: targetVolume,
+    }));
+  } catch (_) { /* quota or private mode — the session is not worth failing over */ }
+}
+function readSession() {
+  try { return JSON.parse(localStorage.getItem(LS.session) || 'null'); }
+  catch (_) { return null; }
+}
+window.addEventListener('pagehide', () => saveSession(true));
+audio.addEventListener('pause', () => saveSession(true));
+
 function loadLastTrack() {
-  const lastPath = recents[0];
+  const sess = readSession();
+  if (sess) {
+    // Modes are independent of whether the track still exists on disk.
+    isShuffle = !!sess.shuffle;
+    repeatMode = [0, 1, 2].includes(sess.repeat) ? sess.repeat : 0;
+    updateShuffleUI();
+    updateRepeatUI();
+    if (Number.isFinite(sess.volume)) setVolume(sess.volume);
+  }
+  const lastPath = (sess && sess.path) || recents[0];
   if (!lastPath) return;
   const realIndex = trackIndexByPath(lastPath);
   if (realIndex < 0) return;
@@ -5956,6 +6059,14 @@ function loadLastTrack() {
   const track = library[realIndex];
   if (!track.cover) ensureCoverFor(track);
   audio.src = 'file://' + track.path;
+  // Deliberately paused: restoring where you were is helpful, starting music on
+  // its own is not. currentTime only sticks once metadata is in.
+  const pos = sess && Number(sess.position) > 0 ? Number(sess.position) : 0;
+  if (pos > 0) {
+    audio.addEventListener('loadedmetadata', () => {
+      if (pos < audio.duration - 1) { try { audio.currentTime = pos; } catch (_) {} }
+    }, { once: true });
+  }
   isPlaying = false;
   updateNowPlayingUI(track);
   refreshPlayingHighlight();
@@ -6905,6 +7016,7 @@ audio.addEventListener('pause', () => { plTick(); isPlaying = false; updatePlayB
 audio.addEventListener('seeked', () => { pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
 audio.addEventListener('timeupdate', () => {
   const cur = audio.currentTime, dur = audio.duration;
+  saveSession(); // throttled internally — this fires ~4x a second
   $('time-current').textContent = formatTime(cur);
   $('fs-time-current').textContent = formatTime(cur);
   if (!isNaN(dur)) {
@@ -6918,9 +7030,10 @@ audio.addEventListener('timeupdate', () => {
   // the 'ended' handler — fading a track into itself makes no sense.
   if (settings.crossfade && !isNaN(dur) && dur > 0) {
     const left = dur - cur;
-    if (left > CROSSFADE_MS / 1000 + 0.5) {
+    const fadeSec = crossfadeMs() / 1000;
+    if (left > fadeSec + 0.5) {
       crossfadeArmed = false; // seeked back out of the fade window — re-arm
-    } else if (!crossfadeArmed && repeatMode !== 2 && left <= CROSSFADE_MS / 1000) {
+    } else if (!crossfadeArmed && repeatMode !== 2 && fadeSec > 0 && left <= fadeSec) {
       crossfadeArmed = true;
       nextTrack();
       return;
@@ -7507,6 +7620,11 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     else if (action === 'favorite') toggleFavorite(path);
     else if (action === 'reveal') window.electronAPI.revealInFolder(path);
     else if (action === 'edit-tags') openMetadataEditor(path);
+    // Same editor, with the lookup already running — the match lands in the
+    // fields and the user still reviews it before anything touches the file.
+    else if (action === 'identify') {
+      openMetadataEditor(path).then(() => $('btn-identify-editor').click());
+    }
     else if (action === 'trim') { if (track) openEditorFor(track); }
     else if (action === 'add-to-playlist') openAddToPlaylistModal(path);
     else if (action === 'remove-from-playlist') {
@@ -7559,6 +7677,47 @@ async function openMetadataEditor(path) {
 }
 $('btn-close-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
 $('btn-cancel-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
+
+const IDENTIFY_ERR_KEY = {
+  noFpcalc: 'editor.idNoFpcalc',
+  apiKey: 'editor.idBadKey',
+};
+
+// Identify via AcoustID: fills the fields with what the fingerprint matched but
+// never writes to disk on its own — the user reviews and presses Save, so a bad
+// match costs nothing.
+$('btn-identify-editor').addEventListener('click', async () => {
+  if (!pendingMetadataPath) return;
+  const btn = $('btn-identify-editor');
+  const status = $('editor-status');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  status.textContent = tr('editor.identifying');
+  status.className = 'editor-foot-status';
+  let res;
+  try {
+    res = await window.electronAPI.identifyTrack(pendingMetadataPath, settings.acoustidKey);
+  } catch (err) {
+    res = { success: false, error: 'lookup' };
+  }
+  btn.disabled = false;
+  if (!res || !res.success) {
+    status.textContent = tr(IDENTIFY_ERR_KEY[res && res.error] || 'editor.idFailed');
+    status.className = 'editor-foot-status error';
+    return;
+  }
+  if (!res.match) {
+    status.textContent = tr('editor.idNoMatch');
+    status.className = 'editor-foot-status';
+    return;
+  }
+  const m = res.match;
+  if (m.title) $('md-title').value = m.title;
+  if (m.artist) $('md-artist').value = m.artist;
+  if (m.album) $('md-album').value = m.album;
+  status.textContent = tr('editor.idFilled');
+  status.className = 'editor-foot-status ok';
+});
 $('btn-save-editor').addEventListener('click', async () => {
   if (!pendingMetadataPath) return;
   const status = $('editor-status');
@@ -8246,6 +8405,18 @@ function renderAccentPalette() {
   }
 }
 
+// The length row only means anything while crossfade is on, so it follows the
+// toggle the same way the background rows follow their source.
+function renderCrossfadeLen() {
+  const row = $('crossfade-len-row');
+  const el = $('crossfade-len');
+  const out = $('crossfade-len-val');
+  if (row) row.hidden = !settings.crossfade;
+  const sec = crossfadeMs() / 1000;
+  if (el) el.value = String(sec);
+  if (out) out.textContent = `${sec} ${tr('unit.sec')}`;
+}
+
 function renderSettings() {
   // Theme combobox
   const themeCurrent = $('theme-current');
@@ -8261,6 +8432,9 @@ function renderSettings() {
     if (settings[key]) t.classList.add('on'); else t.classList.remove('on');
   });
   refreshHwAccelToggle();
+  renderCrossfadeLen();
+  const acoustKey = $('acoustid-key');
+  if (acoustKey && acoustKey !== document.activeElement) acoustKey.value = settings.acoustidKey || '';
   // Folder
   $('default-folder-path').textContent = settings.defaultFolder || tr('placeholder.noFolder');
   // Download format combobox
@@ -8478,8 +8652,29 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'healthCheck') applyHealthCheckVisibility();
     if (key === 'reports') applyReportsVisibility();
     if (key === 'editor') applyEditorVisibility();
+    if (key === 'crossfade') renderCrossfadeLen();
   });
 });
+
+(() => {
+  const el = $('crossfade-len');
+  if (!el) return;
+  el.addEventListener('input', () => {
+    settings.crossfadeSec = Number(el.value);
+    renderCrossfadeLen();
+  });
+  // Persist on release rather than on every frame of the drag.
+  el.addEventListener('change', () => saveSettings());
+})();
+
+(() => {
+  const el = $('acoustid-key');
+  if (!el) return;
+  el.addEventListener('input', () => {
+    settings.acoustidKey = el.value.trim();
+    saveSettings();
+  });
+})();
 
 // ── Hardware acceleration toggle ──
 // State lives in the main process (a marker file read before app.ready), not in
@@ -9103,17 +9298,23 @@ function hideBootOverlay() {
     setTimeout(() => overlay.remove(), 600);
   }, Math.max(0, left));
 }
-// Version shown in the boot-overlay footer and the sidebar brand block. Single
-// source: the Settings version tag — never hardcode the number again here.
-(() => {
-  const tag = document.querySelector('.version-tag');
-  if (!tag) return;
-  const full = tag.textContent.trim();            // e.g. "Audex 1.1.7"
+// Builds are identified by git short hash, not by a release number — the hash
+// comes from main (live git in a dev checkout, build-info.json when packaged).
+// Every spot that shows a build label is filled from that single answer.
+(async () => {
+  let commit = '';
+  try {
+    const info = await window.electronAPI.getBuildInfo();
+    commit = (info && info.commit) || '';
+  } catch (_) { /* leave blank rather than show a stale number */ }
+  const tag = document.getElementById('version-tag');
+  if (tag) tag.textContent = commit ? `Audex ${commit}` : 'Audex';
   const footer = document.getElementById('boot-footer');
-  if (footer) footer.textContent = `${full} · Audex Audio Engine`;
+  if (footer) footer.textContent = `${tag ? tag.textContent : 'Audex'} · Audex Audio Engine`;
   const brand = document.getElementById('brand-version');
-  const num = full.match(/[\d][\d.]*/);
-  if (brand && num) brand.textContent = `v${num[0]}`;
+  if (brand) brand.textContent = commit;
+  const about = document.getElementById('about-version');
+  if (about && commit) about.textContent = `${commit} · Electron · Linux`;
 })();
 // Hard fallback: never leave the overlay up if something in the boot chain throws.
 setTimeout(hideBootOverlay, 30000);

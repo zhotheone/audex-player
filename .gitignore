@@ -5,3 +5,5 @@ release/
 CLAUDE.md
 chromium-bundle/
 yt-dlp-bundle/
+build-info.json
+fpcalc-bundle/

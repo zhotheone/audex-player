@@ -2290,6 +2290,15 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-top: 1px solid var(--border);
 }
 .setting-row:first-child { border-top: none; }
+/* The display:flex above is an author rule, so it outranks the UA stylesheet's
+   [hidden] { display: none } — without this the rows toggled via el.hidden
+   (background options, crossfade length) stay visible. */
+.setting-row[hidden] { display: none; }
+/* .field-input is width:100% for the tag editor's stacked fields; inside a
+   setting-row it has to stay a fixed-width control next to the label. Two
+   classes deep on purpose: .field-input is declared later in this file, so a
+   bare .setting-input would lose the tie and swallow the whole row. */
+.setting-row .setting-input { width: 220px; flex: 0 0 auto; }
 .setting-text { flex: 1; min-width: 0; }
 .setting-label {
   font-size: 13px;

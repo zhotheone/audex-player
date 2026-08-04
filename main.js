@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, screen, Tray, Menu, nativeIm
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 const https = require('https');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
@@ -863,6 +863,28 @@ ipcMain.handle('shell:openExternal', async (event, url) => {
 // effective. Toggling writes or removes the marker; the change needs a restart
 // to take hold (disableHardwareAcceleration only works before app is ready), so
 // we offer one via a native dialog.
+// ── Build identity ──
+// The UI labels builds by git short hash, not by the package.json version. In a
+// dev checkout that comes straight from git; a packaged build has no .git, so it
+// falls back to build-info.json written by scripts/build-info.js at `dist` time.
+let cachedCommit;
+function getCommit() {
+  if (cachedCommit !== undefined) return cachedCommit;
+  const root = app.getAppPath();
+  try {
+    cachedCommit = execFileSync('git', ['rev-parse', '--short', 'HEAD'],
+      { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch (_) {
+    try {
+      cachedCommit = String(JSON.parse(
+        fs.readFileSync(path.join(root, 'build-info.json'), 'utf8')).commit || '');
+    } catch (_) { cachedCommit = ''; }
+  }
+  return cachedCommit;
+}
+
+ipcMain.handle('app:getBuildInfo', () => ({ commit: getCommit() }));
+
 ipcMain.handle('app:getHardwareAcceleration', () => {
   return { enabled: !isGpuDisabled() };
 });
@@ -1951,6 +1973,118 @@ function httpsGetJson(url) {
     req.setTimeout(8000, () => { req.destroy(new Error('timeout')); });
   });
 }
+
+// ── AcoustID / MusicBrainz identification ──
+// The audio itself is fingerprinted with Chromaprint's fpcalc (a well-known
+// system binary, shelled out to like ffmpeg and yt-dlp already are — the
+// bundled ffmpeg-static is built without the chromaprint muxer, so it can't
+// stand in). The fingerprint goes to AcoustID, which answers with the
+// MusicBrainz recordings it maps to. This is the only lookup here that needs
+// the network, and it only runs when the user presses Identify.
+const ACOUSTID_API_KEY = 'WdVlfoQTHq';
+const ACOUSTID_URL = 'https://api.acoustid.org/v2/lookup';
+
+// The fpcalc shipped inside the app (see scripts/fetch-fpcalc.js and
+// build.asarUnpack), falling back to a system install for dev runs or if the
+// bundle is missing. Mirrors resolveBundledYtDlp/ytDlpPath.
+function fpcalcPath() {
+  const bundleRoot = app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'fpcalc-bundle')
+    : path.join(__dirname, 'fpcalc-bundle');
+  const name = process.platform === 'win32' ? 'fpcalc.exe' : 'fpcalc';
+  const bundled = path.join(bundleRoot, name);
+  try {
+    if (fs.existsSync(bundled)) {
+      // AppImage/asar-unpacked files can lose the exec bit on some setups.
+      if (process.platform !== 'win32') {
+        try { fs.chmodSync(bundled, 0o755); } catch (_) {}
+      }
+      return bundled;
+    }
+  } catch (_) {}
+  for (const c of ['/usr/bin/fpcalc', '/usr/local/bin/fpcalc', '/opt/homebrew/bin/fpcalc',
+                   path.join(process.env.HOME || '', '.local', 'bin', 'fpcalc')]) {
+    try { if (fs.existsSync(c)) return c; } catch (_) {}
+  }
+  return name; // last resort: whatever is on PATH
+}
+
+function fingerprintFile(filePath) {
+  return new Promise((resolve) => {
+    let proc;
+    try {
+      proc = spawn(fpcalcPath(), ['-json', filePath], { stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (err) {
+      resolve({ error: 'notFound' });
+      return;
+    }
+    let out = '';
+    proc.stdout.on('data', (c) => { out += c; });
+    proc.stderr.resume();
+    proc.on('error', () => resolve({ error: 'notFound' }));
+    proc.on('close', (code) => {
+      if (code !== 0) { resolve({ error: 'failed' }); return; }
+      try {
+        const fp = JSON.parse(out);
+        resolve(fp && fp.fingerprint && fp.duration ? { fp } : { error: 'failed' });
+      } catch (_) { resolve({ error: 'failed' }); }
+    });
+    setTimeout(() => { try { proc.kill(); } catch (_) {} }, 60000);
+  });
+}
+
+// Highest-scoring recording that actually carries a title.
+function acoustidBestMatch(data) {
+  const results = (data && Array.isArray(data.results) ? data.results : [])
+    .slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  for (const r of results) {
+    for (const rec of r.recordings || []) {
+      if (!rec.title) continue;
+      return {
+        title: rec.title,
+        artist: (rec.artists || []).map(a => a.name).join(' & ') || '',
+        album: ((rec.releasegroups || []).find(rg => rg.title) || {}).title || '',
+      };
+    }
+  }
+  return null;
+}
+
+ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => {
+  if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'notFound' };
+  const { fp, error } = await fingerprintFile(filePath);
+  if (error) return { success: false, error: error === 'notFound' ? 'noFpcalc' : 'fingerprint' };
+  // A space (not "+") in `meta` — the querystring encoder turns it into the
+  // separator the API wants; a literal "+" is escaped to %2B and the whole
+  // meta value is silently dropped, so no recordings ever come back.
+  const qs = new URLSearchParams({
+    client: String(apiKey || '').trim() || ACOUSTID_API_KEY,
+    duration: String(Math.round(fp.duration)),
+    fingerprint: fp.fingerprint,
+    meta: 'recordings releasegroups',
+    format: 'json',
+  });
+  let data;
+  try {
+    data = await httpsGetJson(`${ACOUSTID_URL}?${qs}`);
+  } catch (err) {
+    const msg = String(err && err.message || err);
+    // AcoustID answers a rejected key with HTTP 400, not a 200 carrying an error
+    // body — without this it would surface as a generic "lookup failed" and the
+    // user would never learn their key is the problem.
+    if (msg.includes('HTTP 400')) return { success: false, error: 'apiKey', detail: msg };
+    return { success: false, error: 'lookup', detail: msg };
+  }
+  if (data && data.status === 'error') {
+    return { success: false, error: 'apiKey', detail: String((data.error && data.error.message) || '') };
+  }
+  const match = acoustidBestMatch(data);
+  if (match) return { success: true, match };
+  // No MusicBrainz recording linked yet — the raw AcoustID is still worth showing.
+  const top = (data && Array.isArray(data.results) ? data.results : [])
+    .slice().sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+  return { success: true, match: null, acoustid: top ? top.id : null };
+});
 
 ipcMain.handle('music:lookupCover', async (event, query) => {
   try {
