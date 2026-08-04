@@ -7,8 +7,9 @@
   "scripts": {
     "start": "electron . --no-sandbox",
     "dist": "node scripts/build-info.js && electron-builder",
+    "build": "node scripts/check-bundles.js win32 && node scripts/build-info.js && electron-builder --win --publish never",
     "postinstall": "node scripts/fetch-ytdlp.js && node scripts/fetch-fpcalc.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test-audex.js"
   },
   "build": {
     "appId": "com.audex.player",
