@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   discordSetActivity: (activity) => ipcRenderer.invoke('discord:setActivity', { activity }),
   discordGetStatus: () => ipcRenderer.invoke('discord:getStatus'),
   lookupCover: (query) => ipcRenderer.invoke('music:lookupCover', query),
+  lookupLyrics: (query) => ipcRenderer.invoke('music:lookupLyrics', query),
   identifyTrack: (filePath, apiKey) => ipcRenderer.invoke('acoustid:identify', { filePath, apiKey }),
   onDiscordStatus: (cb) => {
     const listener = (_e, data) => cb(data);

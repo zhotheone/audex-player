@@ -136,6 +136,11 @@
           <svg class="i" width="14" height="14"><use href="#i-sparkle"/></svg>
           <span data-i18n="nav.trending">Trending</span>
         </a>
+        <a href="#" class="nav-item" data-view="albums">
+          <svg class="i" width="14" height="14"><use href="#i-image"/></svg>
+          <span data-i18n="nav.albums">Albums</span>
+          <span class="nav-meta" id="count-albums">0</span>
+        </a>
         <a href="#" class="nav-item" data-view="artists">
           <svg class="i" width="14" height="14"><use href="#i-mic"/></svg>
           <span data-i18n="nav.artists">Artists</span>
@@ -150,14 +155,6 @@
           <svg class="i" width="14" height="14"><use href="#i-heart"/></svg>
           <span data-i18n="nav.favorites">Favorites</span>
           <span class="nav-meta" id="count-favorites">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="report" id="nav-report" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-report"/></svg>
-          <span data-i18n="nav.report">Report</span>
-        </a>
-        <a href="#" class="nav-item" data-view="health" id="nav-health" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-shield"/></svg>
-          <span data-i18n="nav.health">Health</span>
         </a>
         <a href="#" class="nav-item" data-view="editor" id="nav-editor" hidden>
           <svg class="i" width="14" height="14"><use href="#i-scissors"/></svg>
@@ -179,6 +176,18 @@
       <div class="nav-section recents">
         <div class="nav-label" data-i18n="nav.recents">Recent</div>
         <div id="recents-list"></div>
+      </div>
+
+      <div class="nav-section tools" id="nav-tools-group" hidden>
+        <div class="nav-label" data-i18n="nav.tools">Tools</div>
+        <a href="#" class="nav-item" data-view="report" id="nav-report" hidden>
+          <svg class="i" width="14" height="14"><use href="#i-report"/></svg>
+          <span data-i18n="nav.report">Report</span>
+        </a>
+        <a href="#" class="nav-item" data-view="health" id="nav-health" hidden>
+          <svg class="i" width="14" height="14"><use href="#i-shield"/></svg>
+          <span data-i18n="nav.health">Health</span>
+        </a>
       </div>
 
       <div class="sidebar-actions">
@@ -349,6 +358,86 @@
             <div></div>
           </div>
           <div class="tbody" id="pl-detail-list"></div>
+        </div>
+      </section>
+
+      <!-- Albums Grid -->
+      <section id="view-albums" class="view-section">
+        <header class="topbar">
+          <div class="crumb">
+            <span class="crumb-item" data-i18n="crumb.collection">Collection</span>
+            <span class="crumb-sep">/</span>
+            <span class="crumb-item active" data-i18n="nav.albums">Albums</span>
+            <span class="crumb-count" id="albums-count-label">0 albums</span>
+          </div>
+          <div class="searchbox">
+            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+            <input type="text" placeholder="Search album…" data-i18n-placeholder="search.albumPlaceholder" id="albums-search">
+          </div>
+        </header>
+
+        <div class="filters">
+          <button class="chip active" data-albums-sort="alpha" data-i18n="sort.alpha">Alphabetical</button>
+          <button class="chip" data-albums-sort="tracks" data-i18n="sort.byTracks">By track count</button>
+          <button class="chip" data-albums-sort="recent" data-i18n="sort.recent">Recently added</button>
+          <div class="auto-chip-wrap">
+            <span class="auto-chip">
+              <svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg>
+              <span data-i18n="autoChip.albums">List is built automatically from your library</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="playlists-grid" id="albums-grid"></div>
+        <div class="empty-state" id="albums-empty">
+          <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-image"/></svg></div>
+          <div class="empty-title" data-i18n="empty.albums.title">No albums yet</div>
+          <div class="empty-text" data-i18n="empty.albums.text">Add tracks to the library to see albums here.</div>
+        </div>
+      </section>
+
+      <!-- Album Detail -->
+      <section id="view-album-detail" class="view-section">
+        <header class="topbar">
+          <div class="crumb">
+            <span class="crumb-item link" data-view="albums" data-i18n="crumb.collection">Collection</span>
+            <span class="crumb-sep">/</span>
+            <span class="crumb-item link" data-view="albums" data-i18n="nav.albums">Albums</span>
+            <span class="crumb-sep">/</span>
+            <span class="crumb-item active" id="album-detail-crumb"></span>
+          </div>
+        </header>
+
+        <div class="pl-hero">
+          <div class="pl-hero-cover" id="album-hero-cover"><span id="album-hero-letter"></span></div>
+          <div class="pl-hero-body">
+            <div class="pl-eyebrow" data-i18n="eyebrow.album">Album</div>
+            <div class="pl-title" id="album-detail-title"></div>
+            <div class="pl-meta" id="album-detail-meta"></div>
+            <div class="pl-actions">
+              <button class="btn-solid" id="btn-album-play">
+                <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
+                <span data-i18n="btn.playAll">Play all</span>
+              </button>
+              <button class="btn-ghost" id="btn-album-shuffle">
+                <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
+                <span data-i18n="btn.shuffle">Shuffle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="track-table">
+          <div class="thead">
+            <div>#</div>
+            <div data-i18n="table.title">Title</div>
+            <div data-i18n="table.artist">Artist</div>
+            <div data-i18n="table.album">Album</div>
+            <div data-i18n="table.quality">Quality</div>
+            <div class="ta-right" data-i18n="table.time">Time</div>
+            <div></div>
+          </div>
+          <div class="tbody" id="album-detail-list"></div>
         </div>
       </section>
 
@@ -894,6 +983,9 @@
       </button>
       <div class="fs-eyebrow"><span data-i18n="fs.nowPlayingFrom">Now playing · from</span> <span style="color:var(--text-strong)" data-i18n="fs.fromLibrary">Library</span></div>
       <div class="fs-topbar-right">
+        <button class="fs-chip" id="btn-fs-lyrics" title="Lyrics" data-i18n-title="fs.lyrics">
+          <svg class="i" width="13" height="13"><use href="#i-mic"/></svg>
+        </button>
         <button class="fs-chip" id="btn-fs-portrait" title="Mobile mode" data-i18n-title="btn.portrait">
           <svg class="i" width="13" height="13"><use href="#i-smartphone"/></svg>
         </button>
@@ -957,6 +1049,11 @@
           <span class="fs-queue-count" id="fs-queue-count">0 ahead</span>
         </div>
         <div id="fs-queue-list"></div>
+      </div>
+
+      <div class="fs-lyrics-panel" id="fs-lyrics-panel">
+        <div class="fs-lyrics-head" data-i18n="fs.lyrics">Lyrics</div>
+        <div id="fs-lyrics-list" class="fs-lyrics-list"></div>
       </div>
     </div>
   </div>

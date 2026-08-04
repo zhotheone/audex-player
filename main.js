@@ -2172,3 +2172,49 @@ ipcMain.handle('music:lookupCover', async (event, query) => {
     return { url: null, error: String(err && err.message || err) };
   }
 });
+
+// ── Lyrics lookup (LRCLIB) ────────────────────────────────────────────────
+// LRCLIB is a free, key-less lyrics API. /api/get wants an exact match
+// (artist+title+album+duration, duration tolerance ~2s) and 404s if it can't
+// find one; we then fall back to /api/search, which fuzzy-matches on
+// artist+title and returns a ranked list — we take the first hit that has
+// synced lyrics, or else the first with plain lyrics.
+const lrclibCache = new Map(); // "artist|title|album|duration" -> result
+
+ipcMain.handle('music:lookupLyrics', async (event, query) => {
+  try {
+    const artist = String(query && query.artist || '').trim();
+    const title = String(query && query.title || '').trim();
+    const album = String(query && query.album || '').trim();
+    const duration = Math.round(Number(query && query.duration) || 0);
+    if (!title) return { success: false, synced: null, plain: null };
+    const cacheKey = [artist, title, album, duration].join('|').toLowerCase();
+    if (lrclibCache.has(cacheKey)) return lrclibCache.get(cacheKey);
+
+    let result = null;
+    const getParams = new URLSearchParams({ track_name: title, artist_name: artist });
+    if (album) getParams.set('album_name', album);
+    if (duration > 0) getParams.set('duration', String(duration));
+    try {
+      const json = await httpsGetJson(`https://lrclib.net/api/get?${getParams}`);
+      if (json && (json.syncedLyrics || json.plainLyrics)) {
+        result = { success: true, synced: json.syncedLyrics || null, plain: json.plainLyrics || null };
+      }
+    } catch (_) { /* no exact match — fall through to search */ }
+
+    if (!result) {
+      const searchParams = new URLSearchParams({ track_name: title, artist_name: artist });
+      try {
+        const json = await httpsGetJson(`https://lrclib.net/api/search?${searchParams}`);
+        const hit = Array.isArray(json) ? (json.find(r => r.syncedLyrics) || json.find(r => r.plainLyrics)) : null;
+        if (hit) result = { success: true, synced: hit.syncedLyrics || null, plain: hit.plainLyrics || null };
+      } catch (_) { /* no match at all */ }
+    }
+
+    if (!result) result = { success: true, synced: null, plain: null };
+    lrclibCache.set(cacheKey, result);
+    return result;
+  } catch (err) {
+    return { success: false, error: String(err && err.message || err), synced: null, plain: null };
+  }
+});

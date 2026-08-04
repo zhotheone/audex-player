@@ -153,6 +153,8 @@ let pendingMetadataPath = null;
 let pendingAddPath = null;
 let activePlaylistId = null;
 let activeArtistName = null;
+let activeAlbumKey = null;
+let albumsSort = 'alpha';            // 'alpha' | 'tracks' | 'recent'
 let artistsSort = 'alpha';           // 'alpha' | 'tracks' | 'recent'
 let artistsList = [];                // current filtered+sorted list of artist objects
 let artistsCursor = 0;               // how many of artistsList have been mounted in the grid
@@ -335,6 +337,7 @@ const I18N = {
     'update.available': 'Update available',
     'update.download': 'Download',
     'update.dismiss': 'Dismiss',
+    'nav.albums': 'Albums',
     'nav.artists': 'Artists',
     'nav.playlists': 'Playlists',
     'nav.favorites': 'Favorites',
@@ -370,6 +373,7 @@ const I18N = {
     'editor.tooShort': 'Fragment is too short',
     'nav.search': 'Search',
     'nav.recents': 'Recent',
+    'nav.tools': 'Tools',
     'nav.openFiles': 'Open files',
     'nav.settings': 'Settings',
     'nav.trending': 'Trending',
@@ -528,6 +532,7 @@ const I18N = {
     'crumb.collection': 'Collection',
     'search.placeholder': 'Search…',
     'search.artistPlaceholder': 'Search artist…',
+    'search.albumPlaceholder': 'Search album…',
     'search.trackPlaceholder': 'Search track…',
     'filter.all': 'All',
     'filter.recent': 'Recently added',
@@ -554,6 +559,8 @@ const I18N = {
     'empty.playlists.text': 'Create your first playlist — gather tracks by mood, time of day, or album.',
     'empty.artists.title': 'No artists yet',
     'empty.artists.text': 'Add tracks to the library to see artists here.',
+    'empty.albums.title': 'No albums yet',
+    'empty.albums.text': 'Add tracks to the library to see albums here.',
     'empty.favorites.title': 'No favorite tracks',
     'empty.favorites.text': 'Click the heart on any track to add it here.',
     'btn.newPlaylist': 'New playlist',
@@ -589,8 +596,10 @@ const I18N = {
     'tooltip.wip': 'Feature in development',
     'hint.favorites': 'Saved tracks appear here',
     'eyebrow.playlist': 'Playlist',
+    'eyebrow.album': 'Album',
     'eyebrow.artist': 'Artist',
     'autoChip.artists': 'List is built automatically from your library',
+    'autoChip.albums': 'List is built automatically from your library',
     'np.empty.title': 'Nothing selected',
     'np.empty.artist': '—',
     'fs.nowPlayingFrom': 'Now playing · from',
@@ -598,6 +607,9 @@ const I18N = {
     'fs.nowPlaying': 'Now playing',
     'fs.queue': 'Queue',
     'fs.queueAhead': '{n} ahead',
+    'fs.lyrics': 'Lyrics',
+    'fs.lyricsLoading': 'Loading lyrics…',
+    'fs.lyricsNone': 'No lyrics found',
     'downloads.tab.internet': 'From the internet',
     'downloads.tab.parsing': 'Parsing',
     'downloads.title': 'Download from the internet',
@@ -842,6 +854,7 @@ const I18N = {
     'update.available': 'Update verfügbar',
     'update.download': 'Herunterladen',
     'update.dismiss': 'Schließen',
+    'nav.albums': 'Alben',
     'nav.artists': 'Interpreten',
     'nav.playlists': 'Playlists',
     'nav.favorites': 'Favoriten',
@@ -877,6 +890,7 @@ const I18N = {
     'editor.tooShort': 'Ausschnitt ist zu kurz',
     'nav.search': 'Suche',
     'nav.recents': 'Zuletzt',
+    'nav.tools': 'Werkzeuge',
     'nav.openFiles': 'Dateien öffnen',
     'nav.settings': 'Einstellungen',
     'nav.trending': 'Im Trend',
@@ -1035,6 +1049,7 @@ const I18N = {
     'crumb.collection': 'Sammlung',
     'search.placeholder': 'Suche…',
     'search.artistPlaceholder': 'Interpreten suchen…',
+    'search.albumPlaceholder': 'Album suchen…',
     'search.trackPlaceholder': 'Titel suchen…',
     'filter.all': 'Alle',
     'filter.recent': 'Kürzlich hinzugefügt',
@@ -1061,6 +1076,8 @@ const I18N = {
     'empty.playlists.text': 'Erstelle deine erste Playlist — sammle Titel nach Stimmung, Tageszeit oder Album.',
     'empty.artists.title': 'Noch keine Interpreten',
     'empty.artists.text': 'Füge Titel zur Bibliothek hinzu, um hier Interpreten zu sehen.',
+    'empty.albums.title': 'Noch keine Alben',
+    'empty.albums.text': 'Füge Titel zur Bibliothek hinzu, um hier Alben zu sehen.',
     'empty.favorites.title': 'Keine Favoriten',
     'empty.favorites.text': 'Tippe auf das Herz eines Titels, um ihn hier hinzuzufügen.',
     'btn.newPlaylist': 'Neue Playlist',
@@ -1096,8 +1113,10 @@ const I18N = {
     'tooltip.wip': 'Funktion in Entwicklung',
     'hint.favorites': 'Gespeicherte Titel erscheinen hier',
     'eyebrow.playlist': 'Playlist',
+    'eyebrow.album': 'Album',
     'eyebrow.artist': 'Interpret',
     'autoChip.artists': 'Die Liste wird automatisch aus deiner Bibliothek erstellt',
+    'autoChip.albums': 'Die Liste wird automatisch aus deiner Bibliothek erstellt',
     'np.empty.title': 'Nichts ausgewählt',
     'np.empty.artist': '—',
     'fs.nowPlayingFrom': 'Wird abgespielt · aus',
@@ -1105,6 +1124,9 @@ const I18N = {
     'fs.nowPlaying': 'Wird abgespielt',
     'fs.queue': 'Warteschlange',
     'fs.queueAhead': '{n} folgen',
+    'fs.lyrics': 'Songtext',
+    'fs.lyricsLoading': 'Songtext wird geladen…',
+    'fs.lyricsNone': 'Kein Songtext gefunden',
     'downloads.tab.internet': 'Aus dem Internet',
     'downloads.tab.parsing': 'Parsing',
     'downloads.title': 'Aus dem Internet herunterladen',
@@ -1349,6 +1371,7 @@ const I18N = {
     'update.available': 'Mise à jour disponible',
     'update.download': 'Télécharger',
     'update.dismiss': 'Fermer',
+    'nav.albums': 'Albums',
     'nav.artists': 'Artistes',
     'nav.playlists': 'Playlists',
     'nav.favorites': 'Favoris',
@@ -1384,6 +1407,7 @@ const I18N = {
     'editor.tooShort': "L'extrait est trop court",
     'nav.search': 'Recherche',
     'nav.recents': 'Récents',
+    'nav.tools': 'Outils',
     'nav.openFiles': 'Ouvrir des fichiers',
     'nav.settings': 'Paramètres',
     'nav.trending': 'Tendances',
@@ -1542,6 +1566,7 @@ const I18N = {
     'crumb.collection': 'Collection',
     'search.placeholder': 'Recherche…',
     'search.artistPlaceholder': 'Rechercher un artiste…',
+    'search.albumPlaceholder': 'Rechercher un album…',
     'search.trackPlaceholder': 'Rechercher une piste…',
     'filter.all': 'Tout',
     'filter.recent': 'Récemment ajoutés',
@@ -1568,6 +1593,8 @@ const I18N = {
     'empty.playlists.text': "Crée ta première playlist — rassemble des pistes par humeur, moment de la journée ou album.",
     'empty.artists.title': "Aucun artiste pour l'instant",
     'empty.artists.text': 'Ajoute des pistes à la bibliothèque pour voir des artistes ici.',
+    'empty.albums.title': "Aucun album pour l'instant",
+    'empty.albums.text': 'Ajoute des pistes à la bibliothèque pour voir des albums ici.',
     'empty.favorites.title': 'Aucune piste favorite',
     'empty.favorites.text': "Clique sur le cœur d'une piste pour l'ajouter ici.",
     'btn.newPlaylist': 'Nouvelle playlist',
@@ -1603,8 +1630,10 @@ const I18N = {
     'tooltip.wip': 'Fonctionnalité en développement',
     'hint.favorites': 'Les pistes enregistrées apparaissent ici',
     'eyebrow.playlist': 'Playlist',
+    'eyebrow.album': 'Album',
     'eyebrow.artist': 'Artiste',
     'autoChip.artists': 'La liste est générée automatiquement depuis ta bibliothèque',
+    'autoChip.albums': 'La liste est générée automatiquement depuis ta bibliothèque',
     'np.empty.title': 'Rien de sélectionné',
     'np.empty.artist': '—',
     'fs.nowPlayingFrom': 'En cours de lecture · depuis',
@@ -1612,6 +1641,9 @@ const I18N = {
     'fs.nowPlaying': 'En cours de lecture',
     'fs.queue': 'File',
     'fs.queueAhead': '{n} à venir',
+    'fs.lyrics': 'Paroles',
+    'fs.lyricsLoading': 'Chargement des paroles…',
+    'fs.lyricsNone': 'Paroles introuvables',
     'downloads.tab.internet': "Depuis Internet",
     'downloads.tab.parsing': 'Analyse',
     'downloads.title': "Téléchargement depuis Internet",
@@ -1856,6 +1888,7 @@ const I18N = {
     'update.available': 'Доступне оновлення',
     'update.download': 'Завантажити',
     'update.dismiss': 'Закрити',
+    'nav.albums': 'Альбоми',
     'nav.artists': 'Виконавці',
     'nav.playlists': 'Плейлисти',
     'nav.favorites': 'Улюблене',
@@ -1891,6 +1924,7 @@ const I18N = {
     'editor.tooShort': 'Фрагмент занадто короткий',
     'nav.search': 'Пошук',
     'nav.recents': 'Нещодавнє',
+    'nav.tools': 'Інструменти',
     'nav.openFiles': 'Відкрити файли',
     'nav.settings': 'Налаштування',
     'nav.trending': 'У тренді',
@@ -2049,6 +2083,7 @@ const I18N = {
     'crumb.collection': 'Колекція',
     'search.placeholder': 'Пошук…',
     'search.artistPlaceholder': 'Пошук виконавця…',
+    'search.albumPlaceholder': 'Пошук альбому…',
     'search.trackPlaceholder': 'Пошук треку…',
     'filter.all': 'Усі',
     'filter.recent': 'Нещодавно додані',
@@ -2075,6 +2110,8 @@ const I18N = {
     'empty.playlists.text': 'Створи свій перший плейлист — збери треки за настроєм, часом доби чи альбомом.',
     'empty.artists.title': 'Виконавців поки немає',
     'empty.artists.text': 'Додай треки до бібліотеки, щоб побачити тут перелік виконавців.',
+    'empty.albums.title': 'Альбомів поки немає',
+    'empty.albums.text': 'Додай треки до бібліотеки, щоб побачити тут альбоми.',
     'empty.favorites.title': 'Немає улюблених треків',
     'empty.favorites.text': 'Натисни сердечко на будь-якому треку, щоб додати його сюди.',
     'btn.newPlaylist': 'Новий плейлист',
@@ -2110,8 +2147,10 @@ const I18N = {
     'tooltip.wip': 'Розділ у розробці',
     'hint.favorites': 'Збережені треки з\'являються тут',
     'eyebrow.playlist': 'Плейлист',
+    'eyebrow.album': 'Альбом',
     'eyebrow.artist': 'Виконавець',
     'autoChip.artists': 'Список збирається автоматично з бібліотеки',
+    'autoChip.albums': 'Список збирається автоматично з бібліотеки',
     'np.empty.title': 'Не обрано',
     'np.empty.artist': '—',
     'fs.nowPlayingFrom': 'Зараз грає · з',
@@ -2119,6 +2158,9 @@ const I18N = {
     'fs.nowPlaying': 'Зараз грає',
     'fs.queue': 'Черга',
     'fs.queueAhead': '{n} попереду',
+    'fs.lyrics': 'Текст пісні',
+    'fs.lyricsLoading': 'Завантаження тексту…',
+    'fs.lyricsNone': 'Текст не знайдено',
     'downloads.tab.internet': 'З інтернету',
     'downloads.tab.parsing': 'Парсинг',
     'downloads.title': 'Завантаження з інтернету',
@@ -2586,6 +2628,7 @@ const selectedPaths = new Set();
 let lastSelectedPath = null;        // anchor for shift-click range selection
 let favoritesVList = null;
 let playlistVList = null;
+let albumVList = null;
 
 // ── Lazy cover loading ──
 // Covers can be heavy (base64 data URLs). Only fetch them for tracks that actually become visible.
@@ -2600,6 +2643,8 @@ function scheduleCoverRefresh() {
     renderRecents();
     if (currentView === 'artists') refreshArtistsCoversInPlace();
     else if (currentView === 'artist-detail') renderArtistDetail(activeArtistName);
+    else if (currentView === 'albums') refreshAlbumsCoversInPlace();
+    else if (currentView === 'album-detail') renderAlbumDetail(activeAlbumKey);
     if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
     if ($('palette-overlay').classList.contains('active')) renderPaletteResults($('palette-input').value);
   });
@@ -2699,6 +2744,8 @@ function setView(view) {
   else if (view === 'playlist-detail') renderPlaylistDetail(activePlaylistId);
   else if (view === 'artists') renderArtists();
   else if (view === 'artist-detail') renderArtistDetail(activeArtistName);
+  else if (view === 'albums') renderAlbums();
+  else if (view === 'album-detail') renderAlbumDetail(activeAlbumKey);
   else if (view === 'report') renderReport();
   else if (view === 'health') renderHealth();
   // Fetch the chart on first visit; afterwards the session cache answers.
@@ -4810,6 +4857,8 @@ function renderCounts() {
   $('count-favorites').textContent = favorites.length;
   const artistsCountEl = $('count-artists');
   if (artistsCountEl) artistsCountEl.textContent = buildArtistsIndex().length;
+  const albumsCountEl = $('count-albums');
+  if (albumsCountEl) albumsCountEl.textContent = buildAlbumsIndex().length;
 }
 function renderRecents() {
   const list = $('recents-list');
@@ -5382,12 +5431,26 @@ function renderTrackRow(track, displayIndex, queue) {
       <div class="trow-cover" style="${coverStyle}"></div>
       <span class="trow-title">${escapeHtml(track.title)}</span>
     </div>
-    <div class="trow-muted">${escapeHtml(track.artist)}</div>
-    <div class="trow-muted">${escapeHtml(track.album)}</div>
+    <div class="trow-muted trow-link" data-link="artist">${escapeHtml(track.artist)}</div>
+    <div class="trow-muted trow-link" data-link="album">${escapeHtml(track.album)}</div>
     <div class="trow-quality">${qualityBadgeHtml(qualityFor(track))}</div>
     <div class="trow-dur">${formatTime(track.duration)}</div>
     <div class="trow-more"><svg class="i" width="13" height="13"><use href="#i-more"/></svg></div>
   `;
+  // Select mode repurposes a row click for selection — don't hijack that with
+  // navigation, so let it fall through to the row's own click handler below.
+  tr.querySelector('[data-link="artist"]').addEventListener('click', e => {
+    if (currentView === 'library' && librarySelectMode) return;
+    e.stopPropagation();
+    activeArtistName = splitArtists(track.artist)[0];
+    setView('artist-detail');
+  });
+  tr.querySelector('[data-link="album"]').addEventListener('click', e => {
+    if (currentView === 'library' && librarySelectMode) return;
+    e.stopPropagation();
+    activeAlbumKey = albumKeyFor(track);
+    setView('album-detail');
+  });
   tr.addEventListener('click', e => {
     if (currentView === 'library') {
       if (librarySelectMode) {
@@ -5915,6 +5978,186 @@ function renderArtistDetail(name) {
   };
 }
 
+// ── Albums ──
+// Grouped globally from the library, like Artists — not user-curated like
+// Playlists. Keyed on (album title, primary artist) rather than just the
+// title, since the same album name can exist under different artists. The
+// grid/detail UI reuses the Playlist grid/hero/track-table classes wholesale
+// (.playlist-card, .pl-hero, .track-table) rather than duplicating them.
+// albumKeyFor is the single source of truth for that key — renderTrackRow's
+// Album hyperlink computes the same key to jump straight to the right album
+// without rebuilding the whole index just to look one up.
+function albumKeyFor(t) {
+  const name = t.album || tr('label.noAlbum');
+  const artist = splitArtists(t.artist)[0];
+  return name.toLowerCase() + ' ' + artist.toLowerCase();
+}
+
+function buildAlbumsIndex() {
+  const map = new Map();
+  library.forEach((t, idx) => {
+    const name = t.album || tr('label.noAlbum');
+    const artist = splitArtists(t.artist)[0];
+    const key = albumKeyFor(t);
+    let a = map.get(key);
+    if (!a) { a = { key, name, artist, year: t.year, tracks: [], lastIdx: idx }; map.set(key, a); }
+    a.tracks.push(t);
+    if (idx > a.lastIdx) a.lastIdx = idx;
+    if (!a.year && t.year) a.year = t.year;
+  });
+  const out = [];
+  for (const a of map.values()) {
+    out.push({
+      key: a.key, name: a.name, artist: a.artist, year: a.year,
+      tracks: a.tracks, trackCount: a.tracks.length, lastIdx: a.lastIdx,
+      cover: (a.tracks.find(t => t.cover) || {}).cover || null,
+    });
+  }
+  return out;
+}
+
+function sortAlbums(arr) {
+  const c = arr.slice();
+  if (albumsSort === 'tracks') c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
+  else if (albumsSort === 'recent') c.sort((a, b) => b.lastIdx - a.lastIdx);
+  else c.sort((a, b) => a.name.localeCompare(b.name));
+  return c;
+}
+
+// Disc/track-number listening order; falls back to title when tags are missing.
+function sortAlbumTracks(tracks) {
+  return tracks.slice().sort((a, b) => {
+    const da = parseInt(a.discNo, 10) || 0, db = parseInt(b.discNo, 10) || 0;
+    if (da !== db) return da - db;
+    const ta = parseInt(a.trackNo, 10) || 0, tb = parseInt(b.trackNo, 10) || 0;
+    if (ta !== tb) return ta - tb;
+    return a.title.localeCompare(b.title);
+  });
+}
+
+function renderAlbums() {
+  const all = buildAlbumsIndex();
+  const q = ($('albums-search').value || '').trim().toLowerCase();
+  const filtered = q
+    ? all.filter(a => a.name.toLowerCase().includes(q) || a.artist.toLowerCase().includes(q))
+    : all;
+  const sorted = sortAlbums(filtered);
+
+  $('albums-count-label').textContent = `${all.length} ${pluralAlbums(all.length)}`;
+  const grid = $('albums-grid');
+  const empty = $('albums-empty');
+  grid.innerHTML = '';
+
+  if (all.length === 0) {
+    grid.style.display = 'none';
+    empty.classList.add('show');
+    renderCounts();
+    return;
+  }
+  empty.classList.remove('show');
+  grid.style.display = 'grid';
+
+  sorted.forEach((a, i) => {
+    if (!a.cover) {
+      const t = a.tracks.find(t => !t.cover);
+      if (t) ensureCoverFor(t);
+    }
+    const card = document.createElement('div');
+    card.className = 'playlist-card';
+    card.dataset.album = a.key;
+    const coverStyle = a.cover ? `background:url('${a.cover}') center/cover` : `background:${PL_COVERS[i % PL_COVERS.length]}`;
+    card.innerHTML = `
+      <div class="playlist-cover" style="${coverStyle}">
+        ${a.cover ? '' : `<span class="playlist-letter">${escapeHtml((a.name || '?')[0])}</span>`}
+      </div>
+      <div class="playlist-name">${escapeHtml(a.name)}</div>
+      <div class="playlist-desc">${escapeHtml(a.artist)}</div>
+      <div class="playlist-stats">
+        <span>${a.trackCount} ${pluralTracks(a.trackCount)}</span>
+        <span>·</span>
+        <span>${formatTotalDuration(a.tracks)}</span>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      activeAlbumKey = a.key;
+      setView('album-detail');
+    });
+    grid.appendChild(card);
+  });
+  renderCounts();
+}
+
+// Cover loads should update existing cards in place — mirrors refreshArtistsCoversInPlace.
+function refreshAlbumsCoversInPlace() {
+  const grid = $('albums-grid');
+  if (!grid) return;
+  const cards = grid.querySelectorAll('.playlist-card[data-album]');
+  if (cards.length === 0) return;
+  const byKey = new Map();
+  buildAlbumsIndex().forEach(a => { if (a.cover) byKey.set(a.key, a.cover); });
+  cards.forEach(card => {
+    const cover = card.querySelector('.playlist-cover');
+    if (!cover || /url\(/.test(cover.style.background)) return;
+    const url = byKey.get(card.dataset.album);
+    if (!url) return;
+    cover.style.background = `url('${url}') center/cover`;
+    const letter = cover.querySelector('.playlist-letter');
+    if (letter) letter.remove();
+  });
+}
+
+function renderAlbumDetail(key) {
+  const all = buildAlbumsIndex();
+  const album = all.find(a => a.key === key);
+  if (!album) { setView('albums'); return; }
+
+  $('album-detail-crumb').textContent = album.name;
+  $('album-detail-title').textContent = album.name;
+  if (album.cover) {
+    $('album-hero-letter').textContent = '';
+    $('album-hero-cover').style.background = `url('${album.cover}') center/cover`;
+  } else {
+    $('album-hero-letter').textContent = (album.name || '?')[0];
+    $('album-hero-cover').style.background = PL_COVERS[0];
+    const t = album.tracks.find(t => !t.cover);
+    if (t) ensureCoverFor(t);
+  }
+  $('album-detail-meta').innerHTML = `
+    <span class="pl-meta-link" id="album-detail-artist-link">${escapeHtml(album.artist)}</span>
+    <span>·</span>
+    <span>${album.trackCount} ${pluralTracks(album.trackCount)}</span>
+    <span>·</span>
+    <span>${formatTotalDuration(album.tracks)}</span>
+    ${album.year ? `<span>·</span><span>${escapeHtml(String(album.year))}</span>` : ''}
+  `;
+  $('album-detail-artist-link').addEventListener('click', () => {
+    activeArtistName = album.artist;
+    setView('artist-detail');
+  });
+
+  const tracks = sortAlbumTracks(album.tracks);
+  const list = $('album-detail-list');
+  if (tracks.length === 0) {
+    list.innerHTML = '';
+    list.style.height = '';
+  } else {
+    if (!albumVList) albumVList = createVirtualList({ listEl: list, scrollEl });
+    albumVList.setItems(tracks, (t, i, queue) => renderTrackRow(t, i, queue));
+  }
+
+  $('btn-album-play').onclick = () => {
+    if (tracks.length > 0) playTrackByPath(tracks[0].path, tracks);
+  };
+  $('btn-album-shuffle').onclick = () => {
+    if (tracks.length > 0) {
+      isShuffle = true;
+      updateShuffleUI();
+      const random = tracks[Math.floor(Math.random() * tracks.length)];
+      playTrackByPath(random.path, tracks);
+    }
+  };
+}
+
 // ── Crossfade ──
 // Gated by settings.crossfade. The main <audio> element stays the single source
 // of truth for everything else (progress, seek, MediaSession, waveform); the
@@ -6274,6 +6517,7 @@ function updateNowPlayingUI(track) {
   updateFavoriteUI();
   updatePlayButtonUI();
   updateFullscreenQueue();
+  if (fsLyricsOpen) loadFsLyrics(track);
   updateMediaSessionMetadata(track);
   pushDiscordActivity(true);
   if (isSettingsOpen()) renderDiscordPreviewOnly();
@@ -7028,6 +7272,7 @@ audio.addEventListener('timeupdate', () => {
     playbarWave.setProgress(pct);
     fsWave.setProgress(pct);
   }
+  if ($('fullscreen-overlay').classList.contains('active')) updateFsLyricsActive(cur);
   // Crossfade into the next track *before* this one ends. Repeat-one is left to
   // the 'ended' handler — fading a track into itself makes no sense.
   if (settings.crossfade && !isNaN(dur) && dur > 0) {
@@ -7177,6 +7422,7 @@ function closeFullscreen() {
   // Exiting fullscreen also exits portrait — the rest of the UI has min-width
   // constraints (sidebar etc.) and looks broken in a phone-sized window.
   if (portraitMode) setPortraitMode(false);
+  if (fsLyricsOpen) closeFsLyricsPanel();
   fsAnimating = true;
   cancelCoverAnim();
   overlay.classList.remove('is-in');
@@ -7277,6 +7523,123 @@ $('btn-close-fullscreen').addEventListener('click', closeFullscreen);
 $('btn-close-fullscreen-x').addEventListener('click', closeFullscreen);
 const fsPortraitBtn = $('btn-fs-portrait');
 if (fsPortraitBtn) fsPortraitBtn.addEventListener('click', togglePortraitMode);
+
+// ── Lyrics (LRCLIB) ──
+// A dedicated overlay panel (toggled by #btn-fs-lyrics) rather than a queue
+// tab — the queue column is hidden entirely in portrait/mobile fullscreen
+// (.fs-overlay.is-portrait .fs-queue), so a tab living inside it would be
+// unreachable there. The panel is an absolutely-positioned child of .fs-body,
+// which is unaffected by the portrait/desktop layout switch.
+// Synced lyrics are cached per track path for the session — LRCLIB has no
+// rate limit worth worrying about here, but there's no reason to re-fetch a
+// track we already have. `fsLyrics` is 'loading', null (no lyrics), or
+// { lines: [{ time, text }] } sorted ascending by time. Lyrics are only
+// fetched once the panel is actually opened.
+let fsLyricsOpen = false;
+let fsLyricsTrackPath = null;
+let fsLyrics = null;
+let fsLyricsActiveLine = -1;
+const fsLyricsCache = new Map();
+
+function parseLRC(text) {
+  const tagRe = /\[(\d{1,2}):(\d{2}(?:\.\d{1,3})?)\]/g;
+  const lines = [];
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const times = [];
+    let m;
+    tagRe.lastIndex = 0;
+    while ((m = tagRe.exec(raw))) times.push(parseInt(m[1], 10) * 60 + parseFloat(m[2]));
+    if (!times.length) continue;
+    const content = raw.replace(tagRe, '').trim();
+    for (const t of times) lines.push({ time: t, text: content });
+  }
+  return lines.sort((a, b) => a.time - b.time);
+}
+
+function renderFsLyrics() {
+  const list = $('fs-lyrics-list');
+  list.innerHTML = '';
+  fsLyricsActiveLine = -1;
+  if (fsLyrics === 'loading') {
+    list.innerHTML = `<div class="fs-lyrics-empty">${tr('fs.lyricsLoading')}</div>`;
+    return;
+  }
+  if (!fsLyrics || !fsLyrics.lines.length) {
+    list.innerHTML = `<div class="fs-lyrics-empty">${tr('fs.lyricsNone')}</div>`;
+    return;
+  }
+  fsLyrics.lines.forEach((ln) => {
+    const el = document.createElement('div');
+    el.className = 'fs-lyrics-line';
+    el.textContent = ln.text || '♪';
+    el.addEventListener('click', () => { if (isFinite(audio.duration)) audio.currentTime = ln.time; });
+    list.appendChild(el);
+  });
+  updateFsLyricsActive(audio.currentTime || 0);
+}
+
+async function loadFsLyrics(track) {
+  if (!track || fsLyricsTrackPath === track.path) return;
+  fsLyricsTrackPath = track.path;
+  if (fsLyricsCache.has(track.path)) {
+    fsLyrics = fsLyricsCache.get(track.path);
+    renderFsLyrics();
+    return;
+  }
+  fsLyrics = 'loading';
+  renderFsLyrics();
+  let result = null;
+  try {
+    if (window.electronAPI && window.electronAPI.lookupLyrics) {
+      result = await window.electronAPI.lookupLyrics({
+        artist: track.artist, title: track.title, album: track.album,
+        duration: Math.round(track.duration || 0),
+      });
+    }
+  } catch (_) { result = null; }
+  if (fsLyricsTrackPath !== track.path) return; // track moved on while we awaited
+  const parsed = { lines: result && result.synced ? parseLRC(result.synced) : [] };
+  fsLyricsCache.set(track.path, parsed);
+  fsLyrics = parsed;
+  renderFsLyrics();
+}
+
+function updateFsLyricsActive(cur) {
+  if (!fsLyrics || fsLyrics === 'loading' || !fsLyrics.lines.length) return;
+  // Default to the first line rather than -1: with no active line yet (e.g.
+  // playback hasn't reached the first cue), leaving idx at -1 meant nothing
+  // was highlighted and nothing scrolled, so the panel opened on a blank
+  // stretch of top scroll-padding — the "broken" look reported.
+  let idx = 0;
+  for (let i = 0; i < fsLyrics.lines.length; i++) {
+    if (fsLyrics.lines[i].time <= cur) idx = i; else break;
+  }
+  if (idx === fsLyricsActiveLine) return;
+  const list = $('fs-lyrics-list');
+  // Fade lines out with distance from the active one — Apple-Music-style
+  // "focused" read instead of a flat highlighted list.
+  Array.from(list.children).forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+    el.style.opacity = i === idx ? '' : String(Math.max(0.3, 1 - Math.abs(i - idx) * 0.16));
+  });
+  const next = list.children[idx];
+  if (next && fsLyricsOpen) next.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  fsLyricsActiveLine = idx;
+}
+
+function openFsLyricsPanel() {
+  fsLyricsOpen = true;
+  $('fs-lyrics-panel').classList.add('active');
+  $('btn-fs-lyrics').classList.add('is-active');
+  if (currentTrackIndex >= 0) loadFsLyrics(library[currentTrackIndex]);
+}
+function closeFsLyricsPanel() {
+  fsLyricsOpen = false;
+  $('fs-lyrics-panel').classList.remove('active');
+  $('btn-fs-lyrics').classList.remove('is-active');
+}
+function toggleFsLyricsPanel() { if (fsLyricsOpen) closeFsLyricsPanel(); else openFsLyricsPanel(); }
+$('btn-fs-lyrics').addEventListener('click', toggleFsLyricsPanel);
 
 function updateFullscreenQueue() {
   const list = $('fs-queue-list');
@@ -8231,6 +8594,17 @@ $('artist-detail-search').addEventListener('input', () => {
   if (activeArtistName) renderArtistDetail(activeArtistName);
 });
 
+// Albums sort chips + search
+document.querySelectorAll('#view-albums .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#view-albums .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    albumsSort = chip.dataset.albumsSort;
+    renderAlbums();
+  });
+});
+$('albums-search').addEventListener('input', () => renderAlbums());
+
 // ── Settings UI ──
 const TOGGLE_KEY_MAP = {
   'scan-subdirs': 'scanSubdirs',
@@ -8806,6 +9180,15 @@ function applyTrendingVisibility() {
 }
 applyTrendingVisibility();
 
+// Report and Health share a "Tools" sidebar group (index.html #nav-tools-group)
+// that's hidden whenever neither feature is on, so an empty heading doesn't
+// float in the sidebar for users who enable neither.
+function updateToolsGroupVisibility() {
+  const group = $('nav-tools-group');
+  if (!group) return;
+  group.hidden = $('nav-report').hidden && $('nav-health').hidden;
+}
+
 // Master switch for the Library Health-check feature: hides the Health nav item,
 // the Quality column across every track table, the quality note, and any active
 // health filter. Driven by a `quality-off` class on <html> so the CSS collapses
@@ -8815,6 +9198,7 @@ function applyHealthCheckVisibility(reflow = true) {
   document.documentElement.classList.toggle('quality-off', !on);
   const navHealth = $('nav-health');
   if (navHealth) navHealth.hidden = !on;
+  updateToolsGroupVisibility();
   if (!on) {
     clearHealthFilter();
     if (reflow) {
@@ -8832,6 +9216,7 @@ applyHealthCheckVisibility(false); // boot: set class/nav only; renderLibrary() 
 function applyReportsVisibility() {
   const navReport = $('nav-report');
   if (navReport) navReport.hidden = !settings.reports;
+  updateToolsGroupVisibility();
   if (!settings.reports && currentView === 'report') setView('library');
 }
 applyReportsVisibility();
