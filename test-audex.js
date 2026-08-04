@@ -175,5 +175,22 @@ const tags = {
   assert.strictEqual(bestMatch({}), null, 'malformed response -> null');
   assert.strictEqual(bestMatch({ results: [{ id: 'x', score: 1 }] }), null, 'no recordings -> null');
 
+  // Multi-artist splitting (renderer.js): "FACE" and "FACE, Ivan Dremin, ..." used to land
+  // as two unrelated artists because only " & " was a separator — comma-joined credits, the
+  // most common tagging convention, never split at all.
+  const rendererSrc = fs.readFileSync(path.join(__dirname, 'renderer.js'), 'utf8');
+  const artistSepLine = rendererSrc.slice(
+    rendererSrc.indexOf('const ARTIST_SEP'),
+    rendererSrc.indexOf('\n', rendererSrc.indexOf('const ARTIST_SEP')));
+  const ARTIST_SEP = new Function(artistSepLine + '\nreturn ARTIST_SEP;')();
+  const split = (s) => s.split(ARTIST_SEP).map(p => p.trim()).filter(Boolean);
+  assert.deepStrictEqual(split('FACE, Ivan Dremin, Anton Vasilev, Vladislav Mamaev'),
+    ['FACE', 'Ivan Dremin', 'Anton Vasilev', 'Vladislav Mamaev'], 'comma-joined credits did not split');
+  assert.deepStrictEqual(split('Artist A feat. Artist B'), ['Artist A', 'Artist B'], '"feat." did not split');
+  assert.deepStrictEqual(split('Artist A ft Artist B'), ['Artist A', 'Artist B'], '"ft" did not split');
+  assert.deepStrictEqual(split('Artist A; Artist B'), ['Artist A', 'Artist B'], '";" did not split');
+  assert.deepStrictEqual(split('Featherweight'), ['Featherweight'], '"feat" inside a word wrongly split');
+  assert.deepStrictEqual(split('Deftones'), ['Deftones'], '"ft" inside a word wrongly split');
+
   console.log('ok');
 })();

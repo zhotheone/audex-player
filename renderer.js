@@ -5634,10 +5634,12 @@ function renderPlaylistDetail(plId) {
 }
 
 // ── Artists ──
-// A track's `artist` field may list multiple performers joined by " & ".
-// Each side counts as a separate artist; the same track shows up on every
-// artist's page. Pure " & " is the only separator (per product spec).
-const ARTIST_SEP = /\s*&\s*/;
+// A track's `artist` field may list multiple performers joined by " & ", ",",
+// ";", "feat."/"ft." (with or without the trailing period). Each side counts as
+// a separate artist; the same track shows up on every artist's page. "feat"/"ft"
+// only counts as a separator when followed by whitespace, so it doesn't fire
+// inside ordinary words like "Featherweight" or "Deftones".
+const ARTIST_SEP = /\s*(?:&|,|;|\bfeat\.?(?=\s)|\bft\.?(?=\s))\s*/i;
 
 function splitArtists(s) {
   const unknown = tr('label.unknownArtist');
