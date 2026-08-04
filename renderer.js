@@ -336,6 +336,9 @@ const I18N = {
     'nav.library': 'Library',
     'update.available': 'Update available',
     'update.download': 'Download',
+    'update.downloading': 'Downloading… {pct}%',
+    'update.installing': 'Opening installer…',
+    'update.failed': 'Download failed — opening release page',
     'update.dismiss': 'Dismiss',
     'nav.albums': 'Albums',
     'nav.artists': 'Artists',
@@ -857,6 +860,9 @@ const I18N = {
     'nav.library': 'Bibliothek',
     'update.available': 'Update verfügbar',
     'update.download': 'Herunterladen',
+    'update.downloading': 'Wird heruntergeladen… {pct}%',
+    'update.installing': 'Installer wird geöffnet…',
+    'update.failed': 'Download fehlgeschlagen — Release-Seite wird geöffnet',
     'update.dismiss': 'Schließen',
     'nav.albums': 'Alben',
     'nav.artists': 'Interpreten',
@@ -1378,6 +1384,9 @@ const I18N = {
     'nav.library': 'Bibliothèque',
     'update.available': 'Mise à jour disponible',
     'update.download': 'Télécharger',
+    'update.downloading': 'Téléchargement… {pct}%',
+    'update.installing': "Ouverture de l'installateur…",
+    'update.failed': "Échec du téléchargement — ouverture de la page de version",
     'update.dismiss': 'Fermer',
     'nav.albums': 'Albums',
     'nav.artists': 'Artistes',
@@ -1899,6 +1908,9 @@ const I18N = {
     'nav.library': 'Бібліотека',
     'update.available': 'Доступне оновлення',
     'update.download': 'Завантажити',
+    'update.downloading': 'Завантаження… {pct}%',
+    'update.installing': 'Відкриваємо інсталятор…',
+    'update.failed': 'Не вдалося завантажити — відкриваємо сторінку релізу',
     'update.dismiss': 'Закрити',
     'nav.albums': 'Альбоми',
     'nav.artists': 'Виконавці',
@@ -9731,8 +9743,29 @@ function showUpdateBanner(info) {
   const versionEl = document.getElementById('update-banner-version');
   if (versionEl) versionEl.textContent = 'v' + info.latestVersion;
   const dlBtn = document.getElementById('update-download-btn');
-  if (dlBtn) dlBtn.onclick = () => {
-    if (info.url) window.electronAPI.openExternal(info.url);
+  if (dlBtn) dlBtn.onclick = async () => {
+    if (!window.electronAPI || typeof window.electronAPI.downloadUpdate !== 'function') {
+      if (info.url) window.electronAPI.openExternal(info.url);
+      return;
+    }
+    dlBtn.disabled = true;
+    dlBtn.textContent = tr('update.downloading', { pct: 0 });
+    const offProgress = window.electronAPI.onUpdateDownloadProgress
+      ? window.electronAPI.onUpdateDownloadProgress((pct) => {
+          dlBtn.textContent = tr('update.downloading', { pct: Math.round(pct * 100) });
+        })
+      : null;
+    let res;
+    try { res = await window.electronAPI.downloadUpdate(); }
+    catch (_) { res = { success: false }; }
+    if (offProgress) offProgress();
+    if (res && res.success) {
+      dlBtn.textContent = tr('update.installing');
+    } else {
+      dlBtn.textContent = tr('update.failed');
+      if (info.url) window.electronAPI.openExternal(info.url);
+      setTimeout(() => { dlBtn.disabled = false; dlBtn.textContent = tr('update.download'); }, 3000);
+    }
   };
   const closeBtn = document.getElementById('update-close-btn');
   if (closeBtn) closeBtn.onclick = () => {
