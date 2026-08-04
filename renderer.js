@@ -337,7 +337,7 @@ const I18N = {
     'update.available': 'Update available',
     'update.download': 'Download',
     'update.downloading': 'Downloading… {pct}%',
-    'update.installing': 'Opening installer…',
+    'update.restart': 'Restart to install',
     'update.failed': 'Download failed — opening release page',
     'update.dismiss': 'Dismiss',
     'nav.albums': 'Albums',
@@ -861,7 +861,7 @@ const I18N = {
     'update.available': 'Update verfügbar',
     'update.download': 'Herunterladen',
     'update.downloading': 'Wird heruntergeladen… {pct}%',
-    'update.installing': 'Installer wird geöffnet…',
+    'update.restart': 'Zum Installieren neu starten',
     'update.failed': 'Download fehlgeschlagen — Release-Seite wird geöffnet',
     'update.dismiss': 'Schließen',
     'nav.albums': 'Alben',
@@ -1385,7 +1385,7 @@ const I18N = {
     'update.available': 'Mise à jour disponible',
     'update.download': 'Télécharger',
     'update.downloading': 'Téléchargement… {pct}%',
-    'update.installing': "Ouverture de l'installateur…",
+    'update.restart': 'Redémarrer pour installer',
     'update.failed': "Échec du téléchargement — ouverture de la page de version",
     'update.dismiss': 'Fermer',
     'nav.albums': 'Albums',
@@ -1909,7 +1909,7 @@ const I18N = {
     'update.available': 'Доступне оновлення',
     'update.download': 'Завантажити',
     'update.downloading': 'Завантаження… {pct}%',
-    'update.installing': 'Відкриваємо інсталятор…',
+    'update.restart': 'Перезапустити для встановлення',
     'update.failed': 'Не вдалося завантажити — відкриваємо сторінку релізу',
     'update.dismiss': 'Закрити',
     'nav.albums': 'Альбоми',
@@ -9737,6 +9737,7 @@ function getUpdateDismiss() {
   try { return JSON.parse(localStorage.getItem(LS.updateDismiss)) || {}; }
   catch (_) { return {}; }
 }
+const UPDATE_RELEASES_URL = 'https://github.com/zhotheone/audex-player/releases/latest';
 function showUpdateBanner(info) {
   const banner = document.getElementById('update-banner');
   if (!banner) return;
@@ -9745,7 +9746,7 @@ function showUpdateBanner(info) {
   const dlBtn = document.getElementById('update-download-btn');
   if (dlBtn) dlBtn.onclick = async () => {
     if (!window.electronAPI || typeof window.electronAPI.downloadUpdate !== 'function') {
-      if (info.url) window.electronAPI.openExternal(info.url);
+      window.electronAPI.openExternal(UPDATE_RELEASES_URL);
       return;
     }
     dlBtn.disabled = true;
@@ -9755,15 +9756,25 @@ function showUpdateBanner(info) {
           dlBtn.textContent = tr('update.downloading', { pct: Math.round(pct * 100) });
         })
       : null;
+    // electron-updater fires this once the download is verified and ready —
+    // the app has to quit to apply it, so hand control to the user instead of
+    // restarting out from under them.
+    const offDownloaded = window.electronAPI.onUpdateDownloaded
+      ? window.electronAPI.onUpdateDownloaded(() => {
+          dlBtn.textContent = tr('update.restart');
+          dlBtn.disabled = false;
+          dlBtn.onclick = () => window.electronAPI.installUpdate();
+          if (offDownloaded) offDownloaded();
+        })
+      : null;
     let res;
     try { res = await window.electronAPI.downloadUpdate(); }
     catch (_) { res = { success: false }; }
     if (offProgress) offProgress();
-    if (res && res.success) {
-      dlBtn.textContent = tr('update.installing');
-    } else {
+    if (!res || !res.success) {
+      if (offDownloaded) offDownloaded();
       dlBtn.textContent = tr('update.failed');
-      if (info.url) window.electronAPI.openExternal(info.url);
+      window.electronAPI.openExternal(UPDATE_RELEASES_URL);
       setTimeout(() => { dlBtn.disabled = false; dlBtn.textContent = tr('update.download'); }, 3000);
     }
   };

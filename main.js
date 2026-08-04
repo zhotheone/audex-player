@@ -963,133 +963,71 @@ ipcMain.handle('app:setHardwareAcceleration', async (event, enabled) => {
   return { success: true, restarted: choice === 0 };
 });
 
-// ── Update check ──
-// Polls the GitHub Releases API for the latest published release. Releases
-// are tagged `v-<git short hash>` (see getCommit() above), not semver, so
-// "newer" isn't a numeric comparison — GitHub's /releases/latest already
-// returns the most recently published non-draft/non-prerelease release, so
-// any tag hash that doesn't match our own running commit means an update
-// exists.
-const GITHUB_REPO = 'zhotheone/audex-player';
+// ── Auto-update (electron-updater) ──
+// GitHub-hosted releases. electron-builder's `publish` config (package.json)
+// embeds an app-update.yml pointing at zhotheone/audex-player; electron-updater
+// reads it to find latest.yml / latest-mac.yml on the GitHub release, and does
+// the download-verify-apply dance itself (NSIS silent update on Windows,
+// Squirrel.Mac on macOS, in-place AppImage swap on Linux) — the part a
+// hand-rolled updater tends to get wrong.
+// autoDownload is off so the renderer's update banner controls *when* the
+// download starts; the user still has to click.
+const { autoUpdater } = require('electron-updater');
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
 
-function fetchLatestRelease() {
-  return new Promise((resolve, reject) => {
-    const req = https.get(
-      {
-        hostname: 'api.github.com',
-        path: `/repos/${GITHUB_REPO}/releases/latest`,
-        headers: {
-          'User-Agent': 'Audex-Player',
-          Accept: 'application/vnd.github+json',
-        },
-        timeout: 10000,
-      },
-      (res) => {
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`GitHub API status ${res.statusCode}`));
-          return;
-        }
-        let body = '';
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => {
-          try { resolve(JSON.parse(body)); }
-          catch (err) { reject(err); }
-        });
-      }
-    );
-    req.on('timeout', () => req.destroy(new Error('GitHub API timeout')));
-    req.on('error', reject);
-  });
+function sendUpdateEvent(channel, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
 }
+autoUpdater.on('download-progress', (p) => sendUpdateEvent('update:downloadProgress', p.percent / 100));
+autoUpdater.on('update-downloaded', () => sendUpdateEvent('update:downloaded'));
 
 ipcMain.handle('update:check', async () => {
-  const currentVersion = getCommit();
+  const currentVersion = app.getVersion();
+  // Unpackaged (dev) runs have no app-update.yml — electron-updater throws
+  // looking for one, so just report "no update" instead.
+  if (!app.isPackaged) return { success: true, hasUpdate: false, currentVersion };
   try {
-    const release = await fetchLatestRelease();
-    if (!release || release.draft || release.prerelease || !release.tag_name) {
-      return { success: true, hasUpdate: false, currentVersion };
-    }
-    const latestVersion = String(release.tag_name).replace(/^v-?/i, '');
+    const result = await new Promise((resolve, reject) => {
+      const onAvailable = (info) => { cleanup(); resolve({ hasUpdate: true, info }); };
+      const onNotAvailable = (info) => { cleanup(); resolve({ hasUpdate: false, info }); };
+      const onError = (err) => { cleanup(); reject(err); };
+      function cleanup() {
+        autoUpdater.off('update-available', onAvailable);
+        autoUpdater.off('update-not-available', onNotAvailable);
+        autoUpdater.off('error', onError);
+      }
+      autoUpdater.once('update-available', onAvailable);
+      autoUpdater.once('update-not-available', onNotAvailable);
+      autoUpdater.once('error', onError);
+      autoUpdater.checkForUpdates().catch(onError);
+    });
     return {
       success: true,
       currentVersion,
-      latestVersion,
-      hasUpdate: !!currentVersion && latestVersion !== currentVersion,
-      url: release.html_url || `https://github.com/${GITHUB_REPO}/releases/latest`,
-      assets: (release.assets || []).map((a) => ({ name: a.name, url: a.browser_download_url })),
+      latestVersion: result.info ? result.info.version : currentVersion,
+      hasUpdate: result.hasUpdate,
     };
   } catch (err) {
     return { success: false, error: String(err), currentVersion };
   }
 });
 
-// Downloads the release asset matching this OS to a temp file, then hands off
-// to the platform's own installer (NSIS wizard / mounted DMG / AppImage)
-// instead of silently replacing files in place — that hand-off is the part a
-// hand-rolled updater gets wrong (file locks, permissions, no signing), and
-// the OS already does it safely.
-function pickUpdateAsset(assets) {
-  const byExt = (ext) => assets.find((a) => a.name.toLowerCase().endsWith(ext));
-  if (process.platform === 'win32') return byExt('.exe');
-  if (process.platform === 'darwin') return byExt('.dmg');
-  return byExt('.appimage') || byExt('.deb');
-}
-
-function downloadToFile(url, destPath, onProgress) {
-  return new Promise((resolve, reject) => {
-    const request = (u, redirects) => {
-      https.get(u, { headers: { 'User-Agent': 'Audex-Player' } }, (res) => {
-        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-          res.resume();
-          if (redirects > 5) { reject(new Error('Too many redirects')); return; }
-          request(res.headers.location, redirects + 1);
-          return;
-        }
-        if (res.statusCode !== 200) {
-          res.resume();
-          reject(new Error(`Download failed: HTTP ${res.statusCode}`));
-          return;
-        }
-        const total = parseInt(res.headers['content-length'], 10) || 0;
-        let received = 0;
-        const file = fs.createWriteStream(destPath);
-        res.on('data', (chunk) => {
-          received += chunk.length;
-          if (onProgress && total) onProgress(received / total);
-        });
-        res.pipe(file);
-        file.on('finish', () => file.close(() => resolve(destPath)));
-        file.on('error', reject);
-      }).on('error', reject);
-    };
-    request(url, 0);
-  });
-}
-
-ipcMain.handle('update:download', async (event) => {
+ipcMain.handle('update:download', async () => {
   try {
-    const release = await fetchLatestRelease();
-    const assets = (release && release.assets || []).map((a) => ({ name: a.name, url: a.browser_download_url }));
-    const asset = pickUpdateAsset(assets);
-    if (!asset) return { success: false, error: 'noAsset' };
-    const dest = path.join(app.getPath('temp'), asset.name);
-    await downloadToFile(asset.url, dest, (pct) => {
-      if (event.sender && !event.sender.isDestroyed()) event.sender.send('update:downloadProgress', pct);
-    });
-    // Written by our own stream, not extracted from an archive — no exec bit yet.
-    if (dest.toLowerCase().endsWith('.appimage')) fs.chmodSync(dest, 0o755);
-    await shell.openPath(dest);
-    // NSIS needs the running app closed before it can overwrite its files; the
-    // mounted DMG / launched AppImage on the other platforms don't.
-    if (process.platform === 'win32') {
-      setTimeout(() => { isQuitting = true; app.quit(); }, 1200);
-    }
+    await autoUpdater.downloadUpdate();
     return { success: true };
   } catch (err) {
     return { success: false, error: String(err) };
   }
+});
+
+// Quits and applies the already-downloaded update — only meaningful after
+// update:downloaded has fired.
+ipcMain.handle('update:install', () => {
+  isQuitting = true;
+  autoUpdater.quitAndInstall();
+  return { success: true };
 });
 
 // ── Track trimming (editor) ──

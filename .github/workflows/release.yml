@@ -71,6 +71,7 @@ jobs:
           files: |
             release/*.dmg
             release/*.zip
+            release/*.yml
 
   build-windows:
     runs-on: windows-latest
@@ -134,3 +135,4 @@ jobs:
           files: |
             release/*.exe
             release/*.zip
+            release/*.yml

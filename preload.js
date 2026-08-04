@@ -24,10 +24,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setHardwareAcceleration: (enabled) => ipcRenderer.invoke('app:setHardwareAcceleration', !!enabled),
   checkForUpdate: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
   onUpdateDownloadProgress: (cb) => {
     const listener = (_e, pct) => cb(pct);
     ipcRenderer.on('update:downloadProgress', listener);
     return () => ipcRenderer.removeListener('update:downloadProgress', listener);
+  },
+  onUpdateDownloaded: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on('update:downloaded', listener);
+    return () => ipcRenderer.removeListener('update:downloaded', listener);
   },
   ytSearch: (query, count) => ipcRenderer.invoke('downloads:ytSearch', query, count),
   ytDownload: (payload) => ipcRenderer.invoke('downloads:ytDownload', payload),
