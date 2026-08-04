@@ -40,6 +40,14 @@ jobs:
           fi
           ls -la yt-dlp-bundle
 
+      - name: Verify bundled fpcalc
+        run: |
+          if [ ! -f fpcalc-bundle/fpcalc ]; then
+            echo "::error::fpcalc-bundle/fpcalc missing — fetch-fpcalc postinstall must have failed"
+            exit 1
+          fi
+          ls -la fpcalc-bundle
+
       - name: Verify bundled ffmpeg
         run: |
           if [ ! -f node_modules/ffmpeg-static/ffmpeg ]; then
@@ -96,6 +104,15 @@ jobs:
             exit 1
           fi
           ls -la yt-dlp-bundle
+
+      - name: Verify bundled fpcalc
+        shell: bash
+        run: |
+          if [ ! -f fpcalc-bundle/fpcalc.exe ]; then
+            echo "::error::fpcalc-bundle/fpcalc.exe missing — fetch-fpcalc postinstall must have failed"
+            exit 1
+          fi
+          ls -la fpcalc-bundle
 
       - name: Verify bundled ffmpeg
         shell: bash

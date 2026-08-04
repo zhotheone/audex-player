@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   revealInFolder: (filePath) => ipcRenderer.invoke('shell:revealInFolder', filePath),
   deleteFile: (filePath) => ipcRenderer.invoke('shell:deleteFile', filePath),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  getBuildInfo: () => ipcRenderer.invoke('app:getBuildInfo'),
   getHardwareAcceleration: () => ipcRenderer.invoke('app:getHardwareAcceleration'),
   setHardwareAcceleration: (enabled) => ipcRenderer.invoke('app:setHardwareAcceleration', !!enabled),
   checkForUpdate: () => ipcRenderer.invoke('update:check'),
@@ -43,6 +44,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   discordSetActivity: (activity) => ipcRenderer.invoke('discord:setActivity', { activity }),
   discordGetStatus: () => ipcRenderer.invoke('discord:getStatus'),
   lookupCover: (query) => ipcRenderer.invoke('music:lookupCover', query),
+  identifyTrack: (filePath, apiKey) => ipcRenderer.invoke('acoustid:identify', { filePath, apiKey }),
   onDiscordStatus: (cb) => {
     const listener = (_e, data) => cb(data);
     ipcRenderer.on('discord:status', listener);
