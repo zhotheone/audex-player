@@ -341,6 +341,7 @@ const I18N = {
     'update.failed': 'Download failed — opening release page',
     'update.dismiss': 'Dismiss',
     'import.progress': 'Importing tracks…',
+    'fixTags.progress': 'Fixing tags…',
     'nav.albums': 'Albums',
     'nav.artists': 'Artists',
     'nav.playlists': 'Playlists',
@@ -576,6 +577,7 @@ const I18N = {
     'btn.signingIn': 'Waiting…',
     'btn.checkUpdate': 'Check now',
     'btn.checking': 'Checking…',
+    'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
     'btn.cancel': 'Cancel',
     'btn.delete': 'Delete',
     'select.enter': 'Select',
@@ -813,6 +815,15 @@ const I18N = {
     'editor.idBadKey': 'AcoustID rejected the API key',
     'editor.idNoKey': 'Add your AcoustID API key in Settings to use Identify',
     'cm.identify': 'Identify via AcoustID…',
+    'cm.fixTags': 'Fix the tags',
+    'cm.fixTagsForce': 'Fix the tags (without comparing)',
+    'cm.fixTags': 'Fix the tags',
+    'cm.fixTagsForce': 'Fix the tags (without comparing)',
+    'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
+    'fixTags.progress': 'Fixing tags…',
+    'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
+    'palette.action.fixTagsLibrary': 'Fix the tags (Library)',
+    'palette.action.fixTagsLibraryForce': 'Fix the tags (Library, without comparing)',
     'setting.acoustidKey': 'AcoustID API key',
     'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Required — get your own for free at acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Your API key',
@@ -821,6 +832,7 @@ const I18N = {
     'editor.identifying': 'Fingerprinting and looking up…',
     'editor.idFilled': 'Match found — review and save',
     'editor.idNoMatch': 'No match on AcoustID',
+    'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
     'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
     'editor.idFailed': 'Lookup failed',
     'editor.saved': 'Saved ✓',
@@ -844,6 +856,8 @@ const I18N = {
     'palette.action.gotoPlaylists': 'Go to Playlists',
     'palette.action.gotoFavorites': 'Go to Favorites',
     'palette.action.clearLibrary': 'Clear library…',
+    'palette.action.fixTagsLibrary': 'Fix the tags (Library)…',
+    'palette.action.fixTagsLibraryForce': 'Fix the tags (Library, without comparing)…',
     'label.unknownArtist': 'Unknown artist',
     'label.noAlbum': 'No album',
     'label.tracksShort': 'tr.',
@@ -879,6 +893,7 @@ const I18N = {
     'update.failed': 'Download fehlgeschlagen — Release-Seite wird geöffnet',
     'update.dismiss': 'Schließen',
     'import.progress': 'Titel werden importiert…',
+    'fixTags.progress': 'Tags werden korrigiert…',
     'nav.albums': 'Alben',
     'nav.artists': 'Interpreten',
     'nav.playlists': 'Playlists',
@@ -1114,6 +1129,7 @@ const I18N = {
     'btn.signingIn': 'Warten…',
     'btn.checkUpdate': 'Jetzt prüfen',
     'btn.checking': 'Wird geprüft…',
+    'btn.fixTagsTooltip': 'Tags über AcoustID korrigieren…',
     'btn.cancel': 'Abbrechen',
     'btn.delete': 'Löschen',
     'select.enter': 'Auswählen',
@@ -1351,6 +1367,15 @@ const I18N = {
     'editor.idBadKey': 'AcoustID hat den API-Schlüssel abgelehnt',
     'editor.idNoKey': 'Füge deinen AcoustID-API-Schlüssel in den Einstellungen hinzu, um Erkennen zu nutzen',
     'cm.identify': 'Über AcoustID erkennen…',
+    'cm.fixTags': 'Tags korrigieren',
+    'cm.fixTagsForce': 'Tags korrigieren (ohne Vergleich)',
+    'cm.fixTags': 'Tags korrigieren',
+    'cm.fixTagsForce': 'Tags korrigieren (ohne Vergleich)',
+    'btn.fixTagsTooltip': 'Tags über AcoustID korrigieren…',
+    'fixTags.progress': 'Tags werden korrigiert…',
+    'fixTags.summary': '{fixed} aktualisiert · {unchanged} bereits korrekt · {noMatch} ohne Treffer · {failed} fehlgeschlagen ({total} insgesamt)',
+    'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)',
+    'palette.action.fixTagsLibraryForce': 'Tags korrigieren (Bibliothek, ohne Vergleich)',
     'setting.acoustidKey': 'AcoustID-API-Schlüssel',
     'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Erforderlich — einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Dein API-Schlüssel',
@@ -1359,6 +1384,7 @@ const I18N = {
     'editor.identifying': 'Fingerabdruck wird erstellt…',
     'editor.idFilled': 'Treffer gefunden — prüfen und speichern',
     'editor.idNoMatch': 'Kein Treffer bei AcoustID',
+    'fixTags.summary': '{fixed} korrigiert · {unchanged} bereits korrekt · {noMatch} kein Treffer · {failed} fehlgeschlagen (von {total})',
     'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
     'editor.idFailed': 'Abfrage fehlgeschlagen',
     'editor.saved': 'Gespeichert ✓',
@@ -1382,6 +1408,8 @@ const I18N = {
     'palette.action.gotoPlaylists': 'Zu den Playlists',
     'palette.action.gotoFavorites': 'Zu den Favoriten',
     'palette.action.clearLibrary': 'Bibliothek leeren…',
+    'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)…',
+    'palette.action.fixTagsLibraryForce': 'Tags korrigieren (Bibliothek, ohne Vergleich)…',
     'label.unknownArtist': 'Unbekannter Interpret',
     'label.noAlbum': 'Ohne Album',
     'label.tracksShort': 'Tit.',
@@ -1417,6 +1445,7 @@ const I18N = {
     'update.failed': "Échec du téléchargement — ouverture de la page de version",
     'update.dismiss': 'Fermer',
     'import.progress': 'Importation des titres…',
+    'fixTags.progress': 'Correction des tags…',
     'nav.albums': 'Albums',
     'nav.artists': 'Artistes',
     'nav.playlists': 'Playlists',
@@ -1652,6 +1681,7 @@ const I18N = {
     'btn.signingIn': 'En attente…',
     'btn.checkUpdate': 'Vérifier maintenant',
     'btn.checking': 'Vérification…',
+    'btn.fixTagsTooltip': 'Corriger les tags via AcoustID…',
     'btn.cancel': 'Annuler',
     'btn.delete': 'Supprimer',
     'select.enter': 'Sélectionner',
@@ -1889,6 +1919,15 @@ const I18N = {
     'editor.idBadKey': "AcoustID a refusé la clé API",
     'editor.idNoKey': "Ajoutez votre clé API AcoustID dans les Paramètres pour utiliser Identifier",
     'cm.identify': 'Identifier via AcoustID…',
+    'cm.fixTags': 'Corriger les tags',
+    'cm.fixTagsForce': 'Corriger les tags (sans comparer)',
+    'cm.fixTags': 'Corriger les tags',
+    'cm.fixTagsForce': 'Corriger les tags (sans comparer)',
+    'btn.fixTagsTooltip': 'Corriger les tags via AcoustID…',
+    'fixTags.progress': 'Correction des tags…',
+    'fixTags.summary': '{fixed} mis à jour · {unchanged} déjà corrects · {noMatch} sans correspondance · {failed} échoués ({total} au total)',
+    'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)',
+    'palette.action.fixTagsLibraryForce': 'Corriger les tags (Bibliothèque, sans comparer)',
     'setting.acoustidKey': 'Clé API AcoustID',
     'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Requise — obtenez la vôtre gratuitement sur acoustid.org/api-key.",
     'setting.acoustidKeyPh': 'Votre clé API',
@@ -1897,6 +1936,7 @@ const I18N = {
     'editor.identifying': 'Empreinte et recherche en cours…',
     'editor.idFilled': 'Correspondance trouvée — vérifiez puis enregistrez',
     'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
+    'fixTags.summary': '{fixed} corrigées · {unchanged} déjà correctes · {noMatch} sans correspondance · {failed} échouées (sur {total})',
     'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
     'editor.idFailed': 'Échec de la recherche',
     'editor.saved': 'Enregistré ✓',
@@ -1920,6 +1960,8 @@ const I18N = {
     'palette.action.gotoPlaylists': 'Aller aux Playlists',
     'palette.action.gotoFavorites': 'Aller aux Favoris',
     'palette.action.clearLibrary': 'Vider la bibliothèque…',
+    'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)…',
+    'palette.action.fixTagsLibraryForce': 'Corriger les tags (Bibliothèque, sans comparer)…',
     'label.unknownArtist': 'Artiste inconnu',
     'label.noAlbum': 'Sans album',
     'label.tracksShort': 'p.',
@@ -1955,6 +1997,7 @@ const I18N = {
     'update.failed': 'Не вдалося завантажити — відкриваємо сторінку релізу',
     'update.dismiss': 'Закрити',
     'import.progress': 'Імпортуємо треки…',
+    'fixTags.progress': 'Виправляємо теги…',
     'nav.albums': 'Альбоми',
     'nav.artists': 'Виконавці',
     'nav.playlists': 'Плейлисти',
@@ -2190,6 +2233,7 @@ const I18N = {
     'btn.signingIn': 'Очікування…',
     'btn.checkUpdate': 'Перевірити зараз',
     'btn.checking': 'Перевірка…',
+    'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
     'btn.cancel': 'Скасувати',
     'btn.delete': 'Видалити',
     'select.enter': 'Вибрати',
@@ -2427,6 +2471,15 @@ const I18N = {
     'editor.idBadKey': 'AcoustID відхилив ключ API',
     'editor.idNoKey': 'Додайте свій ключ API AcoustID у Налаштуваннях, щоб користуватися Розпізнаванням',
     'cm.identify': 'Розпізнати через AcoustID…',
+    'cm.fixTags': 'Виправити теги',
+    'cm.fixTagsForce': 'Виправити теги (без порівняння)',
+    'cm.fixTags': 'Виправити теги',
+    'cm.fixTagsForce': 'Виправити теги (без порівняння)',
+    'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
+    'fixTags.progress': 'Виправляємо теги…',
+    'fixTags.summary': '{fixed} оновлено · {unchanged} вже правильні · {noMatch} без збігів · {failed} невдало ({total} усього)',
+    'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)',
+    'palette.action.fixTagsLibraryForce': 'Виправити теги (Бібліотека, без порівняння)',
     'setting.acoustidKey': 'Ключ API AcoustID',
     'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Обов’язковий — власний можна отримати безкоштовно на acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Твій ключ API',
@@ -2435,6 +2488,7 @@ const I18N = {
     'editor.identifying': 'Створюємо відбиток і шукаємо…',
     'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
     'editor.idNoMatch': 'В AcoustID збігів немає',
+    'fixTags.summary': '{fixed} виправлено · {unchanged} вже коректні · {noMatch} без збігів · {failed} помилок (з {total})',
     'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
     'editor.idFailed': 'Пошук не вдався',
     'editor.saved': 'Збережено ✓',
@@ -2458,6 +2512,8 @@ const I18N = {
     'palette.action.gotoPlaylists': 'Перейти в Плейлисти',
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
     'palette.action.clearLibrary': 'Очистити бібліотеку…',
+    'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)…',
+    'palette.action.fixTagsLibraryForce': 'Виправити теги (Бібліотека, без порівняння)…',
     'label.unknownArtist': 'Невідомий виконавець',
     'label.noAlbum': 'Без альбому',
     'label.tracksShort': 'тр.',
@@ -6086,6 +6142,7 @@ function renderArtistDetail(name) {
       playTrackByPath(random.path, artist.tracks);
     }
   };
+  $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress');
 }
 
 // ── Albums ──
@@ -6266,6 +6323,7 @@ function renderAlbumDetail(key) {
       playTrackByPath(random.path, tracks);
     }
   };
+  $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress');
 }
 
 // ── Crossfade ──
@@ -6789,13 +6847,14 @@ $('btn-add-files').addEventListener('click', async () => {
   });
 }
 
-function setImportProgress(done, total) {
-  const banner = $('import-progress-banner');
+function setProgressBanner(done, total, labelKey) {
+  const banner = $('progress-banner');
   if (!banner) return;
   if (done == null) { banner.hidden = true; return; }
   banner.hidden = false;
-  $('import-progress-fill').style.width = Math.round((done / total) * 100) + '%';
-  $('import-progress-count').textContent = `${done}/${total}`;
+  $('progress-banner-title').textContent = tr(labelKey || 'import.progress');
+  $('progress-banner-fill').style.width = Math.round((done / total) * 100) + '%';
+  $('progress-banner-count').textContent = `${done}/${total}`;
 }
 
 async function importPaths(paths) {
@@ -6804,17 +6863,17 @@ async function importPaths(paths) {
   // A folder import can take a while (metadata is parsed one file at a time),
   // so show progress once there's more than a couple files to wait on.
   const showProgress = paths.length > 2;
-  if (showProgress) setImportProgress(0, paths.length);
+  if (showProgress) setProgressBanner(0, paths.length);
   for (let i = 0; i < paths.length; i++) {
     const p = paths[i];
-    if (library.some(t => t.path === p)) { if (showProgress) setImportProgress(i + 1, paths.length); continue; }
+    if (library.some(t => t.path === p)) { if (showProgress) setProgressBanner(i + 1, paths.length); continue; }
     const metadata = await window.electronAPI.parseMetadata(p);
     if (metadata.cover) coverCache[p] = metadata.cover;
     metadata.addedAt = Date.now();   // for the Listening Report "added to collection" stat
     library.push(metadata);
     added++;
     sinceRefresh++;
-    if (showProgress) setImportProgress(i + 1, paths.length);
+    if (showProgress) setProgressBanner(i + 1, paths.length);
     // Refresh every 10 tracks instead of once at the end — a folder import can
     // take a while and the list otherwise looks frozen/empty until it's done.
     if (sinceRefresh >= 10) {
@@ -6824,13 +6883,93 @@ async function importPaths(paths) {
       sinceRefresh = 0;
     }
   }
-  if (showProgress) setImportProgress(null);
+  if (showProgress) setProgressBanner(null);
   if (added > 0) {
     saveLibrary();
     refreshCurrentViewRows();
     renderCounts();
   }
 }
+
+// Bulk "Fix the tags": AcoustID-fingerprints every track in scope and treats
+// the MusicBrainz recording it maps to as the source of truth for
+// title/artist/album — no per-track editor confirmation, unlike the single-
+// track "Identify" flow which only fills the editor for review. `compare`
+// skips a track whose current tags already match (fewer needless writes);
+// "without comparing" always overwrites once a match exists. Never writes an
+// empty field — AcoustID sometimes has no album, and that shouldn't blank
+// out one the file already has.
+async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress' } = {}) {
+  if (!tracks || !tracks.length) return;
+  if (!settings.acoustidKey) { alert(tr('editor.idNoKey')); return; }
+  let fixed = 0, unchanged = 0, noMatch = 0, failed = 0;
+  for (let i = 0; i < tracks.length; i++) {
+    setProgressBanner(i, tracks.length, labelKey);
+    const t = tracks[i];
+    let res;
+    try { res = await window.electronAPI.identifyTrack(t.path, settings.acoustidKey); }
+    catch (_) { res = null; }
+    if (!res || !res.success) {
+      // A bad key or a missing fpcalc binary won't fix itself on the next
+      // track either — stop instead of burning through the whole scope.
+      if (res && (res.error === 'apiKey' || res.error === 'noFpcalc')) {
+        setProgressBanner(null);
+        alert(tr(IDENTIFY_ERR_KEY[res.error] || 'editor.idFailed'));
+        return;
+      }
+      failed++;
+      continue;
+    }
+    const m = res.match;
+    if (!m) { noMatch++; continue; }
+    const newTags = {};
+    for (const field of ['title', 'artist', 'album']) {
+      if (!m[field]) continue;
+      if (compare && m[field] === t[field]) continue;
+      newTags[field] = m[field];
+    }
+    if (!Object.keys(newTags).length) { unchanged++; continue; }
+    const wr = await window.electronAPI.writeMetadata(t.path, newTags);
+    if (!wr || !wr.success) { failed++; continue; }
+    Object.assign(t, newTags);
+    fixed++;
+  }
+  setProgressBanner(null);
+  saveLibrary();
+  refreshCurrentViewRows();
+  renderCounts();
+  alert(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length }));
+}
+
+// ── Fix Tags menu (Artist/Album scopes) ──
+let pendingFixTagsScope = null;
+function openFixTagsMenu(e, tracks, labelKey) {
+  e.stopPropagation();
+  pendingFixTagsScope = { tracks, labelKey };
+  const menu = $('fix-tags-menu');
+  menu.classList.add('open');
+  const rect = e.currentTarget.getBoundingClientRect();
+  const w = 240;
+  let x = rect.left;
+  if (x + w > window.innerWidth) x = window.innerWidth - w - 8;
+  menu.style.left = `${x}px`;
+  menu.style.top = `${rect.bottom + 4}px`;
+}
+function closeFixTagsMenu() {
+  $('fix-tags-menu').classList.remove('open');
+  pendingFixTagsScope = null;
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#fix-tags-menu') && !e.target.closest('.btn-fix-tags-trigger')) closeFixTagsMenu();
+});
+document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const scope = pendingFixTagsScope;
+    closeFixTagsMenu();
+    if (!scope) return;
+    runFixTags(scope.tracks, { compare: btn.dataset.action !== 'fix-tags-force', labelKey: scope.labelKey });
+  });
+});
 
 // ── Mini-player navigation ──
 function gotoCurrentTrackInLibrary() {
@@ -8160,6 +8299,8 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     else if (action === 'identify') {
       openMetadataEditor(path).then(() => $('btn-identify-editor').click());
     }
+    else if (action === 'fix-tags') { if (track) runFixTags([track], { compare: true }); }
+    else if (action === 'fix-tags-force') { if (track) runFixTags([track], { compare: false }); }
     else if (action === 'trim') { if (track) openEditorFor(track); }
     else if (action === 'add-to-playlist') openAddToPlaylistModal(path);
     else if (action === 'remove-from-playlist') {
@@ -8357,6 +8498,8 @@ function renderPaletteResults(query) {
     { label: tr('palette.action.gotoPlaylists'),   kind: 'goto-playlists',  icon: '#i-list' },
     { label: tr('palette.action.gotoFavorites'),   kind: 'goto-favorites',  icon: '#i-heart' },
     { label: tr('palette.action.clearLibrary'),    kind: 'clear-library',   icon: '#i-trash' },
+    { label: tr('palette.action.fixTagsLibrary'),      kind: 'fix-tags-library',       icon: '#i-search' },
+    { label: tr('palette.action.fixTagsLibraryForce'), kind: 'fix-tags-library-force', icon: '#i-search' },
   ].filter(a => !q || a.label.toLowerCase().includes(q));
   if (actions.length > 0) {
     const lbl = document.createElement('div');
@@ -8413,6 +8556,10 @@ function runPaletteAction(action) {
       text: tr('modal.clearLibrary.text'),
     });
   }
+  else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
+  else if (action.kind === 'fix-tags-library-force') runFixTags(library, { compare: false });
+  else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
+  else if (action.kind === 'fix-tags-library-force') runFixTags(library, { compare: false });
 }
 $('palette-input').addEventListener('input', e => renderPaletteResults(e.target.value));
 $('palette-input').addEventListener('keydown', e => {
