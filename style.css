@@ -3849,15 +3849,16 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.12); }
 
 /* ─── Update banner ───
-   Fixed, top-centered toast. Floats above content but below the fullscreen
-   player overlay (z 200) and command palette (z 400). Dismissible; the
-   renderer suppresses it for the rest of the day once closed. */
+   Fixed, top-centered toast. Above every other layer (fullscreen player at
+   z 200, command palette at z 400) except the boot overlay, which is gone
+   before an update check ever runs. Dismissible; the renderer suppresses it
+   for the rest of the day once closed. */
 .update-banner {
   position: fixed;
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 150;
+  z-index: 500;
   display: flex;
   align-items: center;
   gap: 12px;

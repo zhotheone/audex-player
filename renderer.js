@@ -901,6 +901,12 @@ const I18N = {
     'editor.idFilled': 'Match found — review and save',
     'editor.idNoMatch': 'No match on AcoustID',
     'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
+    'cm.useAsAlbumCover': 'Use as album cover',
+    'btn.albumCoverTooltip': "Apply a track's cover to every track in the album…",
+    'albumCover.needSource': 'Right-click a track with the correct cover and choose "Use as album cover" first.',
+    'albumCover.confirm': 'Apply the cover from "{track}" to the other {count} track(s) in this album?',
+    'albumCover.progress': 'Updating album covers…',
+    'albumCover.summary': '{updated} updated · {failed} failed ({total} total)',
     'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
     'editor.idFailed': 'Lookup failed',
     'editor.saved': 'Saved ✓',
@@ -1499,6 +1505,12 @@ const I18N = {
     'editor.idFilled': 'Treffer gefunden — prüfen und speichern',
     'editor.idNoMatch': 'Kein Treffer bei AcoustID',
     'fixTags.summary': '{fixed} korrigiert · {unchanged} bereits korrekt · {noMatch} kein Treffer · {failed} fehlgeschlagen (von {total})',
+    'cm.useAsAlbumCover': 'Als Album-Cover verwenden',
+    'btn.albumCoverTooltip': 'Das Cover eines Titels auf alle Titel des Albums übertragen…',
+    'albumCover.needSource': 'Rechtsklick auf den Titel mit dem richtigen Cover und „Als Album-Cover verwenden“ wählen.',
+    'albumCover.confirm': 'Cover von „{track}“ auf die restlichen {count} Titel dieses Albums übertragen?',
+    'albumCover.progress': 'Album-Cover werden aktualisiert…',
+    'albumCover.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
     'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
     'editor.idFailed': 'Abfrage fehlgeschlagen',
     'editor.saved': 'Gespeichert ✓',
@@ -2097,6 +2109,12 @@ const I18N = {
     'editor.idFilled': 'Correspondance trouvée — vérifiez puis enregistrez',
     'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
     'fixTags.summary': '{fixed} corrigées · {unchanged} déjà correctes · {noMatch} sans correspondance · {failed} échouées (sur {total})',
+    'cm.useAsAlbumCover': "Utiliser comme pochette de l'album",
+    'btn.albumCoverTooltip': "Appliquer la pochette d'un titre à tous les titres de l'album…",
+    'albumCover.needSource': 'Faites un clic droit sur le titre ayant la bonne pochette et choisissez « Utiliser comme pochette de l\'album ».',
+    'albumCover.confirm': 'Appliquer la pochette de « {track} » aux {count} autre(s) titre(s) de cet album ?',
+    'albumCover.progress': 'Mise à jour des pochettes…',
+    'albumCover.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
     'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
     'editor.idFailed': 'Échec de la recherche',
     'editor.saved': 'Enregistré ✓',
@@ -2695,6 +2713,12 @@ const I18N = {
     'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
     'editor.idNoMatch': 'В AcoustID збігів немає',
     'fixTags.summary': '{fixed} виправлено · {unchanged} вже коректні · {noMatch} без збігів · {failed} помилок (з {total})',
+    'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
+    'btn.albumCoverTooltip': 'Застосувати обкладинку треку до всіх треків альбому…',
+    'albumCover.needSource': 'Спершу клацніть правою кнопкою на трек із правильною обкладинкою та оберіть «Використати як обкладинку альбому».',
+    'albumCover.confirm': 'Застосувати обкладинку з «{track}» до решти {count} трек(ів) цього альбому?',
+    'albumCover.progress': 'Оновлюємо обкладинки альбому…',
+    'albumCover.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
     'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
     'editor.idFailed': 'Пошук не вдався',
     'editor.saved': 'Збережено ✓',
@@ -6578,6 +6602,7 @@ function renderAlbumDetail(key) {
     }
   };
   $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress');
+  $('btn-album-regen-covers').onclick = () => runRegenerateAlbumCovers(tracks);
 }
 
 // ── Crossfade ──
@@ -6754,6 +6779,7 @@ function refreshCurrentViewRows() {
   else if (currentView === 'playlist-detail') renderPlaylistDetail(activePlaylistId);
   else if (currentView === 'artists') renderArtists();
   else if (currentView === 'artist-detail') renderArtistDetail(activeArtistName);
+  else if (currentView === 'album-detail') renderAlbumDetail(activeAlbumKey);
 }
 
 // Cheap path: only the .playing/equalizer indicator changes — repaint visible rows in place.
@@ -7251,6 +7277,39 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     runFixTags(scope.tracks, { compare: btn.dataset.action !== 'fix-tags-force', labelKey: scope.labelKey });
   });
 });
+
+// ── Regenerate album covers ──
+// A two-step, Fix-Tags-adjacent flow: right-click the one track in the album
+// whose embedded art is actually correct ("Use as album cover" in the track
+// context menu), then hit the hero button to stamp that same picture into
+// every other track in the album. No confirmation modal — the confirm()
+// below both gates the action and shows which track got picked, so a stray
+// click doesn't silently overwrite art with the wrong source.
+let pendingAlbumCoverSource = null;
+async function runRegenerateAlbumCovers(tracks) {
+  const source = pendingAlbumCoverSource && tracks.find(t => t.path === pendingAlbumCoverSource);
+  if (!source || !source.cover) { alert(tr('albumCover.needSource')); return; }
+  const targets = tracks.filter(t => t.path !== source.path && !isRemotePath(t.path));
+  if (!targets.length) return;
+  if (!confirm(tr('albumCover.confirm', { track: source.title, count: targets.length }))) return;
+
+  let updated = 0, failed = 0;
+  for (let i = 0; i < targets.length; i++) {
+    setProgressBanner(i, targets.length, 'albumCover.progress');
+    const t = targets[i];
+    const wr = await window.electronAPI.writeCover(t.path, source.cover);
+    if (wr && wr.success) {
+      t.cover = source.cover;
+      t.hasCover = true;
+      coverCache[t.path] = source.cover;
+      updated++;
+    } else failed++;
+  }
+  setProgressBanner(null);
+  saveLibrary();
+  refreshCurrentViewRows();
+  alert(tr('albumCover.summary', { updated, failed, total: targets.length }));
+}
 
 // ── Mini-player navigation ──
 function gotoCurrentTrackInLibrary() {
@@ -8560,6 +8619,10 @@ function openContextMenu(e, path) {
   const cmTrim = $('cm-trim');
   if (cmTrim) cmTrim.hidden = !settings.editor || remote;
   $('cm-select').hidden = currentView !== 'library' || remote;
+  // Only offered from inside the album whose covers a marked track can then
+  // be stamped across — and only once that track actually has art to copy.
+  const track = trackByPath(path);
+  $('cm-use-cover').hidden = remote || currentView !== 'album-detail' || !(track && track.cover);
   // Everything below is a local-file operation — a peer's track only has a
   // stream URL, nothing on disk here to tag, reveal, or delete.
   ['reveal', 'edit-tags', 'identify', 'fix-tags', 'fix-tags-force', 'delete'].forEach(a => {
@@ -8609,6 +8672,7 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     }
     else if (action === 'fix-tags') { if (track) runFixTags([track], { compare: true }); }
     else if (action === 'fix-tags-force') { if (track) runFixTags([track], { compare: false }); }
+    else if (action === 'use-cover') { pendingAlbumCoverSource = path; }
     else if (action === 'trim') { if (track) openEditorFor(track); }
     else if (action === 'add-to-playlist') openAddToPlaylistModal(path);
     else if (action === 'remove-from-playlist') {

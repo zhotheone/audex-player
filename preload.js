@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readAudioFile: (filePath) => ipcRenderer.invoke('audio:readFile', filePath),
   trimAudio: (payload) => ipcRenderer.invoke('audio:trim', payload),
   writeMetadata: (filePath, tags) => ipcRenderer.invoke('music:writeMetadata', { filePath, tags }),
+  writeCover: (filePath, cover) => ipcRenderer.invoke('music:writeCover', { filePath, cover }),
   revealInFolder: (filePath) => ipcRenderer.invoke('shell:revealInFolder', filePath),
   deleteFile: (filePath) => ipcRenderer.invoke('shell:deleteFile', filePath),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),

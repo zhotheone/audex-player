@@ -959,6 +959,67 @@ async function writeMetadataToFile(filePath, tags) {
 
 ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => writeMetadataToFile(filePath, tags));
 
+// ── Cover replacement (album-wide "regenerate thumbnails") ──
+// track.cover in the renderer is always a `data:<mime>;base64,<data>` URL —
+// decode straight back into the {format, data} shape ffmpegTagArgs already
+// expects, so ogg/opus reuses that exact path (it never cared where the
+// picture came from). Other containers have no such path yet: ffmpegTagArgs's
+// "-map 0 -c copy" just carries the source's own cover stream through
+// untouched, so replacing it needs a second ffmpeg input (the new image)
+// mapped in as the attached-pic stream instead.
+function parseCoverDataUrl(dataUrl) {
+  const m = /^data:([^;]+);base64,(.+)$/.exec(String(dataUrl || ''));
+  if (!m) return null;
+  return { format: m[1], data: Buffer.from(m[2], 'base64') };
+}
+
+async function writeCoverToFile(filePath, coverDataUrl) {
+  if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'File not found' };
+  const picture = parseCoverDataUrl(coverDataUrl);
+  if (!picture) return { success: false, error: 'Bad cover data' };
+  const ffmpeg = resolveBundledFfmpeg();
+  if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
+
+  const ext = path.extname(filePath).toLowerCase();
+  const tmpPath = path.join(path.dirname(filePath), `.audex-cover-${Date.now()}${ext}`);
+  let tmpImgPath = null;
+  let args;
+  if (isOggContainer(ext)) {
+    args = ffmpegTagArgs(filePath, tmpPath, {}, picture);
+  } else {
+    tmpImgPath = `${tmpPath}.${coverExt(picture.format)}`;
+    fs.writeFileSync(tmpImgPath, picture.data);
+    args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', filePath, '-i', tmpImgPath,
+      '-map', '0:a', '-map', '1:v', '-c', 'copy', '-map_metadata', '0', '-disposition:v', 'attached_pic'];
+    if (ext === '.mp3') args.push('-id3v2_version', '3');
+    args.push(tmpPath);
+  }
+
+  try {
+    await runFfmpeg(ffmpeg, args);
+    await fs.promises.rename(tmpPath, filePath);
+    // Disk cover cache is keyed by a hash of the path and never overwrites an
+    // existing entry (it assumes a track's art is immutable) — drop the stale
+    // one first so the new cover actually lands on next boot.
+    const dir = coverCacheDir();
+    await fs.promises.mkdir(dir, { recursive: true });
+    const hash = coverCacheHash(filePath);
+    for (const name of await fs.promises.readdir(dir)) {
+      if (name.startsWith(hash)) await fs.promises.unlink(path.join(dir, name)).catch(() => {});
+    }
+    await saveCoverToCache(filePath, picture);
+    return { success: true };
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
+    return { success: false, error: String((err && err.message) || err) };
+  } finally {
+    if (tmpImgPath) { try { fs.unlinkSync(tmpImgPath); } catch (_) {} }
+    if (isOggContainer(ext)) { try { fs.unlinkSync(tmpPath + '.meta.txt'); } catch (_) {} }
+  }
+}
+
+ipcMain.handle('music:writeCover', async (event, { filePath, cover }) => writeCoverToFile(filePath, cover));
+
 // yt-dlp embeds YouTube thumbnails into Ogg/Opus via Python/mutagen, which can
 // write a METADATA_BLOCK_PICTURE that music-metadata (and this app's own
 // ffmpeg tag writer) can't parse back — the same corruption documented in

@@ -443,6 +443,9 @@
               <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-album-fix-tags" data-i18n-title="btn.fixTagsTooltip" title="Fix the tags via AcoustID…">
                 <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
               </button>
+              <button class="btn-ghost icon-only" id="btn-album-regen-covers" data-i18n-title="btn.albumCoverTooltip" title="Apply a track's cover to every track in the album…">
+                <svg class="i" width="13" height="13"><use href="#i-image"/></svg>
+              </button>
             </div>
           </div>
         </div>
@@ -1753,6 +1756,7 @@
     <button class="cm-item" data-action="identify"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.identify">Identify via AcoustID…</span></button>
     <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix the tags</span></button>
     <button class="cm-item" data-action="fix-tags-force"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTagsForce">Fix the tags (without comparing)</span></button>
+    <button class="cm-item" data-action="use-cover" id="cm-use-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.useAsAlbumCover">Use as album cover</span></button>
     <button class="cm-item" data-action="trim" id="cm-trim" hidden><svg class="i" width="11" height="11"><use href="#i-scissors"/></svg><span data-i18n="cm.trim">Trim track…</span></button>
     <div class="cm-divider" id="cm-div-3"></div>
     <button class="cm-item cm-danger" data-action="delete"><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.delete">Remove from library</span><span class="cm-sh">⌫</span></button>
