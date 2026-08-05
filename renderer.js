@@ -574,6 +574,8 @@ const I18N = {
     'btn.choose': 'Choose…',
     'btn.signIn': 'Sign in…',
     'btn.signingIn': 'Waiting…',
+    'btn.checkUpdate': 'Check now',
+    'btn.checking': 'Checking…',
     'btn.cancel': 'Cancel',
     'btn.delete': 'Delete',
     'select.enter': 'Select',
@@ -765,6 +767,10 @@ const I18N = {
     'setting.uiLanguage': 'Interface language',
     'setting.uiLanguageDesc': 'Applied immediately.',
     'setting.version': 'Version',
+    'setting.checkUpdate': 'Check for updates',
+    'setting.checkUpdateDesc': 'Looks for a newer build on GitHub right now.',
+    'update.checkFailed': 'Could not check for updates.',
+    'update.upToDate': 'You\'re on the latest version ({v}).',
     'badge.wip': 'in development',
     'placeholder.noFolder': '— not selected —',
     'modal.deleteTrack.title': 'Delete track?',
@@ -1106,6 +1112,8 @@ const I18N = {
     'btn.choose': 'Auswählen…',
     'btn.signIn': 'Anmelden…',
     'btn.signingIn': 'Warten…',
+    'btn.checkUpdate': 'Jetzt prüfen',
+    'btn.checking': 'Wird geprüft…',
     'btn.cancel': 'Abbrechen',
     'btn.delete': 'Löschen',
     'select.enter': 'Auswählen',
@@ -1297,6 +1305,10 @@ const I18N = {
     'setting.uiLanguage': 'Sprache der Oberfläche',
     'setting.uiLanguageDesc': 'Wird sofort angewendet.',
     'setting.version': 'Version',
+    'setting.checkUpdate': 'Nach Updates suchen',
+    'setting.checkUpdateDesc': 'Sucht jetzt sofort nach einer neueren Version auf GitHub.',
+    'update.checkFailed': 'Update-Prüfung fehlgeschlagen.',
+    'update.upToDate': 'Du hast bereits die neueste Version ({v}).',
     'badge.wip': 'in Entwicklung',
     'placeholder.noFolder': '— nicht ausgewählt —',
     'modal.deleteTrack.title': 'Titel löschen?',
@@ -1638,6 +1650,8 @@ const I18N = {
     'btn.choose': 'Choisir…',
     'btn.signIn': 'Se connecter…',
     'btn.signingIn': 'En attente…',
+    'btn.checkUpdate': 'Vérifier maintenant',
+    'btn.checking': 'Vérification…',
     'btn.cancel': 'Annuler',
     'btn.delete': 'Supprimer',
     'select.enter': 'Sélectionner',
@@ -1829,6 +1843,10 @@ const I18N = {
     'setting.uiLanguage': "Langue de l'interface",
     'setting.uiLanguageDesc': 'Appliquée immédiatement.',
     'setting.version': 'Version',
+    'setting.checkUpdate': 'Vérifier les mises à jour',
+    'setting.checkUpdateDesc': "Recherche immédiatement une version plus récente sur GitHub.",
+    'update.checkFailed': 'Impossible de vérifier les mises à jour.',
+    'update.upToDate': 'Vous avez déjà la dernière version ({v}).',
     'badge.wip': 'en développement',
     'placeholder.noFolder': '— non sélectionné —',
     'modal.deleteTrack.title': 'Supprimer la piste ?',
@@ -2170,6 +2188,8 @@ const I18N = {
     'btn.choose': 'Обрати…',
     'btn.signIn': 'Увійти…',
     'btn.signingIn': 'Очікування…',
+    'btn.checkUpdate': 'Перевірити зараз',
+    'btn.checking': 'Перевірка…',
     'btn.cancel': 'Скасувати',
     'btn.delete': 'Видалити',
     'select.enter': 'Вибрати',
@@ -2361,6 +2381,10 @@ const I18N = {
     'setting.uiLanguage': 'Мова інтерфейсу',
     'setting.uiLanguageDesc': 'Застосовується одразу.',
     'setting.version': 'Версія',
+    'setting.checkUpdate': 'Перевірити оновлення',
+    'setting.checkUpdateDesc': 'Перевіряє наявність новішої версії на GitHub прямо зараз.',
+    'update.checkFailed': 'Не вдалося перевірити оновлення.',
+    'update.upToDate': 'У вас уже остання версія ({v}).',
     'badge.wip': 'у розробці',
     'placeholder.noFolder': '— не обрано —',
     'modal.deleteTrack.title': 'Видалити трек?',
@@ -9846,6 +9870,10 @@ function showUpdateBanner(info) {
     if (!res || !res.success) {
       if (offDownloaded) offDownloaded();
       dlBtn.textContent = tr('update.failed');
+      // The real reason (e.g. an unsigned macOS build can't self-update) has
+      // nowhere else to surface — this app has no menu bar or DevTools shortcut.
+      dlBtn.title = (res && res.error) || '';
+      if (res && res.error) console.error('[update] download failed:', res.error);
       window.electronAPI.openExternal(UPDATE_RELEASES_URL);
       setTimeout(() => { dlBtn.disabled = false; dlBtn.textContent = tr('update.download'); }, 3000);
     }
@@ -9871,6 +9899,30 @@ async function checkForUpdates() {
   const dismissed = getUpdateDismiss();
   if (dismissed.version === info.latestVersion && dismissed.date === updateTodayStr()) return;
   showUpdateBanner(info);
+}
+
+const checkUpdateBtn = $('btn-check-update');
+if (checkUpdateBtn && window.electronAPI && typeof window.electronAPI.checkForUpdate === 'function') {
+  checkUpdateBtn.addEventListener('click', async () => {
+    const statusEl = $('check-update-status');
+    const label = checkUpdateBtn.querySelector('span');
+    checkUpdateBtn.disabled = true;
+    if (label) label.textContent = tr('btn.checking');
+    if (statusEl) statusEl.textContent = '';
+    let info;
+    try { info = await window.electronAPI.checkForUpdate(); }
+    catch (_) { info = null; }
+    checkUpdateBtn.disabled = false;
+    if (label) label.textContent = tr('btn.checkUpdate');
+    if (!info || !info.success) {
+      if (statusEl) statusEl.textContent = tr('update.checkFailed');
+      return;
+    }
+    // Manual check bypasses the "dismissed for today" suppression that the
+    // silent boot-time check respects — the user explicitly asked.
+    if (info.hasUpdate) showUpdateBanner(info);
+    else if (statusEl) statusEl.textContent = tr('update.upToDate', { v: info.currentVersion });
+  });
 }
 
 // Boot

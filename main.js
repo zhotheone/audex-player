@@ -982,6 +982,15 @@ function sendUpdateEvent(channel, payload) {
 autoUpdater.on('download-progress', (p) => sendUpdateEvent('update:downloadProgress', p.percent / 100));
 autoUpdater.on('update-downloaded', () => sendUpdateEvent('update:downloaded'));
 
+// The app has no menu bar (Menu.setApplicationMenu(null) above) and no DevTools
+// shortcut, so a failed update has nowhere to show its real error — this is the
+// only trace of it. Most common cause on macOS: the build is unsigned
+// (mac.identity: null), and Squirrel.Mac refuses to update an unsigned app.
+function logUpdateError(where, err) {
+  const line = `[${new Date().toISOString()}] ${where}: ${String(err && err.stack || err)}\n`;
+  try { fs.appendFileSync(path.join(app.getPath('userData'), 'update-error.log'), line); } catch (_) {}
+}
+
 ipcMain.handle('update:check', async () => {
   const currentVersion = app.getVersion();
   // Unpackaged (dev) runs have no app-update.yml — electron-updater throws
@@ -1009,6 +1018,7 @@ ipcMain.handle('update:check', async () => {
       hasUpdate: result.hasUpdate,
     };
   } catch (err) {
+    logUpdateError('check', err);
     return { success: false, error: String(err), currentVersion };
   }
 });
@@ -1018,7 +1028,8 @@ ipcMain.handle('update:download', async () => {
     await autoUpdater.downloadUpdate();
     return { success: true };
   } catch (err) {
-    return { success: false, error: String(err) };
+    logUpdateError('download', err);
+    return { success: false, error: String(err && err.message || err) };
   }
 });
 

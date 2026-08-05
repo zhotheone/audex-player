@@ -287,6 +287,25 @@ input { font-family: inherit; color: inherit; }
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  /* .nav-section.recents is the one flexible region (flex:1, min-height:0
+     below) and is meant to absorb a short window by shrinking down to 0.
+     Without min-height:0 here too, the sidebar itself can't shrink below its
+     content's natural height in a nested flex layout, so recents can't do
+     its job and everything below it — including Settings — gets pushed past
+     the bottom edge and clipped by body's overflow:hidden. overflow-y is a
+     last-resort fallback for when even a 0-height recents isn't enough
+     (many opt-in nav items + a very short window). */
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Only recents (below) is allowed to shrink — everything else (brand, main
+   nav, tools, and the pinned Open files/Settings actions) must stay full
+   size so Settings is never squeezed away. */
+.sidebar > .brand,
+.sidebar > .nav-menu,
+.sidebar > .nav-section.tools,
+.sidebar > .sidebar-actions {
+  flex-shrink: 0;
 }
 
 .brand {
