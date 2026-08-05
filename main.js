@@ -165,6 +165,7 @@ function createWindow() {
       webSecurity: false,
       contextIsolation: true,
       nodeIntegration: false,
+      backgroundThrottling: false,
     }
   });
 
@@ -2111,14 +2112,24 @@ const itunesCoverCache = new Map(); // term (lowercased) -> url | null
 function httpsGetJson(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { 'User-Agent': 'Audex' } }, (res) => {
-      if (res.statusCode !== 200) { res.resume(); reject(new Error('HTTP ' + res.statusCode)); return; }
       let data = '';
       res.setEncoding('utf8');
       res.on('data', (c) => {
         data += c;
         if (data.length > 4_000_000) { req.destroy(); reject(new Error('response too large')); }
       });
-      res.on('end', () => { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } });
+      res.on('end', () => {
+        if (res.statusCode !== 200) {
+          const err = new Error('HTTP ' + res.statusCode);
+          // Error bodies (e.g. AcoustID's {status:"error",error:{code,message}})
+          // still carry the real reason a request failed — attach it so callers
+          // can tell "bad key" apart from "rate limited" apart from "bad request".
+          try { err.body = JSON.parse(data); } catch (_) {}
+          reject(err);
+          return;
+        }
+        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+      });
     });
     req.on('error', reject);
     req.setTimeout(8000, () => { req.destroy(new Error('timeout')); });
@@ -2221,15 +2232,19 @@ ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => 
   try {
     data = await httpsGetJson(`${ACOUSTID_URL}?${qs}`);
   } catch (err) {
-    const msg = String(err && err.message || err);
-    // AcoustID answers a rejected key with HTTP 400, not a 200 carrying an error
-    // body — without this it would surface as a generic "lookup failed" and the
-    // user would never learn their key is the problem.
-    if (msg.includes('HTTP 400')) return { success: false, error: 'apiKey', detail: msg };
+    // AcoustID answers a rejected/missing key with HTTP 400 carrying error.code
+    // 1 or 4, but 400 also covers rate limiting and bad fingerprint/duration —
+    // only classify as 'apiKey' when the code actually says so, else the real
+    // cause (e.g. rate limit) would be misreported as a bad key.
+    const code = err && err.body && err.body.error && err.body.error.code;
+    const msg = String((err && err.body && err.body.error && err.body.error.message) || (err && err.message) || err);
+    if (code === 1 || code === 4) return { success: false, error: 'apiKey', detail: msg };
     return { success: false, error: 'lookup', detail: msg };
   }
   if (data && data.status === 'error') {
-    return { success: false, error: 'apiKey', detail: String((data.error && data.error.message) || '') };
+    const code = data.error && data.error.code;
+    const msg = String((data.error && data.error.message) || '');
+    return { success: false, error: (code === 1 || code === 4) ? 'apiKey' : 'lookup', detail: msg };
   }
   const match = acoustidBestMatch(data);
   if (match) return { success: true, match };
