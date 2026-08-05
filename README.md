@@ -8,7 +8,7 @@
 
 A fast, beautiful desktop player for the music you actually own — and a one-click way to get more of it.
 
-[![Version](https://img.shields.io/badge/version-c245f44-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
+[![Version](https://img.shields.io/badge/version-05e1ad8-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![Platforms](https://img.shields.io/badge/Linux%20·%20macOS%20·%20Windows-2b2b2b?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![License](https://img.shields.io/badge/MIT-blue?style=for-the-badge)](LICENSE)
 
