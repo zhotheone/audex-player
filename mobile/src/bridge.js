@@ -390,10 +390,28 @@
     sheet.innerHTML = '<div class="mobile-more-handle"></div>';
     document.body.append(backdrop, sheet);
 
+    // #btn-connect (renderer.js's Spotify-Connect-style take-over/push menu,
+    // renderer.js:9002-9013) stays `hidden` forever on mobile otherwise: it's
+    // only un-hidden by applyLanSharingVisibility() when settings.lanSharing
+    // is on, and that toggle lives in the desktop-only "Sidebar" settings tab
+    // mobile.css hides entirely — same gate lanEnableFeature() above already
+    // bypasses. renderConnectMenu() already lists mobile peers (phone icon,
+    // take/push buttons) same as desktop ones, so reusing it here needs zero
+    // new renderer.js code, just a working way to reach it.
+    const connectBtn = document.getElementById('btn-connect');
+    if (connectBtn) {
+      connectBtn.hidden = false;
+      connectBtn.classList.add('nav-item');
+      const label = document.createElement('span');
+      label.textContent = window.tr ? tr('lan.connect') : 'Connect to a device';
+      connectBtn.appendChild(label);
+    }
+
     const moved = [
       ...nav.querySelectorAll('[data-view="albums"], [data-view="artists"], [data-view="playlists"], [data-view="favorites"]'),
       sidebarActions && sidebarActions.querySelector('#btn-add-files'),
       sidebarActions && sidebarActions.querySelector('.nav-settings'),
+      connectBtn,
     ].filter(Boolean);
     moved.forEach(el => sheet.appendChild(el));
 
@@ -411,8 +429,12 @@
     backdrop.addEventListener('click', close);
     // Any tap inside the sheet is either a navigation (view is about to
     // change, nothing left to show here) or Open files (dialog takes over) —
-    // close either way instead of leaving a stale sheet on top.
+    // close either way instead of leaving a stale sheet on top. #btn-connect
+    // opens a popover instead (renderer.js's own listener, which stops
+    // propagation) — stays open otherwise since this handler never sees the
+    // click.
     sheet.addEventListener('click', (e) => { if (e.target !== sheet) close(); });
+    if (connectBtn) connectBtn.addEventListener('click', close);
   }
 
   setUpNativeAudio();
