@@ -1,5 +1,16 @@
 // ── Audex renderer ──
 
+// No menu bar and no DevTools shortcut means an uncaught renderer error has
+// nowhere to surface — forward it to main's app.log (see logAppError there).
+if (window.electronAPI && typeof window.electronAPI.logError === 'function') {
+  window.addEventListener('error', (e) => {
+    window.electronAPI.logError('renderer:error', e.error && e.error.stack || e.message);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    window.electronAPI.logError('renderer:unhandledrejection', e.reason && e.reason.stack || e.reason);
+  });
+}
+
 // Storage keys (kept "ambevor-*" for the library so existing users don't lose state;
 // new keys use the audex- prefix).
 const LS = {
@@ -6935,7 +6946,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
     const m = res.match;
     if (!m) { noMatch++; continue; }
     const newTags = {};
-    for (const field of ['title', 'artist', 'album']) {
+    for (const field of ['title', 'artist', 'album', 'trackNo', 'discNo']) {
       if (!m[field]) continue;
       if (compare && m[field] === t[field]) continue;
       newTags[field] = m[field];
@@ -8404,6 +8415,8 @@ $('btn-identify-editor').addEventListener('click', async () => {
   if (m.title) $('md-title').value = m.title;
   if (m.artist) $('md-artist').value = m.artist;
   if (m.album) $('md-album').value = m.album;
+  if (m.trackNo) $('md-track-no').value = m.trackNo;
+  if (m.discNo) $('md-disc-no').value = m.discNo;
   status.textContent = tr('editor.idFilled');
   status.className = 'editor-foot-status ok';
 });

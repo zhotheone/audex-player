@@ -10,6 +10,19 @@ const musicMetadata = require('music-metadata');
 
 app.setName('Audex');
 
+// ── Global app log ──
+// General-purpose error log next to update-error.log, for troubleshooting
+// crashes that have nowhere else to surface (no menu bar, no DevTools
+// shortcut). Catches both main-process crashes and renderer-reported errors
+// (see 'renderer:logError' below and the window.onerror hook in renderer.js).
+function appendLog(fileName, where, err) {
+  const line = `[${new Date().toISOString()}] ${where}: ${String(err && err.stack || err)}\n`;
+  try { fs.appendFileSync(path.join(app.getPath('userData'), fileName), line); } catch (_) {}
+}
+function logAppError(where, err) { appendLog('app.log', where, err); }
+process.on('uncaughtException', (err) => logAppError('main:uncaughtException', err));
+process.on('unhandledRejection', (err) => logAppError('main:unhandledRejection', err));
+
 // Single-instance lock. Two Electron processes pointed at the same userData
 // directory can both open the localStorage LevelDB and corrupt it (lost library
 // + settings). If another instance already holds the lock, quit immediately and
@@ -894,6 +907,11 @@ ipcMain.handle('shell:revealInFolder', async (event, filePath) => {
   return false;
 });
 
+ipcMain.handle('renderer:logError', (event, { where, message } = {}) => {
+  logAppError(where || 'renderer', message);
+  return true;
+});
+
 ipcMain.handle('shell:openLogsFolder', async () => {
   const err = await shell.openPath(app.getPath('userData'));
   return { success: !err, error: err || undefined };
@@ -992,10 +1010,7 @@ autoUpdater.on('update-downloaded', () => sendUpdateEvent('update:downloaded'));
 // shortcut, so a failed update has nowhere to show its real error — this is the
 // only trace of it. Most common cause on macOS: the build is unsigned
 // (mac.identity: null), and Squirrel.Mac refuses to update an unsigned app.
-function logUpdateError(where, err) {
-  const line = `[${new Date().toISOString()}] ${where}: ${String(err && err.stack || err)}\n`;
-  try { fs.appendFileSync(path.join(app.getPath('userData'), 'update-error.log'), line); } catch (_) {}
-}
+function logUpdateError(where, err) { appendLog('update-error.log', where, err); }
 
 ipcMain.handle('update:check', async () => {
   const currentVersion = app.getVersion();
@@ -2207,11 +2222,23 @@ function acoustidBestMatch(data) {
   for (const r of results) {
     for (const rec of r.recordings || []) {
       if (!rec.title) continue;
-      return {
+      const match = {
         title: rec.title,
         artist: (rec.artists || []).map(a => a.name).join(' & ') || '',
         album: ((rec.releasegroups || []).find(rg => rg.title) || {}).title || '',
       };
+      // Track/disc number lives on the release (a recording can appear on many
+      // releases at different positions), not on the recording itself — take
+      // the first release+medium that actually lists this recording.
+      for (const rel of rec.releases || []) {
+        const medium = (rel.mediums || []).find(m => (m.tracks || []).some(t => t.id === rec.id));
+        const track = medium && medium.tracks.find(t => t.id === rec.id);
+        if (!track) continue;
+        if (track.position) match.trackNo = String(track.position);
+        if (medium.position) match.discNo = String(medium.position);
+        break;
+      }
+      return match;
     }
   }
   return null;
@@ -2230,7 +2257,7 @@ ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => 
     client: key,
     duration: String(Math.round(fp.duration)),
     fingerprint: fp.fingerprint,
-    meta: 'recordings releasegroups',
+    meta: 'recordings releasegroups releases tracks',
     format: 'json',
   });
   let data;

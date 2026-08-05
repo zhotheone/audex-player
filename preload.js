@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getHardwareAcceleration: () => ipcRenderer.invoke('app:getHardwareAcceleration'),
   setHardwareAcceleration: (enabled) => ipcRenderer.invoke('app:setHardwareAcceleration', !!enabled),
   openLogsFolder: () => ipcRenderer.invoke('shell:openLogsFolder'),
+  logError: (where, message) => ipcRenderer.invoke('renderer:logError', { where, message }),
   checkForUpdate: () => ipcRenderer.invoke('update:check'),
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
   installUpdate: () => ipcRenderer.invoke('update:install'),
