@@ -114,6 +114,15 @@ let discordUser = null;
 const coverCache = {};
 let library = libraryMeta.map(t => ({ ...t, cover: coverCache[t.path] || null }));
 
+// Read by saveLibrary() below (called from the top-level backfill IIFE right
+// after this, i.e. before any function runs) and by lanPublish() to know when
+// peers need a fresh copy of the library, not just a state tick — has to be
+// declared before that IIFE, not just "early", or a fresh/legacy library
+// (any track missing addedAt) hits this `let` while still in its TDZ and
+// aborts the rest of the script's top-level init.
+let lanTracksDirty = true;
+let lanConfigDirty = true;   // same idea, for the settings subset peers can pull
+
 // Backfill `addedAt` for tracks imported before the Listening Report shipped.
 // Their real add-date is unknown, so we stamp a fixed past sentinel (1 = just
 // after the epoch): they count toward the all-time "Added to collection" stat
@@ -158,12 +167,6 @@ let playLog = (() => {
 // `library`, so a track streamed from a peer plays through the same path as a
 // local one (see lanPlayTrack).
 let currentTrack = null;
-// Set by saveLibrary() (called from a top-level backfill IIFE at script load,
-// before any function — so this can't live any later than the other
-// top-of-file state) and read by lanPublish() to know when peers need a fresh
-// copy of the library, not just a state tick.
-let lanTracksDirty = true;
-let lanConfigDirty = true;   // same idea, for the settings subset peers can pull
 let currentQueue = library;          // the list we're playing through
 let currentView = 'library';
 let activeFilter = 'all';
@@ -377,6 +380,7 @@ const I18N = {
     'lan.peers': "Other devices",
     'lan.noPeers': "No devices found yet.",
     'lan.manual': "added by hand",
+    'lan.mobileConnected': "Mobile · Connected",
     'lan.connect': "Connect to a device",
     'lan.networkBadge': "NETWORK",
     'lan.networkFrom': "From {device}",
@@ -6695,7 +6699,10 @@ function startCrossfadeTail() {
 // ── Playback ──
 // A remote track's `path` is the peer's signed stream URL, so it plays through
 // exactly the same code as a local file — only the src prefix differs.
-function isRemotePath(p) { return /^https?:\/\//.test(String(p || '')); }
+// `blob:` is a local-session file (mobile's file-picker fallback, no disk
+// path behind it) — it behaves exactly like a remote track everywhere here:
+// playable as-is, but no tag edits/cover lookups/reveal-in-folder.
+function isRemotePath(p) { return /^(https?|blob):/.test(String(p || '')); }
 function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
 
 // Resolve against the queue before the library: a queue of peer tracks has no
@@ -10620,6 +10627,10 @@ let lanPollTimer = null;
 function lanPeer(id) { return lanStatus.peers.find(p => p.deviceId === id) || null; }
 
 async function lanApi(peer, route, body) {
+  // A mobile peer has no HTTP server to fetch() (see lan.js's "mobile clients"
+  // section) — main.js relays the same request over the WebSocket it's
+  // already holding open instead.
+  if (peer.mobile) return window.electronAPI.lanWsRequest(peer.deviceId, route, body);
   const res = await fetch(peer.base + route, {
     method: body ? 'POST' : 'GET',
     headers: { 'Authorization': 'Bearer ' + lanStatus.key, 'Content-Type': 'application/json' },
@@ -10868,14 +10879,15 @@ function renderDevices() {
   const peers = s.peers.map(p => {
     const lib = lanPeerLibraries[p.deviceId];
     const trackCount = lib ? ` · ${withCount('tracks', lib.tracks.length)}` : '';
+    const meta = p.mobile ? tr('lan.mobileConnected') : `${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}${trackCount}`;
     return `
     <div class="device-row" data-peer="${escapeHtml(p.deviceId)}" style="cursor:default">
-      <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
+      <svg class="i" width="14" height="14"><use href="#${p.mobile ? 'i-smartphone' : 'i-monitor'}"/></svg>
       <div class="device-body">
         <div class="device-name">${escapeHtml(p.name)}</div>
-        <div class="device-meta">${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}${trackCount}</div>
+        <div class="device-meta">${meta}</div>
       </div>
-      <button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>
+      ${p.mobile ? '' : `<button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>`}
       ${p.manual ? `<button class="btn-ghost" data-act="remove">${tr('lan.remove')}</button>` : ''}
     </div>`;
   }).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
@@ -10958,10 +10970,10 @@ function renderConnectMenu() {
   const rows = lanStatus.peers.map(p => `
     <div class="cm-device" data-peer="${escapeHtml(p.deviceId)}">
       <div class="device-row" style="cursor:default">
-        <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
+        <svg class="i" width="14" height="14"><use href="#${p.mobile ? 'i-smartphone' : 'i-monitor'}"/></svg>
         <div class="device-body">
           <div class="device-name">${escapeHtml(p.name)}</div>
-          <div class="device-meta">${escapeHtml(p.host)}${p.manual ? ' · ' + tr('lan.manual') : ''}</div>
+          <div class="device-meta">${p.mobile ? tr('lan.mobileConnected') : escapeHtml(p.host) + (p.manual ? ' · ' + tr('lan.manual') : '')}</div>
         </div>
       </div>
       <div class="cm-device-actions">

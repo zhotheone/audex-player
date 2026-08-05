@@ -1,0 +1,8 @@
+node_modules/
+www/
+# android/ holds hand-edited native code (AndroidManifest.xml, strings.xml)
+# as of the ExoPlayer integration — `cap add android` won't regenerate those,
+# so it's tracked now. android/.gitignore (Capacitor-generated, standard
+# Android template) already excludes build/, .gradle/, local.properties, and
+# the copied web assets.
+ios/

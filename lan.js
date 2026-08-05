@@ -365,8 +365,11 @@ function startDiscovery() {
         try { udp.send(msg, PORT, addr); } catch (_) {}
       }
       let dropped = false;
+      // Mobile peers never send a UDP announce (that's this loop's own
+      // heartbeat) — their presence is the open WebSocket itself, cleaned up
+      // by handleUpgrade()'s close handler instead of this TTL.
       for (const [id, p] of peers) {
-        if (!p.manual && Date.now() - p.lastSeen > PEER_TTL) { peers.delete(id); dropped = true; }
+        if (!p.manual && !p.mobile && Date.now() - p.lastSeen > PEER_TTL) { peers.delete(id); dropped = true; }
       }
       if (dropped) onPeersChanged(listPeers());
     };
@@ -395,7 +398,156 @@ function removePeer(id) {
 }
 
 function listPeers() {
-  return [...peers.values()].map(p => ({ ...p, base: `http://${p.host}:${p.port}` }));
+  return [...peers.values()].map(p => (p.mobile ? { ...p } : { ...p, base: `http://${p.host}:${p.port}` }));
+}
+
+// ── mobile clients (WebSocket) ──
+//
+// A mobile client (mobile/src/bridge.js) has no server of its own to receive
+// a push or answer a take-over on — Capacitor's WebView can't listen for
+// inbound connections without new native code. But it can hold a normal
+// client WebSocket open to *this* server, and the browser/WebView already
+// implements the WS protocol on that end for free. So the only new code
+// needed is a minimal WS *server* here: an Upgrade handshake plus enough of
+// RFC 6455 framing to read/write small JSON text messages — no ping/pong
+// keepalive, no fragmented messages (every message here is one short JSON
+// blob). Same bearer key as the HTTP API; since a browser WebSocket can't
+// set an Authorization header, the key travels as the first message instead
+// of a header.
+const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+const wsClients = new Map();  // deviceId -> { socket, lastSeen }
+const wsPending = new Map();  // reqId -> { resolve, reject, timer }
+let wsReqSeq = 0;
+
+function wsEncode(str) {
+  const payload = Buffer.from(str, 'utf8');
+  const len = payload.length;
+  // Every message we send is a small control blob (a command or a state
+  // snapshot) — 16-bit extended length is plenty; never expect to hit it.
+  const head = len < 126 ? Buffer.from([0x81, len])
+    : Buffer.from([0x81, 126, (len >> 8) & 0xff, len & 0xff]);
+  return Buffer.concat([head, payload]);
+}
+
+// One text frame off the front of `buf`, or null if it isn't fully buffered
+// yet. Client-to-server frames are always masked per spec; anything else is
+// rejected. No continuation-frame support — see the comment above.
+function wsDecode(buf) {
+  if (buf.length < 2) return null;
+  const masked = (buf[1] & 0x80) !== 0;
+  let len = buf[1] & 0x7f;
+  let offset = 2;
+  if (len === 126) {
+    if (buf.length < 4) return null;
+    len = buf.readUInt16BE(2);
+    offset = 4;
+  } else if (len === 127) {
+    if (buf.length < 10) return null;
+    len = Number(buf.readBigUInt64BE(2));
+    offset = 10;
+  }
+  if (!masked || buf.length < offset + 4) return null;
+  const maskKey = buf.slice(offset, offset + 4);
+  offset += 4;
+  if (buf.length < offset + len) return null;
+  const raw = buf.slice(offset, offset + len);
+  const payload = Buffer.alloc(len);
+  for (let i = 0; i < len; i++) payload[i] = raw[i] ^ maskKey[i & 3];
+  return { opcode: buf[0] & 0x0f, payload, size: offset + len };
+}
+
+function wsSend(socket, obj) {
+  try { socket.write(wsEncode(JSON.stringify(obj))); } catch (_) {}
+}
+
+function wsCloseUnauthorized(socket) {
+  try { socket.write(Buffer.from([0x88, 2, 0x0f, 0xa1])); } catch (_) {} // close, code 4001
+  try { socket.destroy(); } catch (_) {}
+}
+
+function handleUpgrade(req, socket) {
+  if (new URL(req.url, 'http://x').pathname !== '/api/ws') { socket.destroy(); return; }
+  const wsKey = req.headers['sec-websocket-key'];
+  if (!wsKey) { socket.destroy(); return; }
+  const accept = crypto.createHash('sha1').update(wsKey + WS_GUID).digest('base64');
+  socket.write(
+    'HTTP/1.1 101 Switching Protocols\r\n' +
+    'Upgrade: websocket\r\n' +
+    'Connection: Upgrade\r\n' +
+    `Sec-WebSocket-Accept: ${accept}\r\n\r\n`
+  );
+
+  let buf = Buffer.alloc(0);
+  let deviceId = null;
+  let authed = false;
+
+  const cleanup = () => {
+    if (!deviceId) return;
+    wsClients.delete(deviceId);
+    peers.delete(deviceId);
+    onPeersChanged(listPeers());
+    deviceId = null;
+  };
+
+  socket.on('data', (chunk) => {
+    buf = Buffer.concat([buf, chunk]);
+    let frame;
+    while ((frame = wsDecode(buf))) {
+      buf = buf.slice(frame.size);
+      if (frame.opcode === 0x8) { socket.destroy(); return; }               // close
+      if (frame.opcode === 0x9) { try { socket.write(Buffer.from([0x8a, 0])); } catch (_) {} continue; } // ping -> pong
+      if (frame.opcode !== 0x1) continue;                                    // text frames only
+
+      let msg;
+      try { msg = JSON.parse(frame.payload.toString('utf8')); } catch (_) { continue; }
+
+      if (!authed) {
+        if (msg.type !== 'auth' || typeof msg.key !== 'string' || !cfg.key
+            || !crypto.timingSafeEqual(sha256(msg.key), sha256(cfg.key))) {
+          return wsCloseUnauthorized(socket);
+        }
+        authed = true;
+        deviceId = String(msg.deviceId || `mobile:${crypto.randomBytes(4).toString('hex')}`);
+        wsClients.set(deviceId, { socket, lastSeen: Date.now() });
+        notePeer({ deviceId, name: msg.name || 'Mobile', mobile: true });
+        wsSend(socket, { type: 'auth-ok' });
+        continue;
+      }
+
+      const client = wsClients.get(deviceId);
+      if (client) client.lastSeen = Date.now();
+      if (msg.type === 'state' && msg.reqId && wsPending.has(msg.reqId)) {
+        const pend = wsPending.get(msg.reqId);
+        wsPending.delete(msg.reqId);
+        clearTimeout(pend.timer);
+        pend.resolve(msg.state || null);
+      }
+    }
+  });
+  socket.on('close', cleanup);
+  socket.on('error', cleanup);
+}
+
+// The renderer-facing half of a take/push against a mobile peer — same shape
+// as lanApi()'s HTTP round trip (`{ok, state}`), just carried over the socket
+// instead of fetch(). Only /api/command is meaningful for a mobile peer: it
+// has no library/config to browse the way a desktop peer does.
+function wsRequest(deviceId, route, body) {
+  const client = wsClients.get(deviceId);
+  if (!client) return Promise.reject(new Error('device not connected'));
+  if (route !== '/api/command') return Promise.reject(new Error('not supported for this device'));
+  if (!body || body.type !== 'transfer') {
+    wsSend(client.socket, { type: 'command', cmd: body });
+    return Promise.resolve({ ok: true, state: null });
+  }
+  // A take-over: ask the phone for its state and wait for the reply, same
+  // one-round-trip contract as the HTTP peer's /api/command?type=transfer.
+  return new Promise((resolve, reject) => {
+    const reqId = String(++wsReqSeq);
+    const timer = setTimeout(() => { wsPending.delete(reqId); reject(new Error('timeout')); }, 5000);
+    wsPending.set(reqId, { resolve: (state) => resolve({ ok: true, state }), reject, timer });
+    wsSend(client.socket, { type: 'req-state', reqId });
+  });
 }
 
 // ── lifecycle ──
@@ -409,6 +561,7 @@ function start() {
       try { sendJson(res, 500, { error: 'server error' }); } catch (_) {}
     });
   });
+  server.on('upgrade', handleUpgrade);
   let attempt = 0;
   server.on('error', (e) => {
     if (e.code === 'EADDRINUSE' && ++attempt < PORT_TRIES) {
@@ -429,6 +582,8 @@ function stop() {
   if (announceTimer) { clearInterval(announceTimer); announceTimer = null; }
   if (udp) { try { udp.close(); } catch (_) {} udp = null; }
   if (server) { try { server.close(); } catch (_) {} server = null; }
+  for (const [id, c] of wsClients) { try { c.socket.destroy(); } catch (_) {} }
+  wsClients.clear();
   for (const [id, p] of peers) if (!p.manual) peers.delete(id);
 }
 
@@ -450,4 +605,4 @@ function status() {
   };
 }
 
-module.exports = { load, setConfig, publish, status, addManualPeer, removePeer, listPeers, stop, PORT, subnetBroadcasts };
+module.exports = { load, setConfig, publish, status, addManualPeer, removePeer, listPeers, stop, PORT, subnetBroadcasts, wsRequest };

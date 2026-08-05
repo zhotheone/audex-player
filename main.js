@@ -426,6 +426,7 @@ ipcMain.handle('lan:setConfig', (event, next) => lan.setConfig(next || {}));
 ipcMain.handle('lan:publish', (event, snap) => { lan.publish(snap); return true; });
 ipcMain.handle('lan:addPeer', (event, addr) => lan.addManualPeer(addr));
 ipcMain.handle('lan:removePeer', (event, id) => lan.removePeer(id));
+ipcMain.handle('lan:wsRequest', (event, deviceId, route, body) => lan.wsRequest(deviceId, route, body));
 
 // Tray keeps the app alive when all windows are closed — don't quit on
 // window-all-closed (mac already kept the app alive; we now do the same

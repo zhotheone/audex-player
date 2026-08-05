@@ -1,0 +1,21 @@
+{
+  "name": "audex-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Audex mobile — LAN client for the desktop player, via Capacitor",
+  "scripts": {
+    "sync": "node sync-assets.js",
+    "cap:sync": "npm run sync && cap sync",
+    "open:android": "npm run cap:sync && cap open android",
+    "open:ios": "npm run cap:sync && cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.0.0",
+    "@mediagrid/capacitor-native-audio": "^2.3.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}
