@@ -1123,6 +1123,10 @@
           <svg class="i" width="13" height="13"><use href="#i-download"/></svg>
           <span data-i18n="section.downloads">Download from the internet</span>
         </button>
+        <button class="settings-tab" data-tab="sidebar" role="tab">
+          <svg class="i" width="13" height="13"><use href="#i-list"/></svg>
+          <span data-i18n="section.sidebar">Sidebar</span>
+        </button>
         <button class="settings-tab" data-tab="discord" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-discord"/></svg>
           <span data-i18n="section.discord">Discord Rich Presence</span>
@@ -1333,6 +1337,50 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.crossfade">Crossfade between tracks</div>
+              <div class="setting-desc" data-i18n="setting.crossfadeDesc">Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.</div>
+            </div>
+            <button class="toggle" data-setting="crossfade"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row" id="crossfade-len-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.crossfadeLen">Crossfade length</div>
+            </div>
+            <div class="range-ctl">
+              <input type="range" id="crossfade-len" class="ui-range" min="0" max="10" step="0.5" value="3">
+              <output class="range-val" id="crossfade-len-val">3 s</output>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.volWheelStep">Volume scroll step</div>
+              <div class="setting-desc" data-i18n="setting.volWheelStepDesc">How much each mouse-wheel notch changes the volume while hovering the slider.</div>
+            </div>
+            <div class="range-ctl">
+              <input type="range" id="vol-wheel-step" class="ui-range" min="0.01" max="0.2" step="0.01" value="0.05">
+              <output class="range-val" id="vol-wheel-step-val">5%</output>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.acoustidKey">AcoustID API key</div>
+              <div class="setting-desc" data-i18n="setting.acoustidKeyDesc">Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.</div>
+            </div>
+            <input type="text" class="field-input setting-input" id="acoustid-key" spellcheck="false" autocomplete="off" data-i18n-placeholder="setting.acoustidKeyPh" placeholder="Your API key">
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <div class="settings-panel" data-panel="sidebar" hidden>
+      <section class="setting-section">
+        <div class="section-label">
+          <svg class="i" width="11" height="11"><use href="#i-list"/></svg>
+          <span data-i18n="section.sidebar">Sidebar</span>
+        </div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-text">
               <div class="setting-label" data-i18n="setting.healthCheck">Quality check (Health-check)</div>
               <div class="setting-desc" data-i18n="setting.healthCheckDesc">The “Library health” section and the “Quality” column in track lists. When off, the column and section are hidden entirely.</div>
             </div>
@@ -1354,26 +1402,10 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.crossfade">Crossfade between tracks</div>
-              <div class="setting-desc" data-i18n="setting.crossfadeDesc">Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.</div>
+              <div class="setting-label" data-i18n="setting.showDevices">Show the “Devices” tab</div>
+              <div class="setting-desc" data-i18n="setting.showDevicesDesc">Lets this app be found and controlled by your other devices on the same LAN or Tailscale network. Opens a local network port; off by default.</div>
             </div>
-            <button class="toggle" data-setting="crossfade"><div class="toggle-knob"></div></button>
-          </div>
-          <div class="setting-row" id="crossfade-len-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.crossfadeLen">Crossfade length</div>
-            </div>
-            <div class="range-ctl">
-              <input type="range" id="crossfade-len" class="ui-range" min="0" max="10" step="0.5" value="3">
-              <output class="range-val" id="crossfade-len-val">3 s</output>
-            </div>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.acoustidKey">AcoustID API key</div>
-              <div class="setting-desc" data-i18n="setting.acoustidKeyDesc">Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.</div>
-            </div>
-            <input type="text" class="field-input setting-input" id="acoustid-key" spellcheck="false" autocomplete="off" data-i18n-placeholder="setting.acoustidKeyPh" placeholder="Your API key">
+            <button class="toggle" data-setting="lan-sharing"><div class="toggle-knob"></div></button>
           </div>
         </div>
       </section>
@@ -1421,13 +1453,6 @@
               <div class="setting-desc" data-i18n="setting.showDownloadsDesc">Adds a section to the sidebar for downloading tracks by URL.</div>
             </div>
             <button class="toggle" data-setting="downloads"><div class="toggle-knob"></div></button>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.showDevices">Show the “Devices” tab</div>
-              <div class="setting-desc" data-i18n="setting.showDevicesDesc">Lets this app be found and controlled by your other devices on the same LAN or Tailscale network. Opens a local network port; off by default.</div>
-            </div>
-            <button class="toggle" data-setting="lan-sharing"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">

@@ -319,6 +319,27 @@ function notePeer(p) {
   if (!prev || prev.host !== p.host || prev.name !== p.name) onPeersChanged(listPeers());
 }
 
+// The global broadcast address (255.255.255.255) only reaches the interface
+// Windows' routing table happens to pick for it — on a machine with several
+// IPv4 adapters (Tailscale's virtual NIC, a VPN, Hyper-V/VMware switches) that
+// is frequently *not* the real LAN adapter, so the announce silently never
+// leaves the box. Sending the same packet to every interface's own
+// subnet-directed broadcast (e.g. 192.168.1.255) sidesteps the ambiguity: each
+// one matches a specific route and is forced out its own adapter.
+function subnetBroadcasts() {
+  const out = [];
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const ni of list || []) {
+      if (ni.family !== 'IPv4' || ni.internal || !ni.netmask) continue;
+      const addr = ni.address.split('.').map(Number);
+      const mask = ni.netmask.split('.').map(Number);
+      if (addr.length !== 4 || mask.length !== 4) continue;
+      out.push(addr.map((o, i) => o | (~mask[i] & 255)).join('.'));
+    }
+  }
+  return out;
+}
+
 function startDiscovery() {
   udp = dgram.createSocket({ type: 'udp4', reuseAddr: true });
   udp.on('error', (e) => { lastError = String(e.message || e); logError('lan:udp', e); });
@@ -334,7 +355,11 @@ function startDiscovery() {
   udp.bind(PORT, () => {
     try { udp.setBroadcast(true); } catch (_) {}
     const beat = () => {
-      try { udp.send(announceMsg(), PORT, '255.255.255.255'); } catch (_) {}
+      const msg = announceMsg();
+      const targets = new Set(['255.255.255.255', ...subnetBroadcasts()]);
+      for (const addr of targets) {
+        try { udp.send(msg, PORT, addr); } catch (_) {}
+      }
       let dropped = false;
       for (const [id, p] of peers) {
         if (!p.manual && Date.now() - p.lastSeen > PEER_TTL) { peers.delete(id); dropped = true; }
@@ -421,4 +446,4 @@ function status() {
   };
 }
 
-module.exports = { load, setConfig, publish, status, addManualPeer, removePeer, listPeers, stop, PORT };
+module.exports = { load, setConfig, publish, status, addManualPeer, removePeer, listPeers, stop, PORT, subnetBroadcasts };

@@ -11,6 +11,20 @@ const path = require('path');
 
 const lan = require('./lan');
 
+// subnetBroadcasts() must derive the correct directed-broadcast address from
+// address+netmask (this is what makes discovery reach the real LAN adapter on
+// Windows boxes with a Tailscale/VPN virtual NIC, instead of only the one the
+// OS picks for the ambiguous 255.255.255.255 target).
+const realNI = os.networkInterfaces;
+os.networkInterfaces = () => ({
+  eth0: [{ family: 'IPv4', internal: false, address: '192.168.1.42', netmask: '255.255.255.0' }],
+  tailscale0: [{ family: 'IPv4', internal: false, address: '100.64.0.5', netmask: '255.192.0.0' }],
+  lo: [{ family: 'IPv4', internal: true, address: '127.0.0.1', netmask: '255.0.0.0' }],
+});
+assert.deepStrictEqual(lan.subnetBroadcasts().sort(), ['100.127.255.255', '192.168.1.255'].sort(),
+  'directed broadcast must be computed per-interface and skip internal/loopback');
+os.networkInterfaces = realNI;
+
 const KEY = 'test-network-key';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audex-lan-'));
 const audioPath = path.join(dir, 'song.mp3');

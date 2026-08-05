@@ -47,6 +47,7 @@ let settings = Object.assign({
   editor: false,
   crossfade: false,
   crossfadeSec: 3,        // 0–10, length of the blend; 0 = instant switch
+  volumeWheelStep: 0.05,  // 0.01–0.2, volume change per mouse-wheel notch on the slider
   acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
   trending: true,
@@ -362,7 +363,7 @@ const I18N = {
     'lan.enable': "Turn on sharing",
     'lan.disable': "Turn off sharing",
     'lan.needKey': "Set a network key first — every device of yours needs the same one.",
-    'lan.hint': "Use the same network key on each of your devices. On a LAN they find each other automatically; over Tailscale add the address by hand.",
+    'lan.hint': "Use the same network key on each of your devices. On a LAN they find each other automatically; over Tailscale add the address by hand. On Windows, a manual add that hangs usually means the firewall rule only covers Private networks — Windows reports the Tailscale adapter as Public, so allow the app there too.",
     'lan.on': "Sharing",
     'lan.off': "Sharing is off",
     'lan.starting': "Starting…",
@@ -737,6 +738,7 @@ const I18N = {
     'setting.surfaceAlphaDesc': 'How much of the background shows through the sidebar and player bar.',
     'section.music': 'Music',
     'section.downloads': 'Download from the internet',
+    'section.sidebar': 'Sidebar',
     'section.language': 'Language',
     'section.about': 'About',
     'section.contacts': 'Contacts',
@@ -765,6 +767,8 @@ const I18N = {
     'setting.reports': 'Listening report',
     'setting.reportsDesc': 'The “Report” section with listening statistics. Stats are always collected, even while the section is hidden.',
     'setting.crossfadeLen': 'Crossfade length',
+    'setting.volWheelStep': 'Volume scroll step',
+    'setting.volWheelStepDesc': 'How much each mouse-wheel notch changes the volume while hovering the slider.',
     'unit.sec': 's',
     'setting.crossfade': 'Crossfade between tracks',
     'setting.crossfadeDesc': 'Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.',
@@ -950,7 +954,7 @@ const I18N = {
     'lan.enable': "Freigabe einschalten",
     'lan.disable': "Freigabe ausschalten",
     'lan.needKey': "Zuerst einen Netzwerkschlüssel setzen — auf allen Geräten derselbe.",
-    'lan.hint': "Auf jedem Ihrer Geräte denselben Netzwerkschlüssel verwenden. Im LAN finden sie sich von selbst; über Tailscale die Adresse von Hand hinzufügen.",
+    'lan.hint': "Auf jedem Ihrer Geräte denselben Netzwerkschlüssel verwenden. Im LAN finden sie sich von selbst; über Tailscale die Adresse von Hand hinzufügen. Bleibt das manuelle Hinzufügen unter Windows hängen, gilt die Firewall-Regel meist nur für private Netzwerke — Windows meldet den Tailscale-Adapter als öffentlich, also die App auch dort zulassen.",
     'lan.on': "Freigabe aktiv",
     'lan.off': "Freigabe ist aus",
     'lan.starting': "Wird gestartet…",
@@ -1325,6 +1329,7 @@ const I18N = {
     'setting.surfaceAlphaDesc': 'Wie stark der Hintergrund durch Seitenleiste und Player-Leiste scheint.',
     'section.music': 'Musik',
     'section.downloads': 'Aus dem Internet herunterladen',
+    'section.sidebar': 'Seitenleiste',
     'section.language': 'Sprache',
     'section.about': 'Über die App',
     'section.contacts': 'Kontakte',
@@ -1353,6 +1358,8 @@ const I18N = {
     'setting.reports': 'Hörbericht',
     'setting.reportsDesc': 'Der Bereich „Bericht“ mit Hörstatistiken. Statistiken werden immer erfasst, auch wenn der Bereich ausgeblendet ist.',
     'setting.crossfadeLen': 'Überblendungsdauer',
+    'setting.volWheelStep': 'Lautstärke-Scrollschritt',
+    'setting.volWheelStepDesc': 'Wie stark jede Mausrad-Rasterung die Lautstärke ändert, während der Regler unter dem Mauszeiger liegt.',
     'unit.sec': 's',
     'setting.crossfade': 'Überblendung zwischen Titeln',
     'setting.crossfadeDesc': 'Titel gehen ineinander über: der aktuelle wird ausgeblendet, während der nächste einsetzt. Gilt sowohl am Titelende als auch beim manuellen Wechseln.',
@@ -1538,7 +1545,7 @@ const I18N = {
     'lan.enable': "Activer le partage",
     'lan.disable': "Désactiver le partage",
     'lan.needKey': "Définissez d'abord une clé réseau — la même sur tous vos appareils.",
-    'lan.hint': "Utilisez la même clé réseau sur chacun de vos appareils. Sur un réseau local ils se trouvent tout seuls ; via Tailscale, ajoutez l'adresse à la main.",
+    'lan.hint': "Utilisez la même clé réseau sur chacun de vos appareils. Sur un réseau local ils se trouvent tout seuls ; via Tailscale, ajoutez l'adresse à la main. Sous Windows, si l'ajout manuel reste bloqué, la règle de pare-feu ne couvre souvent que les réseaux privés — Windows signale l'adaptateur Tailscale comme public, autorisez donc aussi l'app pour ce profil.",
     'lan.on': "Partage actif",
     'lan.off': "Partage désactivé",
     'lan.starting': "Démarrage…",
@@ -1913,6 +1920,7 @@ const I18N = {
     'setting.surfaceAlphaDesc': "Dans quelle mesure l'arrière-plan transparaît sous la barre latérale et le lecteur.",
     'section.music': 'Musique',
     'section.downloads': "Téléchargement depuis Internet",
+    'section.sidebar': 'Barre latérale',
     'section.language': 'Langue',
     'section.about': "À propos",
     'section.contacts': 'Contacts',
@@ -1941,6 +1949,8 @@ const I18N = {
     'setting.reports': "Rapport d'écoute",
     'setting.reportsDesc': "La section « Rapport » avec les statistiques d'écoute. Les statistiques sont toujours collectées, même lorsque la section est masquée.",
     'setting.crossfadeLen': 'Durée du fondu',
+    'setting.volWheelStep': 'Pas du volume à la molette',
+    'setting.volWheelStepDesc': 'De combien chaque cran de la molette change le volume quand le curseur survole le curseur de volume.',
     'unit.sec': 's',
     'setting.crossfade': 'Fondu enchaîné entre les pistes',
     'setting.crossfadeDesc': "Les pistes se fondent l'une dans l'autre : la piste en cours s'estompe pendant que la suivante monte. S'applique en fin de piste comme lors d'un changement manuel.",
@@ -2126,7 +2136,7 @@ const I18N = {
     'lan.enable': "Увімкнути доступ",
     'lan.disable': "Вимкнути доступ",
     'lan.needKey': "Спочатку задайте мережевий ключ — він має бути однаковий на всіх ваших пристроях.",
-    'lan.hint': "Використовуйте однаковий мережевий ключ на всіх своїх пристроях. У локальній мережі вони знаходять одне одного самі; через Tailscale додайте адресу вручну.",
+    'lan.hint': "Використовуйте однаковий мережевий ключ на всіх своїх пристроях. У локальній мережі вони знаходять одне одного самі; через Tailscale додайте адресу вручну. Якщо в Windows ручне додавання зависає — правило фаєрвола, ймовірно, дозволяє лише приватні мережі, а адаптер Tailscale Windows визначає як публічний: дозвольте застосунок і для нього.",
     'lan.on': "Доступ увімкнено",
     'lan.off': "Доступ вимкнено",
     'lan.starting': "Запуск…",
@@ -2501,6 +2511,7 @@ const I18N = {
     'setting.surfaceAlphaDesc': 'Наскільки крізь бічне меню та панель плеєра видно тло.',
     'section.music': 'Музика',
     'section.downloads': 'Завантаження з інтернету',
+    'section.sidebar': 'Бічна панель',
     'section.language': 'Мова',
     'section.about': 'Про застосунок',
     'section.contacts': 'Контакти',
@@ -2529,6 +2540,8 @@ const I18N = {
     'setting.reports': 'Звіт про прослуховування',
     'setting.reportsDesc': 'Розділ «Звіт» зі статистикою прослуховування. Статистика збирається завжди, навіть коли розділ прихований.',
     'setting.crossfadeLen': 'Тривалість переходу',
+    'setting.volWheelStep': 'Крок гучності колесом миші',
+    'setting.volWheelStepDesc': 'Наскільки змінюється гучність на один клік колеса миші, коли курсор над повзунком.',
     'unit.sec': 'с',
     'setting.crossfade': 'Плавний перехід між треками',
     'setting.crossfadeDesc': 'Треки перетікають один в одного: кінець поточного стихає, поки наступний наростає. Діє і в кінці треку, і під час ручного перемикання.',
@@ -7814,7 +7827,8 @@ function wireVolume(trackEl) {
   // scroll/zoom whatever scrollable ancestor sits behind the slider.
   trackEl.addEventListener('wheel', e => {
     e.preventDefault();
-    setVolume(targetVolume + (e.deltaY < 0 ? 0.05 : -0.05));
+    const step = Number(settings.volumeWheelStep) || 0.05;
+    setVolume(targetVolume + (e.deltaY < 0 ? step : -step));
   }, { passive: false });
 }
 wireVolume($('vol-track'));
@@ -9335,6 +9349,14 @@ function renderCrossfadeLen() {
   if (out) out.textContent = `${sec} ${tr('unit.sec')}`;
 }
 
+function renderVolWheelStep() {
+  const el = $('vol-wheel-step');
+  const out = $('vol-wheel-step-val');
+  const step = Number(settings.volumeWheelStep) || 0.05;
+  if (el && el !== document.activeElement) el.value = String(step);
+  if (out) out.textContent = `${Math.round(step * 100)}%`;
+}
+
 function renderSettings() {
   // Theme combobox
   const themeCurrent = $('theme-current');
@@ -9377,6 +9399,7 @@ function renderSettings() {
   if (inc) inc.disabled = settings.uiScale >= UI_SCALE_STEPS[UI_SCALE_STEPS.length - 1] - 1e-6;
   // Discord lives in its own tab now — always expanded, no collapse.
   applySettingsTab(settings.settingsTab);
+  renderVolWheelStep();
   renderBackgroundSettings();
   renderHotkeys();
   renderDiscord();
@@ -9584,6 +9607,16 @@ document.querySelectorAll('.toggle').forEach(t => {
     renderCrossfadeLen();
   });
   // Persist on release rather than on every frame of the drag.
+  el.addEventListener('change', () => saveSettings());
+})();
+
+(() => {
+  const el = $('vol-wheel-step');
+  if (!el) return;
+  el.addEventListener('input', () => {
+    settings.volumeWheelStep = Number(el.value);
+    renderVolWheelStep();
+  });
   el.addEventListener('change', () => saveSettings());
 })();
 
