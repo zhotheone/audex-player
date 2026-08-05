@@ -2304,13 +2304,13 @@ ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => 
   } catch (err) {
     const code = err && err.body && err.body.error && err.body.error.code;
     const msg = String((err && err.body && err.body.error && err.body.error.message) || (err && err.message) || err);
-    logAppError('acoustid:identify', `HTTP error, code=${code}, message=${msg}`);
+    logAppError('acoustid:identify', `key=${key}, HTTP error, code=${code}, message=${msg}`);
     return { success: false, error: isKeyError(msg) ? 'apiKey' : 'lookup', detail: msg };
   }
   if (data && data.status === 'error') {
     const code = data.error && data.error.code;
     const msg = String((data.error && data.error.message) || '');
-    logAppError('acoustid:identify', `status=error, code=${code}, message=${msg}`);
+    logAppError('acoustid:identify', `key=${key}, status=error, code=${code}, message=${msg}`);
     return { success: false, error: isKeyError(msg) ? 'apiKey' : 'lookup', detail: msg };
   }
   const match = acoustidBestMatch(data);
