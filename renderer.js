@@ -643,6 +643,7 @@ const I18N = {
     'btn.delete': 'Delete',
     'select.enter': 'Select',
     'select.count': 'Selected: {n}',
+    'library.count.split': '{local} local, {network} network {tracks}',
     'select.all': 'Select all',
     'modal.deleteTracks.title': 'Delete selected tracks?',
     'modal.deleteTracks.text': '{count} will be removed from the library and the files moved to the trash.',
@@ -1247,6 +1248,7 @@ const I18N = {
     'btn.delete': 'Löschen',
     'select.enter': 'Auswählen',
     'select.count': 'Ausgewählt: {n}',
+    'library.count.split': '{local} lokal, {network} Netzwerk-{tracks}',
     'select.all': 'Alle auswählen',
     'modal.deleteTracks.title': 'Ausgewählte Titel löschen?',
     'modal.deleteTracks.text': '{count} werden aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
@@ -1851,6 +1853,7 @@ const I18N = {
     'btn.delete': 'Supprimer',
     'select.enter': 'Sélectionner',
     'select.count': 'Sélection : {n}',
+    'library.count.split': '{local} locales, {network} réseau ({tracks})',
     'select.all': 'Tout sélectionner',
     'modal.deleteTracks.title': 'Supprimer les pistes sélectionnées ?',
     'modal.deleteTracks.text': '{count} seront retirées de la bibliothèque et les fichiers déplacés vers la corbeille.',
@@ -2455,6 +2458,7 @@ const I18N = {
     'btn.delete': 'Видалити',
     'select.enter': 'Вибрати',
     'select.count': 'Вибрано: {n}',
+    'library.count.split': '{local} локальних, {network} мережевих {tracks}',
     'select.all': 'Вибрати всі',
     'modal.deleteTracks.title': 'Видалити вибрані треки?',
     'modal.deleteTracks.text': '{count} буде вилучено з бібліотеки, а файли — переміщено у смітник.',
@@ -5938,7 +5942,10 @@ function renderLibrary() {
   const empty = $('library-empty');
   updateHealthFilterBar();
   const tracks = currentLibraryTracks();
-  $('library-count-label').textContent = `${library.length} ${pluralTracks(library.length)}`;
+  const networkCount = (!healthFilterPaths && activeFilter === 'all') ? lanAllRemoteTracks().length : 0;
+  $('library-count-label').textContent = networkCount
+    ? tr('library.count.split', { local: library.length, network: networkCount, tracks: pluralTracks(library.length + networkCount) })
+    : `${library.length} ${pluralTracks(library.length)}`;
   if (tracks.length === 0) {
     list.innerHTML = '';
     list.style.height = '';
@@ -6161,9 +6168,13 @@ function artistInitials(name) {
 function pluralAlbums(n) { return plural('albums', n); }
 function pluralArtists(n) { return plural('artists', n); }
 
+// Network tracks slot into the same artist/album grouping as local ones —
+// otherwise a peer's whole library sits stranded in the flat list view.
+function libraryWithNetwork() { return library.concat(lanAllRemoteTracks()); }
+
 function buildArtistsIndex() {
   const map = new Map();
-  library.forEach((t, idx) => {
+  libraryWithNetwork().forEach((t, idx) => {
     const names = splitArtists(t.artist);
     for (const name of names) {
       let a = map.get(name);
@@ -6437,7 +6448,7 @@ function albumKeyFor(t) {
 
 function buildAlbumsIndex() {
   const map = new Map();
-  library.forEach((t, idx) => {
+  libraryWithNetwork().forEach((t, idx) => {
     const name = t.album || tr('label.noAlbum');
     const artist = splitArtists(t.artist)[0];
     const key = albumKeyFor(t);

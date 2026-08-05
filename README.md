@@ -8,7 +8,7 @@
 
 A fast, beautiful desktop player for the music you actually own — and a one-click way to get more of it.
 
-[![Version](https://img.shields.io/badge/version-43ca595-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
+[![Version](https://img.shields.io/badge/version-5ed04c6-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![Platforms](https://img.shields.io/badge/Linux%20·%20macOS%20·%20Windows-2b2b2b?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![License](https://img.shields.io/badge/MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -18,9 +18,22 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 
 </div>
 
-![Audex library](docs/screenshots/library-dark.png)
+---
+
+## This fork vs. [upstream](https://github.com/MishaSok/audex-player)
+
+- **Devices (LAN & Tailscale)** — see every device's library live, stream from it, and one-click **take over** its playback session. Libraries and settings sync across your devices automatically.
+- **AcoustID track ID** — auto-fill missing tags and track/disc numbers; bulk "fix the tags" for a song, artist, album, or the whole library.
+- **More download formats** — Opus, FLAC, M4A and WAV, not just MP3.
+- **YouTube sign-in** — pass yt-dlp your cookies for age-restricted or private videos.
+- **Real auto-updates** — downloads and installs the new version instead of just linking to the releases page.
+- **Fullscreen lyrics, an Albums view**, and cross-links between tracks, artists and albums.
+- **Native Windows build**, a global app log, and an "open logs folder" button.
+- Dropped everything Yandex/Russia-related.
 
 ---
+
+![Audex library](docs/screenshots/library-dark.png)
 
 ## Why you'll like it
 
@@ -29,6 +42,8 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 - **It looks good.** Nine themes, any accent color you like, your own wallpaper behind the interface.
 - **It fills the gaps.** Missing a track? Search YouTube, paste a Spotify playlist, or grab what's charting today — without leaving the app.
 - **It respects you.** Your listening stats are computed on your device and never leave it.
+
+*Not fully offline: identifying a track queries [AcoustID](https://acoustid.org/), lyrics come from [LRCLIB](https://lrclib.net/), and search/parsing/downloads talk to YouTube — only when you use those features. The LAN/Tailscale device server (below) is optional and off by default.*
 
 ---
 
@@ -83,13 +98,11 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 <summary><b>🎵 Library &amp; playback</b></summary>
 
 - Recursive import of `.mp3`, `.wav`, `.ogg`, `.flac`, `.m4a`, `.aac`.
-- Tags and cover art read via `music-metadata`; **MP3 tag editing** written back with `node-id3`.
-- **Playlists, Favorites, Recents**, and an **Artists** view grouped automatically from your library.
+- Tags and cover art via `music-metadata`; **AcoustID** fills in what's missing. **MP3 tag editing** written back with `node-id3`.
+- **Playlists, Favorites, Recents**, and **Artists/Albums** views grouped automatically — including tracks streamed from other devices.
 - **Command palette** (<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>) — jump to any track or view instantly.
-- Shuffle, repeat (off / all / one), sorting, filtering, and **resume on launch**.
-- **Real-waveform seek bar** — the actual audio peaks, in both the playbar and the fullscreen player.
-- **Crossfade** between tracks *(optional)*.
-- **Track trimmer** *(optional)* — cut a track with optional fades; lossless when no fade is applied.
+- Shuffle, repeat, sorting, filtering, and **resume on launch**.
+- **Real-waveform seek bar**, **crossfade**, and a **track trimmer** *(all optional)*.
 - **Library health-check** *(optional)* — finds suspected transcodes, low bitrates, missing covers, incomplete tags and duplicates.
 
 </details>
@@ -97,12 +110,12 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 <details open>
 <summary><b>⬇️ Get new music</b></summary>
 
-- **YouTube** — search and download by query, with cover art and metadata embedded automatically.
+- **YouTube** — search and download by query, with cover art and metadata embedded automatically. Sign in to unlock age-restricted or private videos.
 - **YouTube Music** — paste an album, single or artist link and parse the full track list.
 - **Spotify** — parse playlists and albums, then download them through the shared queue.
 - **Trending** — YouTube Music charts for 8 countries and 13 genres, downloadable in one click.
 - **Download queue** with live progress; queue state survives restarts.
-- Choose where new tracks land, or let them go to a dedicated `Audex Downloads` folder.
+- Downloads in MP3, Opus, FLAC, M4A or WAV, saved wherever you like.
 
 </details>
 
@@ -112,19 +125,17 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 - **Four languages** — English, German, French, Ukrainian.
 - **Nine themes** and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
-- **UI scale** and a **responsive layout** that adapts to narrow windows.
-- **Portrait "mobile player"** mode for the fullscreen view.
+- **UI scale** and a **responsive layout**, with a **portrait "mobile player"** mode for the fullscreen view.
 
 </details>
 
 <details open>
 <summary><b>🖥️ System integration</b></summary>
 
-- **System tray** — transport controls; closing the window keeps music playing.
-- **MPRIS / Media Session** — now-playing info and controls in the GNOME top bar and other OS media widgets.
-- **Global hotkeys** — control playback even when the window isn't focused.
+- **System tray**, **MPRIS / Media Session**, and **global hotkeys** — control and see what's playing from outside the app.
 - **Discord Rich Presence** — track, artist and album cover on your profile, with an optional timer and custom buttons.
-- **Update notifications** — a dismissible in-app banner when a new release is out.
+- **Auto-updates** — downloads and installs new releases; a dismissible banner tells you when.
+- **Global app log**, one click away in Settings → About.
 
 </details>
 
@@ -133,14 +144,16 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 ## 🔗 Devices (LAN & Tailscale)
 
 Turn on sharing in **Devices**, set the same *network key* on each of your machines, and they'll
-see each other's libraries. Play anything from another device, or hit **Take over** to pull its
-session onto yours — same track, same position, same queue, and the other device pauses itself.
+see each other's libraries — merged straight into yours, tracks and all, no separate "Browse"
+screen. Play anything from another device, or hit **Take over** to pull its session onto yours —
+same track, same position, same queue, and the other device pauses itself.
 
 On a LAN devices find each other automatically (UDP broadcast on 8422). Tailscale carries no
 broadcast traffic, so there you add the address by hand — `100.x.y.z` or a MagicDNS name. The
 server binds `0.0.0.0`, so one switch covers both.
 
-### HTTP API
+<details>
+<summary><b>HTTP API</b></summary>
 
 Sharing is a plain HTTP + JSON API, so an Android or iOS client only has to speak HTTP. The
 server listens on **8422** (walking up to 8426 if that's taken; the announce carries the real
@@ -160,12 +173,15 @@ Authorization: Bearer <network key>
 | `POST /api/command` | `play` · `pause` · `next` · `prev` · `seek` · `volume` · `playState` · `transfer` |
 
 `<audio src>` and `<img src>` can't send headers, so the media routes authenticate with a
-per-track HMAC (`?s=`) that `/api/library` hands you instead. The key itself never appears in a URL,
-and file paths never leave the device — peers only ever see the id.
+per-track HMAC (`?s=`) that `/api/library` hands you instead. The key itself never appears in a
+URL, and file paths never leave the device — peers only ever see the id.
 
 `POST /api/command {"type":"transfer"}` is the takeover: it returns the device's full session and
 pauses it. Point your player at `state.track.url`, seek to `state.position`, and you've moved the
-music. `playState` is the same thing pushed the other way — hand a device a session and it starts playing it.
+music. `playState` is the same thing pushed the other way — hand a device a session and it starts
+playing it.
+
+</details>
 
 ---
 
