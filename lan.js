@@ -54,7 +54,7 @@ let lastError = '';
 
 // Published by the renderer, which owns the library and the player. Paths stay
 // on this side of the wire: peers only ever see the sha1 id.
-let snapshot = { tracks: [], state: null };
+let snapshot = { tracks: [], state: null, config: null };
 let byId = new Map();
 
 const peers = new Map(); // deviceId -> { deviceId, name, host, port, lastSeen, manual }
@@ -118,6 +118,7 @@ function signOk(id, given) {
 // state ticks once a second and has no business re-sending thousands of rows.
 function publish(next) {
   if (next && next.state !== undefined) snapshot.state = next.state;
+  if (next && next.config !== undefined) snapshot.config = next.config;
   if (!Array.isArray(next && next.tracks)) return;
   snapshot.tracks = next.tracks;
   byId = new Map();
@@ -290,6 +291,9 @@ async function handle(req, res) {
   }
   if (route === '/api/state') {
     return sendJson(res, 200, publicState(host));
+  }
+  if (route === '/api/config') {
+    return sendJson(res, 200, snapshot.config || {});
   }
   if (route === '/api/command' && req.method === 'POST') {
     const cmd = await readBody(req);

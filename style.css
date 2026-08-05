@@ -839,6 +839,11 @@ input { font-family: inherit; color: inherit; }
 :root[data-theme="light"] .q-good { color: rgba(30,30,32,0.68); }
 :root[data-theme="light"] .q-low  { color: rgba(30,30,32,0.5); }
 
+/* Marks a row streamed from another device's library rather than played from
+   local disk — reuses the quality-badge look so it reads as "one more pill",
+   not a whole separate visual language. */
+.net-badge { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); flex-shrink: 0; }
+
 /* Note pill above the library table explaining the badges. */
 .quality-note {
   display: inline-flex;
@@ -3537,6 +3542,14 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   margin: 4px 6px;
 }
 
+/* Connect menu (playbar device picker) reuses .context-menu/.device-row but
+   needs more width for two action buttons per row. */
+.connect-menu { width: 280px; padding: 6px; }
+.cm-connect-title { padding: 2px 8px 8px; margin: 0; }
+.cm-device:not(:last-child) { border-bottom: 1px solid var(--border); margin-bottom: 4px; padding-bottom: 4px; }
+.cm-device-actions { display: flex; gap: 6px; padding: 0 8px 4px 34px; }
+.cm-device-actions .btn-ghost { flex: 1; justify-content: center; padding: 5px 8px; font-size: 11.5px; }
+
 /* ─── Command palette ─── */
 .palette-overlay {
   position: fixed;
@@ -4868,8 +4881,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   outline: none;
   border-color: var(--text-dim);
 }
-.device-row,
-.device-track {
+.device-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -4878,8 +4890,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   color: var(--text-muted);
   cursor: pointer;
 }
-.device-row:hover,
-.device-track:hover {
+.device-row:hover {
   background: var(--hover-bg);
   color: var(--text-strong);
 }
@@ -4909,23 +4920,4 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   font-size: 12px;
   color: var(--text-faint);
   padding: 8px 10px;
-}
-.device-swatch {
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  background-size: cover;
-  background-position: center;
-  background-color: var(--panel-alt);
-}
-.device-dur {
-  font-size: 11px;
-  color: var(--text-faint);
-  font-variant-numeric: tabular-nums;
-}
-/* The peer's library can be long — keep it scrolling inside the view. */
-.device-tracks {
-  max-height: 46vh;
-  overflow-y: auto;
 }

@@ -110,6 +110,16 @@ async function get(route, opts = {}) {
   assert.strictEqual(state.position, 12.5);
   assert.strictEqual(state.track.url, t.url);
 
+  // Config: same auth gate as everything else, round-trips what was published,
+  // and (like the library) survives a state-only publish tick.
+  assert.strictEqual((await get('/api/config', { auth: false })).status, 401);
+  assert.deepStrictEqual(await (await get('/api/config')).json(), {}, 'nothing published yet');
+  lan.publish({ config: { theme: 'dark', language: 'en' } });
+  assert.deepStrictEqual(await (await get('/api/config')).json(), { theme: 'dark', language: 'en' });
+  lan.publish({ state: { path: audioPath, playing: false, position: 1 } });
+  assert.deepStrictEqual(await (await get('/api/config')).json(), { theme: 'dark', language: 'en' },
+    'a state-only publish must keep the published config');
+
   // Takeover: hand the session over, then stop playing it here.
   const res = await (await get('/api/command', { body: { type: 'transfer' } })).json();
   assert.strictEqual(res.state.track.url, t.url, 'transfer must return the session');

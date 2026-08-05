@@ -160,6 +160,7 @@ let currentTrack = null;
 // top-of-file state) and read by lanPublish() to know when peers need a fresh
 // copy of the library, not just a state tick.
 let lanTracksDirty = true;
+let lanConfigDirty = true;   // same idea, for the settings subset peers can pull
 let currentQueue = library;          // the list we're playing through
 let currentView = 'library';
 let activeFilter = 'all';
@@ -320,6 +321,7 @@ function savePlaylists() {
   }
 }
 function saveSettings() {
+  lanConfigDirty = true;   // peers are serving a copy of the syncable subset
   localStorage.setItem(LS.settings, JSON.stringify(settings));
 }
 function saveRecents() {
@@ -372,8 +374,13 @@ const I18N = {
     'lan.peers': "Other devices",
     'lan.noPeers': "No devices found yet.",
     'lan.manual': "added by hand",
-    'lan.browse': "Browse",
-    'lan.browseHint': "Browse this device's library and stream from it",
+    'lan.connect': "Connect to a device",
+    'lan.networkBadge': "NETWORK",
+    'lan.networkFrom': "From {device}",
+    'lan.syncSettings': "Sync settings",
+    'lan.syncSettingsHint': "Pull this device's app preferences (theme, language, download format, etc.) into yours",
+    'lan.syncSettingsConfirm': "Replace your app preferences with {device}'s? This won't touch your library or files.",
+    'lan.syncSettingsNone': "That device hasn't shared any settings yet.",
     'lan.takeOver': "Take over",
     'lan.takeOverHint': "Pull this device's current session over here, picking up where it left off",
     'lan.push': 'Push here',
@@ -381,8 +388,6 @@ const I18N = {
     'lan.remove': "Remove",
     'lan.add': "Add",
     'lan.addPh': "Address, e.g. 100.90.1.2 or 192.168.1.5:8422",
-    'lan.loading': "Loading…",
-    'lan.playingNow': "Playing now",
     'lan.nothingPlaying': "That device is not playing anything.",
     'lan.errKey': "Wrong network key",
     'lan.errReach': "Can't reach that device:",
@@ -967,8 +972,13 @@ const I18N = {
     'lan.peers': "Andere Geräte",
     'lan.noPeers': "Noch keine Geräte gefunden.",
     'lan.manual': "von Hand hinzugefügt",
-    'lan.browse': "Ansehen",
-    'lan.browseHint': "Die Bibliothek dieses Geräts durchsuchen und davon streamen",
+    'lan.connect': "Mit einem Gerät verbinden",
+    'lan.networkBadge': "NETZWERK",
+    'lan.networkFrom': "Von {device}",
+    'lan.syncSettings': "Einstellungen abgleichen",
+    'lan.syncSettingsHint': "Die App-Einstellungen dieses Geräts (Theme, Sprache, Downloadformat usw.) übernehmen",
+    'lan.syncSettingsConfirm': "Ihre App-Einstellungen durch die von {device} ersetzen? Bibliothek und Dateien bleiben unberührt.",
+    'lan.syncSettingsNone': "Dieses Gerät hat noch keine Einstellungen geteilt.",
     'lan.takeOver': "Übernehmen",
     'lan.takeOverHint': "Die laufende Sitzung dieses Geräts hierher übernehmen, genau dort weiter, wo sie war",
     'lan.push': 'Hierher senden',
@@ -976,8 +986,6 @@ const I18N = {
     'lan.remove': "Entfernen",
     'lan.add': "Hinzufügen",
     'lan.addPh': "Adresse, z. B. 100.90.1.2 oder 192.168.1.5:8422",
-    'lan.loading': "Wird geladen…",
-    'lan.playingNow': "Läuft gerade",
     'lan.nothingPlaying': "Dieses Gerät spielt nichts ab.",
     'lan.errKey': "Falscher Netzwerkschlüssel",
     'lan.errReach': "Gerät nicht erreichbar:",
@@ -1562,8 +1570,13 @@ const I18N = {
     'lan.peers': "Autres appareils",
     'lan.noPeers': "Aucun appareil trouvé pour le moment.",
     'lan.manual': "ajouté à la main",
-    'lan.browse': "Parcourir",
-    'lan.browseHint': "Parcourir la bibliothèque de cet appareil et diffuser depuis celui-ci",
+    'lan.connect': "Se connecter à un appareil",
+    'lan.networkBadge': "RÉSEAU",
+    'lan.networkFrom': "Depuis {device}",
+    'lan.syncSettings': "Synchroniser les réglages",
+    'lan.syncSettingsHint': "Reprendre les préférences de cet appareil (thème, langue, format de téléchargement, etc.)",
+    'lan.syncSettingsConfirm': "Remplacer vos préférences par celles de {device} ? Votre bibliothèque et vos fichiers ne seront pas touchés.",
+    'lan.syncSettingsNone': "Cet appareil n'a pas encore partagé de réglages.",
     'lan.takeOver': "Reprendre",
     'lan.takeOverHint': "Récupérer ici la session en cours de cet appareil, exactement là où elle en était",
     'lan.push': 'Envoyer ici',
@@ -1571,8 +1584,6 @@ const I18N = {
     'lan.remove': "Retirer",
     'lan.add': "Ajouter",
     'lan.addPh': "Adresse, ex. 100.90.1.2 ou 192.168.1.5:8422",
-    'lan.loading': "Chargement…",
-    'lan.playingNow': "En lecture",
     'lan.nothingPlaying': "Cet appareil ne lit rien.",
     'lan.errKey': "Clé réseau incorrecte",
     'lan.errReach': "Appareil injoignable :",
@@ -2157,8 +2168,13 @@ const I18N = {
     'lan.peers': "Інші пристрої",
     'lan.noPeers': "Пристроїв поки не знайдено.",
     'lan.manual': "додано вручну",
-    'lan.browse': "Переглянути",
-    'lan.browseHint': "Переглянути бібліотеку цього пристрою й слухати з нього",
+    'lan.connect': "Підключитися до пристрою",
+    'lan.networkBadge': "МЕРЕЖА",
+    'lan.networkFrom': "З {device}",
+    'lan.syncSettings': "Синхронізувати налаштування",
+    'lan.syncSettingsHint': "Перейняти налаштування застосунку цього пристрою (тема, мова, формат завантаження тощо)",
+    'lan.syncSettingsConfirm': "Замінити ваші налаштування на налаштування {device}? Бібліотеку й файли це не торкнеться.",
+    'lan.syncSettingsNone': "Цей пристрій ще не поділився налаштуваннями.",
     'lan.takeOver': "Перехопити",
     'lan.takeOverHint': "Перехопити поточний сеанс цього пристрою сюди, з того самого місця",
     'lan.push': 'Надіслати сюди',
@@ -2166,8 +2182,6 @@ const I18N = {
     'lan.remove': "Прибрати",
     'lan.add': "Додати",
     'lan.addPh': "Адреса, напр. 100.90.1.2 або 192.168.1.5:8422",
-    'lan.loading': "Завантаження…",
-    'lan.playingNow': "Зараз грає",
     'lan.nothingPlaying': "Цей пристрій нічого не відтворює.",
     'lan.errKey': "Невірний мережевий ключ",
     'lan.errReach': "Не вдається зʼєднатися з пристроєм:",
@@ -5296,6 +5310,12 @@ function qualityBadgeHtml(q) {
   return `<span class="q-badge ${cls}" title="${title}">${warn}${label}${suffix}</span>`;
 }
 
+function networkBadgeHtml(track) {
+  if (!track.remote) return '';
+  const title = escapeHtml(tr('lan.networkFrom', { device: track.deviceName || '' }));
+  return `<span class="q-badge net-badge" title="${title}">${tr('lan.networkBadge')}</span>`;
+}
+
 // ── Track quality: spectral analysis (Tier 2) ──
 // The transcode detector. Decodes a window of PCM at full rate, runs an FFT
 // over overlapping Hann-windowed frames, averages the magnitude spectra, and
@@ -5786,8 +5806,9 @@ async function runHealthScan() {
 // ── Render: track row ──
 function renderTrackRow(track, displayIndex, queue) {
   // Backfill covers and (for libraries saved before this feature) Tier-1 quality
-  // lazily as rows scroll into view.
-  if (!track.cover || track.quality === undefined) ensureCoverFor(track);
+  // lazily as rows scroll into view. A peer's track already carries what it has —
+  // there's no local file here to read tags from.
+  if (!track.remote && (!track.cover || track.quality === undefined)) ensureCoverFor(track);
   const realIndex = trackIndexByPath(track.path);
   const isPlayingRow = !!currentTrack
     && currentTrack.path === track.path;
@@ -5807,6 +5828,7 @@ function renderTrackRow(track, displayIndex, queue) {
     <div class="trow-title-cell">
       <div class="trow-cover" style="${coverStyle}"></div>
       <span class="trow-title">${escapeHtml(track.title)}</span>
+      ${networkBadgeHtml(track)}
     </div>
     <div class="trow-muted trow-link" data-link="artist">${escapeHtml(track.artist)}</div>
     <div class="trow-muted trow-link" data-link="album">${escapeHtml(track.album)}</div>
@@ -5863,13 +5885,19 @@ function currentLibraryTracks() {
   const base = healthFilterPaths
     ? library.filter(t => healthFilterPaths.has(t.path))
     : sortedFilteredLibrary();
+  // Peers' libraries sync automatically and show up right in this list — tagged
+  // with a badge rather than tucked away behind a separate "Browse" screen.
+  // Only for the plain "all" view: favorites/recent/health-check are all keyed
+  // off local state a remote track doesn't have.
+  const remote = (!healthFilterPaths && activeFilter === 'all') ? lanAllRemoteTracks() : [];
+  const all = remote.length ? base.concat(remote) : base;
   if (q) {
-    return base.filter(t =>
+    return all.filter(t =>
       t.title.toLowerCase().includes(q) ||
       t.artist.toLowerCase().includes(q) ||
       t.album.toLowerCase().includes(q));
   }
-  return base;
+  return all;
 }
 
 function renderLibrary() {
@@ -5878,7 +5906,7 @@ function renderLibrary() {
   updateHealthFilterBar();
   const tracks = currentLibraryTracks();
   $('library-count-label').textContent = `${library.length} ${pluralTracks(library.length)}`;
-  if (library.length === 0) {
+  if (tracks.length === 0) {
     list.innerHTML = '';
     list.style.height = '';
     empty.classList.add('show');
@@ -5913,6 +5941,7 @@ function updateSelectBar() {
 }
 
 function toggleRowSelection(path, shiftRange) {
+  if (isRemotePath(path)) return;   // bulk-delete etc. are local-library operations
   if (shiftRange && lastSelectedPath && lastSelectedPath !== path) {
     // Shift-click selects the visible range between the last-clicked row and this one.
     const tracks = currentLibraryTracks();
@@ -5920,7 +5949,7 @@ function toggleRowSelection(path, shiftRange) {
     const b = tracks.findIndex(t => t.path === path);
     if (a >= 0 && b >= 0) {
       const [lo, hi] = a < b ? [a, b] : [b, a];
-      for (let i = lo; i <= hi; i++) selectedPaths.add(tracks[i].path);
+      for (let i = lo; i <= hi; i++) if (!isRemotePath(tracks[i].path)) selectedPaths.add(tracks[i].path);
     } else {
       selectedPaths.add(path);
     }
@@ -5937,7 +5966,7 @@ function toggleRowSelection(path, shiftRange) {
 $('btn-select-mode').addEventListener('click', () => setLibrarySelectMode(!librarySelectMode));
 $('btn-cancel-select').addEventListener('click', () => setLibrarySelectMode(false));
 $('btn-select-all').addEventListener('click', () => {
-  currentLibraryTracks().forEach(t => selectedPaths.add(t.path));
+  currentLibraryTracks().forEach(t => { if (!isRemotePath(t.path)) selectedPaths.add(t.path); });
   updateSelectBar();
   if (libraryVList) libraryVList.refreshVisible();
 });
@@ -6930,12 +6959,31 @@ function updatePlayButtonUI() {
   syncTray();
 }
 
-// MediaSession (maps to MPRIS on Linux — controls in the GNOME top bar)
-function updateMediaSessionMetadata(track) {
+// MediaSession (maps to MPRIS on Linux, SMTC on Windows — OS-level "now playing"
+// thumbnails and lock-screen controls)
+let mediaSessionArtworkUrl = null;   // last blob: URL we handed out, revoked once replaced
+async function updateMediaSessionMetadata(track) {
   if (!('mediaSession' in navigator) || !track) return;
-  const mime = track.cover ? (track.cover.match(/^data:([^;]+);/) || [])[1] : null;
-  const artwork = track.cover
-    ? [{ src: track.cover, sizes: '512x512', ...(mime ? { type: mime } : {}) }]
+  let coverSrc = track.cover;
+  // MediaImage only accepts http(s)/data/blob src. The disk cover cache hands
+  // back file:// URLs (fine for <img>/background-image, silently rejected
+  // here), so most tracks otherwise show no artwork in the OS thumbnail/lock
+  // screen — fetch and re-wrap as a blob: URL, which the spec does accept.
+  if (coverSrc && coverSrc.startsWith('file://')) {
+    try {
+      const res = await fetch(coverSrc);
+      coverSrc = URL.createObjectURL(await res.blob());
+    } catch (_) { coverSrc = null; }
+    if (track !== currentTrack) {  // a newer track landed while this was in flight
+      if (coverSrc) URL.revokeObjectURL(coverSrc);
+      return;
+    }
+  }
+  if (mediaSessionArtworkUrl) { URL.revokeObjectURL(mediaSessionArtworkUrl); mediaSessionArtworkUrl = null; }
+  if (coverSrc && coverSrc.startsWith('blob:')) mediaSessionArtworkUrl = coverSrc;
+  const mime = coverSrc && coverSrc.startsWith('data:') ? (coverSrc.match(/^data:([^;]+);/) || [])[1] : null;
+  const artwork = coverSrc
+    ? [{ src: coverSrc, sizes: '512x512', ...(mime ? { type: mime } : {}) }]
     : [];
   navigator.mediaSession.metadata = new MediaMetadata({
     title: track.title || '',
@@ -8494,11 +8542,20 @@ $('fs-btn-add-playlist').addEventListener('click', () => {
 function openContextMenu(e, path) {
   pendingContextTrackPath = path;
   const menu = $('track-context-menu');
+  const remote = isRemotePath(path);
   $('cm-fav-label').textContent = favorites.includes(path) ? tr('btn.unfavorite') : tr('btn.favorite');
   $('cm-remove-from-pl').hidden = !(currentView === 'playlist-detail' && activePlaylistId);
   const cmTrim = $('cm-trim');
-  if (cmTrim) cmTrim.hidden = !settings.editor;
-  $('cm-select').hidden = currentView !== 'library';
+  if (cmTrim) cmTrim.hidden = !settings.editor || remote;
+  $('cm-select').hidden = currentView !== 'library' || remote;
+  // Everything below is a local-file operation — a peer's track only has a
+  // stream URL, nothing on disk here to tag, reveal, or delete.
+  ['reveal', 'edit-tags', 'identify', 'fix-tags', 'fix-tags-force', 'delete'].forEach(a => {
+    const el = menu.querySelector(`[data-action="${a}"]`);
+    if (el) el.hidden = remote;
+  });
+  $('cm-div-2').hidden = remote;
+  $('cm-div-3').hidden = remote;
   menu.classList.add('open');
   // position
   const rect = menu.getBoundingClientRect();
@@ -10445,14 +10502,11 @@ function warmMissingCoversInBackground() {
 //
 // Main owns the socket; this side owns the library and the player. So we push a
 // snapshot down whenever either changes, and remote commands come back up.
-// Browsing a peer is a plain fetch straight from here — no reason to relay a
+// Talking to a peer is a plain fetch straight from here — no reason to relay a
 // JSON request through the main process.
 
 let lanStatus = { enabled: false, key: '', name: '', addresses: [], peers: [], running: false, error: '' };
-let lanActivePeer = null;      // deviceId of the peer whose library is open
-let lanPeerTracks = [];        // that peer's library
-let lanPeerState = null;       // that peer's now-playing, polled while the view is open
-let lanPeerBusy = false;
+let lanPeerLibraries = {};     // deviceId -> { name, tracks } — kept in sync automatically, no "Browse" needed
 let lanPollTimer = null;
 
 function lanPeer(id) { return lanStatus.peers.find(p => p.deviceId === id) || null; }
@@ -10467,13 +10521,59 @@ async function lanApi(peer, route, body) {
   return res.json();
 }
 
-async function lanRefresh() {
-  lanStatus = await window.electronAPI.lanStatus();
-  $('count-devices').textContent = lanStatus.peers.length;
+// A peer's track carries its own signed stream/cover URL, so it slots into the
+// normal library shape and plays through the same path as a local file.
+function lanRemoteAsTrack(t, peer) {
+  return {
+    path: t.url, title: t.title || '', artist: t.artist || '', album: t.album || '',
+    albumArtist: t.albumArtist || '', year: t.year || '', genre: t.genre || '',
+    trackNo: t.trackNo || '', discNo: t.discNo || '', duration: t.duration || 0,
+    quality: t.quality || null, hasCover: !!t.coverUrl, cover: t.coverUrl || null,
+    remote: true, deviceId: peer.deviceId, deviceName: peer.name,
+  };
+}
+
+async function lanSyncPeerLibrary(peer) {
+  try {
+    const lib = await lanApi(peer, '/api/library');
+    lanPeerLibraries[peer.deviceId] = { name: peer.name, tracks: (lib.tracks || []).map(t => lanRemoteAsTrack(t, peer)) };
+  } catch (e) {
+    delete lanPeerLibraries[peer.deviceId];
+  }
+  if (currentView === 'library') renderLibrary();
   if (currentView === 'devices') renderDevices();
 }
 
-// ── publishing our own library + state ──
+function lanAllRemoteTracks() {
+  return Object.values(lanPeerLibraries).flatMap(l => l.tracks);
+}
+
+async function lanRefresh() {
+  lanStatus = await window.electronAPI.lanStatus();
+  $('count-devices').textContent = lanStatus.peers.length;
+  const ids = new Set(lanStatus.peers.map(p => p.deviceId));
+  for (const id of Object.keys(lanPeerLibraries)) if (!ids.has(id)) delete lanPeerLibraries[id];
+  for (const p of lanStatus.peers) if (!lanPeerLibraries[p.deviceId]) lanSyncPeerLibrary(p);
+  if (currentView === 'devices') renderDevices();
+  if (currentView === 'library') renderLibrary();
+  if ($('connect-menu').classList.contains('open')) renderConnectMenu();
+}
+
+// ── publishing our own library + state + config ──
+
+// Only prefs that make sense the same way on every device — never a local
+// file path, a per-screen scale, or the sharing switch itself (pulling that
+// remotely could silently turn a peer's networking off).
+const LAN_SYNCABLE_SETTINGS = [
+  'theme', 'accent', 'language', 'dlFormat', 'scanSubdirs', 'healthCheck',
+  'reports', 'editor', 'crossfade', 'crossfadeSec', 'volumeWheelStep',
+  'downloads', 'trending', 'showParserBrowser',
+];
+function lanConfigSnapshot() {
+  const out = {};
+  for (const k of LAN_SYNCABLE_SETTINGS) out[k] = settings[k];
+  return out;
+}
 
 // Tracks are sent only when the library changed; state goes out on every
 // playback event and once a second while playing, so a peer's "now playing"
@@ -10505,6 +10605,10 @@ function lanPublish() {
       year: t.year, genre: t.genre, trackNo: t.trackNo, discNo: t.discNo,
       duration: t.duration, quality: t.quality, hasCover: t.hasCover,
     }));
+  }
+  if (lanConfigDirty) {
+    lanConfigDirty = false;
+    snap.config = lanConfigSnapshot();
   }
   window.electronAPI.lanPublish(snap);
 }
@@ -10600,37 +10704,33 @@ async function lanPushTo(peer) {
   }
 }
 
-// ── Devices view ──
-
-async function lanOpenPeer(id) {
-  const peer = lanPeer(id);
+// ── syncing settings from a peer ──
+//
+// The mirror of lanConfigSnapshot(): pull a peer's syncable subset and adopt
+// it here. A confirm because, unlike library/playback, this overwrites the
+// user's own preferences.
+async function lanSyncSettingsFrom(peer) {
   if (!peer) return;
-  lanActivePeer = id;
-  lanPeerTracks = [];
-  lanPeerState = null;
-  lanPeerBusy = true;
-  renderDevices();
   try {
-    const lib = await lanApi(peer, '/api/library');
-    lanPeerTracks = lib.tracks || [];
-    lanPeerState = await lanApi(peer, '/api/state');
+    const cfg = await lanApi(peer, '/api/config');
+    if (!cfg || Object.keys(cfg).length === 0) { alert(tr('lan.syncSettingsNone')); return; }
+    if (!confirm(tr('lan.syncSettingsConfirm', { device: peer.name }))) return;
+    for (const k of LAN_SYNCABLE_SETTINGS) if (cfg[k] !== undefined) settings[k] = cfg[k];
+    saveSettings();
+    applyTheme(settings.theme);
+    applyAccent(settings.accent);
+    applyLanguage(settings.language);
+    renderSettings();
   } catch (e) {
-    lanStatus.error = (e.message || String(e));
+    alert(tr('lan.errReach') + ' ' + (e.message || e));
   }
-  lanPeerBusy = false;
-  renderDevices();
 }
 
-// A peer's track carries its own signed stream URL, so playing it is the same
-// call as playing a local one (see playTrackByPath / srcFor).
-function lanPlayPeerTrack(id) {
-  const queue = lanPeerTracks.map(t => ({
-    path: t.url, title: t.title, artist: t.artist, album: t.album,
-    duration: t.duration, cover: t.coverUrl || null, hasCover: !!t.coverUrl, remote: true,
-  }));
-  const i = lanPeerTracks.findIndex(t => t.id === id);
-  if (i >= 0) playTrackByPath(queue[i].path, queue);
-}
+// ── Devices view ──
+//
+// Setup and pairing only — browsing a peer's library happens automatically
+// (see lanSyncPeerLibrary) and session transfer lives in the playbar's
+// Connect menu below, Spotify-style, so this view doesn't duplicate either.
 
 function renderDevices() {
   const el = $('devices-content');
@@ -10641,38 +10741,20 @@ function renderDevices() {
     : s.running ? `${tr('lan.on')} · ${escapeHtml(addr)}`
     : tr('lan.starting');
 
-  const peers = s.peers.map(p => `
-    <div class="device-row" data-peer="${escapeHtml(p.deviceId)}">
+  const peers = s.peers.map(p => {
+    const lib = lanPeerLibraries[p.deviceId];
+    const trackCount = lib ? ` · ${withCount('tracks', lib.tracks.length)}` : '';
+    return `
+    <div class="device-row" data-peer="${escapeHtml(p.deviceId)}" style="cursor:default">
       <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
       <div class="device-body">
         <div class="device-name">${escapeHtml(p.name)}</div>
-        <div class="device-meta">${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}</div>
+        <div class="device-meta">${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}${trackCount}</div>
       </div>
-      <button class="btn-ghost" data-act="browse" title="${escapeHtml(tr('lan.browseHint'))}">${tr('lan.browse')}</button>
-      <button class="btn-ghost" data-act="push" ${currentTrack ? '' : 'disabled'} title="${escapeHtml(tr('lan.pushHint'))}">${tr('lan.push')}</button>
-      <button class="btn-ghost" data-act="take" title="${escapeHtml(tr('lan.takeOverHint'))}">${tr('lan.takeOver')}</button>
+      <button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>
       ${p.manual ? `<button class="btn-ghost" data-act="remove">${tr('lan.remove')}</button>` : ''}
-    </div>`).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
-
-  const peer = lanActivePeer ? lanPeer(lanActivePeer) : null;
-  const nowPlaying = lanPeerState && lanPeerState.track
-    ? `<div class="device-meta">${tr('lan.playingNow')}: ${escapeHtml(lanPeerState.track.title || '')} — ${escapeHtml(lanPeerState.track.artist || '')}</div>`
-    : '';
-  const peerLib = !peer ? '' : `
-    <div class="device-section">
-      <div class="device-title">${escapeHtml(peer.name)} · ${withCount('tracks', lanPeerTracks.length)}</div>
-      ${nowPlaying}
-      ${lanPeerBusy ? `<div class="device-empty">${tr('lan.loading')}</div>` : `
-        <div class="device-tracks">${lanPeerTracks.map(t => `
-          <div class="device-track" data-track="${escapeHtml(t.id)}">
-            <div class="device-swatch" ${t.coverUrl ? `style="background-image:url('${escapeHtml(t.coverUrl)}')"` : ''}></div>
-            <div class="device-body">
-              <div class="device-name">${escapeHtml(t.title || '')}</div>
-              <div class="device-meta">${escapeHtml(t.artist || '')}${t.album ? ' · ' + escapeHtml(t.album) : ''}</div>
-            </div>
-            <span class="device-dur">${formatTime(t.duration)}</span>
-          </div>`).join('')}</div>`}
     </div>`;
+  }).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
 
   el.innerHTML = `
     <div class="device-section">
@@ -10694,13 +10776,12 @@ function renderDevices() {
         <button class="btn-ghost" id="lan-add">${tr('lan.add')}</button>
       </div>
       <div class="device-hint">${tr('lan.hintPeers')}</div>
-    </div>
-    ${peerLib}`;
+    </div>`;
 
   const save = () => window.electronAPI.lanSetConfig({
     name: $('lan-name').value.trim(),
     key: $('lan-key').value.trim(),
-  }).then(st => { lanStatus = st; lanTracksDirty = true; lanPublish(); renderDevices(); });
+  }).then(st => { lanStatus = st; lanTracksDirty = true; lanConfigDirty = true; lanPublish(); renderDevices(); });
 
   $('lan-name').addEventListener('change', save);
   $('lan-key').addEventListener('change', save);
@@ -10716,6 +10797,7 @@ function renderDevices() {
       enabled: !s.enabled, key, name: $('lan-name').value.trim(),
     });
     lanTracksDirty = true;
+    lanConfigDirty = true;
     lanPublish();
     renderDevices();
   });
@@ -10731,17 +10813,74 @@ function renderDevices() {
     row.addEventListener('click', async (e) => {
       const act = e.target.closest('button') && e.target.closest('button').dataset.act;
       const id = row.dataset.peer;
-      if (act === 'take') return lanTakeOver(lanPeer(id));
-      if (act === 'push') return lanPushTo(lanPeer(id));
       if (act === 'remove') { await window.electronAPI.lanRemovePeer(id); return lanRefresh(); }
-      lanOpenPeer(id);
+      if (act === 'sync-settings') return lanSyncSettingsFrom(lanPeer(id));
     });
   });
-  el.querySelectorAll('.device-track').forEach(row => {
-    row.addEventListener('dblclick', () => lanPlayPeerTrack(row.dataset.track));
-    row.addEventListener('click', () => lanPlayPeerTrack(row.dataset.track));
+}
+
+// ── Connect menu (playbar) ──
+//
+// Spotify Connect's device picker: a small popover off the playbar listing
+// known peers, each with the two session-transfer actions. Reuses the same
+// fixed-position popover mechanics as the track context menu.
+
+function closeConnectMenu() {
+  $('connect-menu').classList.remove('open');
+}
+
+function renderConnectMenu() {
+  const menu = $('connect-menu');
+  const rows = lanStatus.peers.map(p => `
+    <div class="cm-device" data-peer="${escapeHtml(p.deviceId)}">
+      <div class="device-row" style="cursor:default">
+        <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
+        <div class="device-body">
+          <div class="device-name">${escapeHtml(p.name)}</div>
+          <div class="device-meta">${escapeHtml(p.host)}${p.manual ? ' · ' + tr('lan.manual') : ''}</div>
+        </div>
+      </div>
+      <div class="cm-device-actions">
+        <button class="btn-ghost" data-act="take" title="${escapeHtml(tr('lan.takeOverHint'))}">${tr('lan.takeOver')}</button>
+        <button class="btn-ghost" data-act="push" ${currentTrack ? '' : 'disabled'} title="${escapeHtml(tr('lan.pushHint'))}">${tr('lan.push')}</button>
+      </div>
+    </div>`).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
+  menu.innerHTML = `<div class="device-title cm-connect-title">${tr('lan.connect')}</div>${rows}`;
+  menu.querySelectorAll('.cm-device').forEach(row => {
+    row.addEventListener('click', e => {
+      const act = e.target.closest('button') && e.target.closest('button').dataset.act;
+      if (!act) return;
+      const peer = lanPeer(row.dataset.peer);
+      closeConnectMenu();
+      if (act === 'take') lanTakeOver(peer);
+      else if (act === 'push') lanPushTo(peer);
+    });
   });
 }
+
+function openConnectMenu(anchorBtn) {
+  renderConnectMenu();
+  const menu = $('connect-menu');
+  menu.classList.add('open');
+  const b = anchorBtn.getBoundingClientRect();
+  const w = 280, h = menu.getBoundingClientRect().height || 200;
+  let x = b.right - w;
+  if (x < 8) x = 8;
+  let y = b.top - h - 8;
+  if (y < 8) y = b.bottom + 8;
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+}
+
+$('btn-connect').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const menu = $('connect-menu');
+  if (menu.classList.contains('open')) { closeConnectMenu(); return; }
+  openConnectMenu(e.currentTarget);
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#connect-menu') && !e.target.closest('#btn-connect')) closeConnectMenu();
+});
 
 // Master switch, separate from the Devices view's own enable-toggle: this one
 // gates whether the feature is wired up at all. Off (the default) means no IPC
@@ -10756,18 +10895,23 @@ function lanEnableFeature() {
     window.electronAPI.onLanCommand(applyLanCommand);
     lanStartPublishing();
   }
-  lanRefresh().then(() => { lanTracksDirty = true; lanPublish(); });
+  lanRefresh().then(() => { lanTracksDirty = true; lanConfigDirty = true; lanPublish(); });
 }
 function lanDisableFeature() {
   if (lanPollTimer) { clearInterval(lanPollTimer); lanPollTimer = null; }
   if (window.electronAPI && window.electronAPI.lanStatus) window.electronAPI.lanSetConfig({ enabled: false });
   lanStatus = Object.assign({}, lanStatus, { enabled: false, running: false, peers: [] });
+  lanPeerLibraries = {};
+  closeConnectMenu();
   const count = $('count-devices');
   if (count) count.textContent = '0';
+  if (currentView === 'library') renderLibrary();
 }
 function applyLanSharingVisibility() {
   const nav = $('nav-devices');
   if (nav) nav.hidden = !settings.lanSharing;
+  const connectBtn = $('btn-connect');
+  if (connectBtn) connectBtn.hidden = !settings.lanSharing;
   if (settings.lanSharing) lanEnableFeature();
   else {
     if (currentView === 'devices') setView('library');
