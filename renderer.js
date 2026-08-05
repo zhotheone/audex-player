@@ -908,6 +908,7 @@ const I18N = {
     'cm.useAsAlbumCover': 'Use as album cover',
     'btn.albumCoverTooltip': "Apply a track's cover to every track in the album…",
     'albumCover.needSource': 'Right-click a track with the correct cover and choose "Use as album cover" first.',
+    'albumCover.badSource': "This track has no cover art loaded — scroll it into view (or open it) so its art loads, then try again.",
     'albumCover.confirm': 'Apply the cover from "{track}" to the other {count} track(s) in this album?',
     'albumCover.progress': 'Updating album covers…',
     'albumCover.summary': '{updated} updated · {failed} failed ({total} total)',
@@ -1513,6 +1514,7 @@ const I18N = {
     'cm.useAsAlbumCover': 'Als Album-Cover verwenden',
     'btn.albumCoverTooltip': 'Das Cover eines Titels auf alle Titel des Albums übertragen…',
     'albumCover.needSource': 'Rechtsklick auf den Titel mit dem richtigen Cover und „Als Album-Cover verwenden“ wählen.',
+    'albumCover.badSource': 'Für diesen Titel ist noch kein Cover geladen — ins Sichtfeld scrollen (oder öffnen), damit es lädt, dann erneut versuchen.',
     'albumCover.confirm': 'Cover von „{track}“ auf die restlichen {count} Titel dieses Albums übertragen?',
     'albumCover.progress': 'Album-Cover werden aktualisiert…',
     'albumCover.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
@@ -2118,6 +2120,7 @@ const I18N = {
     'cm.useAsAlbumCover': "Utiliser comme pochette de l'album",
     'btn.albumCoverTooltip': "Appliquer la pochette d'un titre à tous les titres de l'album…",
     'albumCover.needSource': 'Faites un clic droit sur le titre ayant la bonne pochette et choisissez « Utiliser comme pochette de l\'album ».',
+    'albumCover.badSource': "Aucune pochette n'est chargée pour ce titre — faites-le défiler à l'écran (ou ouvrez-le) pour la charger, puis réessayez.",
     'albumCover.confirm': 'Appliquer la pochette de « {track} » aux {count} autre(s) titre(s) de cet album ?',
     'albumCover.progress': 'Mise à jour des pochettes…',
     'albumCover.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
@@ -2723,6 +2726,7 @@ const I18N = {
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
     'btn.albumCoverTooltip': 'Застосувати обкладинку треку до всіх треків альбому…',
     'albumCover.needSource': 'Спершу клацніть правою кнопкою на трек із правильною обкладинкою та оберіть «Використати як обкладинку альбому».',
+    'albumCover.badSource': 'Для цього треку ще не завантажено обкладинку — прогорніть до нього список (або відкрийте трек), щоб вона завантажилась, і спробуйте ще раз.',
     'albumCover.confirm': 'Застосувати обкладинку з «{track}» до решти {count} трек(ів) цього альбому?',
     'albumCover.progress': 'Оновлюємо обкладинки альбому…',
     'albumCover.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
@@ -8697,7 +8701,10 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     }
     else if (action === 'fix-tags') { if (track) runFixTags([track], { compare: true }); }
     else if (action === 'fix-tags-force') { if (track) runFixTags([track], { compare: false }); }
-    else if (action === 'use-cover') { pendingAlbumCoverSource = path; }
+    else if (action === 'use-cover') {
+      if (!track || !track.cover) { alert(tr('albumCover.badSource')); return; }
+      pendingAlbumCoverSource = path;
+    }
     else if (action === 'trim') { if (track) openEditorFor(track); }
     else if (action === 'add-to-playlist') openAddToPlaylistModal(path);
     else if (action === 'remove-from-playlist') {

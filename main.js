@@ -5,7 +5,7 @@ const net = require('net');
 const { spawn, execFileSync } = require('child_process');
 const https = require('https');
 const crypto = require('crypto');
-const { pathToFileURL } = require('url');
+const { pathToFileURL, fileURLToPath } = require('url');
 const musicMetadata = require('music-metadata');
 const lan = require('./lan');
 
@@ -967,15 +967,29 @@ ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => write
 // "-map 0 -c copy" just carries the source's own cover stream through
 // untouched, so replacing it needs a second ffmpeg input (the new image)
 // mapped in as the attached-pic stream instead.
-function parseCoverDataUrl(dataUrl) {
-  const m = /^data:([^;]+);base64,(.+)$/.exec(String(dataUrl || ''));
-  if (!m) return null;
-  return { format: m[1], data: Buffer.from(m[2], 'base64') };
+// track.cover in the renderer is either a `data:<mime>;base64,<data>` URL (a
+// freshly-parsed embedded picture) or a `file://...` URL into the on-disk
+// thumbnail cache (the fast-boot path in warmCoversFromDisk — see covers:load
+// above, which is what most already-scanned tracks carry). Both are valid
+// "this track's cover art" — accept either.
+function parseCoverSource(source) {
+  const s = String(source || '');
+  const m = /^data:([^;]+);base64,(.+)$/.exec(s);
+  if (m) return { format: m[1], data: Buffer.from(m[2], 'base64') };
+  if (s.startsWith('file:')) {
+    try {
+      const filePath = fileURLToPath(s);
+      const ext = path.extname(filePath).toLowerCase();
+      const format = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      return { format, data: fs.readFileSync(filePath) };
+    } catch (_) { return null; }
+  }
+  return null;
 }
 
 async function writeCoverToFile(filePath, coverDataUrl) {
   if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'File not found' };
-  const picture = parseCoverDataUrl(coverDataUrl);
+  const picture = parseCoverSource(coverDataUrl);
   if (!picture) return { success: false, error: 'Bad cover data' };
   const ffmpeg = resolveBundledFfmpeg();
   if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
