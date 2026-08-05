@@ -2636,19 +2636,19 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .wave {
   display: flex;
   align-items: center;
-  gap: 1.5px;
+  gap: 3px;
   width: 100%;
   cursor: pointer;
 }
 .wave-bar {
   flex: 1;
   min-height: 2px;
-  border-radius: 1px;
-  background: color-mix(in srgb, var(--text-strong) 16%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-strong) 30%, transparent);
   transition: background 0.12s;
 }
 .wave-bar.played { background: var(--accent); }
-.wave-bar.preview { background: color-mix(in srgb, var(--text-strong) 42%, transparent); }
+.wave-bar.preview { background: color-mix(in srgb, var(--text-strong) 55%, transparent); }
 
 .playbar-right {
   display: flex;
@@ -2851,7 +2851,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   margin-bottom: 8px;
   cursor: pointer;
 }
-.fs-wave { gap: 2px; }
+.fs-wave { gap: 4px; }
 .fs-time-row {
   display: flex;
   justify-content: space-between;

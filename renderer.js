@@ -24,7 +24,7 @@ const LS = {
   ytmState: 'audex-dl-ytm-state',
   spState: 'audex-dl-sp-state',
   queue: 'audex-dl-queue',
-  wavePeaks: 'audex-wave-peaks',
+  wavePeaks: 'audex-wave-peaks-v2', // v2: RMS-per-bucket instead of sample-peak (see decodePeaks)
   playLog: 'audex-play-log',
   qualityCache: 'audex-quality-cache',
   healthReport: 'audex-health-report',
@@ -129,11 +129,14 @@ let library = libraryMeta.map(t => ({ ...t, cover: coverCache[t.path] || null })
 // Real waveform peaks (path -> Float[0..1], length WAVE_BARS), decoded from audio
 // on first play and cached. Loaded from compact 0..255 ints in localStorage.
 const WAVE_CACHE_MAX = 600;
+const WAVE_BARS = 48;
 const wavePeaksCache = (() => {
   try {
     const raw = JSON.parse(localStorage.getItem(LS.wavePeaks) || '{}');
     const out = {};
-    for (const k in raw) out[k] = raw[k].map(v => v / 255);
+    // Entries decoded at a stale bar count (e.g. before WAVE_BARS changed) don't
+    // match the current bar layout — drop them so they re-decode at full res.
+    for (const k in raw) if (raw[k].length === WAVE_BARS) out[k] = raw[k].map(v => v / 255);
     return out;
   } catch (_) { return {}; }
 })();
@@ -7314,7 +7317,10 @@ async function runRegenerateAlbumCovers(tracks) {
       t.hasCover = true;
       coverCache[t.path] = source.cover;
       updated++;
-    } else failed++;
+    } else {
+      failed++;
+      window.electronAPI.logError?.('albumCoverRegen', `${t.path}: ${(wr && wr.error) || 'no response'}`);
+    }
   }
   setProgressBanner(null);
   saveLibrary();
@@ -7407,7 +7413,6 @@ $('fs-btn-repeat').addEventListener('click', () => {
 // Audio API (computeRealPeaks), cached per track in wavePeaksCache. While decoding
 // — or if decode fails — we fall back to a deterministic seeded envelope keyed off
 // the track so the bar always shows something stable instantly.
-const WAVE_BARS = 130;
 
 function waveSeededRand(seed) {
   let a = seed >>> 0;
@@ -7459,21 +7464,30 @@ async function decodePeaks(arrayBuffer) {
   const channels = [];
   for (let c = 0; c < chCount; c++) channels.push(audioBuf.getChannelData(c));
 
+  // RMS per bucket, not sample peak: with only WAVE_BARS buckets each spans a
+  // wide time window, and on loudness-mastered tracks nearly every window
+  // contains a near-max sample — peak-per-bucket would flatten almost every
+  // bar to ~1. RMS reflects the section's actual energy, so quieter passages
+  // (intro, breakdown) still read as shorter bars even on a "loud" track.
   const peaks = new Float32Array(WAVE_BARS);
   const bucket = Math.max(1, Math.floor(len / WAVE_BARS));
   let globalMax = 0;
   for (let i = 0; i < WAVE_BARS; i++) {
     const start = i * bucket;
     const end = i === WAVE_BARS - 1 ? len : Math.min(len, start + bucket);
-    let max = 0;
+    let sumSq = 0;
+    const n = end - start;
     for (let j = start; j < end; j++) {
+      let v = 0;
       for (let c = 0; c < chCount; c++) {
-        const v = Math.abs(channels[c][j]);
-        if (v > max) max = v;
+        const cv = Math.abs(channels[c][j]);
+        if (cv > v) v = cv;
       }
+      sumSq += v * v;
     }
-    peaks[i] = max;
-    if (max > globalMax) globalMax = max;
+    const rms = n > 0 ? Math.sqrt(sumSq / n) : 0;
+    peaks[i] = rms;
+    if (rms > globalMax) globalMax = rms;
   }
   const norm = globalMax > 0 ? 1 / globalMax : 0;
   const out = new Array(WAVE_BARS);
