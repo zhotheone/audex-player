@@ -89,21 +89,33 @@
     };
   }
 
+  // ── diagnostics ──
+  // These failure paths were completely silent before — the only symptom on
+  // a real device was "nothing happens," with no way for us or the user to
+  // tell whether it's the wrong key, an unreachable host, a rejected
+  // handshake, or a network-layer block, short of guessing blind. Capacitor
+  // forwards WebView console.* to `adb logcat` (Capacitor's WebChromeClient
+  // hook), so this is the debuggable surface a real device actually has.
+  const wsLog = (...args) => console.error('[audex:lan-ws]', ...args);
+
   function wsConnectPeer(peer) {
     if (wsSockets.has(peer.deviceId)) return;
     const cfg = loadLan();
     if (!cfg.key || !peer.host) return;
+    const url = `ws://${peer.host}:${peer.port}/api/ws`;
     let ws;
-    try { ws = new WebSocket(`ws://${peer.host}:${peer.port}/api/ws`); } catch (_) { return; }
+    try { ws = new WebSocket(url); } catch (e) { wsLog('failed to construct WebSocket for', url, e); return; }
     wsSockets.set(peer.deviceId, ws);
     ws.onopen = () => {
-      try { ws.send(JSON.stringify({ type: 'auth', key: cfg.key, deviceId: cfg.deviceId, name: cfg.name || 'Mobile' })); } catch (_) {}
+      try { ws.send(JSON.stringify({ type: 'auth', key: cfg.key, deviceId: cfg.deviceId, name: cfg.name || 'Mobile' })); } catch (e) { wsLog('failed to send auth to', url, e); }
     };
     ws.onmessage = (ev) => {
       let msg;
-      try { msg = JSON.parse(ev.data); } catch (_) { return; }
-      if (msg.type === 'req-state') {
-        try { ws.send(JSON.stringify({ type: 'state', reqId: msg.reqId, state: myLanState() })); } catch (_) {}
+      try { msg = JSON.parse(ev.data); } catch (e) { wsLog('unparseable message from', url, ev.data, e); return; }
+      if (msg.type === 'auth-ok') {
+        wsLog('connected and authed:', url);
+      } else if (msg.type === 'req-state') {
+        try { ws.send(JSON.stringify({ type: 'state', reqId: msg.reqId, state: myLanState() })); } catch (e) { wsLog('failed to reply to req-state from', url, e); }
         // A take-over stops playback here too, same as lan.js does for an
         // HTTP peer being taken from.
         if (onLanCommandCb) onLanCommandCb({ type: 'pause' });
@@ -111,9 +123,15 @@
         onLanCommandCb(msg.cmd);
       }
     };
-    const drop = () => { if (wsSockets.get(peer.deviceId) === ws) wsSockets.delete(peer.deviceId); };
-    ws.onclose = drop;
-    ws.onerror = drop;
+    const drop = (why) => {
+      if (wsSockets.get(peer.deviceId) === ws) wsSockets.delete(peer.deviceId);
+      wsLog('disconnected from', url, why);
+    };
+    // Close code 4001 is lan.js's own "bad key" rejection (handleUpgrade's
+    // wsCloseUnauthorized) — everything else is a lower-level network/TCP
+    // failure (unreachable host, refused/reset connection, timeout).
+    ws.onclose = (ev) => drop(`close code=${ev.code} reason=${ev.reason || '(none)'}`);
+    ws.onerror = () => drop('error event (see close event above for the actual reason, if any)');
   }
 
   // ponytail: fixed-interval retry, no backoff/jitter — reasonable for a
@@ -305,12 +323,13 @@
       let res = await cache.match(url);
       if (!res) {
         const fetched = await fetch(url);
-        if (!fetched.ok) return url;
+        if (!fetched.ok) { console.error('[audex:cover]', 'non-OK response', fetched.status, url); return url; }
         await cache.put(url, fetched.clone());
         res = fetched;
       }
       return URL.createObjectURL(await res.blob());
-    } catch (_) {
+    } catch (e) {
+      console.error('[audex:cover]', 'failed to fetch/cache', url, e);
       return url; // offline / cache unavailable — the raw URL still might load
     }
   }

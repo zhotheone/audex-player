@@ -466,6 +466,12 @@ function wsCloseUnauthorized(socket) {
 }
 
 function handleUpgrade(req, socket) {
+  // Was entirely silent before — a rejected/dropped mobile connection looked
+  // identical to "device never even reached the server" from here, with no
+  // way to tell them apart short of guessing. logError() already writes to
+  // the persistent app.log (see main.js's startLan()), reachable from
+  // Settings' "Open logs folder" without attaching a debugger.
+  logError('lan:ws', `upgrade request from ${req.socket.remoteAddress} for ${req.url}`);
   if (new URL(req.url, 'http://x').pathname !== '/api/ws') { socket.destroy(); return; }
   const wsKey = req.headers['sec-websocket-key'];
   if (!wsKey) { socket.destroy(); return; }
@@ -483,6 +489,7 @@ function handleUpgrade(req, socket) {
 
   const cleanup = () => {
     if (!deviceId) return;
+    logError('lan:ws', `peer ${deviceId} disconnected`);
     wsClients.delete(deviceId);
     peers.delete(deviceId);
     onPeersChanged(listPeers());
@@ -502,8 +509,9 @@ function handleUpgrade(req, socket) {
       try { msg = JSON.parse(frame.payload.toString('utf8')); } catch (_) { continue; }
 
       if (!authed) {
-        if (msg.type !== 'auth' || typeof msg.key !== 'string' || !cfg.key
-            || !crypto.timingSafeEqual(sha256(msg.key), sha256(cfg.key))) {
+        const keyOk = typeof msg.key === 'string' && cfg.key && crypto.timingSafeEqual(sha256(msg.key), sha256(cfg.key));
+        if (msg.type !== 'auth' || !keyOk) {
+          logError('lan:ws', `rejected auth from ${req.socket.remoteAddress} (msg.type=${msg && msg.type}, key match=${!!keyOk})`);
           return wsCloseUnauthorized(socket);
         }
         authed = true;
@@ -511,6 +519,7 @@ function handleUpgrade(req, socket) {
         wsClients.set(deviceId, { socket, lastSeen: Date.now() });
         notePeer({ deviceId, name: msg.name || 'Mobile', mobile: true });
         wsSend(socket, { type: 'auth-ok' });
+        logError('lan:ws', `authed and registered peer ${deviceId} (${msg.name || 'Mobile'}) from ${req.socket.remoteAddress}`);
         continue;
       }
 
