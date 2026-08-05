@@ -10,11 +10,12 @@
 (function () {
   // renderer.js's track-list virtualizer absolutely-positions each row via a
   // fixed ROW_HEIGHT constant (renderer.js:2895) — it has to match .trow's
-  // real rendered height or rows overlap. mobile.css's two-line row (title,
-  // then artist+time) is taller than desktop's one-line row: 13px padding
-  // top+bottom (26) + 40px title row (the enlarged cover sets its height) +
-  // 4px row-gap + ~15px artist/time row = 85px. Update this if that CSS
-  // changes — nothing derives it automatically.
+  // real rendered height or rows overlap. mobile.css's leading-thumbnail
+  // two-line row is taller than desktop's one-line row: measured at 85px
+  // (10px padding top+bottom + the 40px cover, which is the tallest thing in
+  // the row). Verified empirically (headless-Chrome getBoundingClientRect),
+  // not derived from the CSS automatically — re-measure if mobile.css's
+  // .trow padding/cover size changes.
   window.AUDEX_ROW_HEIGHT = 85;
 
   const LAN_KEY = 'audex-mobile-lan';

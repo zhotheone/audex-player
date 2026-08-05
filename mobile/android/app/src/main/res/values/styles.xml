@@ -7,16 +7,30 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <!-- Capacitor draws the WebView edge-to-edge by default (see
+             capacitor.config.json's adjustMarginsForEdgeToEdge default of
+             'disable' — Capacitor doesn't auto-inset, mobile.css's own
+             env(safe-area-inset-*) rules are supposed to); without this flag
+             some OEM WebView builds report safe-area-inset-top as 0 despite
+             a real camera cutout, so content (the fullscreen player's topbar,
+             notably) draws straight into the cutout instead of around it. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- This is the theme actually applied to MainActivity for its whole
+             lifetime (see AndroidManifest.xml) — Capacitor never swaps to
+             AppTheme.NoActionBar after the splash, so the cutout flag has to
+             live here too, not just above. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>
