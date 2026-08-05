@@ -9,7 +9,7 @@
     "dist": "node scripts/build-info.js && electron-builder",
     "build": "node scripts/check-bundles.js win32 && node scripts/build-info.js && electron-builder --win --publish never",
     "postinstall": "node scripts/fetch-ytdlp.js && node scripts/fetch-fpcalc.js",
-    "test": "node test-audex.js"
+    "test": "node test-audex.js && node test-lan.js"
   },
   "build": {
     "appId": "com.audex.player",
@@ -20,6 +20,7 @@
     },
     "files": [
       "main.js",
+      "lan.js",
       "preload.js",
       "renderer.js",
       "index.html",

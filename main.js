@@ -7,6 +7,7 @@ const https = require('https');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
 const musicMetadata = require('music-metadata');
+const lan = require('./lan');
 
 app.setName('Audex');
 
@@ -372,6 +373,7 @@ ipcMain.handle('tray:updateState', (event, state) => {
 app.whenReady().then(() => {
   createWindow();
   createTray();
+  startLan();
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -379,7 +381,33 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('before-quit', () => { isQuitting = true; });
+app.on('before-quit', () => { isQuitting = true; lan.stop(); });
+
+// ── LAN / Tailscale sharing ──
+// The server lives here (it needs the filesystem and a real socket) but the
+// library and the player live in the renderer, so the renderer publishes a
+// snapshot on every change and remote commands are forwarded back to it.
+function toRenderer(channel, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try { mainWindow.webContents.send(channel, payload); } catch (_) {}
+  }
+}
+
+function startLan() {
+  lan.load({
+    userDataDir: app.getPath('userData'),
+    coverDir: coverCacheDir(),
+    logError: logAppError,
+    sendCommand: (cmd) => toRenderer('lan:command', cmd),
+    onPeersChanged: (peers) => toRenderer('lan:peers', peers),
+  });
+}
+
+ipcMain.handle('lan:status', () => lan.status());
+ipcMain.handle('lan:setConfig', (event, next) => lan.setConfig(next || {}));
+ipcMain.handle('lan:publish', (event, snap) => { lan.publish(snap); return true; });
+ipcMain.handle('lan:addPeer', (event, addr) => lan.addManualPeer(addr));
+ipcMain.handle('lan:removePeer', (event, id) => lan.removePeer(id));
 
 // Tray keeps the app alive when all windows are closed — don't quit on
 // window-all-closed (mac already kept the app alive; we now do the same
@@ -2259,15 +2287,17 @@ function acoustidBestMatch(data) {
         artist: (rec.artists || []).map(a => a.name).join(' & ') || '',
         album: ((rec.releasegroups || []).find(rg => rg.title) || {}).title || '',
       };
-      // Track/disc number lives on the release (a recording can appear on many
-      // releases at different positions), not on the recording itself — take
-      // the first release+medium that actually lists this recording.
+      // Track/disc number and year live on the release (a recording can appear
+      // on many releases, at different positions and dates), not on the
+      // recording itself — take the first release+medium that actually lists
+      // this recording, and use that same release's date for consistency.
       for (const rel of rec.releases || []) {
         const medium = (rel.mediums || []).find(m => (m.tracks || []).some(t => t.id === rec.id));
         const track = medium && medium.tracks.find(t => t.id === rec.id);
         if (!track) continue;
         if (track.position) match.trackNo = String(track.position);
         if (medium.position) match.discNo = String(medium.position);
+        if (rel.date && rel.date.year) match.year = String(rel.date.year);
         break;
       }
       return match;
@@ -2314,10 +2344,11 @@ ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => 
     return { success: false, error: isKeyError(msg) ? 'apiKey' : 'lookup', detail: msg };
   }
   const match = acoustidBestMatch(data);
+  const results = (data && Array.isArray(data.results) ? data.results : []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const top = results[0];
+  logAppError('acoustid:identify', `file=${filePath}, score=${top ? top.score : 'n/a'}, recordings=${top ? (top.recordings || []).length : 0}, match=${JSON.stringify(match)}`);
   if (match) return { success: true, match };
   // No MusicBrainz recording linked yet — the raw AcoustID is still worth showing.
-  const top = (data && Array.isArray(data.results) ? data.results : [])
-    .slice().sort((a, b) => (b.score || 0) - (a.score || 0))[0];
   return { success: true, match: null, acoustid: top ? top.id : null };
 });
 

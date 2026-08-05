@@ -8,7 +8,7 @@
 
 A fast, beautiful desktop player for the music you actually own — and a one-click way to get more of it.
 
-[![Version](https://img.shields.io/badge/version-dfc5e00-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
+[![Version](https://img.shields.io/badge/version-43ca595-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![Platforms](https://img.shields.io/badge/Linux%20·%20macOS%20·%20Windows-2b2b2b?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![License](https://img.shields.io/badge/MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -127,6 +127,45 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 - **Update notifications** — a dismissible in-app banner when a new release is out.
 
 </details>
+
+---
+
+## 🔗 Devices (LAN & Tailscale)
+
+Turn on sharing in **Devices**, set the same *network key* on each of your machines, and they'll
+see each other's libraries. Play anything from another device, or hit **Take over** to pull its
+session onto yours — same track, same position, same queue, and the other device pauses itself.
+
+On a LAN devices find each other automatically (UDP broadcast on 8422). Tailscale carries no
+broadcast traffic, so there you add the address by hand — `100.x.y.z` or a MagicDNS name. The
+server binds `0.0.0.0`, so one switch covers both.
+
+### HTTP API
+
+Sharing is a plain HTTP + JSON API, so an Android or iOS client only has to speak HTTP. The
+server listens on **8422** (walking up to 8426 if that's taken; the announce carries the real
+port). Requests authenticate with the network key as a bearer token:
+
+```
+Authorization: Bearer <network key>
+```
+
+| Route | What it does |
+| --- | --- |
+| `GET /api/info` | device id, name, track count |
+| `GET /api/library` | every track, each with a signed `url` and `coverUrl` |
+| `GET /api/state` | what's playing, position, volume, shuffle/repeat, and the next 50 queued tracks |
+| `GET /api/track/<id>?s=…` | the audio, with `Range` support so clients can seek |
+| `GET /api/cover/<id>?s=…` | cover art |
+| `POST /api/command` | `play` · `pause` · `next` · `prev` · `seek` · `volume` · `playState` · `transfer` |
+
+`<audio src>` and `<img src>` can't send headers, so the media routes authenticate with a
+per-track HMAC (`?s=`) that `/api/library` hands you instead. The key itself never appears in a URL,
+and file paths never leave the device — peers only ever see the id.
+
+`POST /api/command {"type":"transfer"}` is the takeover: it returns the device's full session and
+pauses it. Point your player at `state.track.url`, seek to `state.position`, and you've moved the
+music. `playState` is the same thing pushed the other way — hand a device a session and it starts playing it.
 
 ---
 

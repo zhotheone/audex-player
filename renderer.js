@@ -50,6 +50,7 @@ let settings = Object.assign({
   acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
   trending: true,
+  lanSharing: false,     // master switch for Devices/LAN sharing — off by default, opens a network port
   showParserBrowser: true,
   uiScale: 1,
   settingsTab: 'appearance', // active tab in the Settings view
@@ -149,7 +150,15 @@ let playLog = (() => {
   } catch (_) { return []; }
 })();
 
-let currentTrackIndex = -1;
+// The track that is playing right now. Held as an object, not an index into
+// `library`, so a track streamed from a peer plays through the same path as a
+// local one (see lanPlayTrack).
+let currentTrack = null;
+// Set by saveLibrary() (called from a top-level backfill IIFE at script load,
+// before any function — so this can't live any later than the other
+// top-of-file state) and read by lanPublish() to know when peers need a fresh
+// copy of the library, not just a state tick.
+let lanTracksDirty = true;
 let currentQueue = library;          // the list we're playing through
 let currentView = 'library';
 let activeFilter = 'all';
@@ -227,7 +236,7 @@ const BG_FIT_CSS = {
 function currentBackgroundUrl() {
   if (settings.bgSource === 'image') return settings.bgImage || '';
   if (settings.bgSource === 'cover') {
-    const t = currentTrackIndex >= 0 ? library[currentTrackIndex] : null;
+    const t = currentTrack;
     if (!t) return '';
     return t.cover || coverCache[t.path] || '';
   }
@@ -293,6 +302,7 @@ applyAppearance();
 
 // ── Persistence ──
 function saveLibrary() {
+  lanTracksDirty = true;   // peers are serving a copy of this list
   libraryMeta = library.map(({ cover, ...rest }) => rest);
   try {
     localStorage.setItem(LS.libraryMeta, JSON.stringify(libraryMeta));
@@ -344,6 +354,33 @@ function saveWavePeaks() {
 // or call tr('your.key') in JS.
 const I18N = {
   en: {
+    'nav.devices': "Devices",
+    'lan.thisDevice': "This device",
+    'lan.namePh': "Device name",
+    'lan.keyPh': "Network key",
+    'lan.generate': "Generate",
+    'lan.enable': "Turn on sharing",
+    'lan.disable': "Turn off sharing",
+    'lan.needKey': "Set a network key first — every device of yours needs the same one.",
+    'lan.hint': "Use the same network key on each of your devices. On a LAN they find each other automatically; over Tailscale add the address by hand.",
+    'lan.on': "Sharing",
+    'lan.off': "Sharing is off",
+    'lan.starting': "Starting…",
+    'lan.error': "Error",
+    'lan.peers': "Other devices",
+    'lan.noPeers': "No devices found yet.",
+    'lan.manual': "added by hand",
+    'lan.browse': "Browse",
+    'lan.takeOver': "Take over",
+    'lan.push': 'Push here',
+    'lan.remove': "Remove",
+    'lan.add': "Add",
+    'lan.addPh': "Address, e.g. 100.90.1.2 or 192.168.1.5:8422",
+    'lan.loading': "Loading…",
+    'lan.playingNow': "Playing now",
+    'lan.nothingPlaying': "That device is not playing anything.",
+    'lan.errKey': "Wrong network key",
+    'lan.errReach': "Can't reach that device:",
     'nav.library': 'Library',
     'update.available': 'Update available',
     'update.download': 'Download',
@@ -502,6 +539,8 @@ const I18N = {
     'issue.nocover.desc': 'Tracks with no embedded album image.',
     'issue.tags.title': 'Incomplete tags',
     'issue.tags.desc': 'Empty artist, album or year fields.',
+    'issue.notrackno.title': 'Missing track number',
+    'issue.notrackno.desc': 'Tracks with no track-number tag, which throws off album order.',
     'issue.dupes.title': 'Possible duplicates',
     'issue.dupes.desc': 'Same artist and title across different files.',
     'section.discord': 'Discord Rich Presence',
@@ -731,6 +770,8 @@ const I18N = {
     'setting.crossfadeDesc': 'Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.',
     'setting.showDownloads': 'Show the “Downloads” tab',
     'setting.showDownloadsDesc': 'Adds a section to the sidebar for downloading tracks by URL.',
+    'setting.showDevices': 'Show the “Devices” tab',
+    'setting.showDevicesDesc': 'Lets this app be found and controlled by your other devices on the same LAN or Tailscale network. Opens a local network port; off by default.',
     'setting.showParserBrowser': 'Show the browser window while parsing',
     'setting.showParserBrowserDesc': 'Useful for signing in to Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.',
     'setting.ytLogin': 'Sign in to YouTube',
@@ -872,6 +913,8 @@ const I18N = {
     'palette.action.clearLibrary': 'Clear library…',
     'palette.action.fixTagsLibrary': 'Fix the tags (Library)…',
     'palette.action.fixTagsLibraryForce': 'Fix the tags (Library, without comparing)…',
+    'palette.action.volumeUp': 'Volume up',
+    'palette.action.volumeDown': 'Volume down',
     'label.unknownArtist': 'Unknown artist',
     'label.noAlbum': 'No album',
     'label.tracksShort': 'tr.',
@@ -899,6 +942,33 @@ const I18N = {
     'downloads.queue.resume': 'Resume',
   },
   de: {
+    'nav.devices': "Geräte",
+    'lan.thisDevice': "Dieses Gerät",
+    'lan.namePh': "Gerätename",
+    'lan.keyPh': "Netzwerkschlüssel",
+    'lan.generate': "Erzeugen",
+    'lan.enable': "Freigabe einschalten",
+    'lan.disable': "Freigabe ausschalten",
+    'lan.needKey': "Zuerst einen Netzwerkschlüssel setzen — auf allen Geräten derselbe.",
+    'lan.hint': "Auf jedem Ihrer Geräte denselben Netzwerkschlüssel verwenden. Im LAN finden sie sich von selbst; über Tailscale die Adresse von Hand hinzufügen.",
+    'lan.on': "Freigabe aktiv",
+    'lan.off': "Freigabe ist aus",
+    'lan.starting': "Wird gestartet…",
+    'lan.error': "Fehler",
+    'lan.peers': "Andere Geräte",
+    'lan.noPeers': "Noch keine Geräte gefunden.",
+    'lan.manual': "von Hand hinzugefügt",
+    'lan.browse': "Ansehen",
+    'lan.takeOver': "Übernehmen",
+    'lan.push': 'Hierher senden',
+    'lan.remove': "Entfernen",
+    'lan.add': "Hinzufügen",
+    'lan.addPh': "Adresse, z. B. 100.90.1.2 oder 192.168.1.5:8422",
+    'lan.loading': "Wird geladen…",
+    'lan.playingNow': "Läuft gerade",
+    'lan.nothingPlaying': "Dieses Gerät spielt nichts ab.",
+    'lan.errKey': "Falscher Netzwerkschlüssel",
+    'lan.errReach': "Gerät nicht erreichbar:",
     'nav.library': 'Bibliothek',
     'update.available': 'Update verfügbar',
     'update.download': 'Herunterladen',
@@ -1057,6 +1127,8 @@ const I18N = {
     'issue.nocover.desc': 'Titel ohne eingebettetes Albumbild.',
     'issue.tags.title': 'Unvollständige Tags',
     'issue.tags.desc': 'Leere Felder für Interpret, Album oder Jahr.',
+    'issue.notrackno.title': 'Fehlende Titelnummer',
+    'issue.notrackno.desc': 'Titel ohne Titelnummer-Tag, das die Albumreihenfolge durcheinanderbringt.',
     'issue.dupes.title': 'Mögliche Duplikate',
     'issue.dupes.desc': 'Gleicher Interpret und Titel in verschiedenen Dateien.',
     'section.discord': 'Discord Rich Presence',
@@ -1286,6 +1358,8 @@ const I18N = {
     'setting.crossfadeDesc': 'Titel gehen ineinander über: der aktuelle wird ausgeblendet, während der nächste einsetzt. Gilt sowohl am Titelende als auch beim manuellen Wechseln.',
     'setting.showDownloads': 'Tab „Downloads“ anzeigen',
     'setting.showDownloadsDesc': 'Öffnet einen Bereich in der Seitenleiste zum Herunterladen von Titeln per URL.',
+    'setting.showDevices': 'Registerkarte „Geräte“ anzeigen',
+    'setting.showDevicesDesc': 'Lässt diese App von Ihren anderen Geräten im selben LAN oder Tailscale-Netzwerk gefunden und gesteuert werden. Öffnet einen lokalen Netzwerkport; standardmäßig aus.',
     'setting.showParserBrowser': 'Browserfenster beim Parsen anzeigen',
     'setting.showParserBrowserDesc': 'Nützlich, um sich beim ersten Start bei Spotify anzumelden, ein Captcha zu lösen oder zu sehen, wo der Parser hängengeblieben ist. Ausschalten, damit der Browser unsichtbar im Hintergrund läuft.',
     'setting.ytLogin': 'Bei YouTube anmelden',
@@ -1427,6 +1501,8 @@ const I18N = {
     'palette.action.clearLibrary': 'Bibliothek leeren…',
     'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)…',
     'palette.action.fixTagsLibraryForce': 'Tags korrigieren (Bibliothek, ohne Vergleich)…',
+    'palette.action.volumeUp': 'Lauter',
+    'palette.action.volumeDown': 'Leiser',
     'label.unknownArtist': 'Unbekannter Interpret',
     'label.noAlbum': 'Ohne Album',
     'label.tracksShort': 'Tit.',
@@ -1454,6 +1530,33 @@ const I18N = {
     'downloads.queue.resume': 'Fortsetzen',
   },
   fr: {
+    'nav.devices': "Appareils",
+    'lan.thisDevice': "Cet appareil",
+    'lan.namePh': "Nom de l'appareil",
+    'lan.keyPh': "Clé réseau",
+    'lan.generate': "Générer",
+    'lan.enable': "Activer le partage",
+    'lan.disable': "Désactiver le partage",
+    'lan.needKey': "Définissez d'abord une clé réseau — la même sur tous vos appareils.",
+    'lan.hint': "Utilisez la même clé réseau sur chacun de vos appareils. Sur un réseau local ils se trouvent tout seuls ; via Tailscale, ajoutez l'adresse à la main.",
+    'lan.on': "Partage actif",
+    'lan.off': "Partage désactivé",
+    'lan.starting': "Démarrage…",
+    'lan.error': "Erreur",
+    'lan.peers': "Autres appareils",
+    'lan.noPeers': "Aucun appareil trouvé pour le moment.",
+    'lan.manual': "ajouté à la main",
+    'lan.browse': "Parcourir",
+    'lan.takeOver': "Reprendre",
+    'lan.push': 'Envoyer ici',
+    'lan.remove': "Retirer",
+    'lan.add': "Ajouter",
+    'lan.addPh': "Adresse, ex. 100.90.1.2 ou 192.168.1.5:8422",
+    'lan.loading': "Chargement…",
+    'lan.playingNow': "En lecture",
+    'lan.nothingPlaying': "Cet appareil ne lit rien.",
+    'lan.errKey': "Clé réseau incorrecte",
+    'lan.errReach': "Appareil injoignable :",
     'nav.library': 'Bibliothèque',
     'update.available': 'Mise à jour disponible',
     'update.download': 'Télécharger',
@@ -1612,6 +1715,8 @@ const I18N = {
     'issue.nocover.desc': 'Pistes sans image d’album intégrée.',
     'issue.tags.title': 'Tags incomplets',
     'issue.tags.desc': 'Champs artiste, album ou année vides.',
+    'issue.notrackno.title': 'Numéro de piste manquant',
+    'issue.notrackno.desc': "Pistes sans numéro de piste, ce qui perturbe l'ordre de l'album.",
     'issue.dupes.title': 'Doublons possibles',
     'issue.dupes.desc': 'Même artiste et titre sur des fichiers différents.',
     'section.discord': 'Discord Rich Presence',
@@ -1841,6 +1946,8 @@ const I18N = {
     'setting.crossfadeDesc': "Les pistes se fondent l'une dans l'autre : la piste en cours s'estompe pendant que la suivante monte. S'applique en fin de piste comme lors d'un changement manuel.",
     'setting.showDownloads': "Afficher l'onglet « Téléchargements »",
     'setting.showDownloadsDesc': 'Ajoute une section à la barre latérale pour télécharger des pistes par URL.',
+    'setting.showDevices': 'Afficher l’onglet « Appareils »',
+    'setting.showDevicesDesc': 'Permet à cette application d’être trouvée et contrôlée par vos autres appareils sur le même réseau local ou Tailscale. Ouvre un port réseau local ; désactivé par défaut.',
     'setting.showParserBrowser': "Afficher la fenêtre du navigateur pendant l'analyse",
     'setting.showParserBrowserDesc': "Utile pour se connecter à Spotify au premier lancement, résoudre un captcha ou voir où l'analyseur s'est bloqué. Désactivez pour exécuter le navigateur silencieusement en arrière-plan.",
     'setting.ytLogin': 'Se connecter à YouTube',
@@ -1982,6 +2089,8 @@ const I18N = {
     'palette.action.clearLibrary': 'Vider la bibliothèque…',
     'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)…',
     'palette.action.fixTagsLibraryForce': 'Corriger les tags (Bibliothèque, sans comparer)…',
+    'palette.action.volumeUp': 'Monter le volume',
+    'palette.action.volumeDown': 'Baisser le volume',
     'label.unknownArtist': 'Artiste inconnu',
     'label.noAlbum': 'Sans album',
     'label.tracksShort': 'p.',
@@ -2009,6 +2118,33 @@ const I18N = {
     'downloads.queue.resume': 'Reprendre',
   },
   uk: {
+    'nav.devices': "Пристрої",
+    'lan.thisDevice': "Цей пристрій",
+    'lan.namePh': "Назва пристрою",
+    'lan.keyPh': "Мережевий ключ",
+    'lan.generate': "Згенерувати",
+    'lan.enable': "Увімкнути доступ",
+    'lan.disable': "Вимкнути доступ",
+    'lan.needKey': "Спочатку задайте мережевий ключ — він має бути однаковий на всіх ваших пристроях.",
+    'lan.hint': "Використовуйте однаковий мережевий ключ на всіх своїх пристроях. У локальній мережі вони знаходять одне одного самі; через Tailscale додайте адресу вручну.",
+    'lan.on': "Доступ увімкнено",
+    'lan.off': "Доступ вимкнено",
+    'lan.starting': "Запуск…",
+    'lan.error': "Помилка",
+    'lan.peers': "Інші пристрої",
+    'lan.noPeers': "Пристроїв поки не знайдено.",
+    'lan.manual': "додано вручну",
+    'lan.browse': "Переглянути",
+    'lan.takeOver': "Перехопити",
+    'lan.push': 'Надіслати сюди',
+    'lan.remove': "Прибрати",
+    'lan.add': "Додати",
+    'lan.addPh': "Адреса, напр. 100.90.1.2 або 192.168.1.5:8422",
+    'lan.loading': "Завантаження…",
+    'lan.playingNow': "Зараз грає",
+    'lan.nothingPlaying': "Цей пристрій нічого не відтворює.",
+    'lan.errKey': "Невірний мережевий ключ",
+    'lan.errReach': "Не вдається зʼєднатися з пристроєм:",
     'nav.library': 'Бібліотека',
     'update.available': 'Доступне оновлення',
     'update.download': 'Завантажити',
@@ -2167,6 +2303,8 @@ const I18N = {
     'issue.nocover.desc': 'Треки без вбудованого зображення альбому.',
     'issue.tags.title': 'Неповні теги',
     'issue.tags.desc': 'Порожні поля виконавця, альбому або року.',
+    'issue.notrackno.title': 'Немає номера треку',
+    'issue.notrackno.desc': 'Треки без тегу номера треку — через це порядок в альбомі збивається.',
     'issue.dupes.title': 'Можливі дублікати',
     'issue.dupes.desc': 'Збігаються виконавець і назва за різних файлів.',
     'section.discord': 'Discord Rich Presence',
@@ -2396,6 +2534,8 @@ const I18N = {
     'setting.crossfadeDesc': 'Треки перетікають один в одного: кінець поточного стихає, поки наступний наростає. Діє і в кінці треку, і під час ручного перемикання.',
     'setting.showDownloads': 'Показати вкладку «Завантаження»',
     'setting.showDownloadsDesc': 'Відкриє в боковому меню розділ для завантаження треків за посиланням.',
+    'setting.showDevices': 'Показати вкладку «Пристрої»',
+    'setting.showDevicesDesc': 'Дозволяє іншим вашим пристроям у тій самій локальній мережі чи Tailscale знаходити цей застосунок і керувати ним. Відкриває локальний мережевий порт; вимкнено за замовчуванням.',
     'setting.showParserBrowser': 'Показувати вікно браузера під час парсингу',
     'setting.showParserBrowserDesc': 'Потрібно, щоб увійти в Spotify при першому запуску, пройти капчу або побачити, на чому парсер спіткнувся. Якщо вимкнути — браузер запуститься у фоні і вікно не з\'явиться.',
     'setting.ytLogin': 'Увійти в YouTube',
@@ -2836,8 +2976,8 @@ async function ensureCoverFor(track, quiet = false) {
         track.cover = md.cover;
         coverCache[track.path] = md.cover;
         touched = true;
-        if (currentTrackIndex >= 0 && library[currentTrackIndex] && library[currentTrackIndex].path === track.path) {
-          updateNowPlayingUI(library[currentTrackIndex]);
+        if (currentTrack && currentTrack.path === track.path) {
+          updateNowPlayingUI(currentTrack);
         }
       }
       if (touched && !quiet) scheduleCoverRefresh();
@@ -2914,6 +3054,7 @@ function setView(view) {
   else if (view === 'album-detail') renderAlbumDetail(activeAlbumKey);
   else if (view === 'report') renderReport();
   else if (view === 'health') renderHealth();
+  else if (view === 'devices') { renderDevices(); lanRefresh(); }
   // Fetch the chart on first visit; afterwards the session cache answers.
   else if (view === 'trending') { renderTrending(); loadTrending(false); }
 }
@@ -5295,7 +5436,8 @@ function normDupKey(t) {
 // Compute the five issue buckets from the current library + spectral cache.
 function computeHealthIssues() {
   const unknownArtist = tr('label.unknownArtist');
-  const transcode = [], lowbitrate = [], nocover = [], tags = [], dupes = [];
+  const transcode = [], lowbitrate = [], nocover = [], tags = [], dupes = [], notrackno = [];
+  const notracknoAlbums = new Set();
   const dupMap = new Map();
   for (const t of library) {
     const q = qualityFor(t);
@@ -5307,6 +5449,12 @@ function computeHealthIssues() {
     const artistBad = !t.artist || t.artist === 'Unknown Artist' || t.artist === unknownArtist;
     const albumBad = !t.album || t.album === 'Unknown Album';
     if (artistBad || albumBad || !t.year) tags.push(t.path);
+    // A track number only means something in the context of an album — a
+    // single with no album tag has nothing to be out of order relative to.
+    if (!t.trackNo && t.album) {
+      notrackno.push(t.path);
+      notracknoAlbums.add(t.album);
+    }
     const key = normDupKey(t);
     if (!dupMap.has(key)) dupMap.set(key, []);
     dupMap.get(key).push(t.path);
@@ -5319,6 +5467,7 @@ function computeHealthIssues() {
     { id: 'lowbitrate', tone: 'warn', icon: 'i-activity', paths: lowbitrate },
     { id: 'nocover', tone: 'warn', icon: 'i-image', paths: nocover },
     { id: 'tags', tone: 'warn', icon: 'i-edit', paths: tags },
+    { id: 'notrackno', tone: 'warn', icon: 'i-list', paths: notrackno, albums: [...notracknoAlbums].sort() },
     { id: 'dupes', tone: 'neutral', icon: 'i-copy', paths: dupes },
   ];
 }
@@ -5457,10 +5606,15 @@ function renderHealth() {
 
   const issuesHtml = issues.map(iss => {
     const count = iss.paths.length;
-    const fixable = iss.id === 'tags' || iss.id === 'nocover';
+    const fixable = iss.id === 'tags' || iss.id === 'nocover' || iss.id === 'notrackno';
     const btn = fixable
       ? `<svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg> ${escapeHtml(tr('health.fix'))}`
       : escapeHtml(tr('health.show'));
+    // Naming the affected albums is more actionable here than a static
+    // description — this issue only exists in the context of an album.
+    const desc = (iss.id === 'notrackno' && iss.albums && iss.albums.length)
+      ? iss.albums.slice(0, 4).join(', ') + (iss.albums.length > 4 ? ` +${iss.albums.length - 4}` : '')
+      : tr('issue.' + iss.id + '.desc');
     return `
       <div class="health-issue tone-${iss.tone}" data-issue="${iss.id}" ${count === 0 ? 'style="opacity:0.5"' : ''}>
         <div class="health-issue-icon"><svg class="i" width="15" height="15"><use href="#${iss.icon}"/></svg></div>
@@ -5469,7 +5623,7 @@ function renderHealth() {
             <span class="health-issue-title">${escapeHtml(tr('issue.' + iss.id + '.title'))}</span>
             <span class="health-issue-count">${count}</span>
           </div>
-          <div class="health-issue-desc">${escapeHtml(tr('issue.' + iss.id + '.desc'))}</div>
+          <div class="health-issue-desc">${escapeHtml(desc)}</div>
         </div>
         <button class="health-issue-btn" data-issue-action="${iss.id}" ${count === 0 ? 'disabled style="opacity:0.4;cursor:default"' : ''}>${btn}</button>
       </div>`;
@@ -5508,7 +5662,7 @@ function renderHealth() {
       const id = btn.dataset.issueAction;
       const iss = issues.find(x => x.id === id);
       if (!iss || iss.paths.length === 0) return;
-      const fixable = id === 'tags' || id === 'nocover';
+      const fixable = id === 'tags' || id === 'nocover' || id === 'notrackno';
       applyHealthFilter(iss.paths, tr('issue.' + id + '.title'));
       if (fixable && iss.paths[0]) openMetadataEditor(iss.paths[0]);
     });
@@ -5606,9 +5760,8 @@ function renderTrackRow(track, displayIndex, queue) {
   // lazily as rows scroll into view.
   if (!track.cover || track.quality === undefined) ensureCoverFor(track);
   const realIndex = trackIndexByPath(track.path);
-  const isPlayingRow = currentTrackIndex >= 0
-    && library[currentTrackIndex]
-    && library[currentTrackIndex].path === track.path;
+  const isPlayingRow = !!currentTrack
+    && currentTrack.path === track.path;
   const selectable = librarySelectMode && currentView === 'library';
   const isSelected = selectable && selectedPaths.has(track.path);
   const tr = document.createElement('div');
@@ -6430,18 +6583,25 @@ function startCrossfadeTail() {
 }
 
 // ── Playback ──
+// A remote track's `path` is the peer's signed stream URL, so it plays through
+// exactly the same code as a local file — only the src prefix differs.
+function isRemotePath(p) { return /^https?:\/\//.test(String(p || '')); }
+function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
+
+// Resolve against the queue before the library: a queue of peer tracks has no
+// entries in `library`, and next/prev/shuffle all route through here.
 function playTrackByPath(path, queue) {
-  const realIndex = trackIndexByPath(path);
-  if (realIndex < 0) return;
-  currentTrackIndex = realIndex;
-  currentQueue = queue && queue.length > 0 ? queue : library;
-  const track = library[realIndex];
-  if (!track.cover) ensureCoverFor(track);
+  const q = queue && queue.length > 0 ? queue : library;
+  const track = q.find(t => t.path === path) || trackByPath(path);
+  if (!track) return;
+  currentTrack = track;
+  currentQueue = q;
+  if (!track.cover && !isRemotePath(track.path)) ensureCoverFor(track);
   const fade = !!settings.crossfade && !audio.paused && !!audio.src;
   if (fade) startCrossfadeTail();
   if (crossfadeRampId) { crossfadeRampId(); crossfadeRampId = null; }
   crossfadeArmed = false;
-  audio.src = 'file://' + track.path;
+  audio.src = srcFor(track);
   if (fade) {
     audio.volume = 0;
     crossfadeRampId = rampVolume(audio, targetVolume, crossfadeMs(), () => { crossfadeRampId = null; });
@@ -6450,10 +6610,12 @@ function playTrackByPath(path, queue) {
   }
   audio.play().catch(e => console.warn('play error:', e));
   isPlaying = true;
-  // recent
-  recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
-  saveRecents();
-  renderRecents();
+  // recent — a peer's URL is not something a later session could reopen.
+  if (!isRemotePath(path)) {
+    recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
+    saveRecents();
+    renderRecents();
+  }
   updateNowPlayingUI(track);
   refreshPlayingHighlight();
 }
@@ -6470,7 +6632,7 @@ function saveSession(force) {
   if (!force && now - lastSessionSave < 5000) return;
   lastSessionSave = now;
   try {
-    const track = library[currentTrackIndex];
+    const track = currentTrack;
     localStorage.setItem(LS.session, JSON.stringify({
       path: track ? track.path : '',
       position: Number(audio.currentTime) || 0,
@@ -6501,9 +6663,9 @@ function loadLastTrack() {
   if (!lastPath) return;
   const realIndex = trackIndexByPath(lastPath);
   if (realIndex < 0) return;
-  currentTrackIndex = realIndex;
-  currentQueue = library;
   const track = library[realIndex];
+  currentTrack = track;
+  currentQueue = library;
   if (!track.cover) ensureCoverFor(track);
   audio.src = 'file://' + track.path;
   // Deliberately paused: restoring where you were is helpful, starting music on
@@ -6540,8 +6702,7 @@ function refreshPlayingHighlight() {
 
 function refreshPlainListHighlight(container) {
   if (!container) return;
-  const playingPath = currentTrackIndex >= 0 && library[currentTrackIndex]
-    ? library[currentTrackIndex].path : null;
+  const playingPath = currentTrack ? currentTrack.path : null;
   container.querySelectorAll('.trow').forEach(row => {
     const isPlayingRow = row.dataset.path === playingPath;
     const wasPlaying = row.classList.contains('playing');
@@ -6766,8 +6927,8 @@ if ('mediaSession' in navigator) {
 }
 
 function updateFavoriteUI() {
-  if (currentTrackIndex < 0) return;
-  const t = library[currentTrackIndex];
+  if (!currentTrack) return;
+  const t = currentTrack;
   const fav = favorites.includes(t.path);
   const heart = $('btn-favorite');
   heart.classList.toggle('active', fav);
@@ -6784,7 +6945,7 @@ function updateFavoriteUI() {
 // its menu labels and tooltip. Safe to call before electronAPI is wired.
 function syncTray() {
   if (!window.electronAPI || !window.electronAPI.updateTrayState) return;
-  const t = currentTrackIndex >= 0 ? library[currentTrackIndex] : null;
+  const t = currentTrack;
   window.electronAPI.updateTrayState({
     hasTrack: !!t,
     isPlaying: !!isPlaying,
@@ -6801,7 +6962,7 @@ if (window.electronAPI && window.electronAPI.onTrayCommand) {
       case 'next':           nextTrack(); break;
       case 'prev':           prevTrack(); break;
       case 'toggleFavorite': {
-        if (currentTrackIndex >= 0) toggleFavorite(library[currentTrackIndex].path);
+        if (currentTrack) toggleFavorite(currentTrack.path);
         break;
       }
     }
@@ -6809,7 +6970,7 @@ if (window.electronAPI && window.electronAPI.onTrayCommand) {
 }
 
 function togglePlay() {
-  if (currentTrackIndex < 0 && library.length > 0) {
+  if (!currentTrack && library.length > 0) {
     playTrackByPath(library[0].path, library);
     return;
   }
@@ -6821,7 +6982,7 @@ function togglePlay() {
 function nextTrack() {
   if (currentQueue.length === 0) return;
   trackChangeDirection = 1;
-  const curPath = currentTrackIndex >= 0 ? library[currentTrackIndex].path : null;
+  const curPath = currentTrack ? currentTrack.path : null;
   const inQueueIdx = currentQueue.findIndex(t => t.path === curPath);
   if (isShuffle && currentQueue.length > 1) {
     let next;
@@ -6841,7 +7002,7 @@ function nextTrack() {
 function prevTrack() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   trackChangeDirection = -1;
-  const curPath = currentTrackIndex >= 0 ? library[currentTrackIndex].path : null;
+  const curPath = currentTrack ? currentTrack.path : null;
   const inQueueIdx = currentQueue.findIndex(t => t.path === curPath);
   let prevIdx = inQueueIdx - 1;
   if (prevIdx < 0) prevIdx = currentQueue.length - 1;
@@ -6957,7 +7118,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
     const m = res.match;
     if (!m) { noMatch++; continue; }
     const newTags = {};
-    for (const field of ['title', 'artist', 'album', 'trackNo', 'discNo']) {
+    for (const field of ['title', 'artist', 'album', 'trackNo', 'discNo', 'year']) {
       if (!m[field]) continue;
       if (compare && m[field] === t[field]) continue;
       newTags[field] = m[field];
@@ -7007,8 +7168,8 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
 
 // ── Mini-player navigation ──
 function gotoCurrentTrackInLibrary() {
-  if (currentTrackIndex < 0) return;
-  const track = library[currentTrackIndex];
+  if (!currentTrack) return;
+  const track = currentTrack;
   $('library-search').value = '';
   activeFilter = 'all';
   document.querySelectorAll('.filter-chip').forEach(c => {
@@ -7026,8 +7187,8 @@ function gotoCurrentTrackInLibrary() {
 }
 
 function gotoCurrentTrackArtist() {
-  if (currentTrackIndex < 0) return;
-  const track = library[currentTrackIndex];
+  if (!currentTrack) return;
+  const track = currentTrack;
   const artists = splitArtists(track.artist);
   if (!artists.length) return;
   activeArtistName = artists[0];
@@ -7039,6 +7200,7 @@ $('track-artist').addEventListener('click', gotoCurrentTrackArtist);
 
 // ── Favorites ──
 function toggleFavorite(path) {
+  if (isRemotePath(path)) return;   // a peer's track isn't ours to file away
   if (favorites.includes(path)) favorites = favorites.filter(p => p !== path);
   else favorites.push(path);
   saveLibrary();
@@ -7049,12 +7211,12 @@ function toggleFavorite(path) {
   renderCounts();
 }
 $('btn-favorite').addEventListener('click', () => {
-  if (currentTrackIndex < 0) return;
-  toggleFavorite(library[currentTrackIndex].path);
+  if (!currentTrack) return;
+  toggleFavorite(currentTrack.path);
 });
 $('fs-btn-favorite').addEventListener('click', () => {
-  if (currentTrackIndex < 0) return;
-  toggleFavorite(library[currentTrackIndex].path);
+  if (!currentTrack) return;
+  toggleFavorite(currentTrack.path);
 });
 
 // ── Playback controls ──
@@ -7179,6 +7341,9 @@ const wavePeaksInFlight = new Set();
 async function computeRealPeaks(track) {
   const p = track.path;
   if (!p || wavePeaksCache[p] || wavePeaksInFlight.has(p)) return;
+  // Real peaks need the whole file. For a peer's track that's a second full
+  // download for a decoration — keep the synthetic waveform instead.
+  if (isRemotePath(p)) return;
   if (!window.electronAPI || !window.electronAPI.readAudioFile) return;
   wavePeaksInFlight.add(p);
   try {
@@ -7291,7 +7456,7 @@ function plTick() {
 }
 
 function plStartIfNeeded() {
-  const track = library[currentTrackIndex];
+  const track = currentTrack;
   if (!track) return;
   // Same track resuming after pause → keep the entry, just restart the tick clock.
   if (plEntry && plEntry.p === track.path) { plLastTick = Date.now(); return; }
@@ -7645,6 +7810,12 @@ function wireVolume(trackEl) {
   trackEl.addEventListener('mousedown', e => { dragging = true; setFromX(e.clientX); });
   window.addEventListener('mousemove', e => { if (dragging) setFromX(e.clientX); });
   window.addEventListener('mouseup', () => { dragging = false; });
+  // Wheel-to-adjust while hovered — prevent default so it doesn't also
+  // scroll/zoom whatever scrollable ancestor sits behind the slider.
+  trackEl.addEventListener('wheel', e => {
+    e.preventDefault();
+    setVolume(targetVolume + (e.deltaY < 0 ? 0.05 : -0.05));
+  }, { passive: false });
 }
 wireVolume($('vol-track'));
 wireVolume($('fs-vol-track'));
@@ -7704,7 +7875,7 @@ function cancelCoverAnim() {
 }
 
 function openFullscreen() {
-  if (currentTrackIndex < 0 || fsAnimating || portraitAnimating) return;
+  if (!currentTrack || fsAnimating || portraitAnimating) return;
   const overlay = $('fullscreen-overlay');
   if (overlay.classList.contains('active')) return;
   fsAnimating = true;
@@ -7935,7 +8106,15 @@ function updateFsLyricsActive(cur) {
     el.style.opacity = i === idx ? '' : String(Math.max(0.3, 1 - Math.abs(i - idx) * 0.16));
   });
   const next = list.children[idx];
-  if (next && fsLyricsOpen) next.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  // Scroll `list` directly instead of next.scrollIntoView(): scrollIntoView
+  // walks every scrollable ancestor to center the target, and can nudge the
+  // whole app viewport (not just this panel) even though .fs-lyrics-list is
+  // itself scrollable.
+  if (next && fsLyricsOpen) {
+    const target = list.scrollTop + (next.getBoundingClientRect().top - list.getBoundingClientRect().top)
+      - (list.clientHeight - next.clientHeight) / 2;
+    list.scrollTo({ top: target, behavior: 'smooth' });
+  }
   fsLyricsActiveLine = idx;
 }
 
@@ -7943,7 +8122,7 @@ function openFsLyricsPanel() {
   fsLyricsOpen = true;
   $('fs-lyrics-panel').classList.add('active');
   $('btn-fs-lyrics').classList.add('is-active');
-  if (currentTrackIndex >= 0) loadFsLyrics(library[currentTrackIndex]);
+  if (currentTrack) loadFsLyrics(currentTrack);
 }
 function closeFsLyricsPanel() {
   fsLyricsOpen = false;
@@ -7956,7 +8135,7 @@ $('btn-fs-lyrics').addEventListener('click', toggleFsLyricsPanel);
 // Playbar shortcut: jumps straight to fullscreen + lyrics in one click instead
 // of opening fullscreen first and hunting for the lyrics toggle inside it.
 $('btn-lyrics').addEventListener('click', () => {
-  if (currentTrackIndex < 0) return;
+  if (!currentTrack) return;
   if (!$('fullscreen-overlay').classList.contains('active')) openFullscreen();
   toggleFsLyricsPanel();
 });
@@ -7964,7 +8143,7 @@ $('btn-lyrics').addEventListener('click', () => {
 function updateFullscreenQueue() {
   const list = $('fs-queue-list');
   list.innerHTML = '';
-  const curPath = currentTrackIndex >= 0 ? library[currentTrackIndex].path : null;
+  const curPath = currentTrack ? currentTrack.path : null;
   const idx = currentQueue.findIndex(t => t.path === curPath);
   const upcoming = currentQueue.slice(idx + 1, idx + 1 + 8);
   $('fs-queue-count').textContent = tr('fs.queueAhead', { n: upcoming.length });
@@ -8016,16 +8195,14 @@ async function deleteTrack(path) {
     return;
   }
   library.splice(idx, 1);
-  if (currentTrackIndex === idx) {
+  if (currentTrack && currentTrack.path === path) {
     audio.pause();
     stopCrossfadeTail();
     isPlaying = false;
-    currentTrackIndex = -1;
+    currentTrack = null;
     $('track-title').textContent = tr('np.empty.title');
     $('track-artist').textContent = '—';
     updatePlayButtonUI();
-  } else if (currentTrackIndex > idx) {
-    currentTrackIndex--;
   }
   favorites = favorites.filter(p => p !== path);
   recents = recents.filter(p => p !== path);
@@ -8044,8 +8221,7 @@ async function deleteTracks(paths) {
     else if (!firstError) firstError = (res && res.error) || tr('error.unknown');
   }
   if (deleted.size > 0) {
-    const playingPath = currentTrackIndex >= 0 && library[currentTrackIndex]
-      ? library[currentTrackIndex].path : null;
+    const playingPath = currentTrack ? currentTrack.path : null;
     // Mutate in place: currentQueue may alias the library array.
     for (let i = library.length - 1; i >= 0; i--) {
       if (deleted.has(library[i].path)) library.splice(i, 1);
@@ -8059,12 +8235,10 @@ async function deleteTracks(paths) {
       audio.pause();
       stopCrossfadeTail();
       isPlaying = false;
-      currentTrackIndex = -1;
+      currentTrack = null;
       $('track-title').textContent = tr('np.empty.title');
       $('track-artist').textContent = '—';
       updatePlayButtonUI();
-    } else if (playingPath) {
-      currentTrackIndex = trackIndexByPath(playingPath);
     }
     favorites = favorites.filter(p => !deleted.has(p));
     recents = recents.filter(p => !deleted.has(p));
@@ -8090,7 +8264,7 @@ function clearLibrary() {
   audio.pause();
   stopCrossfadeTail();
   isPlaying = false;
-  currentTrackIndex = -1;
+  currentTrack = null;
   library.length = 0;
   currentQueue = library;
   favorites = [];
@@ -8257,6 +8431,7 @@ $('btn-save-edit-playlist').addEventListener('click', () => {
 
 // ── Add-to-playlist modal ──
 function openAddToPlaylistModal(trackPath) {
+  if (isRemotePath(trackPath)) return;
   pendingAddPath = trackPath;
   const list = $('add-to-playlist-list');
   list.innerHTML = '';
@@ -8282,7 +8457,7 @@ function openAddToPlaylistModal(trackPath) {
 }
 $('btn-cancel-add-pl').addEventListener('click', () => $('add-to-playlist-modal').classList.remove('active'));
 $('fs-btn-add-playlist').addEventListener('click', () => {
-  if (currentTrackIndex >= 0) openAddToPlaylistModal(library[currentTrackIndex].path);
+  if (currentTrack) openAddToPlaylistModal(currentTrack.path);
 });
 
 // ── Context menu ──
@@ -8356,6 +8531,7 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
 
 // ── Metadata editor ──
 async function openMetadataEditor(path) {
+  if (isRemotePath(path)) return;   // tags live on the owning device's disk
   pendingMetadataPath = path;
   let meta = trackByPath(path);
   // Refresh from disk for full tag set
@@ -8428,6 +8604,7 @@ $('btn-identify-editor').addEventListener('click', async () => {
   if (m.album) $('md-album').value = m.album;
   if (m.trackNo) $('md-track-no').value = m.trackNo;
   if (m.discNo) $('md-disc-no').value = m.discNo;
+  if (m.year) $('md-year').value = m.year;
   status.textContent = tr('editor.idFilled');
   status.className = 'editor-foot-status ok';
 });
@@ -8467,7 +8644,7 @@ $('btn-save-editor').addEventListener('click', async () => {
       });
       saveLibrary();
       refreshCurrentViewRows();
-      if (currentTrackIndex === trackIndexByPath(pendingMetadataPath)) updateNowPlayingUI(t);
+      if (currentTrack && currentTrack.path === pendingMetadataPath) updateNowPlayingUI(t);
     }
     setTimeout(() => $('metadata-modal').classList.remove('active'), 600);
   } else {
@@ -8536,6 +8713,8 @@ function renderPaletteResults(query) {
     { label: tr('palette.action.clearLibrary'),    kind: 'clear-library',   icon: '#i-trash' },
     { label: tr('palette.action.fixTagsLibrary'),      kind: 'fix-tags-library',       icon: '#i-search' },
     { label: tr('palette.action.fixTagsLibraryForce'), kind: 'fix-tags-library-force', icon: '#i-search' },
+    { label: tr('palette.action.volumeUp'),   kind: 'volume-up',   icon: '#i-volume' },
+    { label: tr('palette.action.volumeDown'), kind: 'volume-down', icon: '#i-volume-low' },
   ].filter(a => !q || a.label.toLowerCase().includes(q));
   if (actions.length > 0) {
     const lbl = document.createElement('div');
@@ -8594,8 +8773,8 @@ function runPaletteAction(action) {
   }
   else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
   else if (action.kind === 'fix-tags-library-force') runFixTags(library, { compare: false });
-  else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
-  else if (action.kind === 'fix-tags-library-force') runFixTags(library, { compare: false });
+  else if (action.kind === 'volume-up') setVolume(targetVolume + 0.05);
+  else if (action.kind === 'volume-down') setVolume(targetVolume - 0.05);
 }
 $('palette-input').addEventListener('input', e => renderPaletteResults(e.target.value));
 $('palette-input').addEventListener('keydown', e => {
@@ -8646,8 +8825,8 @@ function hkSeek(delta) {
   audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
 }
 function hkFavoriteCurrent() {
-  if (currentTrackIndex < 0 || !library[currentTrackIndex]) return;
-  toggleFavorite(library[currentTrackIndex].path);
+  if (!currentTrack) return;
+  toggleFavorite(currentTrack.path);
 }
 function hkToggleFullscreen() {
   if ($('fullscreen-overlay').classList.contains('active')) closeFullscreen();
@@ -8658,8 +8837,8 @@ function hkTogglePalette() {
   else openPalette();
 }
 function hkEditCurrentTags() {
-  if (currentTrackIndex < 0 || !library[currentTrackIndex]) return;
-  openMetadataEditor(library[currentTrackIndex].path);
+  if (!currentTrack) return;
+  openMetadataEditor(currentTrack.path);
 }
 
 // Turn a keydown into a normalised combo string, or '' for a bare modifier
@@ -8976,6 +9155,7 @@ const TOGGLE_KEY_MAP = {
   'crossfade': 'crossfade',
   'downloads': 'downloads',
   'trending': 'trending',
+  'lan-sharing': 'lanSharing',
   'show-parser-browser': 'showParserBrowser',
 };
 
@@ -9392,6 +9572,7 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'reports') applyReportsVisibility();
     if (key === 'editor') applyEditorVisibility();
     if (key === 'crossfade') renderCrossfadeLen();
+    if (key === 'lanSharing') applyLanSharingVisibility();
   });
 });
 
@@ -9541,7 +9722,7 @@ document.querySelectorAll('#lang-select .select-opt').forEach(o => {
     if (currentView === 'trending') renderTrending(); // refresh ComboBox label + count
     renderCounts();
     renderRecents();
-    if (currentTrackIndex >= 0) updateNowPlayingUI(library[currentTrackIndex]);
+    if (currentTrack) updateNowPlayingUI(currentTrack);
     else $('track-title').textContent = tr('np.empty.title');
     updateFullscreenQueue();
     if ($('palette-overlay').classList.contains('active')) {
@@ -9640,7 +9821,7 @@ function dcToggleHtml(key, label, desc) {
 }
 
 function renderDiscordPreview() {
-  const t = currentTrackIndex >= 0 ? library[currentTrackIndex] : null;
+  const t = currentTrack;
   const d = settings.discord;
   const placeholder = !discordConnected;
   const paused = !!t && !isPlaying;
@@ -9799,7 +9980,7 @@ function renderDiscordPreviewOnly() {
 
 function buildDiscordActivity() {
   const d = settings.discord;
-  const t = currentTrackIndex >= 0 ? library[currentTrackIndex] : null;
+  const t = currentTrack;
   if (!t) return null;
   if (!isPlaying && !d.showPaused) return null;
   // Discord requires details/state to be ≥ 2 chars when present.
@@ -9851,7 +10032,7 @@ async function ensureDiscordCover(track) {
   discordCoverCache[key] = url;
   delete discordCoverInflight[key];
   // If this track is still the current one, re-push with the artwork attached.
-  if (url && currentTrackIndex >= 0 && library[currentTrackIndex] && library[currentTrackIndex].path === key) {
+  if (url && currentTrack && currentTrack.path === key) {
     pushDiscordActivity(true);
   }
 }
@@ -9862,7 +10043,7 @@ let discordLastPush = 0;
 const DISCORD_PUSH_MIN_MS = 2000; // Discord rate-limits SET_ACTIVITY (~5 / 20s)
 function pushDiscordActivity(immediate) {
   if (!discordConnected || !window.electronAPI || !window.electronAPI.discordSetActivity) return;
-  const cur = currentTrackIndex >= 0 ? library[currentTrackIndex] : null;
+  const cur = currentTrack;
   if (cur && settings.discord.showCover && !(cur.path in discordCoverCache)) ensureDiscordCover(cur);
   const send = () => {
     discordLastPush = Date.now();
@@ -9973,15 +10154,15 @@ async function restoreCovers() {
   if (library.length === 0) return;
   const priority = new Set();
   recents.slice(0, 4).forEach(p => priority.add(p));
-  if (currentTrackIndex >= 0 && library[currentTrackIndex]) {
-    priority.add(library[currentTrackIndex].path);
+  if (currentTrack) {
+    priority.add(currentTrack.path);
   }
   for (const path of priority) {
     const t = trackByPath(path);
     if (t) await ensureCoverFor(t);
   }
   renderRecents();
-  if (currentTrackIndex >= 0) updateNowPlayingUI(library[currentTrackIndex]);
+  if (currentTrack) updateNowPlayingUI(currentTrack);
 }
 
 // On startup, pull tracks from the app's own downloads folder ("Audex Downloads")
@@ -10210,6 +10391,340 @@ function warmMissingCoversInBackground() {
   };
   step();
 }
+
+// ── LAN / Tailscale sharing ──
+//
+// Main owns the socket; this side owns the library and the player. So we push a
+// snapshot down whenever either changes, and remote commands come back up.
+// Browsing a peer is a plain fetch straight from here — no reason to relay a
+// JSON request through the main process.
+
+let lanStatus = { enabled: false, key: '', name: '', addresses: [], peers: [], running: false, error: '' };
+let lanActivePeer = null;      // deviceId of the peer whose library is open
+let lanPeerTracks = [];        // that peer's library
+let lanPeerState = null;       // that peer's now-playing, polled while the view is open
+let lanPeerBusy = false;
+let lanPollTimer = null;
+
+function lanPeer(id) { return lanStatus.peers.find(p => p.deviceId === id) || null; }
+
+async function lanApi(peer, route, body) {
+  const res = await fetch(peer.base + route, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Authorization': 'Bearer ' + lanStatus.key, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(res.status === 401 ? tr('lan.errKey') : `HTTP ${res.status}`);
+  return res.json();
+}
+
+async function lanRefresh() {
+  lanStatus = await window.electronAPI.lanStatus();
+  $('count-devices').textContent = lanStatus.peers.length;
+  if (currentView === 'devices') renderDevices();
+}
+
+// ── publishing our own library + state ──
+
+// Tracks are sent only when the library changed; state goes out on every
+// playback event and once a second while playing, so a peer's "now playing"
+// and a takeover's seek position stay within a second of the truth.
+function lanPublish() {
+  if (!lanStatus.enabled) return;
+  const curPath = currentTrack ? currentTrack.path : '';
+  const idx = currentQueue.findIndex(t => t.path === curPath);
+  const snap = {
+    state: {
+      path: curPath,
+      title: currentTrack ? currentTrack.title : '',
+      artist: currentTrack ? currentTrack.artist : '',
+      album: currentTrack ? currentTrack.album : '',
+      coverUrl: currentTrack && isRemotePath(currentTrack.path) ? currentTrack.cover : null,
+      playing: isPlaying && !audio.paused,
+      position: Number(audio.currentTime) || 0,
+      duration: Number(audio.duration) || (currentTrack ? currentTrack.duration : 0) || 0,
+      volume: targetVolume,
+      shuffle: isShuffle,
+      repeat: repeatMode,
+      queue: idx >= 0 ? currentQueue.slice(idx + 1, idx + 51).map(t => t.path) : [],
+    },
+  };
+  if (lanTracksDirty) {
+    lanTracksDirty = false;
+    snap.tracks = library.map(t => ({
+      path: t.path, title: t.title, artist: t.artist, album: t.album, albumArtist: t.albumArtist,
+      year: t.year, genre: t.genre, trackNo: t.trackNo, discNo: t.discNo,
+      duration: t.duration, quality: t.quality, hasCover: t.hasCover,
+    }));
+  }
+  window.electronAPI.lanPublish(snap);
+}
+
+function lanStartPublishing() {
+  if (lanPollTimer) return;
+  lanPollTimer = setInterval(() => { if (isPlaying && !audio.paused) lanPublish(); }, 1000);
+  for (const ev of ['play', 'pause', 'seeked', 'loadedmetadata', 'volumechange']) {
+    audio.addEventListener(ev, () => lanPublish());
+  }
+}
+
+// ── remote control of this device ──
+
+function lanAdoptState(state, autoplay) {
+  if (!state || !state.track) return;
+  const asTrack = (t) => ({
+    path: t.url, title: t.title || '', artist: t.artist || '', album: t.album || '',
+    duration: t.duration || 0, cover: t.coverUrl || null, hasCover: !!t.coverUrl, remote: true,
+  });
+  const track = asTrack(state.track);
+  currentTrack = track;
+  currentQueue = [track, ...(state.queue || []).map(asTrack)];
+  isShuffle = !!state.shuffle;
+  repeatMode = [0, 1, 2].includes(state.repeat) ? state.repeat : 0;
+  updateShuffleUI();
+  updateRepeatUI();
+  stopCrossfadeTail();
+  audio.src = track.path;
+  audio.volume = targetVolume;
+  const pos = Number(state.position) || 0;
+  if (pos > 0) {
+    audio.addEventListener('loadedmetadata', () => {
+      try { audio.currentTime = pos; } catch (_) {}
+    }, { once: true });
+  }
+  isPlaying = autoplay !== false && state.playing !== false;
+  if (isPlaying) audio.play().catch(e => console.warn('lan play error:', e));
+  updateNowPlayingUI(track);
+  updatePlayButtonUI();
+  refreshPlayingHighlight();
+}
+
+function applyLanCommand(cmd) {
+  if (!cmd) return;
+  switch (cmd.type) {
+    case 'play': if (audio.paused) togglePlay(); break;
+    case 'pause': if (!audio.paused) togglePlay(); break;
+    case 'next': nextTrack(); break;
+    case 'prev': prevTrack(); break;
+    case 'seek': try { audio.currentTime = Number(cmd.position) || 0; } catch (_) {} break;
+    case 'volume': setVolume(Number(cmd.volume)); break;
+    case 'playState': lanAdoptState(cmd.state, true); break;
+  }
+  lanPublish();
+}
+
+// ── taking a session over ──
+//
+// Spotify Connect's transfer, minus the cloud: ask the peer for its session, let
+// it pause itself, and pick the track up here at the same position.
+async function lanTakeOver(peer) {
+  try {
+    const res = await lanApi(peer, '/api/command', { type: 'transfer' });
+    if (!res.state || !res.state.track) { alert(tr('lan.nothingPlaying')); return; }
+    lanAdoptState(res.state, true);
+  } catch (e) {
+    alert(tr('lan.errReach') + ' ' + (e.message || e));
+  }
+}
+
+// Push is the takeover in reverse: hand a peer our session and let it start
+// playing. The track URL has to be one the *peer* can reach, and which of our
+// addresses that is depends on which network they're on — match octets against
+// their host (both Tailscale's 100.x, or the same LAN subnet) rather than
+// guessing. Getting our own signed state means asking our own server, the only
+// place that builds those URLs.
+function lanMyAddressFor(peer) {
+  const prefix = String(peer.host || '').split('.').slice(0, 2).join('.');
+  return lanStatus.addresses.find(a => a.split('.').slice(0, 2).join('.') === prefix)
+    || lanStatus.addresses[0];
+}
+async function lanPushTo(peer) {
+  if (!currentTrack) return;
+  const myHost = lanMyAddressFor(peer);
+  if (!myHost) { alert(tr('lan.errReach') + ' (no reachable local address)'); return; }
+  try {
+    const mine = await lanApi({ base: `http://${myHost}:${lanStatus.port}` }, '/api/state');
+    if (!mine.track) { alert(tr('lan.nothingPlaying')); return; }
+    await lanApi(peer, '/api/command', { type: 'playState', state: mine });
+  } catch (e) {
+    alert(tr('lan.errReach') + ' ' + (e.message || e));
+  }
+}
+
+// ── Devices view ──
+
+async function lanOpenPeer(id) {
+  const peer = lanPeer(id);
+  if (!peer) return;
+  lanActivePeer = id;
+  lanPeerTracks = [];
+  lanPeerState = null;
+  lanPeerBusy = true;
+  renderDevices();
+  try {
+    const lib = await lanApi(peer, '/api/library');
+    lanPeerTracks = lib.tracks || [];
+    lanPeerState = await lanApi(peer, '/api/state');
+  } catch (e) {
+    lanStatus.error = (e.message || String(e));
+  }
+  lanPeerBusy = false;
+  renderDevices();
+}
+
+// A peer's track carries its own signed stream URL, so playing it is the same
+// call as playing a local one (see playTrackByPath / srcFor).
+function lanPlayPeerTrack(id) {
+  const queue = lanPeerTracks.map(t => ({
+    path: t.url, title: t.title, artist: t.artist, album: t.album,
+    duration: t.duration, cover: t.coverUrl || null, hasCover: !!t.coverUrl, remote: true,
+  }));
+  const i = lanPeerTracks.findIndex(t => t.id === id);
+  if (i >= 0) playTrackByPath(queue[i].path, queue);
+}
+
+function renderDevices() {
+  const el = $('devices-content');
+  const s = lanStatus;
+  const addr = s.addresses.map(a => `${a}:${s.port}`).join(', ') || '—';
+  const statusLine = !s.enabled ? tr('lan.off')
+    : s.error ? `${tr('lan.error')}: ${escapeHtml(s.error)}`
+    : s.running ? `${tr('lan.on')} · ${escapeHtml(addr)}`
+    : tr('lan.starting');
+
+  const peers = s.peers.map(p => `
+    <div class="device-row" data-peer="${escapeHtml(p.deviceId)}">
+      <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
+      <div class="device-body">
+        <div class="device-name">${escapeHtml(p.name)}</div>
+        <div class="device-meta">${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}</div>
+      </div>
+      <button class="btn-ghost" data-act="browse">${tr('lan.browse')}</button>
+      <button class="btn-ghost" data-act="push" ${currentTrack ? '' : 'disabled'}>${tr('lan.push')}</button>
+      <button class="btn-ghost" data-act="take">${tr('lan.takeOver')}</button>
+      ${p.manual ? `<button class="btn-ghost" data-act="remove">${tr('lan.remove')}</button>` : ''}
+    </div>`).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
+
+  const peer = lanActivePeer ? lanPeer(lanActivePeer) : null;
+  const nowPlaying = lanPeerState && lanPeerState.track
+    ? `<div class="device-meta">${tr('lan.playingNow')}: ${escapeHtml(lanPeerState.track.title || '')} — ${escapeHtml(lanPeerState.track.artist || '')}</div>`
+    : '';
+  const peerLib = !peer ? '' : `
+    <div class="device-section">
+      <div class="device-title">${escapeHtml(peer.name)} · ${withCount('tracks', lanPeerTracks.length)}</div>
+      ${nowPlaying}
+      ${lanPeerBusy ? `<div class="device-empty">${tr('lan.loading')}</div>` : `
+        <div class="device-tracks">${lanPeerTracks.map(t => `
+          <div class="device-track" data-track="${escapeHtml(t.id)}">
+            <div class="device-swatch" ${t.coverUrl ? `style="background-image:url('${escapeHtml(t.coverUrl)}')"` : ''}></div>
+            <div class="device-body">
+              <div class="device-name">${escapeHtml(t.title || '')}</div>
+              <div class="device-meta">${escapeHtml(t.artist || '')}${t.album ? ' · ' + escapeHtml(t.album) : ''}</div>
+            </div>
+            <span class="device-dur">${formatTime(t.duration)}</span>
+          </div>`).join('')}</div>`}
+    </div>`;
+
+  el.innerHTML = `
+    <div class="device-section">
+      <div class="device-title">${tr('lan.thisDevice')}</div>
+      <div class="device-form">
+        <input id="lan-name" type="text" value="${escapeHtml(s.name || '')}" placeholder="${tr('lan.namePh')}">
+        <input id="lan-key" type="password" value="${escapeHtml(s.key || '')}" placeholder="${tr('lan.keyPh')}">
+        <button class="btn-ghost" id="lan-gen">${tr('lan.generate')}</button>
+        <button class="btn-primary" id="lan-toggle">${s.enabled ? tr('lan.disable') : tr('lan.enable')}</button>
+      </div>
+      <div class="device-meta">${statusLine}</div>
+      <div class="device-hint">${tr('lan.hint')}</div>
+    </div>
+    <div class="device-section">
+      <div class="device-title">${tr('lan.peers')}</div>
+      ${peers}
+      <div class="device-form">
+        <input id="lan-addr" type="text" placeholder="${tr('lan.addPh')}">
+        <button class="btn-ghost" id="lan-add">${tr('lan.add')}</button>
+      </div>
+    </div>
+    ${peerLib}`;
+
+  const save = () => window.electronAPI.lanSetConfig({
+    name: $('lan-name').value.trim(),
+    key: $('lan-key').value.trim(),
+  }).then(st => { lanStatus = st; lanTracksDirty = true; lanPublish(); renderDevices(); });
+
+  $('lan-name').addEventListener('change', save);
+  $('lan-key').addEventListener('change', save);
+  $('lan-gen').addEventListener('click', () => {
+    $('lan-key').value = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    save();
+  });
+  $('lan-toggle').addEventListener('click', async () => {
+    const key = $('lan-key').value.trim();
+    if (!key && !s.enabled) { alert(tr('lan.needKey')); return; }
+    lanStatus = await window.electronAPI.lanSetConfig({
+      enabled: !s.enabled, key, name: $('lan-name').value.trim(),
+    });
+    lanTracksDirty = true;
+    lanPublish();
+    renderDevices();
+  });
+  $('lan-add').addEventListener('click', async () => {
+    const addr = $('lan-addr').value.trim();
+    if (!addr) return;
+    await window.electronAPI.lanAddPeer(addr);
+    $('lan-addr').value = '';
+    lanRefresh();
+  });
+
+  el.querySelectorAll('.device-row').forEach(row => {
+    row.addEventListener('click', async (e) => {
+      const act = e.target.closest('button') && e.target.closest('button').dataset.act;
+      const id = row.dataset.peer;
+      if (act === 'take') return lanTakeOver(lanPeer(id));
+      if (act === 'push') return lanPushTo(lanPeer(id));
+      if (act === 'remove') { await window.electronAPI.lanRemovePeer(id); return lanRefresh(); }
+      lanOpenPeer(id);
+    });
+  });
+  el.querySelectorAll('.device-track').forEach(row => {
+    row.addEventListener('dblclick', () => lanPlayPeerTrack(row.dataset.track));
+    row.addEventListener('click', () => lanPlayPeerTrack(row.dataset.track));
+  });
+}
+
+// Master switch, separate from the Devices view's own enable-toggle: this one
+// gates whether the feature is wired up at all. Off (the default) means no IPC
+// listeners, no publishing, and any server left running from a previous
+// version — before this flag existed — gets shut down.
+let lanWired = false;
+function lanEnableFeature() {
+  if (!window.electronAPI || !window.electronAPI.lanStatus) return;
+  if (!lanWired) {
+    lanWired = true;
+    window.electronAPI.onLanPeers(() => lanRefresh());
+    window.electronAPI.onLanCommand(applyLanCommand);
+    lanStartPublishing();
+  }
+  lanRefresh().then(() => { lanTracksDirty = true; lanPublish(); });
+}
+function lanDisableFeature() {
+  if (lanPollTimer) { clearInterval(lanPollTimer); lanPollTimer = null; }
+  if (window.electronAPI && window.electronAPI.lanStatus) window.electronAPI.lanSetConfig({ enabled: false });
+  lanStatus = Object.assign({}, lanStatus, { enabled: false, running: false, peers: [] });
+  const count = $('count-devices');
+  if (count) count.textContent = '0';
+}
+function applyLanSharingVisibility() {
+  const nav = $('nav-devices');
+  if (nav) nav.hidden = !settings.lanSharing;
+  if (settings.lanSharing) lanEnableFeature();
+  else {
+    if (currentView === 'devices') setView('library');
+    lanDisableFeature();
+  }
+}
+applyLanSharingVisibility();
 
 applyLanguage(settings.language);
 splashStatus('splash.loading');

@@ -76,6 +76,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   trendingFetch: (region) => ipcRenderer.invoke('trending:fetch', { region }),
   pickBackground: () => ipcRenderer.invoke('appearance:pickBackground'),
   clearBackground: () => ipcRenderer.invoke('appearance:clearBackground'),
+  lanStatus: () => ipcRenderer.invoke('lan:status'),
+  lanSetConfig: (next) => ipcRenderer.invoke('lan:setConfig', next),
+  lanPublish: (snapshot) => ipcRenderer.invoke('lan:publish', snapshot),
+  lanAddPeer: (addr) => ipcRenderer.invoke('lan:addPeer', addr),
+  lanRemovePeer: (id) => ipcRenderer.invoke('lan:removePeer', id),
+  onLanPeers: (cb) => {
+    const listener = (_e, data) => cb(data);
+    ipcRenderer.on('lan:peers', listener);
+    return () => ipcRenderer.removeListener('lan:peers', listener);
+  },
+  onLanCommand: (cb) => {
+    const listener = (_e, data) => cb(data);
+    ipcRenderer.on('lan:command', listener);
+    return () => ipcRenderer.removeListener('lan:command', listener);
+  },
   registerGlobalHotkeys: (list) => ipcRenderer.invoke('hotkeys:registerGlobal', list),
   onGlobalHotkey: (cb) => {
     const listener = (_e, data) => cb(data);

@@ -4829,3 +4829,103 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 }
 .ed-footer .dl-status { margin: 0; flex: 1; }
 .ed-footer .btn-primary { margin-left: auto; }
+
+/* ── Devices (LAN / Tailscale sharing) ── */
+#devices-content {
+  padding: 20px 28px 40px;
+  overflow-y: auto;
+}
+.device-section {
+  margin-bottom: 26px;
+}
+.device-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.device-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.device-form input {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--panel-alt);
+  color: var(--text-strong);
+  font: inherit;
+  font-size: 12.5px;
+}
+.device-form input:focus {
+  outline: none;
+  border-color: var(--text-dim);
+}
+.device-row,
+.device-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.device-row:hover,
+.device-track:hover {
+  background: var(--hover-bg);
+  color: var(--text-strong);
+}
+.device-body {
+  flex: 1;
+  min-width: 0;
+}
+.device-name {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.device-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 1px;
+}
+.device-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 6px;
+  max-width: 60ch;
+  line-height: 1.5;
+}
+.device-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 8px 10px;
+}
+.device-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--panel-alt);
+}
+.device-dur {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+/* The peer's library can be long — keep it scrolling inside the view. */
+.device-tracks {
+  max-height: 46vh;
+  overflow-y: auto;
+}
