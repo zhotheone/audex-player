@@ -894,6 +894,11 @@ ipcMain.handle('shell:revealInFolder', async (event, filePath) => {
   return false;
 });
 
+ipcMain.handle('shell:openLogsFolder', async () => {
+  const err = await shell.openPath(app.getPath('userData'));
+  return { success: !err, error: err || undefined };
+});
+
 ipcMain.handle('shell:openExternal', async (event, url) => {
   if (typeof url !== 'string') return { success: false, error: 'No url' };
   if (!/^https?:\/\//i.test(url)) return { success: false, error: 'Only http(s) URLs are allowed' };

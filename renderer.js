@@ -577,6 +577,7 @@ const I18N = {
     'btn.signingIn': 'Waiting…',
     'btn.checkUpdate': 'Check now',
     'btn.checking': 'Checking…',
+    'btn.openLogs': 'Open folder',
     'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
     'btn.cancel': 'Cancel',
     'btn.delete': 'Delete',
@@ -771,6 +772,8 @@ const I18N = {
     'setting.version': 'Version',
     'setting.checkUpdate': 'Check for updates',
     'setting.checkUpdateDesc': 'Looks for a newer build on GitHub right now.',
+    'setting.openLogs': 'Logs',
+    'setting.openLogsDesc': 'Opens the folder with error logs, for troubleshooting a failed update.',
     'update.checkFailed': 'Could not check for updates.',
     'update.upToDate': 'You\'re on the latest version ({v}).',
     'badge.wip': 'in development',
@@ -1129,6 +1132,7 @@ const I18N = {
     'btn.signingIn': 'Warten…',
     'btn.checkUpdate': 'Jetzt prüfen',
     'btn.checking': 'Wird geprüft…',
+    'btn.openLogs': 'Ordner öffnen',
     'btn.fixTagsTooltip': 'Tags über AcoustID korrigieren…',
     'btn.cancel': 'Abbrechen',
     'btn.delete': 'Löschen',
@@ -1323,6 +1327,8 @@ const I18N = {
     'setting.version': 'Version',
     'setting.checkUpdate': 'Nach Updates suchen',
     'setting.checkUpdateDesc': 'Sucht jetzt sofort nach einer neueren Version auf GitHub.',
+    'setting.openLogs': 'Protokolle',
+    'setting.openLogsDesc': 'Öffnet den Ordner mit Fehlerprotokollen zur Fehlersuche bei einem fehlgeschlagenen Update.',
     'update.checkFailed': 'Update-Prüfung fehlgeschlagen.',
     'update.upToDate': 'Du hast bereits die neueste Version ({v}).',
     'badge.wip': 'in Entwicklung',
@@ -1681,6 +1687,7 @@ const I18N = {
     'btn.signingIn': 'En attente…',
     'btn.checkUpdate': 'Vérifier maintenant',
     'btn.checking': 'Vérification…',
+    'btn.openLogs': 'Ouvrir le dossier',
     'btn.fixTagsTooltip': 'Corriger les tags via AcoustID…',
     'btn.cancel': 'Annuler',
     'btn.delete': 'Supprimer',
@@ -1875,6 +1882,8 @@ const I18N = {
     'setting.version': 'Version',
     'setting.checkUpdate': 'Vérifier les mises à jour',
     'setting.checkUpdateDesc': "Recherche immédiatement une version plus récente sur GitHub.",
+    'setting.openLogs': 'Journaux',
+    'setting.openLogsDesc': "Ouvre le dossier des journaux d'erreurs, pour diagnostiquer une mise à jour échouée.",
     'update.checkFailed': 'Impossible de vérifier les mises à jour.',
     'update.upToDate': 'Vous avez déjà la dernière version ({v}).',
     'badge.wip': 'en développement',
@@ -2233,6 +2242,7 @@ const I18N = {
     'btn.signingIn': 'Очікування…',
     'btn.checkUpdate': 'Перевірити зараз',
     'btn.checking': 'Перевірка…',
+    'btn.openLogs': 'Відкрити папку',
     'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
     'btn.cancel': 'Скасувати',
     'btn.delete': 'Видалити',
@@ -2427,6 +2437,8 @@ const I18N = {
     'setting.version': 'Версія',
     'setting.checkUpdate': 'Перевірити оновлення',
     'setting.checkUpdateDesc': 'Перевіряє наявність новішої версії на GitHub прямо зараз.',
+    'setting.openLogs': 'Журнали',
+    'setting.openLogsDesc': 'Відкриває папку з журналами помилок для діагностики невдалого оновлення.',
     'update.checkFailed': 'Не вдалося перевірити оновлення.',
     'update.upToDate': 'У вас уже остання версія ({v}).',
     'badge.wip': 'у розробці',
@@ -10070,6 +10082,11 @@ if (checkUpdateBtn && window.electronAPI && typeof window.electronAPI.checkForUp
     if (info.hasUpdate) showUpdateBanner(info);
     else if (statusEl) statusEl.textContent = tr('update.upToDate', { v: info.currentVersion });
   });
+}
+
+const openLogsBtn = $('btn-open-logs');
+if (openLogsBtn && window.electronAPI && typeof window.electronAPI.openLogsFolder === 'function') {
+  openLogsBtn.addEventListener('click', () => window.electronAPI.openLogsFolder());
 }
 
 // Boot
