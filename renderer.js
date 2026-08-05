@@ -3001,7 +3001,9 @@ function scheduleCoverRefresh() {
 // re-render naturally (scroll, track change, or the warmer's final refresh).
 async function ensureCoverFor(track, quiet = false) {
   if (!track || pendingCoverLoad.has(track.path)) return;
-  const needCover = !track.cover;
+  // A track confirmed to have no embedded art (hasCover === false) will never
+  // grow a `cover`, so it's excluded here rather than retried forever below.
+  const needCover = !track.cover && track.hasCover !== false;
   const needQuality = track.quality === undefined || track.hasCover === undefined;
   if (!needCover && !needQuality) return;
   pendingCoverLoad.add(track.path);
@@ -3025,7 +3027,14 @@ async function ensureCoverFor(track, quiet = false) {
       }
       if (touched && !quiet) scheduleCoverRefresh();
     }
-  } catch (e) { /* file moved / unreadable */ }
+  } catch (e) { /* file moved / unreadable */
+  } finally {
+    // A failed/unreadable attempt must not permanently blacklist the path —
+    // this Set is also an in-flight guard, and until now it never cleared,
+    // so one transient parse error (busy IPC, locked file) killed the
+    // thumbnail for the rest of the session with no way to retry.
+    pendingCoverLoad.delete(track.path);
+  }
 }
 
 // Coalesce the many small library writes from lazy quality/cover backfill into
@@ -7690,7 +7699,10 @@ async function ensureReportCovers(r) {
     try {
       const md = await window.electronAPI.parseMetadata(path);
       if (md && md.cover) { coverCache[path] = md.cover; gotAny = true; }
-    } catch (e) { /* file moved / unreadable */ }
+    } catch (e) { /* file moved / unreadable */
+    } finally {
+      pendingCoverLoad.delete(path);
+    }
   }));
   if (gotAny && currentView === 'report') renderReport();
 }
@@ -10615,10 +10627,23 @@ function lanPublish() {
 
 function lanStartPublishing() {
   if (lanPollTimer) return;
-  lanPollTimer = setInterval(() => { if (isPlaying && !audio.paused) lanPublish(); }, 1000);
+  lanPollTimer = setInterval(() => {
+    // While playing this also carries the position tick; while idle it still
+    // has to run so a library/cover change (dirty flag) reaches peers even
+    // though nothing is "happening" to trigger an audio event.
+    if ((isPlaying && !audio.paused) || lanTracksDirty || lanConfigDirty) lanPublish();
+  }, 1000);
   for (const ev of ['play', 'pause', 'seeked', 'loadedmetadata', 'volumechange']) {
     audio.addEventListener(ev, () => lanPublish());
   }
+  // A one-shot library fetch means a request that failed once (peer still
+  // booting its server, a dropped packet) never gets retried, and a peer's
+  // covers that finish backfilling after the initial sync never show up.
+  // Re-pulling every known peer's library periodically covers both.
+  setInterval(() => {
+    if (!lanStatus.enabled) return;
+    for (const p of lanStatus.peers) lanSyncPeerLibrary(p);
+  }, 30000);
 }
 
 // ── remote control of this device ──
@@ -10699,6 +10724,9 @@ async function lanPushTo(peer) {
     const mine = await lanApi({ base: `http://${myHost}:${lanStatus.port}` }, '/api/state');
     if (!mine.track) { alert(tr('lan.nothingPlaying')); return; }
     await lanApi(peer, '/api/command', { type: 'playState', state: mine });
+    // Handing the session off should stop it here too, same as a take-over
+    // pauses the device being taken from.
+    if (!audio.paused) togglePlay();
   } catch (e) {
     alert(tr('lan.errReach') + ' ' + (e.message || e));
   }
