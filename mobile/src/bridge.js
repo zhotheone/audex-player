@@ -358,6 +358,17 @@
         cacheCoversFor(typeof lanPeerLibraries !== 'undefined' ? lanPeerLibraries[peer.deviceId] : null);
       };
     }
+    // Only #mini-cover-wrapper opens fullscreen by default (renderer.js:8184)
+    // — on a phone the whole bar is the "now playing" affordance, not just
+    // the thumbnail. #btn-play/#btn-next keep their own behavior instead of
+    // also launching fullscreen out from under a tap meant to skip a track.
+    const playbar = document.querySelector('.playbar');
+    if (playbar) {
+      playbar.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-play, #btn-next')) return;
+        if (window.openFullscreen) openFullscreen();
+      });
+    }
   });
 
   // The desktop sidebar has 9 destinations; a phone tab bar only has room for

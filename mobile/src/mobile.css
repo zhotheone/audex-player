@@ -12,8 +12,11 @@
    rendering itself is untouched. */
 
 :root {
-  --mobile-nav-h: 58px;
-  --mobile-playbar-h: 60px;
+  /* One variable, not two independently-tuned ones — the nav bar and the
+     mini-player should read as a matched pair, not drift apart the next
+     time either gets tweaked. */
+  --mobile-nav-h: 60px;
+  --mobile-playbar-h: var(--mobile-nav-h);
 }
 
 body { padding-bottom: 0; }
