@@ -144,6 +144,28 @@
   }
   setInterval(wsConnectAll, 4000);
 
+  // ── self-update ──
+  //
+  // Sideloaded outside the Play Store, so there's no store to push updates
+  // through — this fills renderer.js's checkForUpdate()/downloadUpdate()/
+  // installUpdate() contract (shared with desktop's electron-updater, which
+  // renderer.js's update banner is written against) with GitHub's own
+  // "latest release" API plus UpdaterPlugin.java (DownloadManager for the
+  // fetch, the system package installer for the actual install — Android
+  // has no silent-install path for a non-system app). Same repo as
+  // desktop's own UPDATE_RELEASES_URL (renderer.js:10425).
+  const UPDATE_REPO = 'zhotheone/audex-player';
+  let pendingUpdateUrl = null;
+  let updateProgressCbs = [];
+  let updateDoneCbs = [];
+  const displayVersion = (tag) => String(tag || '').replace(/^v-?/, '') || 'dev';
+
+  async function androidAppInfo() {
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (!App) return null;
+    try { return await App.getInfo(); } catch (_) { return null; }
+  }
+
   // ── local files (session-only fallback) ──
   const localFiles = new Map(); // blob url -> File
   let filePicker = null;
@@ -201,16 +223,62 @@
     openExternal: async (url) => { window.open(url, '_blank'); },
 
     // ── app/build ──
-    getBuildInfo: async () => ({ commit: 'mobile' }),
+    getBuildInfo: async () => {
+      const info = await androidAppInfo();
+      return { commit: info ? displayVersion(info.version) : 'mobile' };
+    },
     getHardwareAcceleration: async () => ({ enabled: true }),
     setHardwareAcceleration: async () => unavailable(),
     openLogsFolder: async () => unavailable(),
     logError: async (where, message) => { console.error('[audex]', where, message); },
-    checkForUpdate: async () => ({ available: false }),
-    downloadUpdate: async () => {},
-    installUpdate: async () => {},
-    onUpdateDownloadProgress: () => () => {},
-    onUpdateDownloaded: () => () => {},
+    checkForUpdate: async () => {
+      const info = await androidAppInfo();
+      // versionName is set to the exact release tag by CI (mobile/android/app/build.gradle) —
+      // a plain string match against GitHub's "latest release" tag is all "is
+      // there something newer" needs, no numeric parsing required.
+      const installedTag = info ? info.version : '';
+      try {
+        const res = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`);
+        if (!res.ok) return { success: false, error: `HTTP ${res.status}`, currentVersion: displayVersion(installedTag) };
+        const rel = await res.json();
+        const asset = (rel.assets || []).find(a => /\.apk$/i.test(a.name));
+        const hasUpdate = !!asset && !!rel.tag_name && rel.tag_name !== installedTag;
+        pendingUpdateUrl = hasUpdate ? asset.browser_download_url : null;
+        return {
+          success: true, hasUpdate,
+          currentVersion: displayVersion(installedTag),
+          latestVersion: displayVersion(rel.tag_name),
+        };
+      } catch (e) {
+        return { success: false, error: String(e && e.message || e), currentVersion: displayVersion(installedTag) };
+      }
+    },
+    downloadUpdate: async () => {
+      const Updater = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Updater;
+      if (!Updater || !pendingUpdateUrl) return { success: false, error: 'no update available — call checkForUpdate first' };
+      const handle = await Updater.addListener('downloadProgress', (p) => {
+        updateProgressCbs.forEach(cb => cb(p.pct));
+      });
+      let res;
+      try { res = await Updater.download({ url: pendingUpdateUrl }); }
+      catch (e) { res = { success: false, error: String(e && e.message || e) }; }
+      handle.remove();
+      if (res && res.success) updateDoneCbs.forEach(cb => cb());
+      return res || { success: false };
+    },
+    installUpdate: async () => {
+      const Updater = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Updater;
+      if (!Updater) return;
+      try { await Updater.install(); } catch (e) { console.error('[audex:update]', 'install failed', e); }
+    },
+    onUpdateDownloadProgress: (cb) => {
+      updateProgressCbs.push(cb);
+      return () => { updateProgressCbs = updateProgressCbs.filter(f => f !== cb); };
+    },
+    onUpdateDownloaded: (cb) => {
+      updateDoneCbs.push(cb);
+      return () => { updateDoneCbs = updateDoneCbs.filter(f => f !== cb); };
+    },
 
     // ── downloads / trending / spotify / youtube: need yt-dlp, desktop-only ──
     ytSearch: async () => unavailable('downloads need the desktop app'),

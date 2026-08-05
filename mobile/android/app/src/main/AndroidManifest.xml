@@ -66,4 +66,10 @@
          notification; the plugin doesn't request it at runtime itself
          (see MainActivity.java), so it's declared and requested here. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Sideloaded outside the Play Store, so self-updating (UpdaterPlugin)
+         has to launch the system package installer itself instead of an
+         app-store update flow. Declaring this doesn't grant it silently —
+         the OS still shows its own "allow this app to install unknown apps"
+         prompt the first time, same as manually installing an APK. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

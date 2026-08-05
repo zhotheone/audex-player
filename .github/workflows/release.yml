@@ -146,3 +146,65 @@ jobs:
             release/*.exe
             release/*.zip
             release/*.yml
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Full history — versionCode is the commit count (see below), same
+          # reasoning as scripts/build-info.js's commit count for desktop.
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Sync web assets and Capacitor
+        working-directory: mobile
+        run: |
+          node sync-assets.js
+          npx cap sync android
+
+      # versionCode has to strictly increase for UpdaterPlugin's install-over-
+      # existing to be accepted as an update rather than a downgrade — commit
+      # count already fills that role for desktop's package.json (see
+      # scripts/build-info.js), reused here for the same reason. versionName
+      # is the exact tag (v-<hash>) so bridge.js's checkForUpdate() can just
+      # string-compare it against GitHub's "latest release" tag.
+      - name: Compute version
+        id: version
+        run: echo "code=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build Android APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug \
+            -PaudexVersionCode=${{ steps.version.outputs.code }} \
+            -PaudexVersionName=${{ github.ref_name }}
+
+      - name: Rename APK for release
+        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk "audex-android-${{ github.ref_name }}.apk"
+
+      - name: Attach artifact to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: audex-android-${{ github.ref_name }}.apk

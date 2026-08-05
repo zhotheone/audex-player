@@ -7,8 +7,16 @@ android {
         applicationId "com.audex.player.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Mirrors scripts/build-info.js's scheme so a single version number
+        // means the same thing on desktop and mobile: versionCode is the
+        // commit count (Android requires it to strictly increase for
+        // UpdaterPlugin's install-over-existing to be accepted as an update,
+        // not a downgrade), versionName is the exact release tag (v-<hash>)
+        // so bridge.js's update check can compare it to GitHub's "latest
+        // release" tag with a plain string match. CI sets both via -P
+        // properties; local builds fall back to something that still works.
+        versionCode (project.hasProperty('audexVersionCode') ? project.audexVersionCode.toInteger() : 1)
+        versionName (project.hasProperty('audexVersionName') ? project.audexVersionName : "dev")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
