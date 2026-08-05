@@ -340,6 +340,7 @@ const I18N = {
     'update.restart': 'Restart to install',
     'update.failed': 'Download failed — opening release page',
     'update.dismiss': 'Dismiss',
+    'import.progress': 'Importing tracks…',
     'nav.albums': 'Albums',
     'nav.artists': 'Artists',
     'nav.playlists': 'Playlists',
@@ -394,7 +395,7 @@ const I18N = {
     'trending.downloadOkAlt': 'Downloaded from an alternative source: {t}',
     'trending.err.geo': 'This track is blocked in your country and no alternative was found.',
     'trending.err.unavailable': 'The video was removed or is unavailable, and no alternative was found.',
-    'trending.err.signin': 'YouTube requires a signed-in account for this track.',
+    'trending.err.signin': 'YouTube requires a signed-in account for this track. Sign in from Settings → Downloads.',
     'trending.err.members': 'This track is limited to channel members.',
     'trending.err.network': 'No connection to YouTube. Check your network.',
     'trending.offline': 'No internet connection. Check your network and try again.',
@@ -571,6 +572,8 @@ const I18N = {
     'btn.shuffle': 'Shuffle',
     'btn.deletePlaylist': 'Delete playlist',
     'btn.choose': 'Choose…',
+    'btn.signIn': 'Sign in…',
+    'btn.signingIn': 'Waiting…',
     'btn.cancel': 'Cancel',
     'btn.delete': 'Delete',
     'select.enter': 'Select',
@@ -714,6 +717,11 @@ const I18N = {
     'setting.showDownloadsDesc': 'Adds a section to the sidebar for downloading tracks by URL.',
     'setting.showParserBrowser': 'Show the browser window while parsing',
     'setting.showParserBrowserDesc': 'Useful for signing in to Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.',
+    'setting.ytLogin': 'Sign in to YouTube',
+    'setting.ytLoginDesc': 'Fixes "Sign in to confirm you\'re not a bot" download errors. Opens a browser window — sign in, then close it.',
+    'setting.ytLogin.signedIn': 'Signed in',
+    'setting.ytLogin.notSignedIn': 'Not signed in',
+    'setting.ytLogin.waiting': 'Waiting for the browser window to close…',
     'setting.dlFormat': 'Download format',
     'setting.dlFormatDesc': 'Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick mp3 if a device of yours cannot play it.',
     'downloads.noFolder': 'Pick a default folder first — downloads are filed into it by artist and album.',
@@ -864,6 +872,7 @@ const I18N = {
     'update.restart': 'Zum Installieren neu starten',
     'update.failed': 'Download fehlgeschlagen — Release-Seite wird geöffnet',
     'update.dismiss': 'Schließen',
+    'import.progress': 'Titel werden importiert…',
     'nav.albums': 'Alben',
     'nav.artists': 'Interpreten',
     'nav.playlists': 'Playlists',
@@ -918,7 +927,7 @@ const I18N = {
     'trending.downloadOkAlt': 'Aus einer anderen Quelle geladen: {t}',
     'trending.err.geo': 'Dieser Titel ist in Ihrem Land gesperrt, und es wurde keine Alternative gefunden.',
     'trending.err.unavailable': 'Das Video wurde entfernt oder ist nicht verfügbar; keine Alternative gefunden.',
-    'trending.err.signin': 'YouTube verlangt für diesen Titel ein angemeldetes Konto.',
+    'trending.err.signin': 'YouTube verlangt für diesen Titel ein angemeldetes Konto. Melde dich unter Einstellungen → Downloads an.',
     'trending.err.members': 'Dieser Titel ist nur für Kanalmitglieder verfügbar.',
     'trending.err.network': 'Keine Verbindung zu YouTube. Prüfen Sie Ihr Netzwerk.',
     'trending.offline': 'Keine Internetverbindung. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.',
@@ -1095,6 +1104,8 @@ const I18N = {
     'btn.shuffle': 'Zufall',
     'btn.deletePlaylist': 'Playlist löschen',
     'btn.choose': 'Auswählen…',
+    'btn.signIn': 'Anmelden…',
+    'btn.signingIn': 'Warten…',
     'btn.cancel': 'Abbrechen',
     'btn.delete': 'Löschen',
     'select.enter': 'Auswählen',
@@ -1238,6 +1249,11 @@ const I18N = {
     'setting.showDownloadsDesc': 'Öffnet einen Bereich in der Seitenleiste zum Herunterladen von Titeln per URL.',
     'setting.showParserBrowser': 'Browserfenster beim Parsen anzeigen',
     'setting.showParserBrowserDesc': 'Nützlich, um sich beim ersten Start bei Spotify anzumelden, ein Captcha zu lösen oder zu sehen, wo der Parser hängengeblieben ist. Ausschalten, damit der Browser unsichtbar im Hintergrund läuft.',
+    'setting.ytLogin': 'Bei YouTube anmelden',
+    'setting.ytLoginDesc': 'Behebt den Download-Fehler „Sign in to confirm you\'re not a bot“. Öffnet ein Browserfenster — anmelden und dann schließen.',
+    'setting.ytLogin.signedIn': 'Angemeldet',
+    'setting.ytLogin.notSignedIn': 'Nicht angemeldet',
+    'setting.ytLogin.waiting': 'Warte, bis das Browserfenster geschlossen wird…',
     'setting.dlFormat': 'Downloadformat',
     'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle mp3, wenn eines deiner Geräte es nicht abspielen kann.',
     'downloads.noFolder': 'Wähle zuerst einen Standardordner — Downloads werden dort nach Interpret und Album einsortiert.',
@@ -1388,6 +1404,7 @@ const I18N = {
     'update.restart': 'Redémarrer pour installer',
     'update.failed': "Échec du téléchargement — ouverture de la page de version",
     'update.dismiss': 'Fermer',
+    'import.progress': 'Importation des titres…',
     'nav.albums': 'Albums',
     'nav.artists': 'Artistes',
     'nav.playlists': 'Playlists',
@@ -1442,7 +1459,7 @@ const I18N = {
     'trending.downloadOkAlt': 'Téléchargé depuis une autre source : {t}',
     'trending.err.geo': 'Ce titre est bloqué dans votre pays et aucune alternative n’a été trouvée.',
     'trending.err.unavailable': 'La vidéo a été supprimée ou est indisponible ; aucune alternative trouvée.',
-    'trending.err.signin': 'YouTube exige un compte connecté pour ce titre.',
+    'trending.err.signin': 'YouTube exige un compte connecté pour ce titre. Connectez-vous depuis Paramètres → Téléchargements.',
     'trending.err.members': 'Ce titre est réservé aux membres de la chaîne.',
     'trending.err.network': 'Pas de connexion à YouTube. Vérifiez votre réseau.',
     'trending.offline': 'Pas de connexion Internet. Vérifiez votre réseau et réessayez.',
@@ -1619,6 +1636,8 @@ const I18N = {
     'btn.shuffle': 'Aléatoire',
     'btn.deletePlaylist': 'Supprimer la playlist',
     'btn.choose': 'Choisir…',
+    'btn.signIn': 'Se connecter…',
+    'btn.signingIn': 'En attente…',
     'btn.cancel': 'Annuler',
     'btn.delete': 'Supprimer',
     'select.enter': 'Sélectionner',
@@ -1762,6 +1781,11 @@ const I18N = {
     'setting.showDownloadsDesc': 'Ajoute une section à la barre latérale pour télécharger des pistes par URL.',
     'setting.showParserBrowser': "Afficher la fenêtre du navigateur pendant l'analyse",
     'setting.showParserBrowserDesc': "Utile pour se connecter à Spotify au premier lancement, résoudre un captcha ou voir où l'analyseur s'est bloqué. Désactivez pour exécuter le navigateur silencieusement en arrière-plan.",
+    'setting.ytLogin': 'Se connecter à YouTube',
+    'setting.ytLoginDesc': "Corrige l'erreur de téléchargement « Sign in to confirm you're not a bot ». Ouvre une fenêtre de navigateur — connectez-vous, puis fermez-la.",
+    'setting.ytLogin.signedIn': 'Connecté',
+    'setting.ytLogin.notSignedIn': 'Non connecté',
+    'setting.ytLogin.waiting': 'En attente de la fermeture de la fenêtre du navigateur…',
     'setting.dlFormat': 'Format de téléchargement',
     'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez mp3 si un de vos appareils ne le lit pas.',
     'downloads.noFolder': 'Choisissez d’abord un dossier par défaut — les téléchargements y sont classés par artiste et album.',
@@ -1912,6 +1936,7 @@ const I18N = {
     'update.restart': 'Перезапустити для встановлення',
     'update.failed': 'Не вдалося завантажити — відкриваємо сторінку релізу',
     'update.dismiss': 'Закрити',
+    'import.progress': 'Імпортуємо треки…',
     'nav.albums': 'Альбоми',
     'nav.artists': 'Виконавці',
     'nav.playlists': 'Плейлисти',
@@ -1966,7 +1991,7 @@ const I18N = {
     'trending.downloadOkAlt': 'Завантажено з іншого джерела: {t}',
     'trending.err.geo': 'Цей трек заблоковано для вашої країни, і заміни не знайдено.',
     'trending.err.unavailable': 'Відео видалено або недоступне, заміни не знайдено.',
-    'trending.err.signin': 'YouTube вимагає вхід в акаунт для цього треку.',
+    'trending.err.signin': 'YouTube вимагає вхід в акаунт для цього треку. Увійдіть у Налаштування → Завантаження.',
     'trending.err.members': 'Трек доступний лише підписникам каналу.',
     'trending.err.network': 'Немає зв’язку з YouTube. Перевірте підключення.',
     'trending.offline': 'Немає підключення до інтернету. Перевірте з’єднання та повторіть.',
@@ -2143,6 +2168,8 @@ const I18N = {
     'btn.shuffle': 'Перемішати',
     'btn.deletePlaylist': 'Видалити плейлист',
     'btn.choose': 'Обрати…',
+    'btn.signIn': 'Увійти…',
+    'btn.signingIn': 'Очікування…',
     'btn.cancel': 'Скасувати',
     'btn.delete': 'Видалити',
     'select.enter': 'Вибрати',
@@ -2286,6 +2313,11 @@ const I18N = {
     'setting.showDownloadsDesc': 'Відкриє в боковому меню розділ для завантаження треків за посиланням.',
     'setting.showParserBrowser': 'Показувати вікно браузера під час парсингу',
     'setting.showParserBrowserDesc': 'Потрібно, щоб увійти в Spotify при першому запуску, пройти капчу або побачити, на чому парсер спіткнувся. Якщо вимкнути — браузер запуститься у фоні і вікно не з\'явиться.',
+    'setting.ytLogin': 'Увійти в YouTube',
+    'setting.ytLoginDesc': 'Виправляє помилку завантаження «Sign in to confirm you\'re not a bot». Відкриває вікно браузера — увійдіть, потім закрийте його.',
+    'setting.ytLogin.signedIn': 'Виконано вхід',
+    'setting.ytLogin.notSignedIn': 'Вхід не виконано',
+    'setting.ytLogin.waiting': 'Очікуємо закриття вікна браузера…',
     'setting.dlFormat': 'Формат завантаження',
     'setting.dlFormatDesc': 'Файли зберігаються як {тека за замовчуванням}/{виконавець}/{альбом}/{виконавець} - {трек}. Opus дає найкращу якість на мегабайт; обери mp3, якщо якийсь із твоїх пристроїв його не програє.',
     'downloads.noFolder': 'Спершу обери теку за замовчуванням — завантаження розкладаються в ній за виконавцем і альбомом.',
@@ -6733,17 +6765,32 @@ $('btn-add-files').addEventListener('click', async () => {
   });
 }
 
+function setImportProgress(done, total) {
+  const banner = $('import-progress-banner');
+  if (!banner) return;
+  if (done == null) { banner.hidden = true; return; }
+  banner.hidden = false;
+  $('import-progress-fill').style.width = Math.round((done / total) * 100) + '%';
+  $('import-progress-count').textContent = `${done}/${total}`;
+}
+
 async function importPaths(paths) {
   let added = 0;
   let sinceRefresh = 0;
-  for (const p of paths) {
-    if (library.some(t => t.path === p)) continue;
+  // A folder import can take a while (metadata is parsed one file at a time),
+  // so show progress once there's more than a couple files to wait on.
+  const showProgress = paths.length > 2;
+  if (showProgress) setImportProgress(0, paths.length);
+  for (let i = 0; i < paths.length; i++) {
+    const p = paths[i];
+    if (library.some(t => t.path === p)) { if (showProgress) setImportProgress(i + 1, paths.length); continue; }
     const metadata = await window.electronAPI.parseMetadata(p);
     if (metadata.cover) coverCache[p] = metadata.cover;
     metadata.addedAt = Date.now();   // for the Listening Report "added to collection" stat
     library.push(metadata);
     added++;
     sinceRefresh++;
+    if (showProgress) setImportProgress(i + 1, paths.length);
     // Refresh every 10 tracks instead of once at the end — a folder import can
     // take a while and the list otherwise looks frozen/empty until it's done.
     if (sinceRefresh >= 10) {
@@ -6753,6 +6800,7 @@ async function importPaths(paths) {
       sinceRefresh = 0;
     }
   }
+  if (showProgress) setImportProgress(null);
   if (added > 0) {
     saveLibrary();
     refreshCurrentViewRows();
@@ -8920,6 +8968,7 @@ function renderSettings() {
   if (acoustKey && acoustKey !== document.activeElement) acoustKey.value = settings.acoustidKey || '';
   // Folder
   $('default-folder-path').textContent = settings.defaultFolder || tr('placeholder.noFolder');
+  refreshYtLoginStatus();
   // Download format combobox
   const fmtCurrent = $('dlfmt-current');
   if (fmtCurrent) fmtCurrent.textContent = DL_FORMAT_LABELS[settings.dlFormat] || DL_FORMAT_LABELS.opus;
@@ -9191,6 +9240,29 @@ $('btn-choose-default-folder').addEventListener('click', async () => {
     renderSettings();
   }
 });
+
+function refreshYtLoginStatus() {
+  const el = $('yt-login-status');
+  if (!el || !window.electronAPI || typeof window.electronAPI.youtubeCookiesStatus !== 'function') return;
+  window.electronAPI.youtubeCookiesStatus()
+    .then(res => { el.textContent = tr(res && res.signedIn ? 'setting.ytLogin.signedIn' : 'setting.ytLogin.notSignedIn'); })
+    .catch(() => {});
+}
+refreshYtLoginStatus();
+
+const ytLoginBtn = $('btn-yt-login');
+if (ytLoginBtn && window.electronAPI && typeof window.electronAPI.youtubeLogin === 'function') {
+  ytLoginBtn.addEventListener('click', async () => {
+    const label = ytLoginBtn.querySelector('span');
+    ytLoginBtn.disabled = true;
+    if (label) label.textContent = tr('btn.signingIn');
+    $('yt-login-status').textContent = tr('setting.ytLogin.waiting');
+    try { await window.electronAPI.youtubeLogin(); } catch (_) {}
+    ytLoginBtn.disabled = false;
+    if (label) label.textContent = tr('btn.signIn');
+    refreshYtLoginStatus();
+  });
+}
 
 document.querySelectorAll('[data-open-url]').forEach(btn => {
   btn.addEventListener('click', () => {

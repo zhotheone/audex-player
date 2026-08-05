@@ -1206,12 +1206,25 @@ function resolveBundledFfmpeg() {
   return _ffmpegPath;
 }
 
+// YouTube increasingly answers yt-dlp with "Sign in to confirm you're not a
+// bot" for anonymous requests. youtube:login (below) opens a real signed-in
+// browser session and dumps its cookies here in Netscape format, the file
+// format yt-dlp's --cookies flag expects; every yt-dlp call picks it up
+// automatically once it exists.
+function youtubeCookiesPath() {
+  return path.join(app.getPath('userData'), 'yt-cookies.txt');
+}
+function ytDlpCookieArgs() {
+  const p = youtubeCookiesPath();
+  return fs.existsSync(p) ? ['--cookies', p] : [];
+}
+
 function runYtDlp(args, { timeoutMs } = {}) {
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
     let killed = false;
-    const proc = spawn(ytDlpPath(), args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(ytDlpPath(), [...ytDlpCookieArgs(), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
     let timer = null;
     if (timeoutMs) {
       timer = setTimeout(() => { killed = true; try { proc.kill('SIGKILL'); } catch (_) {} }, timeoutMs);
@@ -1385,7 +1398,7 @@ function streamYtDlp(args, { onProgress, onPhase, timeoutMs } = {}) {
     let stdout = '';
     let stderr = '';
     let stdoutBuf = '';
-    const proc = spawn(ytDlpPath(), args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(ytDlpPath(), [...ytDlpCookieArgs(), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
     let timer = null;
     if (timeoutMs) {
       timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch (_) {} }, timeoutMs);
@@ -1866,6 +1879,82 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
   } finally {
     try { if (spotifyBrowser) await spotifyBrowser.close(); } catch (_) {}
     spotifyBrowser = null;
+  }
+});
+
+// ── YouTube sign-in (for yt-dlp cookies) ──────────────────────────────────────
+// Same trick as the Spotify parser: a real, visible, bundled-Chromium window
+// with a profile that persists across runs, so the user only has to sign in
+// once. Unlike Spotify there's no page to scrape afterward — the whole point
+// is the cookie jar — so instead of waiting for one specific action to finish,
+// snapshot cookies periodically while the window is open and keep whatever
+// the last snapshot was once the user closes it (closing is the "done" signal;
+// cookies can't be read from Chromium anymore once it has disconnected).
+let youtubeLoginBrowser = null;
+
+function cookiesToNetscape(cookies) {
+  const lines = ['# Netscape HTTP Cookie File'];
+  for (const c of cookies) {
+    const domain = c.domain.startsWith('.') ? c.domain : '.' + c.domain;
+    const expires = c.expires > 0 ? Math.round(c.expires) : Math.round(Date.now() / 1000) + 365 * 24 * 3600;
+    lines.push([domain, 'TRUE', c.path || '/', c.secure ? 'TRUE' : 'FALSE', expires, c.name, c.value].join('\t'));
+  }
+  return lines.join('\n') + '\n';
+}
+
+ipcMain.handle('youtube:login', async () => {
+  if (youtubeLoginBrowser) return { success: false, error: 'A sign-in window is already open.' };
+
+  let puppeteer;
+  try { puppeteer = require('puppeteer'); } catch (_) { return { success: false, error: 'puppeteer not installed' }; }
+  const executablePath = resolveBundledChromium();
+  if (!executablePath || !fs.existsSync(executablePath)) {
+    return { success: false, error: 'Bundled Chromium not found. Run "npm install puppeteer" before packaging.' };
+  }
+
+  const userDataDir = path.join(app.getPath('userData'), 'youtube-profile');
+  try { fs.mkdirSync(userDataDir, { recursive: true }); } catch (_) {}
+
+  let interval = null;
+  try {
+    youtubeLoginBrowser = await puppeteer.launch({
+      executablePath,
+      headless: false,
+      userDataDir,
+      args: ['--no-sandbox', '--disable-blink-features=AutomationControlled', '--disable-notifications', '--window-size=1200,840'],
+      defaultViewport: null,
+    });
+    const pages = await youtubeLoginBrowser.pages();
+    const page = pages[0] || await youtubeLoginBrowser.newPage();
+    await page.goto('https://www.youtube.com', { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+
+    const client = await page.target().createCDPSession();
+    const saveCookies = async () => {
+      try {
+        const { cookies } = await client.send('Network.getAllCookies');
+        fs.writeFileSync(youtubeCookiesPath(), cookiesToNetscape(cookies));
+      } catch (_) { /* browser may already be closing */ }
+    };
+    await saveCookies();
+    interval = setInterval(saveCookies, 3000);
+
+    await new Promise((resolve) => youtubeLoginBrowser.once('disconnected', resolve));
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: String(err && err.message || err).slice(0, 300) };
+  } finally {
+    if (interval) clearInterval(interval);
+    try { if (youtubeLoginBrowser) await youtubeLoginBrowser.close(); } catch (_) {}
+    youtubeLoginBrowser = null;
+  }
+});
+
+ipcMain.handle('youtube:cookiesStatus', async () => {
+  try {
+    const stat = fs.statSync(youtubeCookiesPath());
+    return { signedIn: true, updatedAt: stat.mtimeMs };
+  } catch (_) {
+    return { signedIn: false };
   }
 });
 
