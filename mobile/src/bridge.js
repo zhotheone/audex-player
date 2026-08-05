@@ -278,6 +278,58 @@
     onLanCommand: (cb) => { onLanCommandCb = cb; return () => { onLanCommandCb = null; }; },
   };
 
+  // ── peer cover cache ──
+  //
+  // A remote track's `cover` (renderer.js's lanRemoteAsTrack) is a plain
+  // http(s) URL, rendered as a CSS `background-image` — which has no retry
+  // or persistence of its own: one dropped packet on a flaky phone Wi-Fi
+  // link and that thumbnail is just gone, silently, forever (no onerror
+  // hook exists for a failed background-image load), and it's re-fetched
+  // from scratch over the network on every cold start since nothing local
+  // remembers it. The fix isn't a database — the Cache Storage API (a
+  // standard, already-available Web Platform API, not a Capacitor plugin;
+  // Capacitor serves Android over `https://localhost` by default, a secure
+  // context, so it's available with zero setup) is exactly a persistent
+  // URL-keyed blob store, which is all a thumbnail cache actually needs to
+  // be: no schema, no queries, no native dependency.
+  //
+  // ponytail: unbounded cache (relies on the WebView's own storage-eviction
+  // policy under pressure) and no revocation of superseded blob: URLs across
+  // a session — fine for a personal library's worth of cover art; add an
+  // LRU sweep if this ever needs a hard size cap.
+  const COVER_CACHE = 'audex-covers-v1';
+  async function cachedCoverUrl(url) {
+    if (!window.caches || !/^https?:/.test(url)) return url;
+    try {
+      const cache = await caches.open(COVER_CACHE);
+      let res = await cache.match(url);
+      if (!res) {
+        const fetched = await fetch(url);
+        if (!fetched.ok) return url;
+        await cache.put(url, fetched.clone());
+        res = fetched;
+      }
+      return URL.createObjectURL(await res.blob());
+    } catch (_) {
+      return url; // offline / cache unavailable — the raw URL still might load
+    }
+  }
+
+  // Small concurrent batches rather than the whole library at once, so a
+  // big peer library doesn't open hundreds of connections in one burst.
+  async function cacheCoversFor(lib) {
+    const tracks = (lib && lib.tracks || []).filter(t => /^https?:/.test(t.cover || ''));
+    let changed = false;
+    for (let i = 0; i < tracks.length; i += 6) {
+      const batch = tracks.slice(i, i + 6);
+      await Promise.all(batch.map(async (t) => {
+        const cached = await cachedCoverUrl(t.cover);
+        if (cached !== t.cover) { t.cover = cached; changed = true; }
+      }));
+    }
+    if (changed && window.refreshCurrentViewRows) refreshCurrentViewRows();
+  }
+
   // The portrait now-playing layout only exists as `.fs-overlay.is-portrait`
   // CSS (style.css:2935+); desktop only adds that class via the manual
   // portrait toggle. On mobile it's the only sane layout, so force it on.
@@ -292,6 +344,20 @@
     // permanently unreachable behind a hidden toggle.
     if (window.lanEnableFeature) window.lanEnableFeature();
     wsConnectAll();
+    // Wrap rather than edit renderer.js: it's a plain top-level function, so
+    // reassigning window.lanSyncPeerLibrary redefines the same global every
+    // other call site (including the 30s peer-repoll timer) already calls by
+    // its bare name — same trick electronAPI itself is built on.
+    if (window.lanSyncPeerLibrary) {
+      const originalSync = window.lanSyncPeerLibrary;
+      window.lanSyncPeerLibrary = async function (peer) {
+        await originalSync(peer);
+        // lanPeerLibraries is a top-level `let` in renderer.js, not a
+        // window property (only function declarations become those) — the
+        // bare identifier still resolves through the shared global scope.
+        cacheCoversFor(typeof lanPeerLibraries !== 'undefined' ? lanPeerLibraries[peer.deviceId] : null);
+      };
+    }
   });
 
   // The desktop sidebar has 9 destinations; a phone tab bar only has room for
