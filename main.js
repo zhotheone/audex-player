@@ -426,6 +426,11 @@ ipcMain.handle('window:setPortrait', async (event, payload) => {
     portraitSavedBounds = null;
     portraitSavedMinSize = null;
   }
+  // An un-animated setBounds growing the window can leave the compositor
+  // showing a stale frame in the newly-exposed area until something forces a
+  // repaint — visible as a sliver of the old (pre-fullscreen) layout at the
+  // window edge after toggling portrait mode back off. Force one explicitly.
+  win.webContents.invalidate();
   return { success: true };
 });
 
@@ -854,6 +859,13 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
     // Both -map_metadata calls apply (later ones add to earlier ones, not replace): the
     // source's own tags still come from 0, the picture is layered in from the synthetic file.
     args.push('-i', oggCoverMetaFile(tmpPath, picture), '-map', '0:a', '-map_metadata', '0', '-map_metadata', '1', '-c', 'copy');
+  } else if (isOggContainer(ext)) {
+    // No picture to re-embed — but the source may still carry a cover we
+    // simply failed to parse (a known yt-dlp/mutagen embed corruption, see
+    // music:writeMetadata's catch below). Mapping stream 0 wholesale would hit
+    // that same cover's synthetic mjpeg stream and crash the mux either way,
+    // so stay audio-only regardless; a bad cover just gets dropped, not fatal.
+    args.push('-map', '0:a', '-c', 'copy', '-map_metadata', '0');
   } else {
     args.push('-map', '0', '-c', 'copy', '-map_metadata', '0');
   }
@@ -870,7 +882,7 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
   return args;
 }
 
-ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
+async function writeMetadataToFile(filePath, tags) {
   if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'File not found' };
   const ffmpeg = resolveBundledFfmpeg();
   if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
@@ -881,7 +893,7 @@ ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
     try {
       const md = await musicMetadata.parseFile(filePath);
       picture = (md.common.picture && md.common.picture[0]) || null;
-    } catch (_) { /* no cover to preserve, fall back to the plain stream copy */ }
+    } catch (_) { /* cover unparseable — drop it, ffmpegTagArgs stays audio-only either way */ }
   }
 
   const tmpPath = path.join(path.dirname(filePath), `.audex-tags-${Date.now()}${ext}`);
@@ -897,7 +909,25 @@ ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => {
   } finally {
     if (picture) { try { fs.unlinkSync(tmpPath + '.meta.txt'); } catch (_) {} }
   }
-});
+}
+
+ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => writeMetadataToFile(filePath, tags));
+
+// yt-dlp embeds YouTube thumbnails into Ogg/Opus via Python/mutagen, which can
+// write a METADATA_BLOCK_PICTURE that music-metadata (and this app's own
+// ffmpeg tag writer) can't parse back — the same corruption documented in
+// writeMetadataToFile above. Catch it right after download: a full parse
+// that throws means the cover is broken, so re-run it through the tag writer
+// with no tag changes, which reuses that same fallback to drop the bad
+// picture instead of shipping a file that renders a mangled cover later.
+async function stripCoverIfCorrupt(filePath) {
+  if (!isOggContainer(path.extname(filePath).toLowerCase())) return;
+  try {
+    await musicMetadata.parseFile(filePath);
+  } catch (_) {
+    try { await writeMetadataToFile(filePath, {}); } catch (_) {}
+  }
+}
 
 ipcMain.handle('shell:revealInFolder', async (event, filePath) => {
   if (filePath && fs.existsSync(filePath)) {
@@ -1609,6 +1639,8 @@ async function runYtDownload(event, payload, target) {
     filePath = placeDownload(filePath, downloadsDir, { artist: folderArtist, album, suggestedName, format });
   } catch (_) { /* keep the file where yt-dlp left it */ }
 
+  await stripCoverIfCorrupt(filePath);
+
   return { success: true, filePath, downloadsDir };
 }
 
@@ -2260,23 +2292,26 @@ ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => 
     meta: 'recordings releasegroups releases tracks',
     format: 'json',
   });
+  // AcoustID's numeric error codes aren't reliably documented across API
+  // versions — trust the human-readable message instead of guessing a code
+  // (an earlier version of this guessed code 1/4, which risked mislabeling an
+  // unrelated 400 — e.g. rate limiting — as "bad key"). Every failure here is
+  // logged to app.log with the raw response so a wrong guess is visible.
+  const isKeyError = (msg) => /api ?key/i.test(String(msg || ''));
   let data;
   try {
     data = await httpsGetJson(`${ACOUSTID_URL}?${qs}`);
   } catch (err) {
-    // AcoustID answers a rejected/missing key with HTTP 400 carrying error.code
-    // 1 or 4, but 400 also covers rate limiting and bad fingerprint/duration —
-    // only classify as 'apiKey' when the code actually says so, else the real
-    // cause (e.g. rate limit) would be misreported as a bad key.
     const code = err && err.body && err.body.error && err.body.error.code;
     const msg = String((err && err.body && err.body.error && err.body.error.message) || (err && err.message) || err);
-    if (code === 1 || code === 4) return { success: false, error: 'apiKey', detail: msg };
-    return { success: false, error: 'lookup', detail: msg };
+    logAppError('acoustid:identify', `HTTP error, code=${code}, message=${msg}`);
+    return { success: false, error: isKeyError(msg) ? 'apiKey' : 'lookup', detail: msg };
   }
   if (data && data.status === 'error') {
     const code = data.error && data.error.code;
     const msg = String((data.error && data.error.message) || '');
-    return { success: false, error: (code === 1 || code === 4) ? 'apiKey' : 'lookup', detail: msg };
+    logAppError('acoustid:identify', `status=error, code=${code}, message=${msg}`);
+    return { success: false, error: isKeyError(msg) ? 'apiKey' : 'lookup', detail: msg };
   }
   const match = acoustidBestMatch(data);
   if (match) return { success: true, match };

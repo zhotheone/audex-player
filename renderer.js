@@ -2868,7 +2868,10 @@ function sortedFilteredLibrary() {
     arr = arr.filter(t => favorites.includes(t.path));
   }
   const byTitle = (a, b) => (a.title || '').localeCompare(b.title || '');
-  const byArtist = (a, b) => (a.artist || '').localeCompare(b.artist || '') || byTitle(a, b);
+  // Same artist -> group by album -> track order within it, so an artist's
+  // albums stay intact instead of interleaving alphabetically by title.
+  const byArtist = (a, b) => (a.artist || '').localeCompare(b.artist || '')
+    || (a.album || '').localeCompare(b.album || '') || compareTrackOrder(a, b);
   const byDuration = (a, b) => (a.duration || 0) - (b.duration || 0);
   switch (activeSort) {
     case 'title-asc': arr.sort(byTitle); break;
@@ -4462,7 +4465,7 @@ function isSpTrackInQueue(t) {
   return downloadQueue.some(it => it.source === 'spotify' && it.key === key && it.status !== 'error');
 }
 
-function buildQueueItemFromSp(t) {
+function buildQueueItemFromSp(t, albumTrackNo) {
   return {
     id: 'q-' + (++queueIdSeq),
     source: 'spotify',
@@ -4480,13 +4483,16 @@ function buildQueueItemFromSp(t) {
     filePath: '',
     error: '',
     requestId: '',
+    // Position on the parsed Spotify playlist page — same use as
+    // buildQueueItemFromYtm's albumTrackNo, see fillPredictedTrackNo.
+    albumTrackNo,
   };
 }
 
 function enqueueSpTrack(idx) {
   const t = spTracks[idx];
   if (!t || isSpTrackInQueue(t)) return;
-  downloadQueue.push(buildQueueItemFromSp(t));
+  downloadQueue.push(buildQueueItemFromSp(t, idx + 1));
   renderQueue();
   renderSpResults(spTracks);
   updateQueueTabBadge();
@@ -4496,11 +4502,11 @@ function enqueueSpTrack(idx) {
 function enqueueAllSpTracks() {
   if (!spTracks || !spTracks.length) return;
   let added = 0;
-  for (const t of spTracks) {
-    if (isSpTrackInQueue(t)) continue;
-    downloadQueue.push(buildQueueItemFromSp(t));
+  spTracks.forEach((t, idx) => {
+    if (isSpTrackInQueue(t)) return;
+    downloadQueue.push(buildQueueItemFromSp(t, idx + 1));
     added++;
-  }
+  });
   if (added > 0) {
     renderQueue();
     renderSpResults(spTracks);
@@ -6117,6 +6123,8 @@ function renderArtistDetail(name) {
     if (!slot.cover && t.cover) slot.cover = t.cover;
   });
 
+  byAlbum.forEach(alb => { alb.tracks = sortAlbumTracks(alb.tracks); });
+
   const container = $('artist-albums');
   container.innerHTML = '';
   byAlbum.forEach((alb, gIdx) => {
@@ -6215,14 +6223,17 @@ function sortAlbums(arr) {
 }
 
 // Disc/track-number listening order; falls back to title when tags are missing.
+// Shared by every list that represents an album (album detail, artist detail's
+// per-album grouping, and the library's by-artist sort tie-break below).
+function compareTrackOrder(a, b) {
+  const da = parseInt(a.discNo, 10) || 0, db = parseInt(b.discNo, 10) || 0;
+  if (da !== db) return da - db;
+  const ta = parseInt(a.trackNo, 10) || 0, tb = parseInt(b.trackNo, 10) || 0;
+  if (ta !== tb) return ta - tb;
+  return a.title.localeCompare(b.title);
+}
 function sortAlbumTracks(tracks) {
-  return tracks.slice().sort((a, b) => {
-    const da = parseInt(a.discNo, 10) || 0, db = parseInt(b.discNo, 10) || 0;
-    if (da !== db) return da - db;
-    const ta = parseInt(a.trackNo, 10) || 0, tb = parseInt(b.trackNo, 10) || 0;
-    if (ta !== tb) return ta - tb;
-    return a.title.localeCompare(b.title);
-  });
+  return tracks.slice().sort(compareTrackOrder);
 }
 
 function renderAlbums() {
