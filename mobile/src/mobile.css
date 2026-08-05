@@ -181,20 +181,23 @@ body { padding-bottom: 0; }
   display: none;
 }
 .trow {
-  grid-template-columns: 22px 1fr auto 22px !important;
+  grid-template-columns: 22px 1fr auto 24px !important;
   grid-template-rows: auto auto;
   grid-template-areas:
     "num title title more"
     "num artist dur  more";
-  column-gap: 10px;
-  row-gap: 2px;
-  padding: 9px 6px; /* a bit more room for a touch target */
+  column-gap: 12px;
+  row-gap: 4px;
+  padding: 13px 12px; /* was tighter than desktop's own 7px 10px despite carrying more content (2 lines) */
+  margin-bottom: 2px;
+  border-radius: 10px;
 }
 .trow-num { grid-area: num; align-self: center; }
-.trow-title-cell { grid-area: title; }
-.trow-muted[data-link="artist"] { grid-area: artist; font-size: 11px; }
-.trow-dur { grid-area: dur; font-size: 11px; }
-.trow-more { grid-area: more; align-self: center; }
+.trow-title-cell { grid-area: title; gap: 12px; }
+.trow-cover { width: 40px; height: 40px; border-radius: 6px; } /* scaled up to stay proportionate at the row's new height */
+.trow-muted[data-link="artist"] { grid-area: artist; font-size: 11.5px; }
+.trow-dur { grid-area: dur; font-size: 11.5px; }
+.trow-more { grid-area: more; align-self: center; padding: 4px; margin: -4px; } /* bigger tap target without shifting layout */
 
 /* ── mini-player: cover/title + play/next only, the rest already lives in
    the forced-portrait now-playing screen a tap on the cover opens ── */

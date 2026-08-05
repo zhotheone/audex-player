@@ -8,6 +8,15 @@
 // add @capacitor/filesystem + music-metadata-browser when offline library
 // needs to survive an app restart.
 (function () {
+  // renderer.js's track-list virtualizer absolutely-positions each row via a
+  // fixed ROW_HEIGHT constant (renderer.js:2895) — it has to match .trow's
+  // real rendered height or rows overlap. mobile.css's two-line row (title,
+  // then artist+time) is taller than desktop's one-line row: 13px padding
+  // top+bottom (26) + 40px title row (the enlarged cover sets its height) +
+  // 4px row-gap + ~15px artist/time row = 85px. Update this if that CSS
+  // changes — nothing derives it automatically.
+  window.AUDEX_ROW_HEIGHT = 85;
+
   const LAN_KEY = 'audex-mobile-lan';
   const unavailable = (error) => ({ success: false, error: error || 'not available on mobile' });
 

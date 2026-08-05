@@ -2892,7 +2892,11 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 // Only renders rows visible in the scroll viewport (+ overscan buffer).
 // `listEl` is the row container; rows are absolutely positioned inside it.
 // `scrollEl` is the actual scroll container (here: .main-content).
-const ROW_HEIGHT = 42;
+// Fixed-height virtualizer — has to match .trow's actual rendered height (see
+// style.css's own padding/line-height math) or rows overlap. mobile.css's
+// two-line row (title, then artist+time) is taller than desktop's one-line
+// row, so bridge.js sets window.AUDEX_ROW_HEIGHT before this runs.
+const ROW_HEIGHT = window.AUDEX_ROW_HEIGHT || 42;
 const OVERSCAN = 8;
 
 function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan = OVERSCAN }) {
