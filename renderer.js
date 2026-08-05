@@ -363,7 +363,8 @@ const I18N = {
     'lan.enable': "Turn on sharing",
     'lan.disable': "Turn off sharing",
     'lan.needKey': "Set a network key first — every device of yours needs the same one.",
-    'lan.hint': "Use the same network key on each of your devices. On a LAN they find each other automatically; over Tailscale add the address by hand. On Windows, a manual add that hangs usually means the firewall rule only covers Private networks — Windows reports the Tailscale adapter as Public, so allow the app there too.",
+    'lan.hint': "Pick a network key and set it here — it acts like a Wi-Fi password: every one of your devices needs the exact same key to see each other. Turn sharing on and this device's library becomes reachable to the rest of the group.",
+    'lan.hintPeers': "Devices on the same LAN with the same key show up here automatically — nothing to add. On another network (e.g. over Tailscale), add its address by hand above. On Windows, a manual add that hangs usually means the firewall rule only covers Private networks — Windows reports the Tailscale adapter as Public, so allow the app there too.",
     'lan.on': "Sharing",
     'lan.off': "Sharing is off",
     'lan.starting': "Starting…",
@@ -372,8 +373,11 @@ const I18N = {
     'lan.noPeers': "No devices found yet.",
     'lan.manual': "added by hand",
     'lan.browse': "Browse",
+    'lan.browseHint': "Browse this device's library and stream from it",
     'lan.takeOver': "Take over",
+    'lan.takeOverHint': "Pull this device's current session over here, picking up where it left off",
     'lan.push': 'Push here',
+    'lan.pushHint': "Send what's playing on this device over to it",
     'lan.remove': "Remove",
     'lan.add': "Add",
     'lan.addPh': "Address, e.g. 100.90.1.2 or 192.168.1.5:8422",
@@ -954,7 +958,8 @@ const I18N = {
     'lan.enable': "Freigabe einschalten",
     'lan.disable': "Freigabe ausschalten",
     'lan.needKey': "Zuerst einen Netzwerkschlüssel setzen — auf allen Geräten derselbe.",
-    'lan.hint': "Auf jedem Ihrer Geräte denselben Netzwerkschlüssel verwenden. Im LAN finden sie sich von selbst; über Tailscale die Adresse von Hand hinzufügen. Bleibt das manuelle Hinzufügen unter Windows hängen, gilt die Firewall-Regel meist nur für private Netzwerke — Windows meldet den Tailscale-Adapter als öffentlich, also die App auch dort zulassen.",
+    'lan.hint': "Wählen Sie hier einen Netzwerkschlüssel — er funktioniert wie ein WLAN-Passwort: Nur Geräte mit genau demselben Schlüssel finden sich. Freigabe einschalten, und die Bibliothek dieses Geräts wird für den Rest der Gruppe erreichbar.",
+    'lan.hintPeers': "Geräte im selben LAN mit demselben Schlüssel erscheinen hier automatisch — nichts hinzuzufügen. In einem anderen Netzwerk (z. B. über Tailscale) die Adresse oben von Hand hinzufügen. Bleibt das manuelle Hinzufügen unter Windows hängen, gilt die Firewall-Regel meist nur für private Netzwerke — Windows meldet den Tailscale-Adapter als öffentlich, also die App auch dort zulassen.",
     'lan.on': "Freigabe aktiv",
     'lan.off': "Freigabe ist aus",
     'lan.starting': "Wird gestartet…",
@@ -963,8 +968,11 @@ const I18N = {
     'lan.noPeers': "Noch keine Geräte gefunden.",
     'lan.manual': "von Hand hinzugefügt",
     'lan.browse': "Ansehen",
+    'lan.browseHint': "Die Bibliothek dieses Geräts durchsuchen und davon streamen",
     'lan.takeOver': "Übernehmen",
+    'lan.takeOverHint': "Die laufende Sitzung dieses Geräts hierher übernehmen, genau dort weiter, wo sie war",
     'lan.push': 'Hierher senden',
+    'lan.pushHint': "Die hier laufende Wiedergabe an dieses Gerät senden",
     'lan.remove': "Entfernen",
     'lan.add': "Hinzufügen",
     'lan.addPh': "Adresse, z. B. 100.90.1.2 oder 192.168.1.5:8422",
@@ -1545,7 +1553,8 @@ const I18N = {
     'lan.enable': "Activer le partage",
     'lan.disable': "Désactiver le partage",
     'lan.needKey': "Définissez d'abord une clé réseau — la même sur tous vos appareils.",
-    'lan.hint': "Utilisez la même clé réseau sur chacun de vos appareils. Sur un réseau local ils se trouvent tout seuls ; via Tailscale, ajoutez l'adresse à la main. Sous Windows, si l'ajout manuel reste bloqué, la règle de pare-feu ne couvre souvent que les réseaux privés — Windows signale l'adaptateur Tailscale comme public, autorisez donc aussi l'app pour ce profil.",
+    'lan.hint': "Choisissez une clé réseau ici — elle fonctionne comme un mot de passe Wi-Fi : seuls les appareils ayant exactement la même clé se voient entre eux. Activez le partage et la bibliothèque de cet appareil devient accessible au reste du groupe.",
+    'lan.hintPeers': "Les appareils sur le même réseau local avec la même clé apparaissent ici automatiquement — rien à ajouter. Sur un autre réseau (par ex. via Tailscale), ajoutez son adresse à la main ci-dessus. Sous Windows, si l'ajout manuel reste bloqué, la règle de pare-feu ne couvre souvent que les réseaux privés — Windows signale l'adaptateur Tailscale comme public, autorisez donc aussi l'app pour ce profil.",
     'lan.on': "Partage actif",
     'lan.off': "Partage désactivé",
     'lan.starting': "Démarrage…",
@@ -1554,8 +1563,11 @@ const I18N = {
     'lan.noPeers': "Aucun appareil trouvé pour le moment.",
     'lan.manual': "ajouté à la main",
     'lan.browse': "Parcourir",
+    'lan.browseHint': "Parcourir la bibliothèque de cet appareil et diffuser depuis celui-ci",
     'lan.takeOver': "Reprendre",
+    'lan.takeOverHint': "Récupérer ici la session en cours de cet appareil, exactement là où elle en était",
     'lan.push': 'Envoyer ici',
+    'lan.pushHint': "Envoyer la lecture en cours ici vers cet appareil",
     'lan.remove': "Retirer",
     'lan.add': "Ajouter",
     'lan.addPh': "Adresse, ex. 100.90.1.2 ou 192.168.1.5:8422",
@@ -2136,7 +2148,8 @@ const I18N = {
     'lan.enable': "Увімкнути доступ",
     'lan.disable': "Вимкнути доступ",
     'lan.needKey': "Спочатку задайте мережевий ключ — він має бути однаковий на всіх ваших пристроях.",
-    'lan.hint': "Використовуйте однаковий мережевий ключ на всіх своїх пристроях. У локальній мережі вони знаходять одне одного самі; через Tailscale додайте адресу вручну. Якщо в Windows ручне додавання зависає — правило фаєрвола, ймовірно, дозволяє лише приватні мережі, а адаптер Tailscale Windows визначає як публічний: дозвольте застосунок і для нього.",
+    'lan.hint': "Виберіть тут мережевий ключ — він працює як пароль Wi-Fi: одне одного бачать лише пристрої з точно однаковим ключем. Увімкніть доступ, і бібліотека цього пристрою стане доступною решті групи.",
+    'lan.hintPeers': "Пристрої в тій самій локальній мережі з тим самим ключем з'являються тут самі — нічого додавати не треба. В іншій мережі (наприклад, через Tailscale) додайте адресу вручну вище. Якщо в Windows ручне додавання зависає — правило фаєрвола, ймовірно, дозволяє лише приватні мережі, а адаптер Tailscale Windows визначає як публічний: дозвольте застосунок і для нього.",
     'lan.on': "Доступ увімкнено",
     'lan.off': "Доступ вимкнено",
     'lan.starting': "Запуск…",
@@ -2145,8 +2158,11 @@ const I18N = {
     'lan.noPeers': "Пристроїв поки не знайдено.",
     'lan.manual': "додано вручну",
     'lan.browse': "Переглянути",
+    'lan.browseHint': "Переглянути бібліотеку цього пристрою й слухати з нього",
     'lan.takeOver': "Перехопити",
+    'lan.takeOverHint': "Перехопити поточний сеанс цього пристрою сюди, з того самого місця",
     'lan.push': 'Надіслати сюди',
+    'lan.pushHint': "Надіслати те, що зараз грає тут, на цей пристрій",
     'lan.remove': "Прибрати",
     'lan.add': "Додати",
     'lan.addPh': "Адреса, напр. 100.90.1.2 або 192.168.1.5:8422",
@@ -10632,9 +10648,9 @@ function renderDevices() {
         <div class="device-name">${escapeHtml(p.name)}</div>
         <div class="device-meta">${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}</div>
       </div>
-      <button class="btn-ghost" data-act="browse">${tr('lan.browse')}</button>
-      <button class="btn-ghost" data-act="push" ${currentTrack ? '' : 'disabled'}>${tr('lan.push')}</button>
-      <button class="btn-ghost" data-act="take">${tr('lan.takeOver')}</button>
+      <button class="btn-ghost" data-act="browse" title="${escapeHtml(tr('lan.browseHint'))}">${tr('lan.browse')}</button>
+      <button class="btn-ghost" data-act="push" ${currentTrack ? '' : 'disabled'} title="${escapeHtml(tr('lan.pushHint'))}">${tr('lan.push')}</button>
+      <button class="btn-ghost" data-act="take" title="${escapeHtml(tr('lan.takeOverHint'))}">${tr('lan.takeOver')}</button>
       ${p.manual ? `<button class="btn-ghost" data-act="remove">${tr('lan.remove')}</button>` : ''}
     </div>`).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
 
@@ -10663,7 +10679,7 @@ function renderDevices() {
       <div class="device-title">${tr('lan.thisDevice')}</div>
       <div class="device-form">
         <input id="lan-name" type="text" value="${escapeHtml(s.name || '')}" placeholder="${tr('lan.namePh')}">
-        <input id="lan-key" type="password" value="${escapeHtml(s.key || '')}" placeholder="${tr('lan.keyPh')}">
+        <input id="lan-key" type="text" spellcheck="false" autocomplete="off" value="${escapeHtml(s.key || '')}" placeholder="${tr('lan.keyPh')}">
         <button class="btn-ghost" id="lan-gen">${tr('lan.generate')}</button>
         <button class="btn-primary" id="lan-toggle">${s.enabled ? tr('lan.disable') : tr('lan.enable')}</button>
       </div>
@@ -10677,6 +10693,7 @@ function renderDevices() {
         <input id="lan-addr" type="text" placeholder="${tr('lan.addPh')}">
         <button class="btn-ghost" id="lan-add">${tr('lan.add')}</button>
       </div>
+      <div class="device-hint">${tr('lan.hintPeers')}</div>
     </div>
     ${peerLib}`;
 

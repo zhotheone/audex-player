@@ -189,6 +189,24 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
   mainWindow.autoHideMenuBar = true;
 
+  // Side effect of no application menu: Electron normally wires Ctrl/Cmd+C/V/X/A/Z
+  // to Chromium's edit commands through that menu's accelerators, so with none,
+  // copy/paste/select-all silently stop working in every text field (e.g. copying
+  // a generated LAN sharing key to paste on another device). Re-wire just the
+  // commands via webContents, not a visible menu, so Alt still reveals nothing.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || input.alt) return;
+    if (!(process.platform === 'darwin' ? input.meta : input.control)) return;
+    const wc = mainWindow.webContents;
+    switch (input.key.toLowerCase()) {
+      case 'c': wc.copy(); break;
+      case 'x': wc.cut(); break;
+      case 'v': wc.paste(); break;
+      case 'a': wc.selectAll(); break;
+      case 'z': input.shift ? wc.redo() : wc.undo(); break;
+    }
+  });
+
   // Show only once the renderer has painted its first frame — avoids the blank
   // white window that otherwise flashes (and looks like a freeze) on slow boots.
   // The renderer paints the boot overlay (#boot-overlay in index.html) first,
