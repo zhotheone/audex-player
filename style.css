@@ -3360,6 +3360,17 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   background: var(--hover-bg);
   color: var(--text-strong);
 }
+.tn-num {
+  display: inline-block;
+  width: 28px;
+  color: var(--text-dim);
+}
+.tn-item.tn-done {
+  opacity: 0.45;
+  cursor: default;
+}
+.tn-item.tn-done:hover { background: none; }
+.tn-item.tn-done .tn-num { color: var(--accent-ok); }
 .select-list .sl-empty {
   padding: 16px;
   text-align: center;

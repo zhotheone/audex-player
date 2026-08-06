@@ -773,6 +773,21 @@ ipcMain.handle('covers:load', async (_event, paths) => {
   return result;
 });
 
+// Windows normalizes DOS-style paths before they ever reach the filesystem —
+// trailing dots/spaces are silently dropped and anything past ~260 chars is
+// rejected — unless the path carries the \\?\ prefix, which selects the raw
+// NT path and skips that step entirely. A file this app didn't create itself
+// (imported from elsewhere, or just deeply nested) can have either baked into
+// its real on-disk name, so the plain path 404s on every fs call even though
+// the file is right there. Only takes the \\?\ detour when the plain path
+// actually fails to resolve, so the common case is untouched.
+function resolveRealPath(filePath) {
+  if (!filePath || process.platform !== 'win32' || fs.existsSync(filePath)) return filePath;
+  const abs = path.resolve(filePath);
+  const long = abs.startsWith('\\\\') ? '\\\\?\\UNC\\' + abs.slice(2) : '\\\\?\\' + abs;
+  return fs.existsSync(long) ? long : filePath;
+}
+
 // Ogg/Opus keeps no duration in its header — it lives in the granule position of
 // the very last page, so without this music-metadata stops after the tags and
 // leaves duration, and the bitrate derived from it, undefined. Everything the UI
@@ -785,11 +800,12 @@ ipcMain.handle('music:parseMetadata', async (event, filePath) => {
     // base64 Vorbis comment) throws out of the whole parse. Losing the artwork
     // is fine; losing artist/album/duration with it is not — so retry without
     // covers before giving up on the file.
+    const realPath = resolveRealPath(filePath);
     let metadata;
     try {
-      metadata = await musicMetadata.parseFile(filePath, PARSE_OPTS);
+      metadata = await musicMetadata.parseFile(realPath, PARSE_OPTS);
     } catch (err) {
-      metadata = await musicMetadata.parseFile(filePath, { ...PARSE_OPTS, skipCovers: true });
+      metadata = await musicMetadata.parseFile(realPath, { ...PARSE_OPTS, skipCovers: true });
     }
     let coverBase64 = null;
     let coverFormat = null;
@@ -842,7 +858,7 @@ ipcMain.handle('music:parseMetadata', async (event, filePath) => {
 // amplitude peaks for the waveform progress bar (Web Audio decode runs in the
 // renderer). Returns a Buffer; IPC serializes it to a Uint8Array on the other side.
 ipcMain.handle('audio:readFile', async (event, filePath) => {
-  return await fs.promises.readFile(filePath);
+  return await fs.promises.readFile(resolveRealPath(filePath));
 });
 
 function runFfmpeg(ffmpeg, args) {
@@ -930,7 +946,9 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
 }
 
 async function writeMetadataToFile(filePath, tags) {
-  if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'File not found' };
+  if (!filePath) return { success: false, error: 'File not found' };
+  filePath = resolveRealPath(filePath);
+  if (!fs.existsSync(filePath)) return { success: false, error: 'File not found' };
   const ffmpeg = resolveBundledFfmpeg();
   if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
 
@@ -988,8 +1006,10 @@ function parseCoverSource(source) {
   return null;
 }
 
-async function writeCoverToFile(filePath, coverDataUrl) {
-  if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'File not found' };
+async function writeCoverToFile(origPath, coverDataUrl) {
+  if (!origPath) return { success: false, error: 'File not found' };
+  const filePath = resolveRealPath(origPath);
+  if (!fs.existsSync(filePath)) return { success: false, error: 'File not found' };
   const picture = parseCoverSource(coverDataUrl);
   if (!picture) return { success: false, error: 'Bad cover data' };
   const ffmpeg = resolveBundledFfmpeg();
@@ -1015,14 +1035,15 @@ async function writeCoverToFile(filePath, coverDataUrl) {
     await fs.promises.rename(tmpPath, filePath);
     // Disk cover cache is keyed by a hash of the path and never overwrites an
     // existing entry (it assumes a track's art is immutable) — drop the stale
-    // one first so the new cover actually lands on next boot.
+    // one first so the new cover actually lands on next boot. Keyed by the
+    // original (unresolved) path — that's what covers:load looks it up with.
     const dir = coverCacheDir();
     await fs.promises.mkdir(dir, { recursive: true });
-    const hash = coverCacheHash(filePath);
+    const hash = coverCacheHash(origPath);
     for (const name of await fs.promises.readdir(dir)) {
       if (name.startsWith(hash)) await fs.promises.unlink(path.join(dir, name)).catch(() => {});
     }
-    await saveCoverToCache(filePath, picture);
+    await saveCoverToCache(origPath, picture);
     return { success: true };
   } catch (err) {
     try { fs.unlinkSync(tmpPath); } catch (_) {}
@@ -1052,8 +1073,9 @@ async function stripCoverIfCorrupt(filePath) {
 }
 
 ipcMain.handle('shell:revealInFolder', async (event, filePath) => {
-  if (filePath && fs.existsSync(filePath)) {
-    shell.showItemInFolder(filePath);
+  const real = filePath && resolveRealPath(filePath);
+  if (real && fs.existsSync(real)) {
+    shell.showItemInFolder(real);
     return true;
   }
   return false;
@@ -1259,7 +1281,7 @@ function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain, pictu
 }
 
 ipcMain.handle('audio:trim', async (event, payload) => {
-  const src = payload && payload.filePath ? String(payload.filePath) : '';
+  const src = resolveRealPath(payload && payload.filePath ? String(payload.filePath) : '');
   const start = Math.max(0, Number(payload && payload.start) || 0);
   const end = Number(payload && payload.end) || 0;
   const fadeIn = Math.max(0, Number(payload && payload.fadeIn) || 0);
@@ -1313,6 +1335,7 @@ ipcMain.handle('audio:trim', async (event, payload) => {
 
 ipcMain.handle('shell:deleteFile', async (event, filePath) => {
   if (!filePath) return { success: false, error: 'No path' };
+  filePath = resolveRealPath(filePath);
   if (!fs.existsSync(filePath)) return { success: true, missing: true };
   try {
     await shell.trashItem(filePath);
@@ -1571,7 +1594,14 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
 });
 
 function sanitizeFsName(name) {
-  const s = String(name || '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim().slice(0, 180);
+  // Windows silently strips trailing dots and spaces when it actually creates
+  // the file/folder, so a tag like "Vol. 1." would leave this app holding a
+  // path that doesn't match what's really on disk — every later read (tag
+  // parsing, cover load, playback) then misses the file. Strip trailing dots/
+  // spaces here, twice: once before the length cut, once after (truncation
+  // can expose a new trailing dot/space of its own).
+  const clean = (s) => s.trim().replace(/[.\s]+$/, '');
+  const s = clean(clean(String(name || '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')).slice(0, 180));
   // "." and ".." survive the character filter and would climb out of the target
   // directory — album/artist tags come from remote metadata, so this matters.
   return /^\.+$/.test(s) ? '' : s;
@@ -2401,6 +2431,7 @@ function acoustidBestMatch(data) {
 }
 
 ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => {
+  filePath = filePath && resolveRealPath(filePath);
   if (!filePath || !fs.existsSync(filePath)) return { success: false, error: 'notFound' };
   const key = String(apiKey || '').trim();
   if (!key) return { success: false, error: 'noKey' };

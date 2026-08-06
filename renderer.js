@@ -414,7 +414,6 @@ const I18N = {
     'update.failed': 'Download failed — opening release page',
     'update.dismiss': 'Dismiss',
     'import.progress': 'Importing tracks…',
-    'fixTags.progress': 'Fixing tags…',
     'nav.albums': 'Albums',
     'nav.artists': 'Artists',
     'nav.playlists': 'Playlists',
@@ -445,8 +444,8 @@ const I18N = {
     'editor.save': 'Trim and save',
     'editor.decoding': 'Reading audio…',
     'editor.decodeError': 'Could not read the audio',
-    'editor.saving': 'Trimming…',
-    'editor.saved': 'Saved: {f}',
+    'editor.trimming': 'Trimming…',
+    'editor.trimSaved': 'Saved: {f}',
     'editor.saveError': 'Trim failed: {e}',
     'editor.tooShort': 'Fragment is too short',
     'nav.search': 'Search',
@@ -908,10 +907,8 @@ const I18N = {
     'editor.idNoKey': 'Add your AcoustID API key in Settings to use Identify',
     'cm.fixTags': 'Fix the tags',
     'cm.fixTagsAcoustid': 'Fix tags with AcoustID',
-    'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
     'fixTags.progress': 'Fixing tags…',
     'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
-    'palette.action.fixTagsLibrary': 'Fix the tags (Library)',
     'setting.acoustidKey': 'AcoustID API key',
     'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Required — get your own for free at acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Your API key',
@@ -920,7 +917,6 @@ const I18N = {
     'editor.identifying': 'Fingerprinting and looking up…',
     'editor.idFilled': 'Match found — review and save',
     'editor.idNoMatch': 'No match on AcoustID',
-    'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
     'cm.useAsAlbumCover': 'Use as album cover',
     'cm.applyCoverToAlbum': 'Apply cover to album…',
     'cm.fixYear': 'Fix release year…',
@@ -934,9 +930,7 @@ const I18N = {
     'albumYear.prompt': 'Set the release year for every track in this album:',
     'albumYear.progress': 'Updating release years…',
     'albumYear.summary': '{updated} updated · {failed} failed ({total} total)',
-    'albumTrackNo.pickTitle': 'Pick a track to number',
-    'albumTrackNo.numberPrompt': 'Track number for “{title}”:',
-    'albumTrackNo.invalid': 'Enter a whole number.',
+    'albumTrackNo.pickTitle': 'Click tracks in listening order — first click is track 1',
     'albumTrackNo.writeFailed': 'Could not update the track number.',
     'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
     'editor.idFailed': 'Lookup failed',
@@ -1033,7 +1027,6 @@ const I18N = {
     'update.failed': 'Download fehlgeschlagen — Release-Seite wird geöffnet',
     'update.dismiss': 'Schließen',
     'import.progress': 'Titel werden importiert…',
-    'fixTags.progress': 'Tags werden korrigiert…',
     'nav.albums': 'Alben',
     'nav.artists': 'Interpreten',
     'nav.playlists': 'Playlists',
@@ -1064,8 +1057,8 @@ const I18N = {
     'editor.save': 'Zuschneiden und speichern',
     'editor.decoding': 'Audio wird gelesen…',
     'editor.decodeError': 'Audio konnte nicht gelesen werden',
-    'editor.saving': 'Wird zugeschnitten…',
-    'editor.saved': 'Gespeichert: {f}',
+    'editor.trimming': 'Wird zugeschnitten…',
+    'editor.trimSaved': 'Gespeichert: {f}',
     'editor.saveError': 'Zuschneiden fehlgeschlagen: {e}',
     'editor.tooShort': 'Ausschnitt ist zu kurz',
     'nav.search': 'Suche',
@@ -1527,10 +1520,8 @@ const I18N = {
     'editor.idNoKey': 'Füge deinen AcoustID-API-Schlüssel in den Einstellungen hinzu, um Erkennen zu nutzen',
     'cm.fixTags': 'Tags korrigieren',
     'cm.fixTagsAcoustid': 'Tags über AcoustID korrigieren',
-    'btn.fixTagsTooltip': 'Tags über AcoustID korrigieren…',
     'fixTags.progress': 'Tags werden korrigiert…',
     'fixTags.summary': '{fixed} aktualisiert · {unchanged} bereits korrekt · {noMatch} ohne Treffer · {failed} fehlgeschlagen ({total} insgesamt)',
-    'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)',
     'setting.acoustidKey': 'AcoustID-API-Schlüssel',
     'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Erforderlich — einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Dein API-Schlüssel',
@@ -1539,7 +1530,6 @@ const I18N = {
     'editor.identifying': 'Fingerabdruck wird erstellt…',
     'editor.idFilled': 'Treffer gefunden — prüfen und speichern',
     'editor.idNoMatch': 'Kein Treffer bei AcoustID',
-    'fixTags.summary': '{fixed} korrigiert · {unchanged} bereits korrekt · {noMatch} kein Treffer · {failed} fehlgeschlagen (von {total})',
     'cm.useAsAlbumCover': 'Als Album-Cover verwenden',
     'cm.applyCoverToAlbum': 'Cover auf Album anwenden…',
     'cm.fixYear': 'Erscheinungsjahr korrigieren…',
@@ -1553,9 +1543,7 @@ const I18N = {
     'albumYear.prompt': 'Erscheinungsjahr für alle Titel dieses Albums festlegen:',
     'albumYear.progress': 'Erscheinungsjahre werden aktualisiert…',
     'albumYear.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
-    'albumTrackNo.pickTitle': 'Titel zum Nummerieren wählen',
-    'albumTrackNo.numberPrompt': 'Titelnummer für „{title}“:',
-    'albumTrackNo.invalid': 'Bitte eine ganze Zahl eingeben.',
+    'albumTrackNo.pickTitle': 'Titel in Hörreihenfolge anklicken — der erste Klick wird Titel 1',
     'albumTrackNo.writeFailed': 'Die Titelnummer konnte nicht aktualisiert werden.',
     'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
     'editor.idFailed': 'Abfrage fehlgeschlagen',
@@ -1652,7 +1640,6 @@ const I18N = {
     'update.failed': "Échec du téléchargement — ouverture de la page de version",
     'update.dismiss': 'Fermer',
     'import.progress': 'Importation des titres…',
-    'fixTags.progress': 'Correction des tags…',
     'nav.albums': 'Albums',
     'nav.artists': 'Artistes',
     'nav.playlists': 'Playlists',
@@ -1683,8 +1670,8 @@ const I18N = {
     'editor.save': 'Découper et enregistrer',
     'editor.decoding': "Lecture de l'audio…",
     'editor.decodeError': "Impossible de lire l'audio",
-    'editor.saving': 'Découpe en cours…',
-    'editor.saved': 'Enregistré : {f}',
+    'editor.trimming': 'Découpe en cours…',
+    'editor.trimSaved': 'Enregistré : {f}',
     'editor.saveError': 'Échec de la découpe : {e}',
     'editor.tooShort': "L'extrait est trop court",
     'nav.search': 'Recherche',
@@ -2146,10 +2133,8 @@ const I18N = {
     'editor.idNoKey': "Ajoutez votre clé API AcoustID dans les Paramètres pour utiliser Identifier",
     'cm.fixTags': 'Corriger les tags',
     'cm.fixTagsAcoustid': 'Corriger les tags avec AcoustID',
-    'btn.fixTagsTooltip': 'Corriger les tags via AcoustID…',
     'fixTags.progress': 'Correction des tags…',
     'fixTags.summary': '{fixed} mis à jour · {unchanged} déjà corrects · {noMatch} sans correspondance · {failed} échoués ({total} au total)',
-    'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)',
     'setting.acoustidKey': 'Clé API AcoustID',
     'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Requise — obtenez la vôtre gratuitement sur acoustid.org/api-key.",
     'setting.acoustidKeyPh': 'Votre clé API',
@@ -2158,7 +2143,6 @@ const I18N = {
     'editor.identifying': 'Empreinte et recherche en cours…',
     'editor.idFilled': 'Correspondance trouvée — vérifiez puis enregistrez',
     'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
-    'fixTags.summary': '{fixed} corrigées · {unchanged} déjà correctes · {noMatch} sans correspondance · {failed} échouées (sur {total})',
     'cm.useAsAlbumCover': "Utiliser comme pochette de l'album",
     'cm.applyCoverToAlbum': "Appliquer la pochette à l'album…",
     'cm.fixYear': "Corriger l'année de sortie…",
@@ -2172,9 +2156,7 @@ const I18N = {
     'albumYear.prompt': "Définir l'année de sortie pour tous les titres de cet album :",
     'albumYear.progress': 'Mise à jour des années de sortie…',
     'albumYear.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
-    'albumTrackNo.pickTitle': 'Choisir une piste à numéroter',
-    'albumTrackNo.numberPrompt': 'Numéro de piste pour « {title} » :',
-    'albumTrackNo.invalid': 'Entrez un nombre entier.',
+    'albumTrackNo.pickTitle': "Cliquez les pistes dans l'ordre d'écoute — le premier clic est la piste 1",
     'albumTrackNo.writeFailed': 'Impossible de mettre à jour le numéro de piste.',
     'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
     'editor.idFailed': 'Échec de la recherche',
@@ -2271,7 +2253,6 @@ const I18N = {
     'update.failed': 'Не вдалося завантажити — відкриваємо сторінку релізу',
     'update.dismiss': 'Закрити',
     'import.progress': 'Імпортуємо треки…',
-    'fixTags.progress': 'Виправляємо теги…',
     'nav.albums': 'Альбоми',
     'nav.artists': 'Виконавці',
     'nav.playlists': 'Плейлисти',
@@ -2302,8 +2283,8 @@ const I18N = {
     'editor.save': 'Обрізати та зберегти',
     'editor.decoding': 'Читаємо аудіо…',
     'editor.decodeError': 'Не вдалося прочитати аудіо',
-    'editor.saving': 'Обрізаємо…',
-    'editor.saved': 'Збережено: {f}',
+    'editor.trimming': 'Обрізаємо…',
+    'editor.trimSaved': 'Збережено: {f}',
     'editor.saveError': 'Помилка обрізання: {e}',
     'editor.tooShort': 'Фрагмент занадто короткий',
     'nav.search': 'Пошук',
@@ -2765,10 +2746,8 @@ const I18N = {
     'editor.idNoKey': 'Додайте свій ключ API AcoustID у Налаштуваннях, щоб користуватися Розпізнаванням',
     'cm.fixTags': 'Виправити теги',
     'cm.fixTagsAcoustid': 'Виправити теги через AcoustID',
-    'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
     'fixTags.progress': 'Виправляємо теги…',
     'fixTags.summary': '{fixed} оновлено · {unchanged} вже правильні · {noMatch} без збігів · {failed} невдало ({total} усього)',
-    'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)',
     'setting.acoustidKey': 'Ключ API AcoustID',
     'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Обов’язковий — власний можна отримати безкоштовно на acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Твій ключ API',
@@ -2777,7 +2756,6 @@ const I18N = {
     'editor.identifying': 'Створюємо відбиток і шукаємо…',
     'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
     'editor.idNoMatch': 'В AcoustID збігів немає',
-    'fixTags.summary': '{fixed} виправлено · {unchanged} вже коректні · {noMatch} без збігів · {failed} помилок (з {total})',
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
     'cm.applyCoverToAlbum': 'Застосувати обкладинку до альбому…',
     'cm.fixYear': 'Виправити рік випуску…',
@@ -2791,9 +2769,7 @@ const I18N = {
     'albumYear.prompt': 'Встановити рік випуску для всіх треків цього альбому:',
     'albumYear.progress': 'Оновлюємо роки випуску…',
     'albumYear.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
-    'albumTrackNo.pickTitle': 'Оберіть трек для нумерації',
-    'albumTrackNo.numberPrompt': 'Номер треку для «{title}»:',
-    'albumTrackNo.invalid': 'Введіть ціле число.',
+    'albumTrackNo.pickTitle': 'Клацайте треки у порядку прослуховування — перший клік стане треком 1',
     'albumTrackNo.writeFailed': 'Не вдалося оновити номер треку.',
     'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
     'editor.idFailed': 'Пошук не вдався',
@@ -3573,7 +3549,7 @@ async function saveEditorTrim() {
   const fadeOut = Math.max(0, parseFloat($('ed-fade-out').value) || 0);
   stopEditorPreview();
   if (saveBtn) saveBtn.disabled = true;
-  setEdStatus(tr('editor.saving'));
+  setEdStatus(tr('editor.trimming'));
   try {
     const res = await window.electronAPI.trimAudio({
       filePath: edTrack.path,
@@ -3603,7 +3579,7 @@ async function saveEditorTrim() {
     } else {
       await importPaths([res.filePath]);
     }
-    setEdStatus(tr('editor.saved', { f: res.filePath.split('/').pop() }), 'ok');
+    setEdStatus(tr('editor.trimSaved', { f: res.filePath.split('/').pop() }), 'ok');
     if (overwrite) openEditorFor(edTrack); // re-decode the shortened file
   } catch (err) {
     setEdStatus(tr('editor.saveError', { e: String(err) }), 'error');
@@ -6904,14 +6880,15 @@ function refreshCurrentViewRows() {
 }
 
 // Cheap path: only the .playing/equalizer indicator changes — repaint visible rows in place.
+// Refreshes every track-row surface unconditionally rather than matching
+// currentView to one virtual list — refreshVisible()/querySelectorAll only
+// touch rows that are actually mounted, so this stays cheap, and it removes
+// the "forgot to wire in the new view" trap that let a new detail view's
+// highlight go stale silently (as Album's briefly did).
 function refreshPlayingHighlight() {
-  const v = currentView === 'library' ? libraryVList
-    : currentView === 'favorites' ? favoritesVList
-    : currentView === 'playlist-detail' ? playlistVList
-    : null;
-  if (v) { v.refreshVisible(); return; }
+  [libraryVList, favoritesVList, playlistVList, albumVList].forEach(v => v && v.refreshVisible());
   // Artist detail renders rows directly (no virtual list) — patch them in place.
-  if (currentView === 'artist-detail') refreshPlainListHighlight($('artist-albums'));
+  refreshPlainListHighlight($('artist-albums'));
 }
 
 function refreshPlainListHighlight(container) {
@@ -7486,36 +7463,41 @@ async function runFixAlbumYear(tracks) {
 }
 
 // ── Fix album track numbers ──
-// Used to renumber the whole album sequentially from a typed start value, in
-// whatever order sortAlbumTracks guessed (disc/trackNo, falling back to title
-// when numbers are missing) — but that fallback order is often just
-// alphabetical, nowhere near the real listening order, so the bulk renumber
-// silently stamped wrong numbers onto the wrong songs. Pick the song by name
-// instead, then type its number: one track at a time, no order guessing. The
-// list stays open (re-sorted after each write) so a whole album can be fixed
-// in one pass.
+// Used to ask for a typed start value and bulk-renumber the album in
+// whatever order sortAlbumTracks guessed (disc/trackNo, falling back to
+// title when numbers are missing) — that fallback order is often just
+// alphabetical, nowhere near the real listening order, so it silently
+// stamped wrong numbers onto the wrong songs. The user now picks the order
+// by clicking: the first track clicked becomes #1, and each click after
+// that is auto-stamped with the next number — no typing, no order guessing.
+let trackNumberNext = 1;
 function renderTrackNumberList(tracks) {
   const list = $('track-number-list');
   list.innerHTML = '';
   sortAlbumTracks(tracks).forEach(t => {
     const el = document.createElement('div');
-    el.className = 'sl-item';
-    el.innerHTML = `<span style="color:var(--text-dim);display:inline-block;width:28px">${escapeHtml(t.trackNo || '—')}</span>${escapeHtml(t.title || '—')}`;
+    el.className = 'sl-item tn-item';
+    const num = document.createElement('span');
+    num.className = 'tn-num';
+    num.textContent = t.trackNo || '—';
+    el.appendChild(num);
+    el.appendChild(document.createTextNode(t.title || '—'));
     el.addEventListener('click', async () => {
-      const no = await promptModal(tr('albumTrackNo.numberPrompt', { title: t.title }), t.trackNo || '');
-      if (no === null) return;
-      const trimmed = no.trim();
-      if (!/^\d+$/.test(trimmed)) { alert(tr('albumTrackNo.invalid')); return; }
-      const wr = await window.electronAPI.writeMetadata(t.path, { trackNo: trimmed });
+      if (el.classList.contains('tn-done')) return;
+      const no = trackNumberNext;
+      el.classList.add('tn-done'); // guards against a double-click burning two numbers
+      const wr = await window.electronAPI.writeMetadata(t.path, { trackNo: String(no) });
       if (!wr || !wr.success) {
         window.electronAPI.logError?.('albumTrackNoFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
         alert(tr('albumTrackNo.writeFailed'));
+        el.classList.remove('tn-done');
         return;
       }
-      t.trackNo = trimmed;
+      trackNumberNext = no + 1;
+      t.trackNo = String(no);
+      num.textContent = String(no);
       saveLibrary();
       refreshCurrentViewRows();
-      renderTrackNumberList(tracks);
     });
     list.appendChild(el);
   });
@@ -7523,6 +7505,7 @@ function renderTrackNumberList(tracks) {
 function runFixAlbumTrackNumbers(tracks) {
   const targets = tracks.filter(t => !isRemotePath(t.path));
   if (!targets.length) return;
+  trackNumberNext = 1;
   renderTrackNumberList(targets);
   $('track-number-modal').classList.add('active');
 }

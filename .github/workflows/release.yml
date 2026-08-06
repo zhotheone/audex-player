@@ -71,7 +71,7 @@ jobs:
         run: npm run dist -- --mac --publish never
 
       - name: Attach artifacts to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             release/*.dmg
@@ -140,7 +140,7 @@ jobs:
         run: npm run dist -- --win --publish never
 
       - name: Attach artifacts to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             release/*.exe
@@ -209,7 +209,7 @@ jobs:
         run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk "audex-android-${{ github.ref_name }}.apk"
 
       - name: Attach artifact to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: audex-android-${{ github.ref_name }}.apk
 
@@ -254,6 +254,6 @@ jobs:
           done
 
       - name: Attach artifacts to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: PixelPlayer/app/build/outputs/apk/debug/*.apk
