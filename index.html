@@ -1331,6 +1331,37 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.defaultView">Default page</div>
+              <div class="setting-desc" data-i18n="setting.defaultViewDesc">Which page opens when the app starts.</div>
+            </div>
+            <div class="select" id="defaultview-select">
+              <button class="select-btn">
+                <span id="defaultview-current">Library</span>
+                <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="select-menu">
+                <div class="select-opt" data-defaultview="library" data-i18n="nav.library">Library</div>
+                <div class="select-opt" data-defaultview="artists" data-i18n="nav.artists">Artists</div>
+                <div class="select-opt" data-defaultview="albums" data-i18n="nav.albums">Albums</div>
+                <div class="select-opt" data-defaultview="favorites" data-i18n="nav.favorites">Favorites</div>
+                <div class="select-opt" data-defaultview="playlist-detail" data-i18n="setting.defaultViewPlaylist">Custom playlist…</div>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row" id="defaultview-playlist-row" hidden>
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.defaultPlaylist">Playlist</div>
+            </div>
+            <div class="select" id="defaultplaylist-select">
+              <button class="select-btn">
+                <span id="defaultplaylist-current">—</span>
+                <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="select-menu" id="defaultplaylist-menu"></div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
               <div class="setting-label" data-i18n="setting.scanSubdirs">Scan subfolders</div>
               <div class="setting-desc" data-i18n="setting.scanSubdirsDesc">Include nested directories during indexing.</div>
             </div>
@@ -1351,6 +1382,13 @@
               <input type="range" id="crossfade-len" class="ui-range" min="0" max="10" step="0.5" value="3">
               <output class="range-val" id="crossfade-len-val">3 s</output>
             </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.repeatOneReset">Reset "repeat one" on skip</div>
+              <div class="setting-desc" data-i18n="setting.repeatOneResetDesc">Manually skipping to the next or previous track while "repeat one" is on switches it to "repeat" instead of looping the new track too.</div>
+            </div>
+            <button class="toggle" data-setting="repeat-one-reset"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
@@ -1648,6 +1686,18 @@
     </div>
   </div>
 
+  <!-- Generic text-input prompt (Electron has no window.prompt()) -->
+  <div id="text-prompt-modal" class="modal-overlay">
+    <div class="modal-card modal-card-md">
+      <div class="modal-title" id="text-prompt-title"></div>
+      <input type="text" class="modal-input" id="text-prompt-input">
+      <div class="modal-actions">
+        <button id="btn-cancel-text-prompt" class="btn-ghost" data-i18n="btn.cancel">Cancel</button>
+        <button id="btn-confirm-text-prompt" class="btn-solid" data-i18n="btn.save">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Editor: track picker -->
   <div id="ed-pick-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
@@ -1769,7 +1819,6 @@
   <!-- Fix Tags Menu — triggered from the Artist/Album hero "fix tags" button -->
   <div id="fix-tags-menu" class="context-menu">
     <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix the tags</span></button>
-    <button class="cm-item" data-action="fix-tags-force"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTagsForce">Fix the tags (without comparing)</span></button>
     <button class="cm-item" data-action="apply-cover" id="ftm-apply-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applyCoverToAlbum">Apply cover to album…</span></button>
     <button class="cm-item" data-action="fix-year" id="ftm-fix-year" hidden><svg class="i" width="11" height="11"><use href="#i-clock"/></svg><span data-i18n="cm.fixYear">Fix release year…</span></button>
     <button class="cm-item" data-action="fix-tracknos" id="ftm-fix-tracknos" hidden><svg class="i" width="11" height="11"><use href="#i-list"/></svg><span data-i18n="cm.fixTrackNumbers">Correct track numbers…</span></button>

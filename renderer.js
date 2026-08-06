@@ -40,6 +40,8 @@ let settings = Object.assign({
   accent: '',             // '' = theme default; otherwise a hex like '#5b9eff'
   language: 'en',
   defaultFolder: '',
+  defaultView: 'library',    // view shown on startup: library | artists | albums | favorites | playlist-detail
+  defaultPlaylistId: null,   // used when defaultView === 'playlist-detail'
   dlFormat: 'opus',       // yt-dlp --audio-format: opus | mp3 | flac | m4a | wav
   scanSubdirs: true,
   healthCheck: false,
@@ -47,6 +49,7 @@ let settings = Object.assign({
   editor: false,
   crossfade: false,
   crossfadeSec: 3,        // 0–10, length of the blend; 0 = instant switch
+  repeatOneResetOnSkip: true, // manually skipping while "repeat one" is on drops it to "repeat"
   volumeWheelStep: 0.05,  // 0.01–0.2, volume change per mouse-wheel notch on the slider
   acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
@@ -68,6 +71,10 @@ let settings = Object.assign({
 let recents = JSON.parse(localStorage.getItem(LS.recents) || '[]');
 // Format names are the same in every language, so they stay out of the i18n tables.
 const DL_FORMAT_LABELS = { opus: 'Opus', mp3: 'MP3', flac: 'FLAC', m4a: 'M4A', wav: 'WAV' };
+const DEFAULT_VIEW_LABELS = {
+  library: 'nav.library', artists: 'nav.artists', albums: 'nav.albums',
+  favorites: 'nav.favorites', 'playlist-detail': 'setting.defaultViewPlaylist',
+};
 
 // ── Discord Rich Presence ──
 // Paste your Discord Application Client ID here (https://discord.com/developers
@@ -775,6 +782,10 @@ const I18N = {
     'setting.accentCustom': 'Custom color',
     'setting.defaultFolder': 'Default folder',
     'setting.defaultFolderDesc': 'Where to load tracks from on startup.',
+    'setting.defaultView': 'Default page',
+    'setting.defaultViewDesc': 'Which page opens when the app starts.',
+    'setting.defaultViewPlaylist': 'Custom playlist…',
+    'setting.defaultPlaylist': 'Playlist',
     'setting.uiScale': 'Interface scale',
     'setting.uiScaleDesc': 'Makes the entire UI larger or smaller. Applies instantly.',
     'setting.uiScaleReset': 'Reset',
@@ -790,6 +801,8 @@ const I18N = {
     'unit.sec': 's',
     'setting.crossfade': 'Crossfade between tracks',
     'setting.crossfadeDesc': 'Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.',
+    'setting.repeatOneReset': 'Reset "repeat one" on skip',
+    'setting.repeatOneResetDesc': 'Manually skipping to the next or previous track while "repeat one" is on switches it to "repeat" instead of looping the new track too.',
     'setting.showDownloads': 'Show the “Downloads” tab',
     'setting.showDownloadsDesc': 'Adds a section to the sidebar for downloading tracks by URL.',
     'setting.showDevices': 'Show the “Devices” tab',
@@ -852,6 +865,8 @@ const I18N = {
     'update.upToDate': 'You\'re on the latest version ({v}).',
     'badge.wip': 'in development',
     'placeholder.noFolder': '— not selected —',
+    'placeholder.noPlaylists': 'No playlists yet',
+    'placeholder.choosePlaylist': 'Choose a playlist…',
     'modal.deleteTrack.title': 'Delete track?',
     'modal.deleteTrack.text': 'The track will be removed from the library and the file moved to the trash.',
     'modal.deleteTrackFull.text': '“{title}” by {artist} will be removed from the library and the file moved to the trash.',
@@ -900,7 +915,6 @@ const I18N = {
     'fixTags.progress': 'Fixing tags…',
     'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
     'palette.action.fixTagsLibrary': 'Fix the tags (Library)',
-    'palette.action.fixTagsLibraryForce': 'Fix the tags (Library, without comparing)',
     'setting.acoustidKey': 'AcoustID API key',
     'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Required — get your own for free at acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Your API key',
@@ -951,7 +965,6 @@ const I18N = {
     'palette.action.gotoFavorites': 'Go to Favorites',
     'palette.action.clearLibrary': 'Clear library…',
     'palette.action.fixTagsLibrary': 'Fix the tags (Library)…',
-    'palette.action.fixTagsLibraryForce': 'Fix the tags (Library, without comparing)…',
     'palette.action.volumeUp': 'Volume up',
     'palette.action.volumeDown': 'Volume down',
     'label.unknownArtist': 'Unknown artist',
@@ -1391,6 +1404,10 @@ const I18N = {
     'setting.accentCustom': 'Eigene Farbe',
     'setting.defaultFolder': 'Standardordner',
     'setting.defaultFolderDesc': 'Woher Titel beim Start geladen werden.',
+    'setting.defaultView': 'Startseite',
+    'setting.defaultViewDesc': 'Welche Seite beim Start der App geöffnet wird.',
+    'setting.defaultViewPlaylist': 'Eigene Playlist…',
+    'setting.defaultPlaylist': 'Playlist',
     'setting.uiScale': 'Oberflächenskalierung',
     'setting.uiScaleDesc': 'Vergrößert oder verkleinert die gesamte Oberfläche. Wird sofort angewendet.',
     'setting.uiScaleReset': 'Zurücksetzen',
@@ -1406,6 +1423,8 @@ const I18N = {
     'unit.sec': 's',
     'setting.crossfade': 'Überblendung zwischen Titeln',
     'setting.crossfadeDesc': 'Titel gehen ineinander über: der aktuelle wird ausgeblendet, während der nächste einsetzt. Gilt sowohl am Titelende als auch beim manuellen Wechseln.',
+    'setting.repeatOneReset': '„Titel wiederholen“ beim Überspringen zurücksetzen',
+    'setting.repeatOneResetDesc': 'Wird manuell zum nächsten oder vorherigen Titel gewechselt, während „Titel wiederholen“ aktiv ist, schaltet es auf „Wiederholen“ um, statt auch den neuen Titel zu wiederholen.',
     'setting.showDownloads': 'Tab „Downloads“ anzeigen',
     'setting.showDownloadsDesc': 'Öffnet einen Bereich in der Seitenleiste zum Herunterladen von Titeln per URL.',
     'setting.showDevices': 'Registerkarte „Geräte“ anzeigen',
@@ -1468,6 +1487,8 @@ const I18N = {
     'update.upToDate': 'Du hast bereits die neueste Version ({v}).',
     'badge.wip': 'in Entwicklung',
     'placeholder.noFolder': '— nicht ausgewählt —',
+    'placeholder.noPlaylists': 'Noch keine Playlists',
+    'placeholder.choosePlaylist': 'Playlist wählen…',
     'modal.deleteTrack.title': 'Titel löschen?',
     'modal.deleteTrack.text': 'Der Titel wird aus der Bibliothek entfernt und die Datei in den Papierkorb verschoben.',
     'modal.deleteTrackFull.text': '„{title}“ von {artist} wird aus der Bibliothek entfernt und die Datei in den Papierkorb verschoben.',
@@ -1516,7 +1537,6 @@ const I18N = {
     'fixTags.progress': 'Tags werden korrigiert…',
     'fixTags.summary': '{fixed} aktualisiert · {unchanged} bereits korrekt · {noMatch} ohne Treffer · {failed} fehlgeschlagen ({total} insgesamt)',
     'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)',
-    'palette.action.fixTagsLibraryForce': 'Tags korrigieren (Bibliothek, ohne Vergleich)',
     'setting.acoustidKey': 'AcoustID-API-Schlüssel',
     'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Erforderlich — einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Dein API-Schlüssel',
@@ -1567,7 +1587,6 @@ const I18N = {
     'palette.action.gotoFavorites': 'Zu den Favoriten',
     'palette.action.clearLibrary': 'Bibliothek leeren…',
     'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)…',
-    'palette.action.fixTagsLibraryForce': 'Tags korrigieren (Bibliothek, ohne Vergleich)…',
     'palette.action.volumeUp': 'Lauter',
     'palette.action.volumeDown': 'Leiser',
     'label.unknownArtist': 'Unbekannter Interpret',
@@ -2007,6 +2026,10 @@ const I18N = {
     'setting.accentCustom': 'Couleur personnalisée',
     'setting.defaultFolder': 'Dossier par défaut',
     'setting.defaultFolderDesc': "D'où charger les pistes au démarrage.",
+    'setting.defaultView': 'Page par défaut',
+    'setting.defaultViewDesc': "Quelle page s'ouvre au démarrage de l'application.",
+    'setting.defaultViewPlaylist': 'Playlist personnalisée…',
+    'setting.defaultPlaylist': 'Playlist',
     'setting.uiScale': "Échelle de l'interface",
     'setting.uiScaleDesc': "Agrandit ou réduit toute l'interface. Appliqué immédiatement.",
     'setting.uiScaleReset': 'Réinitialiser',
@@ -2022,6 +2045,8 @@ const I18N = {
     'unit.sec': 's',
     'setting.crossfade': 'Fondu enchaîné entre les pistes',
     'setting.crossfadeDesc': "Les pistes se fondent l'une dans l'autre : la piste en cours s'estompe pendant que la suivante monte. S'applique en fin de piste comme lors d'un changement manuel.",
+    'setting.repeatOneReset': 'Réinitialiser « répéter le titre » lors d\'un changement',
+    'setting.repeatOneResetDesc': 'Passer manuellement au titre suivant ou précédent alors que « répéter le titre » est actif le fait basculer sur « répéter » au lieu de reboucler aussi sur le nouveau titre.',
     'setting.showDownloads': "Afficher l'onglet « Téléchargements »",
     'setting.showDownloadsDesc': 'Ajoute une section à la barre latérale pour télécharger des pistes par URL.',
     'setting.showDevices': 'Afficher l’onglet « Appareils »',
@@ -2084,6 +2109,8 @@ const I18N = {
     'update.upToDate': 'Vous avez déjà la dernière version ({v}).',
     'badge.wip': 'en développement',
     'placeholder.noFolder': '— non sélectionné —',
+    'placeholder.noPlaylists': 'Pas encore de playlist',
+    'placeholder.choosePlaylist': 'Choisir une playlist…',
     'modal.deleteTrack.title': 'Supprimer la piste ?',
     'modal.deleteTrack.text': 'La piste sera retirée de la bibliothèque et le fichier déplacé vers la corbeille.',
     'modal.deleteTrackFull.text': '« {title} » de {artist} sera retirée de la bibliothèque et le fichier déplacé vers la corbeille.',
@@ -2132,7 +2159,6 @@ const I18N = {
     'fixTags.progress': 'Correction des tags…',
     'fixTags.summary': '{fixed} mis à jour · {unchanged} déjà corrects · {noMatch} sans correspondance · {failed} échoués ({total} au total)',
     'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)',
-    'palette.action.fixTagsLibraryForce': 'Corriger les tags (Bibliothèque, sans comparer)',
     'setting.acoustidKey': 'Clé API AcoustID',
     'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Requise — obtenez la vôtre gratuitement sur acoustid.org/api-key.",
     'setting.acoustidKeyPh': 'Votre clé API',
@@ -2183,7 +2209,6 @@ const I18N = {
     'palette.action.gotoFavorites': 'Aller aux Favoris',
     'palette.action.clearLibrary': 'Vider la bibliothèque…',
     'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)…',
-    'palette.action.fixTagsLibraryForce': 'Corriger les tags (Bibliothèque, sans comparer)…',
     'palette.action.volumeUp': 'Monter le volume',
     'palette.action.volumeDown': 'Baisser le volume',
     'label.unknownArtist': 'Artiste inconnu',
@@ -2623,6 +2648,10 @@ const I18N = {
     'setting.accentCustom': 'Власний колір',
     'setting.defaultFolder': 'Тека за замовчуванням',
     'setting.defaultFolderDesc': 'Звідки завантажувати треки під час запуску.',
+    'setting.defaultView': 'Початкова сторінка',
+    'setting.defaultViewDesc': 'Яка сторінка відкривається при запуску застосунку.',
+    'setting.defaultViewPlaylist': 'Свій плейлист…',
+    'setting.defaultPlaylist': 'Плейлист',
     'setting.uiScale': 'Масштаб інтерфейсу',
     'setting.uiScaleDesc': 'Збільшує або зменшує весь інтерфейс. Застосовується одразу.',
     'setting.uiScaleReset': 'Скинути',
@@ -2638,6 +2667,8 @@ const I18N = {
     'unit.sec': 'с',
     'setting.crossfade': 'Плавний перехід між треками',
     'setting.crossfadeDesc': 'Треки перетікають один в одного: кінець поточного стихає, поки наступний наростає. Діє і в кінці треку, і під час ручного перемикання.',
+    'setting.repeatOneReset': 'Скидати «повтор треку» при перемиканні',
+    'setting.repeatOneResetDesc': 'Ручне перемикання на наступний або попередній трек, коли ввімкнено «повтор треку», перемикає режим на «повтор» замість зациклення і нового треку теж.',
     'setting.showDownloads': 'Показати вкладку «Завантаження»',
     'setting.showDownloadsDesc': 'Відкриє в боковому меню розділ для завантаження треків за посиланням.',
     'setting.showDevices': 'Показати вкладку «Пристрої»',
@@ -2700,6 +2731,8 @@ const I18N = {
     'update.upToDate': 'У вас уже остання версія ({v}).',
     'badge.wip': 'у розробці',
     'placeholder.noFolder': '— не обрано —',
+    'placeholder.noPlaylists': 'Плейлистів ще немає',
+    'placeholder.choosePlaylist': 'Обрати плейлист…',
     'modal.deleteTrack.title': 'Видалити трек?',
     'modal.deleteTrack.text': 'Трек буде вилучено з бібліотеки, а файл — переміщено у смітник.',
     'modal.deleteTrackFull.text': '«{title}» від {artist} буде вилучено з бібліотеки, а файл — переміщено у смітник.',
@@ -2748,7 +2781,6 @@ const I18N = {
     'fixTags.progress': 'Виправляємо теги…',
     'fixTags.summary': '{fixed} оновлено · {unchanged} вже правильні · {noMatch} без збігів · {failed} невдало ({total} усього)',
     'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)',
-    'palette.action.fixTagsLibraryForce': 'Виправити теги (Бібліотека, без порівняння)',
     'setting.acoustidKey': 'Ключ API AcoustID',
     'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Обов’язковий — власний можна отримати безкоштовно на acoustid.org/api-key.',
     'setting.acoustidKeyPh': 'Твій ключ API',
@@ -2799,7 +2831,6 @@ const I18N = {
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
     'palette.action.clearLibrary': 'Очистити бібліотеку…',
     'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)…',
-    'palette.action.fixTagsLibraryForce': 'Виправити теги (Бібліотека, без порівняння)…',
     'label.unknownArtist': 'Невідомий виконавець',
     'label.noAlbum': 'Без альбому',
     'label.tracksShort': 'тр.',
@@ -7180,8 +7211,15 @@ function togglePlay() {
   updatePlayButtonUI();
 }
 
-function nextTrack() {
+// `manual` is true for every real skip (playbar/hotkey/media-key/remote) and
+// false for the two internal auto-advances (crossfade pre-empt, 'ended').
+// Repeat-one only makes sense while a track is left to loop on its own —
+// a manual skip is the user choosing to move on, so (unless turned off in
+// Settings) it drops back to "repeat all" instead of trapping the next track
+// in the same loop.
+function nextTrack({ manual = true } = {}) {
   if (currentQueue.length === 0) return;
+  if (manual && repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = 1;
   const curPath = currentTrack ? currentTrack.path : null;
   const inQueueIdx = currentQueue.findIndex(t => t.path === curPath);
@@ -7202,6 +7240,7 @@ function nextTrack() {
 
 function prevTrack() {
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+  if (repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = -1;
   const curPath = currentTrack ? currentTrack.path : null;
   const inQueueIdx = currentQueue.findIndex(t => t.path === curPath);
@@ -7289,12 +7328,14 @@ async function importPaths(paths) {
 
 // Bulk "Fix the tags": AcoustID-fingerprints every track in scope and treats
 // the MusicBrainz recording it maps to as the source of truth for
-// title/artist/album — no per-track editor confirmation, unlike the single-
-// track "Identify" flow which only fills the editor for review. `compare`
-// skips a track whose current tags already match (fewer needless writes);
-// "without comparing" always overwrites once a match exists. Never writes an
-// empty field — AcoustID sometimes has no album, and that shouldn't blank
-// out one the file already has.
+// title/artist/album/trackNo/discNo/year — no per-track editor confirmation,
+// unlike the single-track "Identify" flow which only fills the editor for
+// review. `compare` skips a track whose current tags already match (fewer
+// needless writes). Never writes an empty field — AcoustID sometimes has no
+// album, and that shouldn't blank out one the file already has. The album
+// page's separate "Fix release year…"/"Correct track numbers…" actions are
+// for typing a value in by hand when AcoustID has no match or gets it
+// wrong — they don't replace this automatic fill, just cover what it misses.
 async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress' } = {}) {
   if (!tracks || !tracks.length) return;
   if (!settings.acoustidKey) { alert(tr('editor.idNoKey')); return; }
@@ -7372,7 +7413,7 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
     else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
-    else runFixTags(scope.tracks, { compare: action !== 'fix-tags-force', labelKey: scope.labelKey });
+    else runFixTags(scope.tracks, { compare: true, labelKey: scope.labelKey });
   });
 });
 
@@ -7417,7 +7458,7 @@ async function runRegenerateAlbumCovers(tracks) {
 // rest of the album agrees — this stamps every track to the same value.
 async function runFixAlbumYear(tracks) {
   const current = (tracks.find(t => t.year) || {}).year || '';
-  const year = prompt(tr('albumYear.prompt'), String(current));
+  const year = await promptModal(tr('albumYear.prompt'), String(current));
   if (year === null) return;
   const trimmed = year.trim();
   if (!trimmed) return;
@@ -7453,7 +7494,7 @@ const discKeyOf = (t) => parseInt(t.discNo, 10) || 0;
 async function runFixAlbumTrackNumbers(tracks) {
   const ordered = sortAlbumTracks(tracks).filter(t => !isRemotePath(t.path));
   if (!ordered.length) return;
-  const start = prompt(tr('albumTrackNo.prompt'), '1');
+  const start = await promptModal(tr('albumTrackNo.prompt'), '1');
   if (start === null) return;
   const startNo = parseInt(start.trim(), 10);
   if (!Number.isFinite(startNo) || startNo < 0) { alert(tr('albumTrackNo.invalid')); return; }
@@ -8082,7 +8123,7 @@ audio.addEventListener('timeupdate', () => {
       crossfadeArmed = false; // seeked back out of the fade window — re-arm
     } else if (!crossfadeArmed && repeatMode !== 2 && fadeSec > 0 && left <= fadeSec) {
       crossfadeArmed = true;
-      nextTrack();
+      nextTrack({ manual: false });
       return;
     }
   }
@@ -8097,7 +8138,7 @@ audio.addEventListener('timeupdate', () => {
 audio.addEventListener('ended', () => {
   plFinalize();
   if (repeatMode === 2) { audio.currentTime = 0; audio.play(); }
-  else nextTrack();
+  else nextTrack({ manual: false });
 });
 
 // Progress track click/drag (both bars)
@@ -8491,6 +8532,28 @@ function updateFullscreenQueue() {
     list.appendChild(el);
   });
 }
+
+// ── Generic text-input prompt (Electron doesn't implement window.prompt()) ──
+let pendingPromptResolve = null;
+function promptModal(message, defaultValue) {
+  return new Promise((resolve) => {
+    pendingPromptResolve = resolve;
+    $('text-prompt-title').textContent = message;
+    const input = $('text-prompt-input');
+    input.value = defaultValue != null ? String(defaultValue) : '';
+    $('text-prompt-modal').classList.add('active');
+    setTimeout(() => { input.focus(); input.select(); }, 50);
+  });
+}
+function closeTextPromptModal(result) {
+  $('text-prompt-modal').classList.remove('active');
+  if (pendingPromptResolve) { const r = pendingPromptResolve; pendingPromptResolve = null; r(result); }
+}
+$('btn-cancel-text-prompt').addEventListener('click', () => closeTextPromptModal(null));
+$('btn-confirm-text-prompt').addEventListener('click', () => closeTextPromptModal($('text-prompt-input').value));
+$('text-prompt-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); closeTextPromptModal($('text-prompt-input').value); }
+});
 
 // ── Confirm delete modal ──
 function confirmDelete({ kind, payload, title, text }) {
@@ -9055,8 +9118,7 @@ function renderPaletteResults(query) {
     { label: tr('palette.action.gotoPlaylists'),   kind: 'goto-playlists',  icon: '#i-list' },
     { label: tr('palette.action.gotoFavorites'),   kind: 'goto-favorites',  icon: '#i-heart' },
     { label: tr('palette.action.clearLibrary'),    kind: 'clear-library',   icon: '#i-trash' },
-    { label: tr('palette.action.fixTagsLibrary'),      kind: 'fix-tags-library',       icon: '#i-search' },
-    { label: tr('palette.action.fixTagsLibraryForce'), kind: 'fix-tags-library-force', icon: '#i-search' },
+    { label: tr('palette.action.fixTagsLibrary'), kind: 'fix-tags-library', icon: '#i-search' },
     { label: tr('palette.action.volumeUp'),   kind: 'volume-up',   icon: '#i-volume' },
     { label: tr('palette.action.volumeDown'), kind: 'volume-down', icon: '#i-volume-low' },
   ].filter(a => !q || a.label.toLowerCase().includes(q));
@@ -9116,7 +9178,6 @@ function runPaletteAction(action) {
     });
   }
   else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
-  else if (action.kind === 'fix-tags-library-force') runFixTags(library, { compare: false });
   else if (action.kind === 'volume-up') setVolume(targetVolume + 0.05);
   else if (action.kind === 'volume-down') setVolume(targetVolume - 0.05);
 }
@@ -9355,6 +9416,7 @@ document.addEventListener('keydown', e => {
     else if ($('metadata-modal').classList.contains('active')) $('metadata-modal').classList.remove('active');
     else if ($('new-playlist-modal').classList.contains('active')) $('new-playlist-modal').classList.remove('active');
     else if ($('add-to-playlist-modal').classList.contains('active')) $('add-to-playlist-modal').classList.remove('active');
+    else if ($('text-prompt-modal').classList.contains('active')) closeTextPromptModal(null);
     else if (librarySelectMode) setLibrarySelectMode(false);
     return;
   }
@@ -9497,6 +9559,7 @@ const TOGGLE_KEY_MAP = {
   'reports': 'reports',
   'editor': 'editor',
   'crossfade': 'crossfade',
+  'repeat-one-reset': 'repeatOneResetOnSkip',
   'downloads': 'downloads',
   'trending': 'trending',
   'lan-sharing': 'lanSharing',
@@ -9707,6 +9770,15 @@ function renderSettings() {
   if (acoustKey && acoustKey !== document.activeElement) acoustKey.value = settings.acoustidKey || '';
   // Folder
   $('default-folder-path').textContent = settings.defaultFolder || tr('placeholder.noFolder');
+  // Default startup page
+  const dvCurrent = $('defaultview-current');
+  if (dvCurrent) dvCurrent.textContent = tr(DEFAULT_VIEW_LABELS[settings.defaultView] || DEFAULT_VIEW_LABELS.library);
+  document.querySelectorAll('#defaultview-select .select-opt').forEach(o => {
+    o.classList.toggle('active', o.dataset.defaultview === settings.defaultView);
+  });
+  const dvPlRow = $('defaultview-playlist-row');
+  if (dvPlRow) dvPlRow.hidden = settings.defaultView !== 'playlist-detail';
+  renderDefaultPlaylistSelect();
   refreshYtLoginStatus();
   // Download format combobox
   const fmtCurrent = $('dlfmt-current');
@@ -10065,6 +10137,61 @@ if (dlfmtSelect) {
   });
 }
 
+const defaultViewSelect = $('defaultview-select');
+if (defaultViewSelect) {
+  defaultViewSelect.querySelector('.select-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    defaultViewSelect.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#defaultview-select')) defaultViewSelect.classList.remove('open');
+  });
+  defaultViewSelect.querySelectorAll('.select-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      settings.defaultView = o.dataset.defaultview;
+      saveSettings();
+      defaultViewSelect.classList.remove('open');
+      renderSettings();
+    });
+  });
+}
+
+const defaultPlaylistSelect = $('defaultplaylist-select');
+if (defaultPlaylistSelect) {
+  defaultPlaylistSelect.querySelector('.select-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    defaultPlaylistSelect.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#defaultplaylist-select')) defaultPlaylistSelect.classList.remove('open');
+  });
+}
+// Options are rebuilt from `playlists` on every call — the list changes
+// whenever a playlist is added/renamed/deleted, unlike the static dlfmt/theme menus.
+function renderDefaultPlaylistSelect() {
+  const menu = $('defaultplaylist-menu');
+  const current = $('defaultplaylist-current');
+  if (!menu || !current) return;
+  if (!playlists.length) {
+    menu.innerHTML = '';
+    current.textContent = tr('placeholder.noPlaylists');
+    return;
+  }
+  const active = playlists.find(p => p.id === settings.defaultPlaylistId);
+  current.textContent = active ? active.name : tr('placeholder.choosePlaylist');
+  menu.innerHTML = playlists.map(p =>
+    `<div class="select-opt${p.id === settings.defaultPlaylistId ? ' active' : ''}" data-plid="${escapeHtml(p.id)}">${escapeHtml(p.name)}</div>`
+  ).join('');
+  menu.querySelectorAll('.select-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      settings.defaultPlaylistId = o.dataset.plid;
+      saveSettings();
+      defaultPlaylistSelect.classList.remove('open');
+      renderDefaultPlaylistSelect();
+    });
+  });
+}
+
 const langSelect = $('lang-select');
 langSelect.querySelector('.select-btn').addEventListener('click', e => {
   e.stopPropagation();
@@ -10348,7 +10475,10 @@ function buildDiscordActivity() {
   if (!isPlaying && !d.showPaused) return null;
   // Discord requires details/state to be ≥ 2 chars when present.
   const fit = (s, max) => { s = (s || '').slice(0, max); return s.length >= 2 ? s : null; };
-  const activity = { instance: false };
+  // type 2 = Listening. Discord only renders the scrubbable progress bar (vs.
+  // a plain elapsed/remaining countdown) for Listening/Watching activities —
+  // Playing (the IPC default) never gets one, no matter what timestamps say.
+  const activity = { instance: false, type: 2 };
   if (d.showTitle) { const v = fit(t.title || 'Unknown', 128); if (v) activity.details = v; }
   if (d.showArtist) { const v = fit([t.artist, t.album].filter(Boolean).join(' · '), 128); if (v) activity.state = v; }
   if (d.showTimer && isPlaying && isFinite(audio.duration) && audio.duration > 0) {
@@ -11215,10 +11345,24 @@ renderSettings();
 syncGlobalHotkeys();
 updateShuffleUI();
 updateRepeatUI();
+// Boot-time equivalent of a nav click for whichever page Settings' "Default
+// page" points to — falls back to Library if it's a playlist that's since
+// been deleted.
+function openDefaultView() {
+  const view = settings.defaultView || 'library';
+  if (view === 'playlist-detail') {
+    const pl = playlists.find(p => p.id === settings.defaultPlaylistId);
+    if (pl) { activePlaylistId = pl.id; return setView('playlist-detail'); }
+    return setView('library');
+  }
+  if (view === 'artists' || view === 'albums' || view === 'favorites') return setView(view);
+  return setView('library');
+}
+
 (async () => {
   splashStatus('splash.covers');
   await warmCoversFromDisk();
-  renderLibrary();
+  openDefaultView();
   renderRecents();
   loadLastTrack();
   try { await warmFirstCoversDuringSplash(200); } catch (_) { /* ignore */ }

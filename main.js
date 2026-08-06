@@ -2446,6 +2446,14 @@ ipcMain.handle('acoustid:identify', async (event, { filePath, apiKey } = {}) => 
   return { success: true, match: null, acoustid: top ? top.id : null };
 });
 
+// artworkUrl100 looks like ".../100x100bb.jpg" — upscale to 512 for Discord.
+async function itunesArtwork(term, entity) {
+  const api = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=${entity}&limit=1`;
+  const json = await httpsGetJson(api);
+  const r = json && Array.isArray(json.results) && json.results[0];
+  return r && r.artworkUrl100 ? r.artworkUrl100.replace(/\/\d+x\d+bb\./, '/512x512bb.') : null;
+}
+
 ipcMain.handle('music:lookupCover', async (event, query) => {
   try {
     const artist = String(query && query.artist || '').trim();
@@ -2457,13 +2465,14 @@ ipcMain.handle('music:lookupCover', async (event, query) => {
     if (!term) return { url: null };
     const cacheKey = term.toLowerCase();
     if (itunesCoverCache.has(cacheKey)) return { url: itunesCoverCache.get(cacheKey) };
-    const api = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=1`;
     let url = null;
     try {
-      const json = await httpsGetJson(api);
-      const r = json && Array.isArray(json.results) && json.results[0];
-      // artworkUrl100 looks like ".../100x100bb.jpg" — upscale to 512 for Discord.
-      if (r && r.artworkUrl100) url = r.artworkUrl100.replace(/\/\d+x\d+bb\./, '/512x512bb.');
+      // An album search matches the actual release art; a song search often
+      // returns whatever compilation/rerelease iTunes ranks first for a common
+      // track title, which is frequently the wrong cover. Try album first.
+      const albumTerm = [artist, album].filter(Boolean).join(' ').trim();
+      if (albumTerm) url = await itunesArtwork(albumTerm, 'album');
+      if (!url) url = await itunesArtwork(term, 'song');
     } catch (_) { url = null; }
     itunesCoverCache.set(cacheKey, url);
     return { url };
