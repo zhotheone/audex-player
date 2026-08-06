@@ -152,6 +152,13 @@ On a LAN devices find each other automatically (UDP broadcast on 8422). Tailscal
 broadcast traffic, so there you add the address by hand — `100.x.y.z` or a MagicDNS name. The
 server binds `0.0.0.0`, so one switch covers both.
 
+Two Android clients speak this API today: the in-repo [`mobile/`](mobile/) Capacitor app, and
+[PixelPlayer](https://github.com/zhotheone/PixelPlayer) — a fork of the excellent
+[PixelPlayerHQ/PixelPlayer](https://github.com/PixelPlayerHQ/PixelPlayer) with an added Audex
+source: pair with a device's network key and its library syncs straight into PixelPlayer's own
+Library/Albums/Artists/Search, cover art and all, alongside its Navidrome/Jellyfin/Telegram
+sources.
+
 <details>
 <summary><b>HTTP API</b></summary>
 

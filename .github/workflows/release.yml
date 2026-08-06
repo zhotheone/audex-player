@@ -147,7 +147,11 @@ jobs:
             release/*.zip
             release/*.yml
 
+  # Paused for now — the mobile/ Capacitor app isn't going out with releases
+  # until it's further along. Flip this back to `true` (or drop the `if:`
+  # entirely) to resume attaching it.
   build-android:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -208,3 +212,48 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: audex-android-${{ github.ref_name }}.apk
+
+  # zhotheone/PixelPlayer is a separate repo (a fork of PixelPlayerHQ/PixelPlayer
+  # with an added Audex LAN source, see README's Devices section) — it has its
+  # own commit history, so there's no meaningful ref of ours to pin it to; this
+  # just builds whatever's on its default branch at release time and ships it
+  # alongside audex-player's own artifacts. Toolchain steps and the Gradle
+  # invocation are copied from PixelPlayer's own .github/workflows/phone-debug.yml
+  # rather than reinvented — notably no separate Android SDK setup step: their
+  # CI relies on ubuntu-latest's preinstalled SDK + AGP's own auto-download for
+  # anything newer (PixelPlayer's compileSdk tends to track new API levels
+  # ahead of what's preinstalled), and `-Ppixelplay.enableAbiSplits=true` is
+  # required to get the arm64-v8a/armeabi-v7a split APKs.
+  build-pixelplayer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PixelPlayer fork
+        uses: actions/checkout@v6
+        with:
+          repository: zhotheone/PixelPlayer
+          path: PixelPlayer
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build PixelPlayer debug APK
+        working-directory: PixelPlayer
+        run: gradle :app:assembleDebug -Ppixelplay.enableAbiSplits=true
+
+      - name: Rename APKs for release
+        working-directory: PixelPlayer/app/build/outputs/apk/debug
+        run: |
+          for f in *.apk; do
+            mv "$f" "pixelplayer-${{ github.ref_name }}-$f"
+          done
+
+      - name: Attach artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: PixelPlayer/app/build/outputs/apk/debug/*.apk
