@@ -6675,9 +6675,12 @@ function stopCrossfadeTail() {
 }
 
 // Hand the currently playing track to a transient element and fade it out.
-function startCrossfadeTail() {
+// `onReady` fires once the tail has actually taken over playback (or failed
+// to) — the caller must not touch audio.src before then, or the outgoing
+// track's sound dies while the tail is still loading, leaving a silent gap.
+function startCrossfadeTail(onReady) {
   stopCrossfadeTail();
-  if (!audio.src || audio.paused || audio.muted) return;
+  if (!audio.src || audio.paused || audio.muted) { onReady(); return; }
   const pos = audio.currentTime;
   const tail = new Audio();
   crossfadeTail = tail;
@@ -6691,7 +6694,8 @@ function startCrossfadeTail() {
     tail.play().then(() => {
       if (crossfadeTail !== tail) { try { tail.pause(); } catch (_) {} return; }
       rampVolume(tail, 0, crossfadeMs());
-    }).catch(() => { if (crossfadeTail === tail) stopCrossfadeTail(); });
+      onReady();
+    }).catch(() => { if (crossfadeTail === tail) stopCrossfadeTail(); onReady(); });
   }, { once: true });
   tail.src = audio.src;
   // Hard stop so a tail can never outlive its fade (e.g. if the ramp is lost).
@@ -6719,26 +6723,31 @@ function playTrackByPath(path, queue) {
   currentQueue = q;
   if (!track.cover && !isRemotePath(track.path)) ensureCoverFor(track);
   const fade = !!settings.crossfade && !audio.paused && !!audio.src;
-  if (fade) startCrossfadeTail();
-  if (crossfadeRampId) { crossfadeRampId(); crossfadeRampId = null; }
-  crossfadeArmed = false;
-  audio.src = srcFor(track);
-  if (fade) {
-    audio.volume = 0;
-    crossfadeRampId = rampVolume(audio, targetVolume, crossfadeMs(), () => { crossfadeRampId = null; });
-  } else {
-    audio.volume = targetVolume;
-  }
-  audio.play().catch(e => console.warn('play error:', e));
-  isPlaying = true;
-  // recent — a peer's URL is not something a later session could reopen.
-  if (!isRemotePath(path)) {
-    recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
-    saveRecents();
-    renderRecents();
-  }
-  updateNowPlayingUI(track);
-  refreshPlayingHighlight();
+  // The swap (killing the old track's sound by reassigning audio.src) must wait
+  // until the tail has actually taken over — otherwise there's a silent gap
+  // between the old track dying and the tail loading in.
+  const swap = () => {
+    if (crossfadeRampId) { crossfadeRampId(); crossfadeRampId = null; }
+    crossfadeArmed = false;
+    audio.src = srcFor(track);
+    if (fade) {
+      audio.volume = 0;
+      crossfadeRampId = rampVolume(audio, targetVolume, crossfadeMs(), () => { crossfadeRampId = null; });
+    } else {
+      audio.volume = targetVolume;
+    }
+    audio.play().catch(e => console.warn('play error:', e));
+    isPlaying = true;
+    // recent — a peer's URL is not something a later session could reopen.
+    if (!isRemotePath(path)) {
+      recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
+      saveRecents();
+      renderRecents();
+    }
+    updateNowPlayingUI(track);
+    refreshPlayingHighlight();
+  };
+  if (fade) startCrossfadeTail(swap); else swap();
 }
 
 // ── Session ──
