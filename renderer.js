@@ -381,6 +381,7 @@ const I18N = {
     'lan.noPeers': "No devices found yet.",
     'lan.manual': "added by hand",
     'lan.mobileConnected': "Mobile · Connected",
+    'lan.inbound': "Connected · read-only",
     'lan.connect': "Connect to a device",
     'lan.networkBadge': "NETWORK",
     'lan.networkFrom': "From {device}",
@@ -910,12 +911,22 @@ const I18N = {
     'editor.idNoMatch': 'No match on AcoustID',
     'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
     'cm.useAsAlbumCover': 'Use as album cover',
-    'btn.albumCoverTooltip': "Apply a track's cover to every track in the album…",
+    'cm.applyCoverToAlbum': 'Apply cover to album…',
+    'cm.fixYear': 'Fix release year…',
+    'cm.fixTrackNumbers': 'Correct track numbers…',
+    'btn.albumMenuTooltip': 'Fix tags, cover, release year & track numbers…',
     'albumCover.needSource': 'Right-click a track with the correct cover and choose "Use as album cover" first.',
     'albumCover.badSource': "This track has no cover art loaded — scroll it into view (or open it) so its art loads, then try again.",
     'albumCover.confirm': 'Apply the cover from "{track}" to the other {count} track(s) in this album?',
     'albumCover.progress': 'Updating album covers…',
     'albumCover.summary': '{updated} updated · {failed} failed ({total} total)',
+    'albumYear.prompt': 'Set the release year for every track in this album:',
+    'albumYear.progress': 'Updating release years…',
+    'albumYear.summary': '{updated} updated · {failed} failed ({total} total)',
+    'albumTrackNo.prompt': 'Renumber this album starting from:',
+    'albumTrackNo.invalid': 'Enter a whole number to start from.',
+    'albumTrackNo.progress': 'Updating track numbers…',
+    'albumTrackNo.summary': '{updated} updated · {failed} failed ({total} total)',
     'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
     'editor.idFailed': 'Lookup failed',
     'editor.saved': 'Saved ✓',
@@ -1516,12 +1527,22 @@ const I18N = {
     'editor.idNoMatch': 'Kein Treffer bei AcoustID',
     'fixTags.summary': '{fixed} korrigiert · {unchanged} bereits korrekt · {noMatch} kein Treffer · {failed} fehlgeschlagen (von {total})',
     'cm.useAsAlbumCover': 'Als Album-Cover verwenden',
-    'btn.albumCoverTooltip': 'Das Cover eines Titels auf alle Titel des Albums übertragen…',
+    'cm.applyCoverToAlbum': 'Cover auf Album anwenden…',
+    'cm.fixYear': 'Erscheinungsjahr korrigieren…',
+    'cm.fixTrackNumbers': 'Titelnummern korrigieren…',
+    'btn.albumMenuTooltip': 'Tags, Cover, Erscheinungsjahr & Titelnummern korrigieren…',
     'albumCover.needSource': 'Rechtsklick auf den Titel mit dem richtigen Cover und „Als Album-Cover verwenden“ wählen.',
     'albumCover.badSource': 'Für diesen Titel ist noch kein Cover geladen — ins Sichtfeld scrollen (oder öffnen), damit es lädt, dann erneut versuchen.',
     'albumCover.confirm': 'Cover von „{track}“ auf die restlichen {count} Titel dieses Albums übertragen?',
     'albumCover.progress': 'Album-Cover werden aktualisiert…',
     'albumCover.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
+    'albumYear.prompt': 'Erscheinungsjahr für alle Titel dieses Albums festlegen:',
+    'albumYear.progress': 'Erscheinungsjahre werden aktualisiert…',
+    'albumYear.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
+    'albumTrackNo.prompt': 'Titelnummern dieses Albums neu vergeben, beginnend bei:',
+    'albumTrackNo.invalid': 'Bitte eine ganze Zahl als Startwert eingeben.',
+    'albumTrackNo.progress': 'Titelnummern werden aktualisiert…',
+    'albumTrackNo.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
     'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
     'editor.idFailed': 'Abfrage fehlgeschlagen',
     'editor.saved': 'Gespeichert ✓',
@@ -2122,12 +2143,22 @@ const I18N = {
     'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
     'fixTags.summary': '{fixed} corrigées · {unchanged} déjà correctes · {noMatch} sans correspondance · {failed} échouées (sur {total})',
     'cm.useAsAlbumCover': "Utiliser comme pochette de l'album",
-    'btn.albumCoverTooltip': "Appliquer la pochette d'un titre à tous les titres de l'album…",
+    'cm.applyCoverToAlbum': "Appliquer la pochette à l'album…",
+    'cm.fixYear': "Corriger l'année de sortie…",
+    'cm.fixTrackNumbers': 'Corriger les numéros de piste…',
+    'btn.albumMenuTooltip': "Corriger les tags, la pochette, l'année de sortie et les numéros de piste…",
     'albumCover.needSource': 'Faites un clic droit sur le titre ayant la bonne pochette et choisissez « Utiliser comme pochette de l\'album ».',
     'albumCover.badSource': "Aucune pochette n'est chargée pour ce titre — faites-le défiler à l'écran (ou ouvrez-le) pour la charger, puis réessayez.",
     'albumCover.confirm': 'Appliquer la pochette de « {track} » aux {count} autre(s) titre(s) de cet album ?',
     'albumCover.progress': 'Mise à jour des pochettes…',
     'albumCover.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
+    'albumYear.prompt': "Définir l'année de sortie pour tous les titres de cet album :",
+    'albumYear.progress': 'Mise à jour des années de sortie…',
+    'albumYear.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
+    'albumTrackNo.prompt': 'Renuméroter cet album à partir de :',
+    'albumTrackNo.invalid': 'Entrez un nombre entier de départ.',
+    'albumTrackNo.progress': 'Mise à jour des numéros de piste…',
+    'albumTrackNo.summary': '{updated} mis à jour · {failed} échoués ({total} au total)',
     'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
     'editor.idFailed': 'Échec de la recherche',
     'editor.saved': 'Enregistré ✓',
@@ -2728,12 +2759,22 @@ const I18N = {
     'editor.idNoMatch': 'В AcoustID збігів немає',
     'fixTags.summary': '{fixed} виправлено · {unchanged} вже коректні · {noMatch} без збігів · {failed} помилок (з {total})',
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
-    'btn.albumCoverTooltip': 'Застосувати обкладинку треку до всіх треків альбому…',
+    'cm.applyCoverToAlbum': 'Застосувати обкладинку до альбому…',
+    'cm.fixYear': 'Виправити рік випуску…',
+    'cm.fixTrackNumbers': 'Виправити номери треків…',
+    'btn.albumMenuTooltip': 'Виправити теги, обкладинку, рік випуску та номери треків…',
     'albumCover.needSource': 'Спершу клацніть правою кнопкою на трек із правильною обкладинкою та оберіть «Використати як обкладинку альбому».',
     'albumCover.badSource': 'Для цього треку ще не завантажено обкладинку — прогорніть до нього список (або відкрийте трек), щоб вона завантажилась, і спробуйте ще раз.',
     'albumCover.confirm': 'Застосувати обкладинку з «{track}» до решти {count} трек(ів) цього альбому?',
     'albumCover.progress': 'Оновлюємо обкладинки альбому…',
     'albumCover.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
+    'albumYear.prompt': 'Встановити рік випуску для всіх треків цього альбому:',
+    'albumYear.progress': 'Оновлюємо роки випуску…',
+    'albumYear.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
+    'albumTrackNo.prompt': 'Перенумерувати цей альбом, починаючи з:',
+    'albumTrackNo.invalid': 'Введіть ціле число для початкового номера.',
+    'albumTrackNo.progress': 'Оновлюємо номери треків…',
+    'albumTrackNo.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
     'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
     'editor.idFailed': 'Пошук не вдався',
     'editor.saved': 'Збережено ✓',
@@ -5882,7 +5923,7 @@ function renderTrackRow(track, displayIndex, queue) {
       <span class="trow-title">${escapeHtml(track.title)}</span>
       ${networkBadgeHtml(track)}
     </div>
-    <div class="trow-muted trow-link" data-link="artist">${escapeHtml(track.artist)}</div>
+    <div class="trow-muted" data-link="artist">${artistLinksHtml(track.artist)}</div>
     <div class="trow-muted trow-link" data-link="album">${escapeHtml(track.album)}</div>
     <div class="trow-quality">${qualityBadgeHtml(qualityFor(track))}</div>
     <div class="trow-dur">${formatTime(track.duration)}</div>
@@ -5890,11 +5931,13 @@ function renderTrackRow(track, displayIndex, queue) {
   `;
   // Select mode repurposes a row click for selection — don't hijack that with
   // navigation, so let it fall through to the row's own click handler below.
-  tr.querySelector('[data-link="artist"]').addEventListener('click', e => {
-    if (currentView === 'library' && librarySelectMode) return;
-    e.stopPropagation();
-    activeArtistName = splitArtists(track.artist)[0];
-    setView('artist-detail');
+  tr.querySelectorAll('[data-artist]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (currentView === 'library' && librarySelectMode) return;
+      e.stopPropagation();
+      activeArtistName = el.dataset.artist;
+      setView('artist-detail');
+    });
   });
   tr.querySelector('[data-link="album"]').addEventListener('click', e => {
     if (currentView === 'library' && librarySelectMode) return;
@@ -6170,6 +6213,15 @@ function splitArtists(s) {
   if (!s) return [unknown];
   const parts = s.split(ARTIST_SEP).map(p => p.trim()).filter(Boolean);
   return parts.length > 0 ? parts : [unknown];
+}
+
+// A row's artist cell used to link the whole "A, B" string to just the first
+// name — clicking anywhere always went to A. Each name gets its own span so a
+// click lands on the artist actually under the cursor.
+function artistLinksHtml(s) {
+  return splitArtists(s)
+    .map(name => `<span class="trow-artist-link" data-artist="${escapeHtml(name)}">${escapeHtml(name)}</span>`)
+    .join('<span class="trow-artist-sep">, </span>');
 }
 
 function artistInitials(name) {
@@ -6627,8 +6679,7 @@ function renderAlbumDetail(key) {
       playTrackByPath(random.path, tracks);
     }
   };
-  $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress');
-  $('btn-album-regen-covers').onclick = () => runRegenerateAlbumCovers(tracks);
+  $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress', { albumActions: true });
 }
 
 // ── Crossfade ──
@@ -7288,9 +7339,14 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
 
 // ── Fix Tags menu (Artist/Album scopes) ──
 let pendingFixTagsScope = null;
-function openFixTagsMenu(e, tracks, labelKey) {
+// Album scope also gets the cover/year bulk actions grouped into the same
+// popover — Artist scope spans multiple albums, where neither one makes sense.
+function openFixTagsMenu(e, tracks, labelKey, { albumActions = false } = {}) {
   e.stopPropagation();
   pendingFixTagsScope = { tracks, labelKey };
+  $('ftm-apply-cover').hidden = !albumActions;
+  $('ftm-fix-year').hidden = !albumActions;
+  $('ftm-fix-tracknos').hidden = !albumActions;
   const menu = $('fix-tags-menu');
   menu.classList.add('open');
   const rect = e.currentTarget.getBoundingClientRect();
@@ -7310,9 +7366,13 @@ document.addEventListener('click', e => {
 document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
   btn.addEventListener('click', () => {
     const scope = pendingFixTagsScope;
+    const action = btn.dataset.action;
     closeFixTagsMenu();
     if (!scope) return;
-    runFixTags(scope.tracks, { compare: btn.dataset.action !== 'fix-tags-force', labelKey: scope.labelKey });
+    if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
+    else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
+    else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
+    else runFixTags(scope.tracks, { compare: action !== 'fix-tags-force', labelKey: scope.labelKey });
   });
 });
 
@@ -7350,6 +7410,75 @@ async function runRegenerateAlbumCovers(tracks) {
   saveLibrary();
   refreshCurrentViewRows();
   alert(tr('albumCover.summary', { updated, failed, total: targets.length }));
+}
+
+// ── Fix album release year ──
+// Imports often leave one or two tracks with a stray/missing year while the
+// rest of the album agrees — this stamps every track to the same value.
+async function runFixAlbumYear(tracks) {
+  const current = (tracks.find(t => t.year) || {}).year || '';
+  const year = prompt(tr('albumYear.prompt'), String(current));
+  if (year === null) return;
+  const trimmed = year.trim();
+  if (!trimmed) return;
+  const targets = tracks.filter(t => !isRemotePath(t.path));
+  if (!targets.length) return;
+
+  let updated = 0, failed = 0;
+  for (let i = 0; i < targets.length; i++) {
+    setProgressBanner(i, targets.length, 'albumYear.progress');
+    const t = targets[i];
+    const wr = await window.electronAPI.writeMetadata(t.path, { year: trimmed });
+    if (wr && wr.success) {
+      t.year = trimmed;
+      updated++;
+    } else {
+      failed++;
+      window.electronAPI.logError?.('albumYearFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
+    }
+  }
+  setProgressBanner(null);
+  saveLibrary();
+  refreshCurrentViewRows();
+  alert(tr('albumYear.summary', { updated, failed, total: targets.length }));
+}
+
+// ── Fix album track numbers ──
+// Renumbers the album sequentially in its normal listening order (disc/track/
+// title, same as the album page shows it), starting from a number the user
+// types in — for albums where tags came in out of order or missing entirely.
+// Numbering restarts at that same start value on every disc, matching how
+// sortAlbumTracks/compareTrackOrder already group discs.
+const discKeyOf = (t) => parseInt(t.discNo, 10) || 0;
+async function runFixAlbumTrackNumbers(tracks) {
+  const ordered = sortAlbumTracks(tracks).filter(t => !isRemotePath(t.path));
+  if (!ordered.length) return;
+  const start = prompt(tr('albumTrackNo.prompt'), '1');
+  if (start === null) return;
+  const startNo = parseInt(start.trim(), 10);
+  if (!Number.isFinite(startNo) || startNo < 0) { alert(tr('albumTrackNo.invalid')); return; }
+
+  let updated = 0, failed = 0, curDisc = null, no = startNo;
+  for (let i = 0; i < ordered.length; i++) {
+    setProgressBanner(i, ordered.length, 'albumTrackNo.progress');
+    const t = ordered[i];
+    const disc = discKeyOf(t);
+    if (disc !== curDisc) { curDisc = disc; no = startNo; }
+    const trackNo = String(no);
+    no++;
+    const wr = await window.electronAPI.writeMetadata(t.path, { trackNo });
+    if (wr && wr.success) {
+      t.trackNo = trackNo;
+      updated++;
+    } else {
+      failed++;
+      window.electronAPI.logError?.('albumTrackNoFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
+    }
+  }
+  setProgressBanner(null);
+  saveLibrary();
+  refreshCurrentViewRows();
+  alert(tr('albumTrackNo.summary', { updated, failed, total: ordered.length }));
 }
 
 // ── Mini-player navigation ──
@@ -10685,7 +10814,10 @@ async function lanRefresh() {
   $('count-devices').textContent = lanStatus.peers.length;
   const ids = new Set(lanStatus.peers.map(p => p.deviceId));
   for (const id of Object.keys(lanPeerLibraries)) if (!ids.has(id)) delete lanPeerLibraries[id];
-  for (const p of lanStatus.peers) if (!lanPeerLibraries[p.deviceId]) lanSyncPeerLibrary(p);
+  // Inbound-only entries (see lan.js's `inbound` map) have no base URL and no
+  // WS to reach them through — they only ever pull from us, so there's no
+  // library to fetch back.
+  for (const p of lanStatus.peers) if (!lanPeerLibraries[p.deviceId] && (p.mobile || p.base)) lanSyncPeerLibrary(p);
   if (currentView === 'devices') renderDevices();
   if (currentView === 'library') renderLibrary();
   if ($('connect-menu').classList.contains('open')) renderConnectMenu();
@@ -10892,15 +11024,20 @@ function renderDevices() {
   const peers = s.peers.map(p => {
     const lib = lanPeerLibraries[p.deviceId];
     const trackCount = lib ? ` · ${withCount('tracks', lib.tracks.length)}` : '';
-    const meta = p.mobile ? tr('lan.mobileConnected') : `${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}${trackCount}`;
+    // Inbound-only entries are one-way (they connected to us; we have no
+    // address to reach them back at) — no port, no sync/remove actions.
+    const meta = p.mobile ? tr('lan.mobileConnected')
+      : p.inbound ? `${escapeHtml(p.host)} · ${tr('lan.inbound')}`
+      : `${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}${trackCount}`;
+    const icon = p.mobile ? 'i-smartphone' : p.inbound ? 'i-link' : 'i-monitor';
     return `
     <div class="device-row" data-peer="${escapeHtml(p.deviceId)}" style="cursor:default">
-      <svg class="i" width="14" height="14"><use href="#${p.mobile ? 'i-smartphone' : 'i-monitor'}"/></svg>
+      <svg class="i" width="14" height="14"><use href="#${icon}"/></svg>
       <div class="device-body">
         <div class="device-name">${escapeHtml(p.name)}</div>
         <div class="device-meta">${meta}</div>
       </div>
-      ${p.mobile ? '' : `<button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>`}
+      ${!p.mobile && !p.inbound ? `<button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>` : ''}
       ${p.manual ? `<button class="btn-ghost" data-act="remove">${tr('lan.remove')}</button>` : ''}
     </div>`;
   }).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
@@ -10980,7 +11117,10 @@ function closeConnectMenu() {
 
 function renderConnectMenu() {
   const menu = $('connect-menu');
-  const rows = lanStatus.peers.map(p => `
+  // Inbound-only entries have no address to send a take-over/push request to
+  // — they only ever pull from us — so they don't belong in a picker of
+  // session-transfer targets.
+  const rows = lanStatus.peers.filter(p => !p.inbound).map(p => `
     <div class="cm-device" data-peer="${escapeHtml(p.deviceId)}">
       <div class="device-row" style="cursor:default">
         <svg class="i" width="14" height="14"><use href="#${p.mobile ? 'i-smartphone' : 'i-monitor'}"/></svg>

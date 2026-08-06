@@ -440,11 +440,8 @@
                 <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
                 <span data-i18n="btn.shuffle">Shuffle</span>
               </button>
-              <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-album-fix-tags" data-i18n-title="btn.fixTagsTooltip" title="Fix the tags via AcoustID…">
-                <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-              </button>
-              <button class="btn-ghost icon-only" id="btn-album-regen-covers" data-i18n-title="btn.albumCoverTooltip" title="Apply a track's cover to every track in the album…">
-                <svg class="i" width="13" height="13"><use href="#i-image"/></svg>
+              <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-album-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
+                <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
               </button>
             </div>
           </div>
@@ -1773,6 +1770,9 @@
   <div id="fix-tags-menu" class="context-menu">
     <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix the tags</span></button>
     <button class="cm-item" data-action="fix-tags-force"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTagsForce">Fix the tags (without comparing)</span></button>
+    <button class="cm-item" data-action="apply-cover" id="ftm-apply-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applyCoverToAlbum">Apply cover to album…</span></button>
+    <button class="cm-item" data-action="fix-year" id="ftm-fix-year" hidden><svg class="i" width="11" height="11"><use href="#i-clock"/></svg><span data-i18n="cm.fixYear">Fix release year…</span></button>
+    <button class="cm-item" data-action="fix-tracknos" id="ftm-fix-tracknos" hidden><svg class="i" width="11" height="11"><use href="#i-list"/></svg><span data-i18n="cm.fixTrackNumbers">Correct track numbers…</span></button>
   </div>
 
   <!-- Connect Menu — playbar device picker (Spotify Connect style: take over / push here) -->

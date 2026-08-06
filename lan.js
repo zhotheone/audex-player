@@ -31,6 +31,7 @@ const PORT = 8422;
 const PORT_TRIES = 5;
 const ANNOUNCE_MS = 5000;
 const PEER_TTL = 20000;
+const INBOUND_TTL = 45000;
 
 let httpPort = PORT;
 
@@ -58,6 +59,26 @@ let snapshot = { tracks: [], state: null, config: null };
 let byId = new Map();
 
 const peers = new Map(); // deviceId -> { deviceId, name, host, port, lastSeen, manual }
+
+// Clients that only ever *pull* from us (PixelPlayer, or an Audex instance
+// across a subnet UDP can't reach) never show up in `peers` — they don't
+// announce and don't open the WS. Any authenticated request is still proof
+// something is connected, so track it here by IP with the same TTL peers use.
+const inbound = new Map(); // ip -> { deviceId, name, host, lastSeen, inbound: true }
+
+function clientIp(req) {
+  return String(req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+}
+
+function noteInbound(req) {
+  const ip = clientIp(req);
+  if (!ip || [...peers.values()].some(p => p.host === ip)) return; // already visible as a real peer
+  const isNew = !inbound.has(ip);
+  const ua = String(req.headers['user-agent'] || '');
+  const name = /pixelplayer/i.test(ua) ? 'PixelPlayer' : ip;
+  inbound.set(ip, { deviceId: `inbound:${ip}`, name, host: ip, lastSeen: Date.now(), inbound: true });
+  if (isNew) onPeersChanged(listPeers());
+}
 
 // ── config ──
 
@@ -277,11 +298,13 @@ async function handle(req, res) {
     if (!signOk(id, url.searchParams.get('s'))) return sendJson(res, 401, { error: 'bad signature' });
     const t = byId.get(id);
     if (!t) return sendJson(res, 404, { error: 'unknown track' });
+    noteInbound(req);
     if (media[1] === 'cover') return sendCover(res, t.path);
     return sendFile(req, res, t.path, MIME[path.extname(t.path).toLowerCase()] || 'application/octet-stream');
   }
 
   if (!authOk(req)) return sendJson(res, 401, { error: 'unauthorized' });
+  noteInbound(req);
 
   if (route === '/api/info') {
     return sendJson(res, 200, { deviceId, name: cfg.name, app: 'audex', api: 1, tracks: snapshot.tracks.length });
@@ -371,6 +394,11 @@ function startDiscovery() {
       for (const [id, p] of peers) {
         if (!p.manual && !p.mobile && Date.now() - p.lastSeen > PEER_TTL) { peers.delete(id); dropped = true; }
       }
+      // Pull-only clients aren't on a fixed heartbeat like the UDP announce —
+      // give them extra slack so a normal polling gap doesn't flicker them out.
+      for (const [ip, c] of inbound) {
+        if (Date.now() - c.lastSeen > INBOUND_TTL) { inbound.delete(ip); dropped = true; }
+      }
       if (dropped) onPeersChanged(listPeers());
     };
     beat();
@@ -398,7 +426,10 @@ function removePeer(id) {
 }
 
 function listPeers() {
-  return [...peers.values()].map(p => (p.mobile ? { ...p } : { ...p, base: `http://${p.host}:${p.port}` }));
+  const known = [...peers.values()].map(p => (p.mobile ? { ...p } : { ...p, base: `http://${p.host}:${p.port}` }));
+  const knownHosts = new Set(known.map(p => p.host));
+  const inboundOnly = [...inbound.values()].filter(c => !knownHosts.has(c.host));
+  return [...known, ...inboundOnly];
 }
 
 // ── mobile clients (WebSocket) ──
@@ -594,6 +625,7 @@ function stop() {
   for (const [id, c] of wsClients) { try { c.socket.destroy(); } catch (_) {} }
   wsClients.clear();
   for (const [id, p] of peers) if (!p.manual) peers.delete(id);
+  inbound.clear();
 }
 
 function addresses() {

@@ -794,6 +794,9 @@ input { font-family: inherit; color: inherit; }
 }
 .trow-link { cursor: pointer; }
 .trow-link:hover { color: var(--text-strong); text-decoration: underline; }
+.trow-artist-link { cursor: pointer; }
+.trow-artist-link:hover { color: var(--text-strong); text-decoration: underline; }
+.trow-artist-sep { white-space: pre; }
 .trow-dur {
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
