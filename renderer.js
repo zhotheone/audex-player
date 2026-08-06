@@ -3211,6 +3211,11 @@ function setView(view) {
   document.querySelectorAll('.view-section').forEach(s => {
     s.classList.toggle('active', s.id === `view-${view}`);
   });
+  // All view-sections share one scroller (.main-content), so without this a
+  // navigation lands wherever the previous, possibly-taller view happened to
+  // be scrolled. Callers that need to land on a specific row (e.g. scrolling
+  // to the current track) override this afterwards via requestAnimationFrame.
+  scrollEl.scrollTop = 0;
   if (view === 'library') renderLibrary();
   else if (view === 'favorites') renderFavorites();
   else if (view === 'playlists') renderPlaylists();
@@ -7523,20 +7528,16 @@ async function runFixAlbumTrackNumbers(tracks) {
 }
 
 // ── Mini-player navigation ──
-function gotoCurrentTrackInLibrary() {
+function gotoCurrentTrackInAlbum() {
   if (!currentTrack) return;
   const track = currentTrack;
-  $('library-search').value = '';
-  activeFilter = 'all';
-  document.querySelectorAll('.filter-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.filter === 'all');
-  });
-  setView('library');
+  activeAlbumKey = albumKeyFor(track);
+  setView('album-detail');
   requestAnimationFrame(() => {
-    if (!libraryVList) return;
-    const idx = libraryVList.findIndex(t => t.path === track.path);
+    if (!albumVList) return;
+    const idx = albumVList.findIndex(t => t.path === track.path);
     if (idx < 0) return;
-    const listEl = $('library-list');
+    const listEl = $('album-detail-list');
     const listOffset = listEl.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
     scrollEl.scrollTop = Math.max(0, listOffset + idx * ROW_HEIGHT - scrollEl.clientHeight / 2 + ROW_HEIGHT / 2);
   });
@@ -7551,7 +7552,7 @@ function gotoCurrentTrackArtist() {
   setView('artist-detail');
 }
 
-$('track-title').addEventListener('click', gotoCurrentTrackInLibrary);
+$('track-title').addEventListener('click', gotoCurrentTrackInAlbum);
 $('track-artist').addEventListener('click', gotoCurrentTrackArtist);
 
 // ── Favorites ──
