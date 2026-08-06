@@ -3,7 +3,6 @@ const path = require('path');
 const fs = require('fs');
 const net = require('net');
 const { spawn, execFileSync } = require('child_process');
-const https = require('https');
 const crypto = require('crypto');
 const { pathToFileURL, fileURLToPath } = require('url');
 const musicMetadata = require('music-metadata');
@@ -2313,31 +2312,18 @@ app.on('before-quit', () => discordTeardown());
 // in-process so each track is looked up at most once per session.
 const itunesCoverCache = new Map(); // term (lowercased) -> url | null
 
-function httpsGetJson(url) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'Audex' } }, (res) => {
-      let data = '';
-      res.setEncoding('utf8');
-      res.on('data', (c) => {
-        data += c;
-        if (data.length > 4_000_000) { req.destroy(); reject(new Error('response too large')); }
-      });
-      res.on('end', () => {
-        if (res.statusCode !== 200) {
-          const err = new Error('HTTP ' + res.statusCode);
-          // Error bodies (e.g. AcoustID's {status:"error",error:{code,message}})
-          // still carry the real reason a request failed — attach it so callers
-          // can tell "bad key" apart from "rate limited" apart from "bad request".
-          try { err.body = JSON.parse(data); } catch (_) {}
-          reject(err);
-          return;
-        }
-        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
-      });
-    });
-    req.on('error', reject);
-    req.setTimeout(8000, () => { req.destroy(new Error('timeout')); });
-  });
+async function httpsGetJson(url) {
+  const res = await fetch(url, { headers: { 'User-Agent': 'Audex' }, signal: AbortSignal.timeout(8000) });
+  const text = await res.text();
+  if (!res.ok) {
+    const err = new Error('HTTP ' + res.status);
+    // Error bodies (e.g. AcoustID's {status:"error",error:{code,message}})
+    // still carry the real reason a request failed — attach it so callers
+    // can tell "bad key" apart from "rate limited" apart from "bad request".
+    try { err.body = JSON.parse(text); } catch (_) {}
+    throw err;
+  }
+  return JSON.parse(text);
 }
 
 // ── AcoustID / MusicBrainz identification ──

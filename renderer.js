@@ -2922,7 +2922,6 @@ function escapeHtml(s) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
-function uid() { return Math.random().toString(36).slice(2, 10); }
 
 // ── Virtual list ──
 // Only renders rows visible in the scroll viewport (+ overscan buffer).
@@ -3782,13 +3781,6 @@ function setTrStatus(text, kind) {
   el.textContent = text;
 }
 
-function trFormatDuration(sec) {
-  if (!sec || !isFinite(sec)) return '';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
 // A chart row counts as "in the library" when a track with the same title and
 // artist is already there — the downloaded file name won't match the video id.
 function trAlreadyHave(t) {
@@ -3854,7 +3846,7 @@ function renderTrending() {
         <div class="thumb" style="background-image: url('${escapeHtml(t.thumbnail || '')}')"></div>
         <div class="title" title="${escapeHtml(t.rawTitle || t.title)}">${escapeHtml(t.title || '')}</div>
         <div class="channel" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
-        <div class="duration">${escapeHtml(trFormatDuration(t.duration))}</div>
+        <div class="duration">${escapeHtml(t.duration && isFinite(t.duration) ? formatTime(t.duration) : '')}</div>
         <div class="action">
           <button type="button" class="dl-download-btn${have ? ' is-done' : ''}" data-tr-dl="${i}"${have ? ' disabled' : ''}>
             <svg class="i" width="12" height="12"><use href="#i-${have ? 'check' : 'download'}"/></svg>
@@ -8672,7 +8664,7 @@ $('btn-create-playlist').addEventListener('click', () => {
   if (!name) return;
   const desc = $('new-playlist-desc').value.trim();
   playlists.push({
-    id: uid(),
+    id: crypto.randomUUID(),
     name, desc,
     color: PL_COVERS[playlists.length % PL_COVERS.length],
     trackPaths: [],
