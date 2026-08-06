@@ -906,11 +906,8 @@ const I18N = {
     'editor.saving': 'Saving…',
     'editor.idBadKey': 'AcoustID rejected the API key',
     'editor.idNoKey': 'Add your AcoustID API key in Settings to use Identify',
-    'cm.identify': 'Identify via AcoustID…',
     'cm.fixTags': 'Fix the tags',
-    'cm.fixTagsForce': 'Fix the tags (without comparing)',
-    'cm.fixTags': 'Fix the tags',
-    'cm.fixTagsForce': 'Fix the tags (without comparing)',
+    'cm.fixTagsAcoustid': 'Fix tags with AcoustID',
     'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
     'fixTags.progress': 'Fixing tags…',
     'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
@@ -937,10 +934,10 @@ const I18N = {
     'albumYear.prompt': 'Set the release year for every track in this album:',
     'albumYear.progress': 'Updating release years…',
     'albumYear.summary': '{updated} updated · {failed} failed ({total} total)',
-    'albumTrackNo.prompt': 'Renumber this album starting from:',
-    'albumTrackNo.invalid': 'Enter a whole number to start from.',
-    'albumTrackNo.progress': 'Updating track numbers…',
-    'albumTrackNo.summary': '{updated} updated · {failed} failed ({total} total)',
+    'albumTrackNo.pickTitle': 'Pick a track to number',
+    'albumTrackNo.numberPrompt': 'Track number for “{title}”:',
+    'albumTrackNo.invalid': 'Enter a whole number.',
+    'albumTrackNo.writeFailed': 'Could not update the track number.',
     'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
     'editor.idFailed': 'Lookup failed',
     'editor.saved': 'Saved ✓',
@@ -1528,11 +1525,8 @@ const I18N = {
     'editor.saving': 'Speichern…',
     'editor.idBadKey': 'AcoustID hat den API-Schlüssel abgelehnt',
     'editor.idNoKey': 'Füge deinen AcoustID-API-Schlüssel in den Einstellungen hinzu, um Erkennen zu nutzen',
-    'cm.identify': 'Über AcoustID erkennen…',
     'cm.fixTags': 'Tags korrigieren',
-    'cm.fixTagsForce': 'Tags korrigieren (ohne Vergleich)',
-    'cm.fixTags': 'Tags korrigieren',
-    'cm.fixTagsForce': 'Tags korrigieren (ohne Vergleich)',
+    'cm.fixTagsAcoustid': 'Tags über AcoustID korrigieren',
     'btn.fixTagsTooltip': 'Tags über AcoustID korrigieren…',
     'fixTags.progress': 'Tags werden korrigiert…',
     'fixTags.summary': '{fixed} aktualisiert · {unchanged} bereits korrekt · {noMatch} ohne Treffer · {failed} fehlgeschlagen ({total} insgesamt)',
@@ -1559,10 +1553,10 @@ const I18N = {
     'albumYear.prompt': 'Erscheinungsjahr für alle Titel dieses Albums festlegen:',
     'albumYear.progress': 'Erscheinungsjahre werden aktualisiert…',
     'albumYear.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
-    'albumTrackNo.prompt': 'Titelnummern dieses Albums neu vergeben, beginnend bei:',
-    'albumTrackNo.invalid': 'Bitte eine ganze Zahl als Startwert eingeben.',
-    'albumTrackNo.progress': 'Titelnummern werden aktualisiert…',
-    'albumTrackNo.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
+    'albumTrackNo.pickTitle': 'Titel zum Nummerieren wählen',
+    'albumTrackNo.numberPrompt': 'Titelnummer für „{title}“:',
+    'albumTrackNo.invalid': 'Bitte eine ganze Zahl eingeben.',
+    'albumTrackNo.writeFailed': 'Die Titelnummer konnte nicht aktualisiert werden.',
     'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
     'editor.idFailed': 'Abfrage fehlgeschlagen',
     'editor.saved': 'Gespeichert ✓',
@@ -2150,11 +2144,8 @@ const I18N = {
     'editor.saving': 'Enregistrement…',
     'editor.idBadKey': "AcoustID a refusé la clé API",
     'editor.idNoKey': "Ajoutez votre clé API AcoustID dans les Paramètres pour utiliser Identifier",
-    'cm.identify': 'Identifier via AcoustID…',
     'cm.fixTags': 'Corriger les tags',
-    'cm.fixTagsForce': 'Corriger les tags (sans comparer)',
-    'cm.fixTags': 'Corriger les tags',
-    'cm.fixTagsForce': 'Corriger les tags (sans comparer)',
+    'cm.fixTagsAcoustid': 'Corriger les tags avec AcoustID',
     'btn.fixTagsTooltip': 'Corriger les tags via AcoustID…',
     'fixTags.progress': 'Correction des tags…',
     'fixTags.summary': '{fixed} mis à jour · {unchanged} déjà corrects · {noMatch} sans correspondance · {failed} échoués ({total} au total)',
@@ -2181,10 +2172,10 @@ const I18N = {
     'albumYear.prompt': "Définir l'année de sortie pour tous les titres de cet album :",
     'albumYear.progress': 'Mise à jour des années de sortie…',
     'albumYear.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
-    'albumTrackNo.prompt': 'Renuméroter cet album à partir de :',
-    'albumTrackNo.invalid': 'Entrez un nombre entier de départ.',
-    'albumTrackNo.progress': 'Mise à jour des numéros de piste…',
-    'albumTrackNo.summary': '{updated} mis à jour · {failed} échoués ({total} au total)',
+    'albumTrackNo.pickTitle': 'Choisir une piste à numéroter',
+    'albumTrackNo.numberPrompt': 'Numéro de piste pour « {title} » :',
+    'albumTrackNo.invalid': 'Entrez un nombre entier.',
+    'albumTrackNo.writeFailed': 'Impossible de mettre à jour le numéro de piste.',
     'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
     'editor.idFailed': 'Échec de la recherche',
     'editor.saved': 'Enregistré ✓',
@@ -2772,11 +2763,8 @@ const I18N = {
     'editor.saving': 'Збереження…',
     'editor.idBadKey': 'AcoustID відхилив ключ API',
     'editor.idNoKey': 'Додайте свій ключ API AcoustID у Налаштуваннях, щоб користуватися Розпізнаванням',
-    'cm.identify': 'Розпізнати через AcoustID…',
     'cm.fixTags': 'Виправити теги',
-    'cm.fixTagsForce': 'Виправити теги (без порівняння)',
-    'cm.fixTags': 'Виправити теги',
-    'cm.fixTagsForce': 'Виправити теги (без порівняння)',
+    'cm.fixTagsAcoustid': 'Виправити теги через AcoustID',
     'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
     'fixTags.progress': 'Виправляємо теги…',
     'fixTags.summary': '{fixed} оновлено · {unchanged} вже правильні · {noMatch} без збігів · {failed} невдало ({total} усього)',
@@ -2803,10 +2791,10 @@ const I18N = {
     'albumYear.prompt': 'Встановити рік випуску для всіх треків цього альбому:',
     'albumYear.progress': 'Оновлюємо роки випуску…',
     'albumYear.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
-    'albumTrackNo.prompt': 'Перенумерувати цей альбом, починаючи з:',
-    'albumTrackNo.invalid': 'Введіть ціле число для початкового номера.',
-    'albumTrackNo.progress': 'Оновлюємо номери треків…',
-    'albumTrackNo.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
+    'albumTrackNo.pickTitle': 'Оберіть трек для нумерації',
+    'albumTrackNo.numberPrompt': 'Номер треку для «{title}»:',
+    'albumTrackNo.invalid': 'Введіть ціле число.',
+    'albumTrackNo.writeFailed': 'Не вдалося оновити номер треку.',
     'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
     'editor.idFailed': 'Пошук не вдався',
     'editor.saved': 'Збережено ✓',
@@ -6492,9 +6480,9 @@ function renderArtistDetail(name) {
     const head = document.createElement('div');
     head.className = 'artist-album-head';
     head.innerHTML = `
-      <div class="artist-album-cover" style="${coverStyle}"></div>
+      <div class="artist-album-cover pl-meta-link" style="${coverStyle}" title="${escapeHtml(alb.album)}"></div>
       <div class="artist-album-info">
-        <div class="artist-album-name">${escapeHtml(alb.album)}</div>
+        <div class="artist-album-name pl-meta-link" title="${escapeHtml(alb.album)}">${escapeHtml(alb.album)}</div>
         <div class="artist-album-meta">
           ${alb.year ? `<span>${escapeHtml(String(alb.year))}</span><span>·</span>` : ''}
           <span>${alb.tracks.length} ${pluralTracks(alb.tracks.length)}</span>
@@ -6505,6 +6493,14 @@ function renderArtistDetail(name) {
         ${escapeHtml(tr('btn.album'))}
       </button>
     `;
+    const gotoAlbum = e => {
+      e.stopPropagation();
+      if (!alb.tracks.length) return;
+      activeAlbumKey = albumKeyFor(alb.tracks[0]);
+      setView('album-detail');
+    };
+    head.querySelector('.artist-album-cover').addEventListener('click', gotoAlbum);
+    head.querySelector('.artist-album-name').addEventListener('click', gotoAlbum);
     head.querySelector('.artist-album-play').addEventListener('click', e => {
       e.stopPropagation();
       if (alb.tracks.length > 0) playTrackByPath(alb.tracks[0].path, artist.tracks);
@@ -7490,42 +7486,47 @@ async function runFixAlbumYear(tracks) {
 }
 
 // ── Fix album track numbers ──
-// Renumbers the album sequentially in its normal listening order (disc/track/
-// title, same as the album page shows it), starting from a number the user
-// types in — for albums where tags came in out of order or missing entirely.
-// Numbering restarts at that same start value on every disc, matching how
-// sortAlbumTracks/compareTrackOrder already group discs.
-const discKeyOf = (t) => parseInt(t.discNo, 10) || 0;
-async function runFixAlbumTrackNumbers(tracks) {
-  const ordered = sortAlbumTracks(tracks).filter(t => !isRemotePath(t.path));
-  if (!ordered.length) return;
-  const start = await promptModal(tr('albumTrackNo.prompt'), '1');
-  if (start === null) return;
-  const startNo = parseInt(start.trim(), 10);
-  if (!Number.isFinite(startNo) || startNo < 0) { alert(tr('albumTrackNo.invalid')); return; }
-
-  let updated = 0, failed = 0, curDisc = null, no = startNo;
-  for (let i = 0; i < ordered.length; i++) {
-    setProgressBanner(i, ordered.length, 'albumTrackNo.progress');
-    const t = ordered[i];
-    const disc = discKeyOf(t);
-    if (disc !== curDisc) { curDisc = disc; no = startNo; }
-    const trackNo = String(no);
-    no++;
-    const wr = await window.electronAPI.writeMetadata(t.path, { trackNo });
-    if (wr && wr.success) {
-      t.trackNo = trackNo;
-      updated++;
-    } else {
-      failed++;
-      window.electronAPI.logError?.('albumTrackNoFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
-    }
-  }
-  setProgressBanner(null);
-  saveLibrary();
-  refreshCurrentViewRows();
-  alert(tr('albumTrackNo.summary', { updated, failed, total: ordered.length }));
+// Used to renumber the whole album sequentially from a typed start value, in
+// whatever order sortAlbumTracks guessed (disc/trackNo, falling back to title
+// when numbers are missing) — but that fallback order is often just
+// alphabetical, nowhere near the real listening order, so the bulk renumber
+// silently stamped wrong numbers onto the wrong songs. Pick the song by name
+// instead, then type its number: one track at a time, no order guessing. The
+// list stays open (re-sorted after each write) so a whole album can be fixed
+// in one pass.
+function renderTrackNumberList(tracks) {
+  const list = $('track-number-list');
+  list.innerHTML = '';
+  sortAlbumTracks(tracks).forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'sl-item';
+    el.innerHTML = `<span style="color:var(--text-dim);display:inline-block;width:28px">${escapeHtml(t.trackNo || '—')}</span>${escapeHtml(t.title || '—')}`;
+    el.addEventListener('click', async () => {
+      const no = await promptModal(tr('albumTrackNo.numberPrompt', { title: t.title }), t.trackNo || '');
+      if (no === null) return;
+      const trimmed = no.trim();
+      if (!/^\d+$/.test(trimmed)) { alert(tr('albumTrackNo.invalid')); return; }
+      const wr = await window.electronAPI.writeMetadata(t.path, { trackNo: trimmed });
+      if (!wr || !wr.success) {
+        window.electronAPI.logError?.('albumTrackNoFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
+        alert(tr('albumTrackNo.writeFailed'));
+        return;
+      }
+      t.trackNo = trimmed;
+      saveLibrary();
+      refreshCurrentViewRows();
+      renderTrackNumberList(tracks);
+    });
+    list.appendChild(el);
+  });
 }
+function runFixAlbumTrackNumbers(tracks) {
+  const targets = tracks.filter(t => !isRemotePath(t.path));
+  if (!targets.length) return;
+  renderTrackNumberList(targets);
+  $('track-number-modal').classList.add('active');
+}
+$('btn-close-track-number').addEventListener('click', () => $('track-number-modal').classList.remove('active'));
 
 // ── Mini-player navigation ──
 function gotoCurrentTrackInAlbum() {
@@ -8867,7 +8868,7 @@ function openContextMenu(e, path) {
   $('cm-use-cover').hidden = remote || currentView !== 'album-detail' || !(track && track.cover);
   // Everything below is a local-file operation — a peer's track only has a
   // stream URL, nothing on disk here to tag, reveal, or delete.
-  ['reveal', 'edit-tags', 'identify', 'fix-tags', 'fix-tags-force', 'delete'].forEach(a => {
+  ['reveal', 'edit-tags', 'fix-tags', 'delete'].forEach(a => {
     const el = menu.querySelector(`[data-action="${a}"]`);
     if (el) el.hidden = remote;
   });
@@ -8907,13 +8908,7 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     else if (action === 'favorite') toggleFavorite(path);
     else if (action === 'reveal') window.electronAPI.revealInFolder(path);
     else if (action === 'edit-tags') openMetadataEditor(path);
-    // Same editor, with the lookup already running — the match lands in the
-    // fields and the user still reviews it before anything touches the file.
-    else if (action === 'identify') {
-      openMetadataEditor(path).then(() => $('btn-identify-editor').click());
-    }
     else if (action === 'fix-tags') { if (track) runFixTags([track], { compare: true }); }
-    else if (action === 'fix-tags-force') { if (track) runFixTags([track], { compare: false }); }
     else if (action === 'use-cover') {
       if (!track || !track.cover) { alert(tr('albumCover.badSource')); return; }
       pendingAlbumCoverSource = path;
@@ -9418,6 +9413,7 @@ document.addEventListener('keydown', e => {
     else if ($('new-playlist-modal').classList.contains('active')) $('new-playlist-modal').classList.remove('active');
     else if ($('add-to-playlist-modal').classList.contains('active')) $('add-to-playlist-modal').classList.remove('active');
     else if ($('text-prompt-modal').classList.contains('active')) closeTextPromptModal(null);
+    else if ($('track-number-modal').classList.contains('active')) $('track-number-modal').classList.remove('active');
     else if (librarySelectMode) setLibrarySelectMode(false);
     return;
   }

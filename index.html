@@ -1698,6 +1698,17 @@
     </div>
   </div>
 
+  <!-- Correct track numbers: pick a track by name, then type its number -->
+  <div id="track-number-modal" class="modal-overlay">
+    <div class="modal-card modal-card-md">
+      <div class="modal-title" data-i18n="albumTrackNo.pickTitle">Pick a track to number</div>
+      <div class="select-list" id="track-number-list"></div>
+      <div class="modal-actions">
+        <button id="btn-close-track-number" class="btn-ghost" data-i18n="btn.close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Editor: track picker -->
   <div id="ed-pick-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
@@ -1800,9 +1811,7 @@
     <button class="cm-item" data-action="reveal"><svg class="i" width="11" height="11"><use href="#i-folder"/></svg><span data-i18n="cm.reveal">Show in folder</span></button>
     <div class="cm-divider" id="cm-div-2"></div>
     <button class="cm-item cm-highlight" data-action="edit-tags"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.editTags">Edit tags…</span><span class="cm-sh">⌘E</span></button>
-    <button class="cm-item" data-action="identify"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.identify">Identify via AcoustID…</span></button>
-    <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix the tags</span></button>
-    <button class="cm-item" data-action="fix-tags-force"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTagsForce">Fix the tags (without comparing)</span></button>
+    <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTagsAcoustid">Fix tags with AcoustID</span></button>
     <button class="cm-item" data-action="use-cover" id="cm-use-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.useAsAlbumCover">Use as album cover</span></button>
     <button class="cm-item" data-action="trim" id="cm-trim" hidden><svg class="i" width="11" height="11"><use href="#i-scissors"/></svg><span data-i18n="cm.trim">Trim track…</span></button>
     <div class="cm-divider" id="cm-div-3"></div>
