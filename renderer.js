@@ -6124,7 +6124,10 @@ $('btn-select-all').addEventListener('click', () => {
   updateSelectBar();
   if (libraryVList) libraryVList.refreshVisible();
 });
-$('btn-download-selected').addEventListener('click', () => downloadSelectedFromHost());
+$('btn-download-selected').addEventListener('click', () => {
+  const remoteByPath = new Map(lanAllRemoteTracks().map(t => [t.path, t]));
+  downloadTracksFromHost([...selectedPaths].map(p => remoteByPath.get(p)).filter(Boolean));
+});
 $('btn-delete-selected').addEventListener('click', () => {
   const paths = [...selectedPaths].filter(p => !isRemotePath(p));
   if (paths.length === 0) return;
@@ -7430,8 +7433,10 @@ function openFixTagsMenu(e, tracks, labelKey, { albumActions = false, name = '' 
   $('ftm-apply-cover').hidden = !albumActions;
   $('ftm-fix-year').hidden = !albumActions;
   $('ftm-fix-tracknos').hidden = !albumActions;
-  $('ftm-delete-album').hidden = !albumActions;
-  $('ftm-delete-artist').hidden = albumActions;
+  $('ftm-download').hidden = !tracks.some(t => isRemotePath(t.path));
+  const hasLocal = tracks.some(t => !isRemotePath(t.path));
+  $('ftm-delete-album').hidden = !albumActions || !hasLocal;
+  $('ftm-delete-artist').hidden = albumActions || !hasLocal;
   const menu = $('fix-tags-menu');
   menu.classList.add('open');
   const rect = e.currentTarget.getBoundingClientRect();
@@ -7454,20 +7459,22 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     const action = btn.dataset.action;
     closeFixTagsMenu();
     if (!scope) return;
+    const localTracks = scope.tracks.filter(t => !isRemotePath(t.path));
     if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
     else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
+    else if (action === 'download') downloadTracksFromHost(scope.tracks);
     else if (action === 'delete-album') confirmDelete({
       kind: 'tracks',
-      payload: scope.tracks.map(t => t.path),
+      payload: localTracks.map(t => t.path),
       title: tr('modal.deleteAlbum.title'),
-      text: tr('modal.deleteAlbum.text', { name: scope.name, count: withCount('tracks', scope.tracks.length) }),
+      text: tr('modal.deleteAlbum.text', { name: scope.name, count: withCount('tracks', localTracks.length) }),
     });
     else if (action === 'delete-artist') confirmDelete({
       kind: 'tracks',
-      payload: scope.tracks.map(t => t.path),
+      payload: localTracks.map(t => t.path),
       title: tr('modal.deleteArtist.title'),
-      text: tr('modal.deleteArtist.text', { name: scope.name, count: withCount('tracks', scope.tracks.length) }),
+      text: tr('modal.deleteArtist.text', { name: scope.name, count: withCount('tracks', localTracks.length) }),
     });
     else runFixTags(scope.tracks, { compare: true, labelKey: scope.labelKey });
   });
@@ -11055,16 +11062,16 @@ function lanAllRemoteTracks() {
   return Object.values(lanPeerLibraries).flatMap(l => l.tracks);
 }
 
-// Bulk-select's "Download from Host": pulls the selected peer tracks down as
-// real local files (through the same defaultFolder prompt every other
-// download in the app uses) and indexes them via importPaths, exactly like a
-// finished YouTube/Spotify download. Only ever sees remote paths that are
-// still in lanPeerLibraries right now, so there's no separate "peer still
-// reachable" check needed - an unreachable peer's tracks already vanished
-// from the list (see lanSyncPeerLibrary).
-async function downloadSelectedFromHost() {
-  const remoteByPath = new Map(lanAllRemoteTracks().map(t => [t.path, t]));
-  const tracks = [...selectedPaths].map(p => remoteByPath.get(p)).filter(Boolean);
+// "Download from Host": pulls peer tracks down as real local files (through
+// the same defaultFolder prompt every other download in the app uses) and
+// indexes them via importPaths, exactly like a finished YouTube/Spotify
+// download. Only ever called with tracks that are still in lanPeerLibraries
+// right now, so there's no separate "peer still reachable" check needed - an
+// unreachable peer's tracks already vanished from the list (see
+// lanSyncPeerLibrary). Shared by the library bulk-select bar and the
+// album/artist "⋮" menu, both of which just gather track objects differently.
+async function downloadTracksFromHost(tracks) {
+  tracks = tracks.filter(t => isRemotePath(t.path));
   if (!tracks.length) return;
   const args = await ensureDownloadArgs({});
   if (!args) return; // user closed the folder picker without choosing one
