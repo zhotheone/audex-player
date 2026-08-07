@@ -664,6 +664,13 @@ ipcMain.handle('music:scanFolder', async (event, folderPath) => {
   return scanDir(folderPath);
 });
 
+// Lets the renderer tell "file moved/deleted out from under us" apart from
+// "file's here but won't decode" after a playback error, without reading the
+// whole thing the way readAudioFile would.
+ipcMain.handle('music:fileExists', (event, filePath) => {
+  try { return fs.existsSync(resolveRealPath(filePath)); } catch (_) { return false; }
+});
+
 // Tier 1 quality — everything derivable from the file header at parse time
 // (no audio decoding). music-metadata's `format` block already exposes the
 // codec, true average bitrate (Xing/Info for VBR), sample rate, the LAME

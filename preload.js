@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFiles: () => ipcRenderer.invoke('dialog:openFiles'),
   chooseFolder: () => ipcRenderer.invoke('dialog:chooseFolder'),
   scanFolder: (folderPath) => ipcRenderer.invoke('music:scanFolder', folderPath),
+  fileExists: (filePath) => ipcRenderer.invoke('music:fileExists', filePath),
   parseMetadata: (filePath) => ipcRenderer.invoke('music:parseMetadata', filePath),
   loadCoverCache: (paths) => ipcRenderer.invoke('covers:load', paths),
   readAudioFile: (filePath) => ipcRenderer.invoke('audio:readFile', filePath),

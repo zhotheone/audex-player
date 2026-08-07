@@ -963,6 +963,7 @@ const I18N = {
     'label.tracksShort': 'tr.',
     'error.deleteFile': 'Could not delete file from disk: ',
     'error.unknown': 'unknown error',
+    'library.ghostsRemoved': '{count} track(s) no longer found on disk — removed from your library.',
     'downloads.tab.queue': 'Queue',
     'downloads.queue.add': 'Queue',
     'downloads.queue.queued': 'Queued',
@@ -1576,6 +1577,7 @@ const I18N = {
     'label.tracksShort': 'Tit.',
     'error.deleteFile': 'Datei konnte nicht gelöscht werden: ',
     'error.unknown': 'unbekannter Fehler',
+    'library.ghostsRemoved': '{count} Titel wurden nicht mehr auf der Festplatte gefunden — aus der Bibliothek entfernt.',
     'downloads.tab.queue': 'Warteschlange',
     'downloads.queue.add': 'In Warteschlange',
     'downloads.queue.queued': 'In Warteschlange',
@@ -2189,6 +2191,7 @@ const I18N = {
     'label.tracksShort': 'p.',
     'error.deleteFile': "Impossible de supprimer le fichier du disque : ",
     'error.unknown': 'erreur inconnue',
+    'library.ghostsRemoved': "{count} morceau(x) introuvable(s) sur le disque — retiré(s) de votre bibliothèque.",
     'downloads.tab.queue': 'File d\'attente',
     'downloads.queue.add': 'À la file',
     'downloads.queue.queued': 'En file',
@@ -2800,6 +2803,7 @@ const I18N = {
     'label.tracksShort': 'тр.',
     'error.deleteFile': 'Не вдалося видалити файл з диска: ',
     'error.unknown': 'невідома помилка',
+    'library.ghostsRemoved': '{count} трек(и) більше не знайдено на диску — видалено з бібліотеки.',
     'downloads.tab.queue': 'Черга',
     'downloads.queue.add': 'В чергу',
     'downloads.queue.queued': 'В черзі',
@@ -8078,6 +8082,17 @@ function renderReport() {
 audio.addEventListener('play', () => { isPlaying = true; updatePlayButtonUI(); plStartIfNeeded(); pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
 audio.addEventListener('pause', () => { plTick(); isPlaying = false; updatePlayButtonUI(); savePlayLog(); pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
 audio.addEventListener('seeked', () => { pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
+// file:// 404s (moved/deleted track) and a genuinely corrupt file both land
+// here indistinguishably — revalidateLibrary() tells them apart by checking
+// disk, so a codec error a still-present file doesn't wrongly get purged.
+let revalidatingLibrary = false;
+audio.addEventListener('error', async () => {
+  if (revalidatingLibrary || !currentTrack || isRemotePath(currentTrack.path)) return;
+  revalidatingLibrary = true;
+  const removed = await revalidateLibrary();
+  revalidatingLibrary = false;
+  if (removed > 0) alert(tr('library.ghostsRemoved', { count: removed }));
+});
 audio.addEventListener('timeupdate', () => {
   const cur = audio.currentTime, dur = audio.duration;
   saveSession(); // throttled internally — this fires ~4x a second
@@ -8579,6 +8594,38 @@ async function deleteTrack(path) {
   refreshCurrentViewRows();
   renderRecents();
 }
+// Drops `paths` from the library, current queue, favorites, recents and
+// playlists, stopping playback if the current track is among them. Shared by
+// deleteTracks() (after a real disk delete) and revalidateLibrary() (after
+// finding files gone from under the app).
+function removeTracksFromState(paths) {
+  const playingPath = currentTrack ? currentTrack.path : null;
+  // Mutate in place: currentQueue may alias the library array.
+  for (let i = library.length - 1; i >= 0; i--) {
+    if (paths.has(library[i].path)) library.splice(i, 1);
+  }
+  if (currentQueue !== library) {
+    for (let i = currentQueue.length - 1; i >= 0; i--) {
+      if (paths.has(currentQueue[i].path)) currentQueue.splice(i, 1);
+    }
+  }
+  if (playingPath && paths.has(playingPath)) {
+    audio.pause();
+    stopCrossfadeTail();
+    isPlaying = false;
+    currentTrack = null;
+    $('track-title').textContent = tr('np.empty.title');
+    $('track-artist').textContent = '—';
+    updatePlayButtonUI();
+  }
+  favorites = favorites.filter(p => !paths.has(p));
+  recents = recents.filter(p => !paths.has(p));
+  playlists.forEach(pl => { pl.trackPaths = pl.trackPaths.filter(p => !paths.has(p)); });
+  saveLibrary(); savePlaylists(); saveRecents();
+  renderCounts();
+  renderRecents();
+}
+
 async function deleteTracks(paths) {
   const deleted = new Set();
   let firstError = null;
@@ -8587,36 +8634,22 @@ async function deleteTracks(paths) {
     if (res && res.success) deleted.add(path);
     else if (!firstError) firstError = (res && res.error) || tr('error.unknown');
   }
-  if (deleted.size > 0) {
-    const playingPath = currentTrack ? currentTrack.path : null;
-    // Mutate in place: currentQueue may alias the library array.
-    for (let i = library.length - 1; i >= 0; i--) {
-      if (deleted.has(library[i].path)) library.splice(i, 1);
-    }
-    if (currentQueue !== library) {
-      for (let i = currentQueue.length - 1; i >= 0; i--) {
-        if (deleted.has(currentQueue[i].path)) currentQueue.splice(i, 1);
-      }
-    }
-    if (playingPath && deleted.has(playingPath)) {
-      audio.pause();
-      stopCrossfadeTail();
-      isPlaying = false;
-      currentTrack = null;
-      $('track-title').textContent = tr('np.empty.title');
-      $('track-artist').textContent = '—';
-      updatePlayButtonUI();
-    }
-    favorites = favorites.filter(p => !deleted.has(p));
-    recents = recents.filter(p => !deleted.has(p));
-    playlists.forEach(pl => { pl.trackPaths = pl.trackPaths.filter(p => !deleted.has(p)); });
-    saveLibrary(); savePlaylists(); saveRecents();
-    renderCounts();
-    renderRecents();
-  }
+  if (deleted.size > 0) removeTracksFromState(deleted);
   setLibrarySelectMode(false); // clears selection and re-renders the library view
   refreshCurrentViewRows();
   if (firstError) alert(tr('error.deleteFile') + firstError);
+}
+
+// A file moved/deleted outside the app surfaces as a native <audio> error
+// indistinguishable from "corrupt file" — check every local track against
+// disk and drop whichever ones are actually gone. Returns how many were removed.
+async function revalidateLibrary() {
+  if (!window.electronAPI || !window.electronAPI.fileExists) return 0;
+  const local = library.filter(t => !isRemotePath(t.path));
+  const exists = await Promise.all(local.map(t => window.electronAPI.fileExists(t.path)));
+  const ghosts = new Set(local.filter((t, i) => !exists[i]).map(t => t.path));
+  if (ghosts.size > 0) removeTracksFromState(ghosts);
+  return ghosts.size;
 }
 
 function deletePlaylist(id) {
