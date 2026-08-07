@@ -1744,6 +1744,12 @@ function classifyYtDlpError(text) {
   if (/Sign in to confirm|not a bot|cookies/i.test(s)) return 'signin';
   if (/members-only|join this channel/i.test(s)) return 'members';
   if (/Unable to download|Failed to resolve|Connection reset|timed out|Network is unreachable/i.test(s)) return 'network';
+  // A bare Python errno/traceback fragment ("[Errno 2] No such file or
+  // directory: '...videoplayback'") — yt-dlp's own postprocessing tripped
+  // over a file it expected to exist, usually because YouTube served a
+  // broken manifest for that one request. Not tied to any particular video:
+  // the same URL/args reliably succeed on a plain retry.
+  if (/errno \d+|no such file or directory|Postprocessing:/i.test(s)) return 'transient';
   return '';
 }
 
