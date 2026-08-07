@@ -746,8 +746,20 @@ function coverExt(format) {
   if (f.includes('webp')) return 'webp';
   return 'jpg';
 }
+// Every "is this cover corrupt" check in this file used to stop at "did the
+// tag parser throw" or "what does the declared mime/extension say" — neither
+// catches a tag-structurally-valid picture whose actual image bytes are
+// truncated or garbled (the shape a yt-dlp/mutagen partial embed or a bad
+// upstream round-trip leaves behind). nativeImage actually decodes the bytes
+// (Chromium's own JPEG/PNG/WebP/GIF/BMP decoders), so an empty result means
+// the data genuinely isn't a valid image — already imported for the tray icon,
+// so this is free: no new dependency, no subprocess.
+function isValidImage(buf) {
+  try { return !nativeImage.createFromBuffer(Buffer.from(buf)).isEmpty(); } catch (_) { return false; }
+}
 async function saveCoverToCache(trackPath, picture) {
   try {
+    if (!isValidImage(picture.data)) return; // don't let a bad cover become permanent
     const dir = coverCacheDir();
     const file = path.join(dir, coverCacheHash(trackPath) + '.' + coverExt(picture.format));
     if (fs.existsSync(file)) return;
@@ -938,10 +950,10 @@ function oggCoverMetaFile(tmpPath, picture) {
   return metaPath;
 }
 
-function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
+function ffmpegTagArgs(filePath, tmpPath, tags, picture, { dropCover = false } = {}) {
   const ext = path.extname(filePath).toLowerCase();
   const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', toFfmpegPath(filePath)];
-  if (isOggContainer(ext) && picture) {
+  if (isOggContainer(ext) && picture && !dropCover) {
     // Both -map_metadata calls apply (later ones add to earlier ones, not replace): the
     // source's own tags still come from 0, the picture is layered in from the synthetic file.
     args.push('-i', toFfmpegPath(oggCoverMetaFile(tmpPath, picture)), '-map', '0:a', '-map_metadata', '0', '-map_metadata', '1', '-c', 'copy');
@@ -951,6 +963,11 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
     // music:writeMetadata's catch below). Mapping stream 0 wholesale would hit
     // that same cover's synthetic mjpeg stream and crash the mux either way,
     // so stay audio-only regardless; a bad cover just gets dropped, not fatal.
+    args.push('-map', '0:a', '-c', 'copy', '-map_metadata', '0');
+  } else if (dropCover) {
+    // Same "strip the bad cover, keep everything else" as the Ogg branch
+    // above, generalized to ID3/MP4 containers — map audio only so whatever
+    // attached-pic/covr stream was carrying the bad image doesn't survive.
     args.push('-map', '0:a', '-c', 'copy', '-map_metadata', '0');
   } else {
     args.push('-map', '0', '-c', 'copy', '-map_metadata', '0');
@@ -968,7 +985,7 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
   return args;
 }
 
-async function writeMetadataToFile(filePath, tags) {
+async function writeMetadataToFile(filePath, tags, { dropCover = false } = {}) {
   if (!filePath) return { success: false, error: 'File not found' };
   filePath = resolveRealPath(filePath);
   if (!fs.existsSync(filePath)) return { success: false, error: 'File not found' };
@@ -977,15 +994,20 @@ async function writeMetadataToFile(filePath, tags) {
 
   const ext = path.extname(filePath).toLowerCase();
   let picture = null;
-  if (isOggContainer(ext)) {
+  if (isOggContainer(ext) && !dropCover) {
     try {
       const md = await musicMetadata.parseFile(filePath);
-      picture = (md.common.picture && md.common.picture[0]) || null;
+      const pic = (md.common.picture && md.common.picture[0]) || null;
+      // A tag-structurally-valid picture whose bytes don't actually decode
+      // would otherwise get faithfully re-serialized by oggCoverMetaFile
+      // below, compounding the corruption on every future tag edit instead
+      // of ever clearing it — treat it the same as a parse failure.
+      picture = (pic && isValidImage(pic.data)) ? pic : null;
     } catch (_) { /* cover unparseable — drop it, ffmpegTagArgs stays audio-only either way */ }
   }
 
   const tmpPath = path.join(path.dirname(filePath), `.audex-tags-${Date.now()}${ext}`);
-  const args = ffmpegTagArgs(filePath, tmpPath, tags, picture);
+  const args = ffmpegTagArgs(filePath, tmpPath, tags, picture, { dropCover });
 
   try {
     await runFfmpeg(ffmpeg, args);
@@ -1014,16 +1036,24 @@ ipcMain.handle('music:writeMetadata', async (event, { filePath, tags }) => write
 // thumbnail cache (the fast-boot path in warmCoversFromDisk — see covers:load
 // above, which is what most already-scanned tracks carry). Both are valid
 // "this track's cover art" — accept either.
+// Validated here so a bad source (a corrupt cached thumbnail, a mangled
+// data: URL) fails writeCoverToFile with "Bad cover data" up front instead of
+// getting embedded and then fanned out to every other track in the album by
+// runRegenerateAlbumCovers.
 function parseCoverSource(source) {
   const s = String(source || '');
   const m = /^data:([^;]+);base64,(.+)$/.exec(s);
-  if (m) return { format: m[1], data: Buffer.from(m[2], 'base64') };
+  if (m) {
+    const data = Buffer.from(m[2], 'base64');
+    return isValidImage(data) ? { format: m[1], data } : null;
+  }
   if (s.startsWith('file:')) {
     try {
       const filePath = fileURLToPath(s);
       const ext = path.extname(filePath).toLowerCase();
       const format = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
-      return { format, data: fs.readFileSync(filePath) };
+      const data = fs.readFileSync(filePath);
+      return isValidImage(data) ? { format, data } : null;
     } catch (_) { return null; }
   }
   return null;
@@ -1079,20 +1109,21 @@ async function writeCoverToFile(origPath, coverDataUrl) {
 
 ipcMain.handle('music:writeCover', async (event, { filePath, cover }) => writeCoverToFile(filePath, cover));
 
-// yt-dlp embeds YouTube thumbnails into Ogg/Opus via Python/mutagen, which can
-// write a METADATA_BLOCK_PICTURE that music-metadata (and this app's own
-// ffmpeg tag writer) can't parse back — the same corruption documented in
-// writeMetadataToFile above. Catch it right after download: a full parse
-// that throws means the cover is broken, so re-run it through the tag writer
-// with no tag changes, which reuses that same fallback to drop the bad
-// picture instead of shipping a file that renders a mangled cover later.
+// yt-dlp/ffmpeg can leave a thumbnail embedded whose tag framing parses fine
+// but whose actual image bytes are truncated or garbled (a partial mutagen
+// write for Ogg/Opus, or a bad APIC/covr frame for mp3/m4a/flac) — "the tag
+// parser didn't throw" was never proof the picture itself decodes, so check
+// that too via isValidImage. Catch it right after every download: either
+// failure means the cover is broken, so re-run it through the tag writer with
+// dropCover set, which maps audio-only regardless of container instead of
+// shipping a file that renders a mangled cover later.
 async function stripCoverIfCorrupt(filePath) {
-  if (!isOggContainer(path.extname(filePath).toLowerCase())) return;
   try {
-    await musicMetadata.parseFile(filePath);
-  } catch (_) {
-    try { await writeMetadataToFile(filePath, {}); } catch (_) {}
-  }
+    const md = await musicMetadata.parseFile(filePath);
+    const pic = md.common.picture && md.common.picture[0];
+    if (!pic || isValidImage(pic.data)) return; // no cover, or a good one — nothing to do
+  } catch (_) { /* tag structure itself didn't parse — fall through to strip below */ }
+  try { await writeMetadataToFile(filePath, {}, { dropCover: true }); } catch (_) {}
 }
 
 ipcMain.handle('shell:revealInFolder', async (event, filePath) => {
