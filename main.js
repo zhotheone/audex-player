@@ -663,6 +663,43 @@ ipcMain.handle('dialog:chooseFolder', async () => {
   return filePaths[0];
 });
 
+// Read a user-picked image into a base64 data: URL that writeCoverToFile can
+// embed. jpg/png (the standard cover formats, embedded and validated cleanly)
+// pass through untouched; anything else (webp/avif/gif/bmp) is normalized to
+// png via the bundled ffmpeg first — so it both embeds correctly and clears
+// the nativeImage validity gate, which mishandles some webp.
+async function loadImageAsCover(src) {
+  const ext = path.extname(src).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg' || ext === '.png') {
+    const data = await fs.promises.readFile(src);
+    return `data:${ext === '.png' ? 'image/png' : 'image/jpeg'};base64,${data.toString('base64')}`;
+  }
+  const ffmpeg = resolveBundledFfmpeg();
+  if (ffmpeg) {
+    const tmp = path.join(app.getPath('temp'), `audex-cover-${Date.now()}.png`);
+    try {
+      await runFfmpeg(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y', '-i', toFfmpegPath(src), toFfmpegPath(tmp)]);
+      const data = await fs.promises.readFile(tmp);
+      return `data:image/png;base64,${data.toString('base64')}`;
+    } finally { try { fs.unlinkSync(tmp); } catch (_) {} }
+  }
+  const data = await fs.promises.readFile(src); // no ffmpeg — pass through, embed may still work
+  return `data:image/${ext.slice(1) || 'jpeg'};base64,${data.toString('base64')}`;
+}
+
+ipcMain.handle('dialog:chooseImage', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp'] }],
+  });
+  if (canceled || !filePaths.length) return { canceled: true };
+  try {
+    return { dataUrl: await loadImageAsCover(filePaths[0]), name: path.basename(filePaths[0]) };
+  } catch (err) {
+    return { error: String((err && err.message) || err) };
+  }
+});
+
 ipcMain.handle('music:scanFolder', async (event, folderPath) => {
   if (!folderPath || !fs.existsSync(folderPath)) return [];
   return scanDir(folderPath);

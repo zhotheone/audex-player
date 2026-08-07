@@ -751,6 +751,7 @@ const I18N = {
     'downloads.parsing.col.duration': 'Dur.',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
+    'downloads.warnPlainYoutube': '⚠ This is a youtube.com link. Use the music.youtube.com version for higher-quality (Premium 256 kbps) audio — open it in YouTube Music and copy that link.',
     'downloads.ytm.hint': 'Link to an album, single, or artist on YouTube Music. No login or browser needed.',
     'downloads.ytm.idle.title': 'YouTube Music parsing',
     'downloads.ytm.idle.text': 'Paste a link to an album, single, or artist page from YouTube Music. The app will collect the track list and you can download any of them in one click.',
@@ -954,6 +955,7 @@ const I18N = {
     'editor.idFilled': 'Match found — review and save',
     'editor.idNoMatch': 'No match on AcoustID',
     'cm.useAsAlbumCover': 'Use as album cover',
+    'cm.setCoverFromFile': 'Set cover from file…',
     'cm.applyCoverToAlbum': 'Apply cover to album…',
     'cm.fixYear': 'Fix release year…',
     'cm.fixTrackNumbers': 'Correct track numbers…',
@@ -964,6 +966,9 @@ const I18N = {
     'albumCover.badSource': "This track has no cover art loaded — scroll it into view (or open it) so its art loads, then try again.",
     'albumCover.confirm': 'Apply the cover from "{track}" to the other {count} track(s) in this album?',
     'albumCover.progress': 'Updating album covers…',
+    'coverFile.progress': 'Setting cover…',
+    'coverFile.confirm': 'Set this image as the cover for all {count} tracks?',
+    'coverFile.error': 'Could not read that image: {e}',
     'albumCover.summary': '{updated} updated · {failed} failed ({total} total)',
     'albumYear.prompt': 'Set the release year for every track in this album:',
     'albumYear.progress': 'Updating release years…',
@@ -1386,6 +1391,7 @@ const I18N = {
     'downloads.parsing.col.duration': 'Dauer',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
+    'downloads.warnPlainYoutube': '⚠ Das ist ein youtube.com-Link. Nutze die music.youtube.com-Version für höhere Qualität (Premium, 256 kbit/s) — in YouTube Music öffnen und diesen Link kopieren.',
     'downloads.ytm.hint': 'Link zu einem Album, einer Single oder einem Interpreten auf YouTube Music. Kein Login oder Browser nötig.',
     'downloads.ytm.idle.title': 'YouTube-Music-Parsing',
     'downloads.ytm.idle.text': 'Füge einen Link zu einem Album, einer Single oder einer Interpretenseite von YouTube Music ein. Die App sammelt die Titelliste, und du kannst jeden Titel mit einem Klick herunterladen.',
@@ -1589,6 +1595,7 @@ const I18N = {
     'editor.idFilled': 'Treffer gefunden — prüfen und speichern',
     'editor.idNoMatch': 'Kein Treffer bei AcoustID',
     'cm.useAsAlbumCover': 'Als Album-Cover verwenden',
+    'cm.setCoverFromFile': 'Cover aus Datei wählen…',
     'cm.applyCoverToAlbum': 'Cover auf Album anwenden…',
     'cm.fixYear': 'Erscheinungsjahr korrigieren…',
     'cm.fixTrackNumbers': 'Titelnummern korrigieren…',
@@ -1599,6 +1606,9 @@ const I18N = {
     'albumCover.badSource': 'Für diesen Titel ist noch kein Cover geladen — ins Sichtfeld scrollen (oder öffnen), damit es lädt, dann erneut versuchen.',
     'albumCover.confirm': 'Cover von „{track}“ auf die restlichen {count} Titel dieses Albums übertragen?',
     'albumCover.progress': 'Album-Cover werden aktualisiert…',
+    'coverFile.progress': 'Cover wird gesetzt…',
+    'coverFile.confirm': 'Dieses Bild als Cover für alle {count} Titel setzen?',
+    'coverFile.error': 'Bild konnte nicht gelesen werden: {e}',
     'albumCover.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
     'albumYear.prompt': 'Erscheinungsjahr für alle Titel dieses Albums festlegen:',
     'albumYear.progress': 'Erscheinungsjahre werden aktualisiert…',
@@ -2021,6 +2031,7 @@ const I18N = {
     'downloads.parsing.col.duration': 'Durée',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
+    'downloads.warnPlainYoutube': '⚠ Ceci est un lien youtube.com. Utilisez la version music.youtube.com pour une meilleure qualité (Premium 256 kbit/s) — ouvrez-le dans YouTube Music et copiez ce lien.',
     'downloads.ytm.hint': 'Lien vers un album, un single ou un artiste sur YouTube Music. Aucune connexion ni navigateur requis.',
     'downloads.ytm.idle.title': 'Analyse YouTube Music',
     'downloads.ytm.idle.text': "Collez un lien vers un album, un single ou une page d'artiste de YouTube Music. L'application récupérera la liste des pistes et vous pourrez en télécharger n'importe laquelle en un clic.",
@@ -2224,6 +2235,7 @@ const I18N = {
     'editor.idFilled': 'Correspondance trouvée — vérifiez puis enregistrez',
     'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
     'cm.useAsAlbumCover': "Utiliser comme pochette de l'album",
+    'cm.setCoverFromFile': 'Choisir une pochette depuis un fichier…',
     'cm.applyCoverToAlbum': "Appliquer la pochette à l'album…",
     'cm.fixYear': "Corriger l'année de sortie…",
     'cm.fixTrackNumbers': 'Corriger les numéros de piste…',
@@ -2234,6 +2246,9 @@ const I18N = {
     'albumCover.badSource': "Aucune pochette n'est chargée pour ce titre — faites-le défiler à l'écran (ou ouvrez-le) pour la charger, puis réessayez.",
     'albumCover.confirm': 'Appliquer la pochette de « {track} » aux {count} autre(s) titre(s) de cet album ?',
     'albumCover.progress': 'Mise à jour des pochettes…',
+    'coverFile.progress': 'Application de la pochette…',
+    'coverFile.confirm': 'Définir cette image comme pochette pour les {count} titres ?',
+    'coverFile.error': "Impossible de lire cette image : {e}",
     'albumCover.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
     'albumYear.prompt': "Définir l'année de sortie pour tous les titres de cet album :",
     'albumYear.progress': 'Mise à jour des années de sortie…',
@@ -2656,6 +2671,7 @@ const I18N = {
     'downloads.parsing.col.duration': 'Трив.',
     'downloads.parsing.subtab.ytmusic': 'YouTube Music',
     'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
+    'downloads.warnPlainYoutube': '⚠ Це посилання youtube.com. Використайте версію music.youtube.com для вищої якості (Premium 256 кбіт/с) — відкрийте у YouTube Music і скопіюйте це посилання.',
     'downloads.ytm.hint': 'Посилання на альбом, сингл або виконавця з YouTube Music. Логін і браузер не потрібні.',
     'downloads.ytm.idle.title': 'Парсинг YouTube Music',
     'downloads.ytm.idle.text': 'Вставте посилання на альбом, сингл або сторінку виконавця з YouTube Music. Застосунок збере список треків, і ви зможете завантажити будь-який одним кліком.',
@@ -2859,6 +2875,7 @@ const I18N = {
     'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
     'editor.idNoMatch': 'В AcoustID збігів немає',
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
+    'cm.setCoverFromFile': 'Вибрати обкладинку з файлу…',
     'cm.applyCoverToAlbum': 'Застосувати обкладинку до альбому…',
     'cm.fixYear': 'Виправити рік випуску…',
     'cm.fixTrackNumbers': 'Виправити номери треків…',
@@ -2869,6 +2886,9 @@ const I18N = {
     'albumCover.badSource': 'Для цього треку ще не завантажено обкладинку — прогорніть до нього список (або відкрийте трек), щоб вона завантажилась, і спробуйте ще раз.',
     'albumCover.confirm': 'Застосувати обкладинку з «{track}» до решти {count} трек(ів) цього альбому?',
     'albumCover.progress': 'Оновлюємо обкладинки альбому…',
+    'coverFile.progress': 'Встановлення обкладинки…',
+    'coverFile.confirm': 'Встановити це зображення як обкладинку для всіх {count} треків?',
+    'coverFile.error': 'Не вдалося прочитати зображення: {e}',
     'albumCover.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
     'albumYear.prompt': 'Встановити рік випуску для всіх треків цього альбому:',
     'albumYear.progress': 'Оновлюємо роки випуску…',
@@ -3829,12 +3849,28 @@ if (window.electronAPI && window.electronAPI.onYtDownloadProgress) {
 function setYtStatus(text, kind) {
   const el = $('dl-yt-status');
   if (!el) return;
-  el.classList.remove('is-error', 'is-ok');
+  el.classList.remove('is-error', 'is-ok', 'is-warn');
   if (!text) { el.hidden = true; el.textContent = ''; return; }
   if (kind === 'error') el.classList.add('is-error');
   else if (kind === 'ok') el.classList.add('is-ok');
+  else if (kind === 'warn') el.classList.add('is-warn');
   el.hidden = false;
   el.textContent = text;
+}
+
+// A youtube.com / youtu.be link that isn't the music.youtube.com variant —
+// those miss the 256kbps Premium audio tier that only music.youtube.com URLs
+// expose, so warn the user to grab the YouTube Music link instead.
+function isPlainYoutubeUrl(v) {
+  let host;
+  try { host = new URL(String(v || '').trim()).hostname.toLowerCase(); } catch (_) { return false; }
+  if (host === 'music.youtube.com') return false;
+  return host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'youtu.be';
+}
+function updatePlainYtWarning(value, setStatus, statusId) {
+  if (isPlainYoutubeUrl(value)) { setStatus(tr('downloads.warnPlainYoutube'), 'warn'); return; }
+  const el = $(statusId);
+  if (el && el.classList.contains('is-warn')) setStatus(null);
 }
 
 function saveYtState() {
@@ -4357,6 +4393,7 @@ async function downloadYtResult(idx, btn) {
     // Enter doesn't drop their input. Light-touch: just rewrites the same
     // JSON blob, no debouncing needed at human typing speed.
     input.addEventListener('input', saveYtState);
+    input.addEventListener('input', () => updatePlainYtWarning(input.value, setYtStatus, 'dl-yt-status'));
   }
   if (queueAll) queueAll.addEventListener('click', enqueueAllYtResults);
 })();
@@ -4388,10 +4425,11 @@ const ytmActiveDownloads = new Map(); // requestId -> rowEl (direct, non-queue d
 function setYtmStatus(text, kind) {
   const el = $('dl-ytm-status');
   if (!el) return;
-  el.classList.remove('is-error', 'is-ok');
+  el.classList.remove('is-error', 'is-ok', 'is-warn');
   if (!text) { el.hidden = true; el.textContent = ''; return; }
   if (kind === 'error') el.classList.add('is-error');
   else if (kind === 'ok') el.classList.add('is-ok');
+  else if (kind === 'warn') el.classList.add('is-warn');
   el.hidden = false;
   el.textContent = text;
 }
@@ -4616,7 +4654,6 @@ function enqueueAllYtmTracks() {
     renderYtmResults(ytmTracks);
     updateQueueTabBadge();
     startQueueWorker();
-    activateDlTab('queue');
   }
 }
 
@@ -4659,6 +4696,7 @@ async function runYtmParse() {
       if (e.key === 'Enter') { e.preventDefault(); runYtmParse(); }
     });
     url.addEventListener('input', saveYtmState);
+    url.addEventListener('input', () => updatePlainYtWarning(url.value, setYtmStatus, 'dl-ytm-status'));
   }
 })();
 
@@ -4898,7 +4936,6 @@ function enqueueAllSpTracks() {
     renderSpResults(spTracks);
     updateQueueTabBadge();
     startQueueWorker();
-    activateDlTab('queue');
   }
 }
 
@@ -5013,7 +5050,6 @@ function enqueueAllYtResults() {
     renderYtResults(ytLastResults);
     updateQueueTabBadge();
     startQueueWorker();
-    activateDlTab('queue');
   }
 }
 
@@ -7507,6 +7543,7 @@ function openFixTagsMenu(e, tracks, labelKey, { albumActions = false, name = '' 
   $('ftm-fix-tracknos').hidden = !albumActions;
   $('ftm-download').hidden = !tracks.some(t => isRemotePath(t.path));
   const hasLocal = tracks.some(t => !isRemotePath(t.path));
+  $('ftm-set-cover').hidden = !hasLocal;
   $('ftm-delete-album').hidden = !albumActions || !hasLocal;
   $('ftm-delete-artist').hidden = albumActions || !hasLocal;
   const menu = $('fix-tags-menu');
@@ -7533,6 +7570,7 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     if (!scope) return;
     const localTracks = scope.tracks.filter(t => !isRemotePath(t.path));
     if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
+    else if (action === 'set-cover-file') setCoverFromFile(scope.tracks);
     else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
     else if (action === 'download') downloadTracksFromHost(scope.tracks);
@@ -7560,24 +7598,22 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
 // below both gates the action and shows which track got picked, so a stray
 // click doesn't silently overwrite art with the wrong source.
 let pendingAlbumCoverSource = null;
-async function runRegenerateAlbumCovers(tracks) {
-  const source = pendingAlbumCoverSource && tracks.find(t => t.path === pendingAlbumCoverSource);
-  if (!source || !source.cover) { alert(tr('albumCover.needSource')); return; }
-  const targets = tracks.filter(t => t.path !== source.path && !isRemotePath(t.path));
-  if (!targets.length) return;
-  if (!confirm(tr('albumCover.confirm', { track: source.title, count: targets.length }))) return;
 
+// Stamp one cover (a data: URL) into every given local track, with progress +
+// summary. Shared by "use as album cover" (source = a marked track's art) and
+// "set cover from file" (source = a picked image).
+async function applyCoverToTargets(targets, coverUrl, progressKey) {
   let updated = 0, failed = 0, ghosts = 0;
   for (let i = 0; i < targets.length; i++) {
-    setProgressBanner(i, targets.length, 'albumCover.progress');
+    setProgressBanner(i, targets.length, progressKey);
     const t = targets[i];
-    const wr = await window.electronAPI.writeCover(t.path, source.cover);
+    const wr = await window.electronAPI.writeCover(t.path, coverUrl);
     if (wr && wr.success) {
-      t.cover = source.cover;
+      t.cover = coverUrl;
       t.hasCover = true;
-      coverCache[t.path] = source.cover;
+      coverCache[t.path] = coverUrl;
       updated++;
-    } else if (await purgeOnWriteFailure(t.path, 'albumCoverRegen', wr && wr.error)) {
+    } else if (await purgeOnWriteFailure(t.path, 'coverWrite', wr && wr.error)) {
       ghosts++;
     } else {
       failed++;
@@ -7588,6 +7624,29 @@ async function runRegenerateAlbumCovers(tracks) {
   refreshCurrentViewRows();
   alert(tr('albumCover.summary', { updated, failed, total: targets.length })
     + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
+}
+
+async function runRegenerateAlbumCovers(tracks) {
+  const source = pendingAlbumCoverSource && tracks.find(t => t.path === pendingAlbumCoverSource);
+  if (!source || !source.cover) { alert(tr('albumCover.needSource')); return; }
+  const targets = tracks.filter(t => t.path !== source.path && !isRemotePath(t.path));
+  if (!targets.length) return;
+  if (!confirm(tr('albumCover.confirm', { track: source.title, count: targets.length }))) return;
+  await applyCoverToTargets(targets, source.cover, 'albumCover.progress');
+}
+
+// Pick a local image file and set it as the cover for the given track(s) —
+// one for a single song, or the whole album/artist track set.
+async function setCoverFromFile(tracks) {
+  const targets = (tracks || []).filter(t => !isRemotePath(t.path));
+  if (!targets.length || !window.electronAPI.chooseImage) return;
+  const res = await window.electronAPI.chooseImage();
+  if (!res || res.canceled) return;
+  if (res.error || !res.dataUrl) { alert(tr('coverFile.error', { e: (res && res.error) || 'unknown' })); return; }
+  // A single song applies instantly; an album/artist overwrites many files, so
+  // confirm the count first to guard against a misclick.
+  if (targets.length > 1 && !confirm(tr('coverFile.confirm', { count: targets.length }))) return;
+  await applyCoverToTargets(targets, res.dataUrl, 'coverFile.progress');
 }
 
 // ── Fix album release year ──
@@ -9054,7 +9113,7 @@ function openContextMenu(e, path) {
   $('cm-use-cover').hidden = remote || currentView !== 'album-detail' || !(track && track.cover);
   // Everything below is a local-file operation — a peer's track only has a
   // stream URL, nothing on disk here to tag, reveal, or delete.
-  ['reveal', 'edit-tags', 'fix-tags', 'delete'].forEach(a => {
+  ['reveal', 'edit-tags', 'fix-tags', 'set-cover-file', 'delete'].forEach(a => {
     const el = menu.querySelector(`[data-action="${a}"]`);
     if (el) el.hidden = remote;
   });
@@ -9099,6 +9158,7 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
       if (!track || !track.cover) { alert(tr('albumCover.badSource')); return; }
       pendingAlbumCoverSource = path;
     }
+    else if (action === 'set-cover-file') { if (track) setCoverFromFile([track]); }
     else if (action === 'trim') { if (track) openEditorFor(track); }
     else if (action === 'add-to-playlist') openAddToPlaylistModal(path);
     else if (action === 'remove-from-playlist') {

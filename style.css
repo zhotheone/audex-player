@@ -1392,6 +1392,13 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .dl-status.is-error { color: #ef6c6c; border-color: #ef6c6c44; }
 .dl-status.is-ok { color: #6cd58a; border-color: #6cd58a44; }
+.dl-status.is-warn {
+  color: #e0a021;
+  border-color: #e0a02166;
+  background: #e0a0211a;
+  font-size: 13px;
+  font-weight: 600;
+}
 
 .dl-results {
   border: 1px solid var(--border);

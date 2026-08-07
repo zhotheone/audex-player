@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setPortrait: (on) => ipcRenderer.invoke('window:setPortrait', { on: !!on }),
   openFiles: () => ipcRenderer.invoke('dialog:openFiles'),
   chooseFolder: () => ipcRenderer.invoke('dialog:chooseFolder'),
+  chooseImage: () => ipcRenderer.invoke('dialog:chooseImage'),
   scanFolder: (folderPath) => ipcRenderer.invoke('music:scanFolder', folderPath),
   fileExists: (filePath) => ipcRenderer.invoke('music:fileExists', filePath),
   parseMetadata: (filePath) => ipcRenderer.invoke('music:parseMetadata', filePath),
