@@ -200,6 +200,21 @@ const $ = id => document.getElementById(id);
 const audio = $('audio-player');
 const root = document.documentElement;
 
+// A modal opened from a click-driven action (closing a popover first, etc.)
+// can still lose the focus() call to whatever the triggering click leaves
+// focused — a plain "setTimeout(() => el.focus(), 50)" then races that and
+// sometimes loses, leaving a field that looks editable but silently eats
+// every keystroke. Verify the focus actually landed and retry once instead
+// of gambling on a fixed delay being long enough.
+function focusModalInput(el, { select = false } = {}) {
+  if (!el) return;
+  const attempt = () => { el.focus(); if (select) el.select(); };
+  requestAnimationFrame(() => {
+    attempt();
+    setTimeout(() => { if (document.activeElement !== el) attempt(); }, 100);
+  });
+}
+
 // ── Theme ──
 function applyTheme(t) {
   const resolved = t === 'system'
@@ -3688,7 +3703,7 @@ function renderEdPickList(filter) {
     $('ed-pick-search').value = '';
     renderEdPickList('');
     $('ed-pick-modal').classList.add('active');
-    setTimeout(() => $('ed-pick-search').focus(), 50);
+    focusModalInput($('ed-pick-search'));
   });
   $('ed-pick-cancel').addEventListener('click', () => $('ed-pick-modal').classList.remove('active'));
   $('ed-pick-search').addEventListener('input', e => renderEdPickList(e.target.value));
@@ -8552,7 +8567,7 @@ function promptModal(message, defaultValue) {
     const input = $('text-prompt-input');
     input.value = defaultValue != null ? String(defaultValue) : '';
     $('text-prompt-modal').classList.add('active');
-    setTimeout(() => { input.focus(); input.select(); }, 50);
+    focusModalInput(input, { select: true });
   });
 }
 function closeTextPromptModal(result) {
@@ -8714,7 +8729,7 @@ function openNewPlaylistModal() {
   $('new-playlist-name').value = '';
   $('new-playlist-desc').value = '';
   $('new-playlist-modal').classList.add('active');
-  setTimeout(() => $('new-playlist-name').focus(), 50);
+  focusModalInput($('new-playlist-name'));
 }
 $('btn-cancel-new-playlist').addEventListener('click', () => {
   $('new-playlist-modal').classList.remove('active');
@@ -8831,7 +8846,7 @@ function openEditPlaylistModal(plId) {
   $('edit-playlist-desc').value = pl.desc || '';
   renderEditAvatarPreview();
   $('edit-playlist-modal').classList.add('active');
-  setTimeout(() => $('edit-playlist-name').focus(), 50);
+  focusModalInput($('edit-playlist-name'));
 }
 $('btn-cancel-edit-playlist').addEventListener('click', () => {
   $('edit-playlist-modal').classList.remove('active');
@@ -9104,7 +9119,7 @@ function openPalette() {
   $('palette-overlay').classList.add('active');
   $('palette-input').value = '';
   renderPaletteResults('');
-  setTimeout(() => $('palette-input').focus(), 50);
+  focusModalInput($('palette-input'));
 }
 function closePalette() {
   $('palette-overlay').classList.remove('active');
