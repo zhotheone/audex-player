@@ -8587,30 +8587,18 @@ $('btn-confirm-delete').addEventListener('click', () => {
 });
 
 async function deleteTrack(path) {
-  const idx = trackIndexByPath(path);
-  if (idx < 0) return;
+  if (trackIndexByPath(path) < 0) return;
   const res = await window.electronAPI.deleteFile(path);
-  if (!res || !res.success) {
-    alert(tr('error.deleteFile') + (res && res.error ? res.error : tr('error.unknown')));
-    return;
-  }
-  library.splice(idx, 1);
-  if (currentTrack && currentTrack.path === path) {
-    audio.pause();
-    stopCrossfadeTail();
-    isPlaying = false;
-    currentTrack = null;
-    $('track-title').textContent = tr('np.empty.title');
-    $('track-artist').textContent = '—';
-    updatePlayButtonUI();
-  }
-  favorites = favorites.filter(p => p !== path);
-  recents = recents.filter(p => p !== path);
-  playlists.forEach(pl => { pl.trackPaths = pl.trackPaths.filter(p => p !== path); });
-  saveLibrary(); savePlaylists(); saveRecents();
-  renderCounts();
+  // Purge from the library either way: a track whose disk delete keeps
+  // failing (locked, or a Shell-API path quirk — see shell:deleteFile) is
+  // worse to leave stuck forever than to drop from the app while the real
+  // file lingers on disk for the user to clean up by hand.
+  removeTracksFromState(new Set([path]));
   refreshCurrentViewRows();
-  renderRecents();
+  if (!res || !res.success) {
+    window.electronAPI.logError?.('deleteTrack', `${path}: ${(res && res.error) || 'no response'}`);
+    alert(tr('error.deleteFile') + ((res && res.error) || tr('error.unknown')));
+  }
 }
 // Drops `paths` from the library, current queue, favorites, recents and
 // playlists, stopping playback if the current track is among them. Shared by
@@ -8645,17 +8633,24 @@ function removeTracksFromState(paths) {
 }
 
 async function deleteTracks(paths) {
-  const deleted = new Set();
-  let firstError = null;
+  let failed = 0, firstError = null;
   for (const path of paths) {
     const res = await window.electronAPI.deleteFile(path);
-    if (res && res.success) deleted.add(path);
-    else if (!firstError) firstError = (res && res.error) || tr('error.unknown');
+    if (!res || !res.success) {
+      failed++;
+      firstError = firstError || (res && res.error) || tr('error.unknown');
+      window.electronAPI.logError?.('deleteTracks', `${path}: ${(res && res.error) || 'no response'}`);
+    }
   }
-  if (deleted.size > 0) removeTracksFromState(deleted);
+  // Purge every requested track from the library regardless of disk-delete
+  // outcome — see deleteTrack for why a stuck ghost is worse than a track
+  // that's gone from the app but still needs manual cleanup on disk.
+  removeTracksFromState(new Set(paths));
   setLibrarySelectMode(false); // clears selection and re-renders the library view
   refreshCurrentViewRows();
-  if (firstError) alert(tr('error.deleteFile') + firstError);
+  if (firstError) {
+    alert(tr('error.deleteFile') + firstError + (failed > 1 ? ` (${failed})` : ''));
+  }
 }
 
 // A file moved/deleted outside the app surfaces as a native <audio> error
@@ -10868,10 +10863,13 @@ function hideBootOverlay() {
   const brand = document.getElementById('brand-version');
   if (brand) brand.textContent = commit;
   const about = document.getElementById('about-version');
-  if (about && commit) {
+  if (about) {
     const plat = String(navigator.platform || '');
     const osLabel = plat.startsWith('Win') ? 'Windows' : plat.startsWith('Mac') ? 'macOS' : plat.startsWith('Linux') ? 'Linux' : (plat || 'Desktop');
-    about.textContent = `${commit} · Electron · ${osLabel}`;
+    // The platform label doesn't depend on the commit hash being available —
+    // a build with no git history (or a build machine missing `git` on PATH)
+    // still shouldn't be stuck showing index.html's static "Linux" placeholder.
+    about.textContent = commit ? `${commit} · Electron · ${osLabel}` : `Electron · ${osLabel}`;
   }
 })();
 // Hard fallback: never leave the overlay up if something in the boot chain throws.
