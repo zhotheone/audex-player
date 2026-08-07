@@ -841,6 +841,10 @@ const I18N = {
     'setting.ytLogin.signedIn': 'Signed in',
     'setting.ytLogin.notSignedIn': 'Not signed in',
     'setting.ytLogin.waiting': 'Waiting for the browser window to close…',
+    'setting.ytPremium.checking': 'Checking Premium…',
+    'setting.ytPremium.active': 'YouTube Premium · 256 kbps',
+    'setting.ytPremium.none': 'No Premium · up to 160 kbps',
+    'setting.ytPremium.unknown': 'Premium status unknown',
     'setting.dlFormat': 'Download format',
     'setting.dlFormatDesc': 'Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick M4A if a device of yours cannot play it.',
     'downloads.noFolder': 'Pick a default folder first — downloads are filed into it by artist and album.',
@@ -1472,6 +1476,10 @@ const I18N = {
     'setting.ytLogin.signedIn': 'Angemeldet',
     'setting.ytLogin.notSignedIn': 'Nicht angemeldet',
     'setting.ytLogin.waiting': 'Warte, bis das Browserfenster geschlossen wird…',
+    'setting.ytPremium.checking': 'Premium wird geprüft…',
+    'setting.ytPremium.active': 'YouTube Premium · 256 kbit/s',
+    'setting.ytPremium.none': 'Kein Premium · bis zu 160 kbit/s',
+    'setting.ytPremium.unknown': 'Premium-Status unbekannt',
     'setting.dlFormat': 'Downloadformat',
     'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle M4A, wenn eines deiner Geräte es nicht abspielen kann.',
     'downloads.noFolder': 'Wähle zuerst einen Standardordner — Downloads werden dort nach Interpret und Album einsortiert.',
@@ -2103,6 +2111,10 @@ const I18N = {
     'setting.ytLogin.signedIn': 'Connecté',
     'setting.ytLogin.notSignedIn': 'Non connecté',
     'setting.ytLogin.waiting': 'En attente de la fermeture de la fenêtre du navigateur…',
+    'setting.ytPremium.checking': 'Vérification de Premium…',
+    'setting.ytPremium.active': 'YouTube Premium · 256 kbit/s',
+    'setting.ytPremium.none': 'Pas de Premium · jusqu\'à 160 kbit/s',
+    'setting.ytPremium.unknown': 'Statut Premium inconnu',
     'setting.dlFormat': 'Format de téléchargement',
     'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez M4A si un de vos appareils ne le lit pas.',
     'downloads.noFolder': 'Choisissez d’abord un dossier par défaut — les téléchargements y sont classés par artiste et album.',
@@ -2734,6 +2746,10 @@ const I18N = {
     'setting.ytLogin.signedIn': 'Виконано вхід',
     'setting.ytLogin.notSignedIn': 'Вхід не виконано',
     'setting.ytLogin.waiting': 'Очікуємо закриття вікна браузера…',
+    'setting.ytPremium.checking': 'Перевірка Premium…',
+    'setting.ytPremium.active': 'YouTube Premium · 256 кбіт/с',
+    'setting.ytPremium.none': 'Без Premium · до 160 кбіт/с',
+    'setting.ytPremium.unknown': 'Статус Premium невідомий',
     'setting.dlFormat': 'Формат завантаження',
     'setting.dlFormatDesc': 'Файли зберігаються як {тека за замовчуванням}/{виконавець}/{альбом}/{виконавець} - {трек}. Opus дає найкращу якість на мегабайт; обери M4A, якщо якийсь із твоїх пристроїв його не програє.',
     'downloads.noFolder': 'Спершу обери теку за замовчуванням — завантаження розкладаються в ній за виконавцем і альбомом.',
@@ -10270,15 +10286,45 @@ $('btn-choose-default-folder').addEventListener('click', async () => {
   }
 });
 
+// Reflects the YT Premium probe (a network call) in both the settings row and
+// the Downloads-page badge. State: 'none' | 'checking' | 'premium' | 'standard'
+// | 'unknown'.
+function setYtPremiumUI(state) {
+  const settingsEl = $('yt-premium-status');
+  const dlEl = $('dl-yt-account');
+  const label = {
+    checking: tr('setting.ytPremium.checking'),
+    premium: tr('setting.ytPremium.active'),
+    standard: tr('setting.ytPremium.none'),
+    unknown: tr('setting.ytPremium.unknown'),
+  }[state] || '';
+  if (settingsEl) {
+    settingsEl.hidden = state === 'none' || !label;
+    settingsEl.textContent = label;
+  }
+  if (dlEl) {
+    dlEl.hidden = state === 'none' || state === 'checking' || !label;
+    dlEl.textContent = label;
+    dlEl.classList.toggle('is-premium', state === 'premium');
+  }
+}
+
 function refreshYtLoginStatus() {
   const el = $('yt-login-status');
   const logoutBtn = $('btn-yt-logout');
-  if (!el || !window.electronAPI || typeof window.electronAPI.youtubeCookiesStatus !== 'function') return;
-  window.electronAPI.youtubeCookiesStatus()
+  const api = window.electronAPI;
+  if (!api || typeof api.youtubeCookiesStatus !== 'function') return;
+  api.youtubeCookiesStatus()
     .then(res => {
       const signedIn = !!(res && res.signedIn);
-      el.textContent = tr(signedIn ? 'setting.ytLogin.signedIn' : 'setting.ytLogin.notSignedIn');
+      if (el) el.textContent = tr(signedIn ? 'setting.ytLogin.signedIn' : 'setting.ytLogin.notSignedIn');
       if (logoutBtn) logoutBtn.hidden = !signedIn;
+      if (!signedIn) { setYtPremiumUI('none'); return; }
+      setYtPremiumUI('checking');
+      if (typeof api.youtubePremiumStatus !== 'function') { setYtPremiumUI('unknown'); return; }
+      api.youtubePremiumStatus()
+        .then(p => setYtPremiumUI(p && p.premium ? 'premium' : (p && p.unknown ? 'unknown' : 'standard')))
+        .catch(() => setYtPremiumUI('unknown'));
     })
     .catch(() => {});
 }

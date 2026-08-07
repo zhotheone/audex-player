@@ -925,11 +925,6 @@ const FFMPEG_TAG_KEYS = {
   trackNo: 'track',
   discNo: 'disc',
   comment: 'comment',
-  // ponytail: ffmpeg's mov muxer silently drops unrecognized metadata keys, so
-  // this never lands for m4a — fine everywhere else (ID3 TXXX, Vorbis comment).
-  // Upgrade: parse-and-remap the same key into a "----:com.apple.iTunes:" atom
-  // if m4a coverage ever matters.
-  explicit: 'itunesadvisory',
 };
 
 function isOggContainer(ext) {
@@ -1595,16 +1590,51 @@ function fmtDuration(sec) {
   return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
-// yt-dlp exposes no structured "explicit" field (checked --dump-json on a
-// known-explicit YT Music watch page — not present for any container). The
-// only signal is the "(Explicit)"/"(Clean)" suffix uploaders themselves put
-// in the title, so that's what this reads. Titles that don't carry the
-// marker resolve to null (unknown), not false.
-function detectExplicitTag(title) {
-  const s = String(title || '');
-  if (/[([]\s*explicit\s*[)\]]/i.test(s)) return true;
-  if (/[([]\s*(clean|edited|radio edit)\s*[)\]]/i.test(s)) return false;
-  return null;
+// YouTube Music marks explicit tracks with an "E" badge that lives ONLY in its
+// innertube API — yt-dlp exposes no explicit field at all (checked --dump-json:
+// no such key on any container), and a title regex misses the (many) tracks
+// that don't spell "(Explicit)" out. So ask the same API YT Music's own web
+// player uses: it needs no auth for badges. Best-effort — any failure (network,
+// or the hardcoded client version finally going stale) just yields no badges,
+// never breaks the search/parse it annotates.
+// ponytail: clientVersion is a moving target YouTube rotates; bump it if
+// explicit badges ever stop appearing.
+const YTM_CLIENT = { clientName: 'WEB_REMIX', clientVersion: '1.20241218.01.00', hl: 'en', gl: 'US' };
+
+async function ytmInnertube(endpoint, body) {
+  const res = await fetch(`https://music.youtube.com/youtubei/v1/${endpoint}?prettyPrint=false`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    },
+    body: JSON.stringify({ context: { client: YTM_CLIENT }, ...body }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`innertube ${endpoint} ${res.status}`);
+  return res.json();
+}
+
+// Walk any innertube response for track rows and collect videoId -> explicit.
+function collectExplicit(node, map) {
+  if (Array.isArray(node)) { for (const v of node) collectExplicit(v, map); return map; }
+  if (node && typeof node === 'object') {
+    const r = node.musicResponsiveListItemRenderer;
+    if (r && r.playlistItemData && r.playlistItemData.videoId) {
+      map[r.playlistItemData.videoId] = JSON.stringify(r.badges || []).includes('MUSIC_EXPLICIT_BADGE');
+    }
+    for (const k in node) collectExplicit(node[k], map);
+  }
+  return map;
+}
+
+async function ytmExplicitBySearch(query) {
+  try { return collectExplicit(await ytmInnertube('search', { query }), {}); }
+  catch (_) { return {}; }
+}
+async function ytmExplicitByPlaylist(listId) {
+  try { return collectExplicit(await ytmInnertube('browse', { browseId: 'VL' + listId }), {}); }
+  catch (_) { return {}; }
 }
 
 ipcMain.handle('downloads:ytSearch', async (event, query, count) => {
@@ -1639,13 +1669,15 @@ ipcMain.handle('downloads:ytSearch', async (event, query, count) => {
         durationStr: fmtDuration(j.duration || 0),
         thumbnail: thumb,
         url: j.url || j.webpage_url || `https://www.youtube.com/watch?v=${j.id}`,
-        explicit: detectExplicitTag(j.title),
       });
     } catch (_) { /* skip malformed lines */ }
   }
   if (results.length === 0 && code !== 0) {
     return { success: false, error: (stderr.trim().split('\n').pop() || 'yt-dlp error').slice(0, 300) };
   }
+  // Annotate with YT Music's explicit badge (best-effort; null = unknown).
+  const explicitMap = await ytmExplicitBySearch(q);
+  for (const r of results) r.explicit = r.id in explicitMap ? explicitMap[r.id] : null;
   return { success: true, results };
 });
 
@@ -1734,13 +1766,17 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
       duration: fmtDuration(dur),
       cover,
       url: entryUrl || `https://music.youtube.com/watch?v=${j.id}`,
-      explicit: detectExplicitTag(j.title),
     });
   }
   if (tracks.length === 0) {
     const msg = (stderr.trim().split('\n').pop() || 'No tracks found').slice(0, 300);
     return { success: false, error: msg };
   }
+  // Annotate with YT Music's explicit badge. A playlist/album (list=…) resolves
+  // in one browse call; anything else (bare artist page) has no single list to
+  // browse, so those tracks stay unmarked (null = unknown).
+  const explicitMap = urlListId ? await ytmExplicitByPlaylist(urlListId) : {};
+  for (const t of tracks) t.explicit = t.id in explicitMap ? explicitMap[t.id] : null;
   return { success: true, tracks, title: playlistTitle };
 });
 
@@ -1924,7 +1960,7 @@ ipcMain.handle('lan:downloadTrack', async (event, payload) => {
 // Both download entry points differ only in what they hand yt-dlp: a concrete
 // video URL, or a "ytsearch1:…" query.
 async function runYtDownload(event, payload, target) {
-  const { videoId, url, suggestedName, artist, requestId, targetDir, explicit } = payload || {};
+  const { videoId, url, suggestedName, artist, requestId, targetDir } = payload || {};
   const format = AUDIO_FORMATS.has(payload && payload.format) ? payload.format : 'opus';
   const downloadsDir = resolveDownloadsDir(targetDir);
   const outPattern = path.join(downloadsDir, '%(title)s [%(id)s].%(ext)s');
@@ -2041,12 +2077,6 @@ async function runYtDownload(event, payload, target) {
   } catch (_) { /* keep the file where yt-dlp left it */ }
 
   await stripCoverIfCorrupt(filePath);
-
-  // Only known explicit/clean titles pay for a second ffmpeg pass — most
-  // videos carry no marker at all (explicit === null) and skip this.
-  if (explicit === true || explicit === false) {
-    try { await writeMetadataToFile(filePath, { explicit: explicit ? '1' : '0' }); } catch (_) {}
-  }
 
   return { success: true, filePath, downloadsDir };
 }
@@ -2417,6 +2447,7 @@ ipcMain.handle('youtube:login', async () => {
     if (interval) clearInterval(interval);
     try { if (youtubeLoginBrowser) await youtubeLoginBrowser.close(); } catch (_) {}
     youtubeLoginBrowser = null;
+    premiumCache = null; // account may have changed — re-probe on next check
   }
 });
 
@@ -2428,6 +2459,33 @@ ipcMain.handle('youtube:cookiesStatus', async () => {
     return { signedIn: false };
   }
 });
+
+// Whether the signed-in account has YouTube Premium — the only accounts that
+// get the 256kbps audio tier (itag 774/141). yt-dlp exposes no account-level
+// entitlement flag, so probe the actual capability: list formats for a stable,
+// globally-available YT Music track and check for a >=256kbps audio stream.
+// Only Premium+cookies surfaces one (verified: 257 with a premium session,
+// 129 without). Cached for the session (entitlement doesn't change mid-run)
+// and cleared on login/logout.
+const PREMIUM_PROBE_URL = 'https://music.youtube.com/watch?v=9bZkp7q19f0'; // evergreen, billions of views
+let premiumCache = null; // true | false, or null when not yet probed
+
+async function probeYoutubePremium() {
+  if (!ytDlpCookieArgs().length) return { signedIn: false, premium: false };
+  if (premiumCache !== null) return { signedIn: true, premium: premiumCache };
+  const { code, stdout } = await runYtDlp(['--dump-json', '--skip-download', '--no-warnings', PREMIUM_PROBE_URL], { timeoutMs: 30000 });
+  if (code !== 0) return { signedIn: true, premium: false, unknown: true };
+  try {
+    const line = stdout.split('\n').find(l => l.trim().startsWith('{')) || '{}';
+    const formats = (JSON.parse(line).formats) || [];
+    const premium = formats.some(f => f.acodec && f.acodec !== 'none' && (f.abr || 0) >= 256);
+    premiumCache = premium;
+    return { signedIn: true, premium };
+  } catch (_) {
+    return { signedIn: true, premium: false, unknown: true };
+  }
+}
+ipcMain.handle('youtube:premiumStatus', () => probeYoutubePremium());
 
 // Clearing just yt-cookies.txt isn't a real logout: the persistent Chromium
 // profile (youtube-profile/) still has the signed-in session, so hitting

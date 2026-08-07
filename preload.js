@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   youtubeLogin: () => ipcRenderer.invoke('youtube:login'),
   youtubeLogout: () => ipcRenderer.invoke('youtube:logout'),
   youtubeCookiesStatus: () => ipcRenderer.invoke('youtube:cookiesStatus'),
+  youtubePremiumStatus: () => ipcRenderer.invoke('youtube:premiumStatus'),
   onSpotifyParseProgress: (cb) => {
     const listener = (_e, data) => cb(data);
     ipcRenderer.on('spotify:parseProgress', listener);
