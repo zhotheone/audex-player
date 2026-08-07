@@ -794,6 +794,19 @@ function resolveRealPath(filePath) {
   return fs.existsSync(long) ? long : filePath;
 }
 
+// The above is no help for ffmpeg specifically: Node's fs already resolves a
+// trailing-dot/space path fine (so resolveRealPath's existsSync gate never
+// fires), but ffmpeg's own avio layer does its own path canonicalization and
+// 404s on that exact same path regardless — confirmed by hand: the plain path
+// fails "No such file or directory" for both input and output while the \\?\
+// form succeeds for both. So every ffmpeg-bound path is forced through \\?\
+// unconditionally on Windows, not just the ones fs itself couldn't find.
+function toFfmpegPath(filePath) {
+  if (!filePath || process.platform !== 'win32' || filePath.startsWith('\\\\?\\')) return filePath;
+  const abs = path.resolve(filePath);
+  return abs.startsWith('\\\\') ? '\\\\?\\UNC\\' + abs.slice(2) : '\\\\?\\' + abs;
+}
+
 // Ogg/Opus keeps no duration in its header — it lives in the granule position of
 // the very last page, so without this music-metadata stops after the tags and
 // leaves duration, and the bitrate derived from it, undefined. Everything the UI
@@ -923,11 +936,11 @@ function oggCoverMetaFile(tmpPath, picture) {
 
 function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
   const ext = path.extname(filePath).toLowerCase();
-  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', filePath];
+  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', toFfmpegPath(filePath)];
   if (isOggContainer(ext) && picture) {
     // Both -map_metadata calls apply (later ones add to earlier ones, not replace): the
     // source's own tags still come from 0, the picture is layered in from the synthetic file.
-    args.push('-i', oggCoverMetaFile(tmpPath, picture), '-map', '0:a', '-map_metadata', '0', '-map_metadata', '1', '-c', 'copy');
+    args.push('-i', toFfmpegPath(oggCoverMetaFile(tmpPath, picture)), '-map', '0:a', '-map_metadata', '0', '-map_metadata', '1', '-c', 'copy');
   } else if (isOggContainer(ext)) {
     // No picture to re-embed — but the source may still carry a cover we
     // simply failed to parse (a known yt-dlp/mutagen embed corruption, see
@@ -947,7 +960,7 @@ function ffmpegTagArgs(filePath, tmpPath, tags, picture) {
     if (tags && tags[key] !== undefined) args.push(metaFlag, `${ffKey}=${String(tags[key])}`);
   }
   if (ext === '.mp3') args.push('-id3v2_version', '3');
-  args.push(tmpPath);
+  args.push(toFfmpegPath(tmpPath));
   return args;
 }
 
@@ -1030,10 +1043,10 @@ async function writeCoverToFile(origPath, coverDataUrl) {
   } else {
     tmpImgPath = `${tmpPath}.${coverExt(picture.format)}`;
     fs.writeFileSync(tmpImgPath, picture.data);
-    args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', filePath, '-i', tmpImgPath,
+    args = ['-hide_banner', '-loglevel', 'error', '-y', '-i', toFfmpegPath(filePath), '-i', toFfmpegPath(tmpImgPath),
       '-map', '0:a', '-map', '1:v', '-c', 'copy', '-map_metadata', '0', '-disposition:v', 'attached_pic'];
     if (ext === '.mp3') args.push('-id3v2_version', '3');
-    args.push(tmpPath);
+    args.push(toFfmpegPath(tmpPath));
   }
 
   try {
@@ -1255,11 +1268,11 @@ const REENCODE_BITRATE = { '.opus': '192k', '.flac': '', '.wav': '' };
 
 function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain, picture }) {
   const ext = path.extname(src).toLowerCase();
-  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(start), '-i', src, '-t', String(dur)];
+  const args = ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(start), '-i', toFfmpegPath(src), '-t', String(dur)];
   // Ogg/Opus cover art is metadata, not a stream ffmpeg can carry through a trim (see
   // oggCoverMetaFile above) — feed it back in as a second input instead.
   const withPicture = isOggContainer(ext) && picture;
-  if (withPicture) args.push('-i', oggCoverMetaFile(tmpPath, picture));
+  if (withPicture) args.push('-i', toFfmpegPath(oggCoverMetaFile(tmpPath, picture)));
   // Any filter (fade or gain) rules out the stream copy and forces a re-encode.
   if (fadeIn > 0 || fadeOut > 0 || gain !== 0) {
     const filters = [];
@@ -1282,7 +1295,7 @@ function ffmpegTrimArgs(src, tmpPath, { start, dur, fadeIn, fadeOut, gain, pictu
   if (withPicture) args.push('-map', '0:a', '-map_metadata', '0', '-map_metadata', '1');
   else args.push('-map_metadata', '0');
   if (ext === '.mp3') args.push('-id3v2_version', '3');
-  args.push(tmpPath);
+  args.push(toFfmpegPath(tmpPath));
   return args;
 }
 
@@ -1347,7 +1360,17 @@ ipcMain.handle('shell:deleteFile', async (event, filePath) => {
     await shell.trashItem(filePath);
     return { success: true };
   } catch (err) {
-    return { success: false, error: String(err) };
+    // trashItem goes through the Explorer shell namespace, which does its own
+    // path parsing independently of fs/ffmpeg and can 404 on a name Explorer
+    // would otherwise display fine (trailing dots/spaces — see toFfmpegPath).
+    // Fall back to a permanent delete via the raw file API rather than leaving
+    // the track stuck forever with no way to remove the real file.
+    try {
+      await fs.promises.unlink(filePath);
+      return { success: true, permanent: true };
+    } catch (_) {
+      return { success: false, error: String(err) };
+    }
   }
 });
 
