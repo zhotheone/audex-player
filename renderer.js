@@ -964,6 +964,7 @@ const I18N = {
     'error.deleteFile': 'Could not delete file from disk: ',
     'error.unknown': 'unknown error',
     'library.ghostsRemoved': '{count} track(s) no longer found on disk — removed from your library.',
+    'library.purgedOnError': '{count} track(s) removed from your library — couldn\'t be read or written (missing or damaged file).',
     'downloads.tab.queue': 'Queue',
     'downloads.queue.add': 'Queue',
     'downloads.queue.queued': 'Queued',
@@ -1578,6 +1579,7 @@ const I18N = {
     'error.deleteFile': 'Datei konnte nicht gelöscht werden: ',
     'error.unknown': 'unbekannter Fehler',
     'library.ghostsRemoved': '{count} Titel wurden nicht mehr auf der Festplatte gefunden — aus der Bibliothek entfernt.',
+    'library.purgedOnError': '{count} Titel wurden aus der Bibliothek entfernt — konnten nicht gelesen oder geschrieben werden (fehlende oder beschädigte Datei).',
     'downloads.tab.queue': 'Warteschlange',
     'downloads.queue.add': 'In Warteschlange',
     'downloads.queue.queued': 'In Warteschlange',
@@ -2192,6 +2194,7 @@ const I18N = {
     'error.deleteFile': "Impossible de supprimer le fichier du disque : ",
     'error.unknown': 'erreur inconnue',
     'library.ghostsRemoved': "{count} morceau(x) introuvable(s) sur le disque — retiré(s) de votre bibliothèque.",
+    'library.purgedOnError': "{count} morceau(x) retiré(s) de votre bibliothèque — illisible(s) ou impossible(s) à écrire (fichier manquant ou endommagé).",
     'downloads.tab.queue': 'File d\'attente',
     'downloads.queue.add': 'À la file',
     'downloads.queue.queued': 'En file',
@@ -2804,6 +2807,7 @@ const I18N = {
     'error.deleteFile': 'Не вдалося видалити файл з диска: ',
     'error.unknown': 'невідома помилка',
     'library.ghostsRemoved': '{count} трек(и) більше не знайдено на диску — видалено з бібліотеки.',
+    'library.purgedOnError': '{count} трек(и) видалено з бібліотеки — не вдалося прочитати або записати (файл відсутній або пошкоджений).',
     'downloads.tab.queue': 'Черга',
     'downloads.queue.add': 'В чергу',
     'downloads.queue.queued': 'В черзі',
@@ -7328,7 +7332,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
         alert(tr(IDENTIFY_ERR_KEY[res.error] || 'editor.idFailed'));
         return;
       }
-      if (await purgeIfGhost(t.path)) { ghosts++; continue; }
+      if (await purgeOnWriteFailure(t.path, 'fixTagsIdentify', res && res.error)) { ghosts++; continue; }
       failed++;
       continue;
     }
@@ -7343,7 +7347,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
     if (!Object.keys(newTags).length) { unchanged++; continue; }
     const wr = await window.electronAPI.writeMetadata(t.path, newTags);
     if (!wr || !wr.success) {
-      if (await purgeIfGhost(t.path)) { ghosts++; continue; }
+      if (await purgeOnWriteFailure(t.path, 'fixTagsWrite', wr && wr.error)) { ghosts++; continue; }
       failed++;
       continue;
     }
@@ -7355,7 +7359,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
   refreshCurrentViewRows();
   renderCounts();
   alert(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length })
-    + (ghosts ? ' · ' + tr('library.ghostsRemoved', { count: ghosts }) : ''));
+    + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
 // ── Fix Tags menu (Artist/Album scopes) ──
@@ -7422,18 +7426,17 @@ async function runRegenerateAlbumCovers(tracks) {
       t.hasCover = true;
       coverCache[t.path] = source.cover;
       updated++;
-    } else if (await purgeIfGhost(t.path)) {
+    } else if (await purgeOnWriteFailure(t.path, 'albumCoverRegen', wr && wr.error)) {
       ghosts++;
     } else {
       failed++;
-      window.electronAPI.logError?.('albumCoverRegen', `${t.path}: ${(wr && wr.error) || 'no response'}`);
     }
   }
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
   alert(tr('albumCover.summary', { updated, failed, total: targets.length })
-    + (ghosts ? ' · ' + tr('library.ghostsRemoved', { count: ghosts }) : ''));
+    + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
 // ── Fix album release year ──
@@ -7456,18 +7459,17 @@ async function runFixAlbumYear(tracks) {
     if (wr && wr.success) {
       t.year = trimmed;
       updated++;
-    } else if (await purgeIfGhost(t.path)) {
+    } else if (await purgeOnWriteFailure(t.path, 'albumYearFix', wr && wr.error)) {
       ghosts++;
     } else {
       failed++;
-      window.electronAPI.logError?.('albumYearFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
     }
   }
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
   alert(tr('albumYear.summary', { updated, failed, total: targets.length })
-    + (ghosts ? ' · ' + tr('library.ghostsRemoved', { count: ghosts }) : ''));
+    + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
 // ── Fix album track numbers ──
@@ -7496,12 +7498,11 @@ function renderTrackNumberList(tracks) {
       el.classList.add('tn-done'); // guards against a double-click burning two numbers
       const wr = await window.electronAPI.writeMetadata(t.path, { trackNo: String(no) });
       if (!wr || !wr.success) {
-        if (await purgeIfGhost(t.path)) {
+        if (await purgeOnWriteFailure(t.path, 'albumTrackNoFix', wr && wr.error)) {
           el.remove();
-          alert(tr('library.ghostsRemoved', { count: 1 }));
+          alert(tr('library.purgedOnError', { count: 1 }));
           return;
         }
-        window.electronAPI.logError?.('albumTrackNoFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
         alert(tr('albumTrackNo.writeFailed'));
         el.classList.remove('tn-done');
         return;
@@ -8669,13 +8670,16 @@ async function revalidateLibrary() {
   return ghosts.size;
 }
 
-// A metadata/cover write (ffmpeg under the hood) fails identically whether
-// the file is locked, malformed, or simply gone — check which it was and drop
-// the track if it's the latter, so a moved/deleted file doesn't keep failing
-// every bulk-fix run forever. Returns true if the track was removed.
-async function purgeIfGhost(path) {
-  if (isRemotePath(path) || !window.electronAPI || !window.electronAPI.fileExists) return false;
-  if (await window.electronAPI.fileExists(path)) return false;
+// A metadata/cover write (ffmpeg under the hood) can fail for many reasons —
+// missing file, corrupt file, locked file, permissions — and none of them
+// self-heal on the next bulk-fix run, so any local write failure purges the
+// track instead of leaving a dead entry to keep failing forever. Remote
+// tracks are left alone: a write failure there is the server's problem, not
+// a local file gone bad. Always logs the underlying error. Returns true if
+// the track was purged.
+async function purgeOnWriteFailure(path, opLabel, errMsg) {
+  window.electronAPI.logError?.(opLabel, `${path}: ${errMsg || 'unknown error'}`);
+  if (isRemotePath(path)) return false;
   removeTracksFromState(new Set([path]));
   return true;
 }
@@ -9086,8 +9090,8 @@ $('btn-save-editor').addEventListener('click', async () => {
       if (currentTrack && currentTrack.path === pendingMetadataPath) updateNowPlayingUI(t);
     }
     setTimeout(() => $('metadata-modal').classList.remove('active'), 600);
-  } else if (await purgeIfGhost(pendingMetadataPath)) {
-    status.textContent = tr('library.ghostsRemoved', { count: 1 });
+  } else if (await purgeOnWriteFailure(pendingMetadataPath, 'metadataEditorSave', res.error)) {
+    status.textContent = tr('library.purgedOnError', { count: 1 });
     status.className = 'editor-foot-status error';
     refreshCurrentViewRows();
     setTimeout(() => $('metadata-modal').classList.remove('active'), 1200);
