@@ -674,6 +674,9 @@ const I18N = {
     'select.count': 'Selected: {n}',
     'library.count.split': '{local} local, {network} network {tracks}',
     'select.all': 'Select all',
+    'select.downloadFromHost': 'Download from Host',
+    'lanDownload.progress': 'Downloading from host…',
+    'lanDownload.summary': '{done} downloaded · {failed} failed ({total} total)',
     'modal.deleteTracks.title': 'Delete selected tracks?',
     'modal.deleteTracks.text': '{count} will be removed from the library and the files moved to the trash.',
     'btn.create': 'Create',
@@ -1295,6 +1298,9 @@ const I18N = {
     'select.count': 'Ausgewählt: {n}',
     'library.count.split': '{local} lokal, {network} Netzwerk-{tracks}',
     'select.all': 'Alle auswählen',
+    'select.downloadFromHost': 'Vom Host herunterladen',
+    'lanDownload.progress': 'Herunterladen vom Host…',
+    'lanDownload.summary': '{done} heruntergeladen · {failed} fehlgeschlagen ({total} insgesamt)',
     'modal.deleteTracks.title': 'Ausgewählte Titel löschen?',
     'modal.deleteTracks.text': '{count} werden aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
     'btn.create': 'Erstellen',
@@ -1916,6 +1922,9 @@ const I18N = {
     'select.count': 'Sélection : {n}',
     'library.count.split': '{local} locales, {network} réseau ({tracks})',
     'select.all': 'Tout sélectionner',
+    'select.downloadFromHost': "Télécharger depuis l'hôte",
+    'lanDownload.progress': "Téléchargement depuis l'hôte…",
+    'lanDownload.summary': '{done} téléchargé(s) · {failed} échoué(s) ({total} au total)',
     'modal.deleteTracks.title': 'Supprimer les pistes sélectionnées ?',
     'modal.deleteTracks.text': '{count} seront retirées de la bibliothèque et les fichiers déplacés vers la corbeille.',
     'btn.create': 'Créer',
@@ -2537,6 +2546,9 @@ const I18N = {
     'select.count': 'Вибрано: {n}',
     'library.count.split': '{local} локальних, {network} мережевих {tracks}',
     'select.all': 'Вибрати всі',
+    'select.downloadFromHost': 'Завантажити з хоста',
+    'lanDownload.progress': 'Завантаження з хоста…',
+    'lanDownload.summary': '{done} завантажено · {failed} не вдалося (усього {total})',
     'modal.deleteTracks.title': 'Видалити вибрані треки?',
     'modal.deleteTracks.text': '{count} буде вилучено з бібліотеки, а файли — переміщено у смітник.',
     'btn.create': 'Створити',
@@ -6074,11 +6086,16 @@ function setLibrarySelectMode(on) {
 function updateSelectBar() {
   $('select-count-label').textContent =
     tr('select.count', { n: withCount('tracks', selectedPaths.size) });
-  $('btn-delete-selected').disabled = selectedPaths.size === 0;
+  const paths = [...selectedPaths];
+  // Delete only ever touches local files (remote ones aren't ours to delete);
+  // download only ever touches remote ones (a local file is already local).
+  $('btn-delete-selected').disabled = !paths.some(p => !isRemotePath(p));
+  const hasRemote = paths.some(isRemotePath);
+  $('btn-download-selected').hidden = !hasRemote;
+  $('btn-download-selected').disabled = !hasRemote;
 }
 
 function toggleRowSelection(path, shiftRange) {
-  if (isRemotePath(path)) return;   // bulk-delete etc. are local-library operations
   if (shiftRange && lastSelectedPath && lastSelectedPath !== path) {
     // Shift-click selects the visible range between the last-clicked row and this one.
     const tracks = currentLibraryTracks();
@@ -6086,7 +6103,7 @@ function toggleRowSelection(path, shiftRange) {
     const b = tracks.findIndex(t => t.path === path);
     if (a >= 0 && b >= 0) {
       const [lo, hi] = a < b ? [a, b] : [b, a];
-      for (let i = lo; i <= hi; i++) if (!isRemotePath(tracks[i].path)) selectedPaths.add(tracks[i].path);
+      for (let i = lo; i <= hi; i++) selectedPaths.add(tracks[i].path);
     } else {
       selectedPaths.add(path);
     }
@@ -6103,17 +6120,19 @@ function toggleRowSelection(path, shiftRange) {
 $('btn-select-mode').addEventListener('click', () => setLibrarySelectMode(!librarySelectMode));
 $('btn-cancel-select').addEventListener('click', () => setLibrarySelectMode(false));
 $('btn-select-all').addEventListener('click', () => {
-  currentLibraryTracks().forEach(t => { if (!isRemotePath(t.path)) selectedPaths.add(t.path); });
+  currentLibraryTracks().forEach(t => selectedPaths.add(t.path));
   updateSelectBar();
   if (libraryVList) libraryVList.refreshVisible();
 });
+$('btn-download-selected').addEventListener('click', () => downloadSelectedFromHost());
 $('btn-delete-selected').addEventListener('click', () => {
-  if (selectedPaths.size === 0) return;
+  const paths = [...selectedPaths].filter(p => !isRemotePath(p));
+  if (paths.length === 0) return;
   confirmDelete({
     kind: 'tracks',
-    payload: [...selectedPaths],
+    payload: paths,
     title: tr('modal.deleteTracks.title'),
-    text: tr('modal.deleteTracks.text', { count: withCount('tracks', selectedPaths.size) }),
+    text: tr('modal.deleteTracks.text', { count: withCount('tracks', paths.length) }),
   });
 });
 
@@ -8949,7 +8968,7 @@ function openContextMenu(e, path) {
   $('cm-remove-from-pl').hidden = !(currentView === 'playlist-detail' && activePlaylistId);
   const cmTrim = $('cm-trim');
   if (cmTrim) cmTrim.hidden = !settings.editor || remote;
-  $('cm-select').hidden = currentView !== 'library' || remote;
+  $('cm-select').hidden = currentView !== 'library';
   // Only offered from inside the album whose covers a marked track can then
   // be stamped across — and only once that track actually has art to copy.
   const track = trackByPath(path);
@@ -11034,6 +11053,39 @@ async function lanSyncPeerLibrary(peer) {
 
 function lanAllRemoteTracks() {
   return Object.values(lanPeerLibraries).flatMap(l => l.tracks);
+}
+
+// Bulk-select's "Download from Host": pulls the selected peer tracks down as
+// real local files (through the same defaultFolder prompt every other
+// download in the app uses) and indexes them via importPaths, exactly like a
+// finished YouTube/Spotify download. Only ever sees remote paths that are
+// still in lanPeerLibraries right now, so there's no separate "peer still
+// reachable" check needed - an unreachable peer's tracks already vanished
+// from the list (see lanSyncPeerLibrary).
+async function downloadSelectedFromHost() {
+  const remoteByPath = new Map(lanAllRemoteTracks().map(t => [t.path, t]));
+  const tracks = [...selectedPaths].map(p => remoteByPath.get(p)).filter(Boolean);
+  if (!tracks.length) return;
+  const args = await ensureDownloadArgs({});
+  if (!args) return; // user closed the folder picker without choosing one
+  let done = 0, failed = 0;
+  for (let i = 0; i < tracks.length; i++) {
+    setProgressBanner(i, tracks.length, 'lanDownload.progress');
+    const t = tracks[i];
+    const res = await window.electronAPI.lanDownloadTrack({
+      url: t.path, artist: t.artist, album: t.album, title: t.title, targetDir: args.targetDir,
+    });
+    if (res && res.success) {
+      done++;
+      await importPaths([res.filePath]);
+    } else {
+      failed++;
+      window.electronAPI.logError?.('lanDownload', `${t.path}: ${(res && res.error) || 'no response'}`);
+    }
+  }
+  setProgressBanner(null);
+  setLibrarySelectMode(false);
+  alert(tr('lanDownload.summary', { done, failed, total: tracks.length }));
 }
 
 async function lanRefresh() {

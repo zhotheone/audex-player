@@ -1752,6 +1752,40 @@ function placeDownload(filePath, downloadsDir, { artist, album, suggestedName, f
   return targetPath;
 }
 
+// ── LAN track download (bulk-select "Download from Host") ──
+// A peer track streams over the same signed URL the <audio> element already
+// plays from, byte-for-byte - no transcoding, just fetch and file it under
+// the same {artist}/{album}/{artist} - {title}.{ext} layout every other
+// download in the app uses. The peer's Content-Type is the only source of the
+// real extension: a LAN peer can be an older Audex build, so nothing here can
+// assume it exposes more than what sendFile() in lan.js has always sent.
+const LAN_EXT_BY_MIME = {
+  'audio/mpeg': '.mp3', 'audio/ogg': '.opus', 'audio/flac': '.flac',
+  'audio/mp4': '.m4a', 'audio/aac': '.aac', 'audio/wav': '.wav', 'audio/x-ms-wma': '.wma',
+};
+ipcMain.handle('lan:downloadTrack', async (event, payload) => {
+  const { url, artist, album, title, targetDir } = payload || {};
+  if (!url) return { success: false, error: 'No URL' };
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return { success: false, error: `HTTP ${res.status}` };
+    const mime = (res.headers.get('content-type') || '').split(';')[0].trim();
+    const ext = LAN_EXT_BY_MIME[mime] || '.opus';
+    const downloadsDir = resolveDownloadsDir(targetDir);
+    const dir = path.join(downloadsDir, ...[artist, album].map(sanitizeFsName).filter(Boolean));
+    const base = sanitizeFsName(artist ? `${artist} - ${title || 'Untitled'}` : (title || 'Untitled')) || 'track';
+    fs.mkdirSync(dir, { recursive: true });
+    const targetPath = path.join(dir, base + ext);
+    // Already downloaded before — keep the existing copy rather than refetch.
+    if (fs.existsSync(targetPath)) return { success: true, filePath: targetPath };
+    const buf = Buffer.from(await res.arrayBuffer());
+    await fs.promises.writeFile(targetPath, buf);
+    return { success: true, filePath: targetPath };
+  } catch (err) {
+    return { success: false, error: String((err && err.message) || err) };
+  }
+});
+
 // Both download entry points differ only in what they hand yt-dlp: a concrete
 // video URL, or a "ytsearch1:…" query.
 async function runYtDownload(event, payload, target) {
