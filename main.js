@@ -197,12 +197,16 @@ function createWindow() {
     if (input.type !== 'keyDown' || input.alt) return;
     if (!(process.platform === 'darwin' ? input.meta : input.control)) return;
     const wc = mainWindow.webContents;
+    // A focused <input>/<textarea> already handles these natively - without
+    // preventDefault() that native handling runs too, on top of the manual
+    // command below, doubling every paste (and copy/cut/undo/redo) in every
+    // text field in the app.
     switch (input.key.toLowerCase()) {
-      case 'c': wc.copy(); break;
-      case 'x': wc.cut(); break;
-      case 'v': wc.paste(); break;
-      case 'a': wc.selectAll(); break;
-      case 'z': input.shift ? wc.redo() : wc.undo(); break;
+      case 'c': event.preventDefault(); wc.copy(); break;
+      case 'x': event.preventDefault(); wc.cut(); break;
+      case 'v': event.preventDefault(); wc.paste(); break;
+      case 'a': event.preventDefault(); wc.selectAll(); break;
+      case 'z': event.preventDefault(); input.shift ? wc.redo() : wc.undo(); break;
     }
   });
 
