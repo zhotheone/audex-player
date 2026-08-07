@@ -1916,6 +1916,17 @@ async function runYtDownload(event, payload, target) {
   const downloadsDir = resolveDownloadsDir(targetDir);
   const outPattern = path.join(downloadsDir, '%(title)s [%(id)s].%(ext)s');
 
+  // "0" (best) means "-q:a N" VBR to ffmpeg, and that scale is only sane for
+  // the encoders yt-dlp calibrated it against (libmp3lame, libopus). ffmpeg's
+  // *native* aac encoder — what m4a transcodes actually use here — takes "0"
+  // as "-q:a 4.0" and produces ~400-450kbps files from a ~130-260kbps source:
+  // pure bloat, no quality gained since the source was already lossy. A
+  // literal target (yt-dlp also accepts "128K"-style strings) maps to a real
+  // "-b:a 256k" instead, capping it at a sane ceiling. Opus/flac downloads
+  // never hit this: opus is a same-codec remux (quality flag unused) and
+  // flac is lossless (compression level, not bitrate).
+  const audioQuality = format === 'm4a' ? '256K' : '0';
+
   const args = [
     '--no-playlist',
     '--no-warnings',
@@ -1924,7 +1935,7 @@ async function runYtDownload(event, payload, target) {
     '--progress-template', '[dlprog] %(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
     '--extract-audio',
     '--audio-format', format,
-    '--audio-quality', '0',
+    '--audio-quality', audioQuality,
     '--add-metadata',
     '--output', outPattern,
     '--print', `after_move:${META_TAG}%(artist|)s\t%(album|)s\t%(filepath)s`,
@@ -1939,7 +1950,13 @@ async function runYtDownload(event, payload, target) {
   // Skip yt-dlp's embed step and do it ourselves below with the ffmpeg path
   // already trusted for cover replacement (writeCoverToFile) — same mechanism
   // for every format instead of leaving it to mutagen's per-container quirks.
-  if (THUMBNAIL_FORMATS.has(format)) args.push('--write-thumbnail');
+  // Convert to png at fetch time: some YouTube thumbnail webps (confirmed on
+  // a real track) fail Electron's nativeImage decoder outright — isEmpty()
+  // true, 0x0 — even though ffmpeg decodes them fine. Every validity check
+  // in this file (isValidImage, stripCoverIfCorrupt's safety net right below)
+  // goes through nativeImage, so an affected webp would embed successfully
+  // and then get immediately stripped again as "corrupt". png sidesteps it.
+  if (THUMBNAIL_FORMATS.has(format)) args.push('--write-thumbnail', '--convert-thumbnails', 'png');
   if (SOURCE_CODEC_FILTER[format]) args.push('-f', `bestaudio${SOURCE_CODEC_FILTER[format]}/bestaudio/best`);
   const ffmpeg = resolveBundledFfmpeg();
   if (ffmpeg) args.push('--ffmpeg-location', ffmpeg);
