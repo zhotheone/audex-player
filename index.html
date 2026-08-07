@@ -404,6 +404,10 @@
               <span data-i18n="autoChip.albums">List is built automatically from your library</span>
             </span>
           </div>
+          <div class="seg" id="albums-view-seg">
+            <button class="seg-btn active" data-albums-view="cards" data-i18n="view.cards">Cards</button>
+            <button class="seg-btn" data-albums-view="list" data-i18n="view.list">List</button>
+          </div>
         </div>
 
         <div class="playlists-grid" id="albums-grid"></div>
@@ -1367,6 +1371,19 @@
               <div class="setting-desc" data-i18n="setting.scanSubdirsDesc">Include nested directories during indexing.</div>
             </div>
             <button class="toggle" data-setting="scan-subdirs"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.artistMinTracks">Hide small artists</div>
+              <div class="setting-desc" data-i18n="setting.artistMinTracksDesc">Leave out artists with only a track or two in the Artists view — usually a stray feature credit rather than someone worth a whole entry.</div>
+            </div>
+            <button class="toggle" data-setting="artist-min-tracks"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row" id="artist-min-tracks-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.artistMinTracksN">Minimum tracks</div>
+            </div>
+            <input type="number" class="field-input setting-input setting-input-narrow" id="artist-min-tracks-n" min="1" max="99" step="1" value="2">
           </div>
           <div class="setting-row">
             <div class="setting-text">

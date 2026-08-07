@@ -1883,6 +1883,49 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+.playlist-text { min-width: 0; }
+
+/* Albums view "List" mode — same .playlist-card markup as the card grid
+   (and the Playlists view, which shares these classes), just laid out as a
+   row instead of a tile. Scoped to #albums-grid so Playlists is untouched. */
+#albums-grid.list-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#albums-grid.list-mode .playlist-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+}
+#albums-grid.list-mode .playlist-cover {
+  width: 40px;
+  height: 40px;
+  aspect-ratio: unset;
+  margin-bottom: 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+#albums-grid.list-mode .playlist-letter { font-size: 16px; }
+#albums-grid.list-mode .playlist-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#albums-grid.list-mode .playlist-name,
+#albums-grid.list-mode .playlist-desc {
+  margin-bottom: 0;
+  min-height: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#albums-grid.list-mode .playlist-desc::before { content: '·'; margin-right: 8px; }
+#albums-grid.list-mode .playlist-stats { flex-shrink: 0; }
 
 /* ─── Playlist detail hero ─── */
 .pl-hero {
@@ -2337,6 +2380,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
    classes deep on purpose: .field-input is declared later in this file, so a
    bare .setting-input would lose the tie and swallow the whole row. */
 .setting-row .setting-input { width: 220px; flex: 0 0 auto; }
+.setting-row .setting-input-narrow { width: 64px; text-align: center; }
 .setting-text { flex: 1; min-width: 0; }
 .setting-label {
   font-size: 13px;

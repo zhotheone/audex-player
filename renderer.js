@@ -44,6 +44,8 @@ let settings = Object.assign({
   defaultPlaylistId: null,   // used when defaultView === 'playlist-detail'
   dlFormat: 'opus',       // yt-dlp --audio-format: opus | mp3 | flac | m4a | wav
   scanSubdirs: true,
+  artistMinTracksEnabled: false,
+  artistMinTracks: 2,     // artists with fewer tracks than this are hidden from the Artists view when the toggle above is on
   healthCheck: false,
   reports: false,
   editor: false,
@@ -190,6 +192,7 @@ let activePlaylistId = null;
 let activeArtistName = null;
 let activeAlbumKey = null;
 let albumsSort = 'alpha';            // 'alpha' | 'tracks' | 'recent'
+let albumsViewMode = 'cards';        // 'cards' | 'list'
 let artistsSort = 'alpha';           // 'alpha' | 'tracks' | 'recent'
 let artistsList = [];                // current filtered+sorted list of artist objects
 let artistsCursor = 0;               // how many of artistsList have been mounted in the grid
@@ -643,6 +646,8 @@ const I18N = {
     'sort.alpha': 'Alphabetical',
     'sort.byTracks': 'By track count',
     'sort.recent': 'Recently added',
+    'view.cards': 'Cards',
+    'view.list': 'List',
     'table.title': 'Title',
     'table.artist': 'Artist',
     'table.album': 'Album',
@@ -808,6 +813,9 @@ const I18N = {
     'setting.uiScaleReset': 'Reset',
     'setting.scanSubdirs': 'Scan subfolders',
     'setting.scanSubdirsDesc': 'Include nested directories during indexing.',
+    'setting.artistMinTracks': 'Hide small artists',
+    'setting.artistMinTracksDesc': 'Leave out artists with only a track or two in the Artists view — usually a stray feature credit rather than someone worth a whole entry.',
+    'setting.artistMinTracksN': 'Minimum tracks',
     'setting.healthCheck': 'Quality check (Health-check)',
     'setting.healthCheckDesc': 'The “Library health” section and the “Quality” column in track lists. When off, the column and section are hidden entirely.',
     'setting.reports': 'Listening report',
@@ -1267,6 +1275,8 @@ const I18N = {
     'sort.alpha': 'Alphabetisch',
     'sort.byTracks': 'Nach Titelanzahl',
     'sort.recent': 'Kürzlich hinzugefügt',
+    'view.cards': 'Karten',
+    'view.list': 'Liste',
     'table.title': 'Titel',
     'table.artist': 'Interpret',
     'table.album': 'Album',
@@ -1432,6 +1442,9 @@ const I18N = {
     'setting.uiScaleReset': 'Zurücksetzen',
     'setting.scanSubdirs': 'Unterordner durchsuchen',
     'setting.scanSubdirsDesc': 'Verschachtelte Verzeichnisse beim Indizieren einbeziehen.',
+    'setting.artistMinTracks': 'Kleine Interpreten ausblenden',
+    'setting.artistMinTracksDesc': 'Interpreten mit nur ein oder zwei Titeln aus der Interpreten-Ansicht ausblenden — meist nur ein vereinzelter Feature-Credit statt eines eigenen Eintrags.',
+    'setting.artistMinTracksN': 'Mindestanzahl Titel',
     'setting.healthCheck': 'Qualitätsprüfung (Health-check)',
     'setting.healthCheckDesc': 'Der Bereich „Bibliothekszustand“ und die Spalte „Qualität“ in den Titellisten. Wenn deaktiviert, sind Spalte und Bereich vollständig ausgeblendet.',
     'setting.reports': 'Hörbericht',
@@ -1891,6 +1904,8 @@ const I18N = {
     'sort.alpha': 'Alphabétique',
     'sort.byTracks': 'Par nombre de pistes',
     'sort.recent': 'Récemment ajoutés',
+    'view.cards': 'Cartes',
+    'view.list': 'Liste',
     'table.title': 'Titre',
     'table.artist': 'Artiste',
     'table.album': 'Album',
@@ -2056,6 +2071,9 @@ const I18N = {
     'setting.uiScaleReset': 'Réinitialiser',
     'setting.scanSubdirs': 'Analyser les sous-dossiers',
     'setting.scanSubdirsDesc': "Inclure les répertoires imbriqués lors de l'indexation.",
+    'setting.artistMinTracks': 'Masquer les petits artistes',
+    'setting.artistMinTracksDesc': "Exclure de la vue Artistes les artistes n'ayant qu'un ou deux titres — souvent un simple featuring plutôt qu'un artiste méritant sa propre entrée.",
+    'setting.artistMinTracksN': 'Titres minimum',
     'setting.healthCheck': 'Contrôle de qualité (Health-check)',
     'setting.healthCheckDesc': 'La section « État de la bibliothèque » et la colonne « Qualité » dans les listes de pistes. Désactivé, la colonne et la section sont entièrement masquées.',
     'setting.reports': "Rapport d'écoute",
@@ -2515,6 +2533,8 @@ const I18N = {
     'sort.alpha': 'За алфавітом',
     'sort.byTracks': 'За кількістю треків',
     'sort.recent': 'Нещодавно додані',
+    'view.cards': 'Картки',
+    'view.list': 'Список',
     'table.title': 'Назва',
     'table.artist': 'Виконавець',
     'table.album': 'Альбом',
@@ -2680,6 +2700,9 @@ const I18N = {
     'setting.uiScaleReset': 'Скинути',
     'setting.scanSubdirs': 'Сканувати підтеки',
     'setting.scanSubdirsDesc': 'Враховувати вкладені каталоги під час індексації.',
+    'setting.artistMinTracks': 'Приховати малих виконавців',
+    'setting.artistMinTracksDesc': 'Не показувати у розділі «Виконавці» тих, у кого лише один-два треки — зазвичай це випадковий фіт, а не виконавець, вартий окремого запису.',
+    'setting.artistMinTracksN': 'Мінімум треків',
     'setting.healthCheck': 'Перевірка якості (Health-check)',
     'setting.healthCheckDesc': 'Розділ «Стан бібліотеки» та стовпець «Якість» у списках треків. Коли вимкнено — стовпець і розділ повністю приховані.',
     'setting.reports': 'Звіт про прослуховування',
@@ -5379,7 +5402,7 @@ function renderCounts() {
   $('count-playlists').textContent = playlists.length;
   $('count-favorites').textContent = favorites.length;
   const artistsCountEl = $('count-artists');
-  if (artistsCountEl) artistsCountEl.textContent = buildArtistsIndex().length;
+  if (artistsCountEl) artistsCountEl.textContent = visibleArtists().length;
   const albumsCountEl = $('count-albums');
   if (albumsCountEl) albumsCountEl.textContent = buildAlbumsIndex().length;
 }
@@ -6401,8 +6424,17 @@ function appendArtistsBatch() {
   }
 }
 
-function renderArtists() {
+// Shared by renderArtists and the sidebar nav count so they never disagree
+// on how many artists there "are" once small ones are hidden.
+function visibleArtists() {
   const all = buildArtistsIndex();
+  if (!settings.artistMinTracksEnabled) return all;
+  const min = Math.max(1, Number(settings.artistMinTracks) || 1);
+  return all.filter(a => a.trackCount >= min);
+}
+
+function renderArtists() {
+  const all = visibleArtists();
   const q = ($('artists-search').value || '').trim().toLowerCase();
   const filtered = q ? all.filter(a => a.name.toLowerCase().includes(q)) : all;
   const sorted = sortArtists(filtered);
@@ -6639,6 +6671,7 @@ function renderAlbums() {
   const grid = $('albums-grid');
   const empty = $('albums-empty');
   grid.innerHTML = '';
+  grid.classList.toggle('list-mode', albumsViewMode === 'list');
 
   if (all.length === 0) {
     grid.style.display = 'none';
@@ -6647,7 +6680,7 @@ function renderAlbums() {
     return;
   }
   empty.classList.remove('show');
-  grid.style.display = 'grid';
+  grid.style.display = albumsViewMode === 'list' ? 'flex' : 'grid';
 
   sorted.forEach((a, i) => {
     if (!a.cover) {
@@ -6662,8 +6695,10 @@ function renderAlbums() {
       <div class="playlist-cover" style="${coverStyle}">
         ${a.cover ? '' : `<span class="playlist-letter">${escapeHtml((a.name || '?')[0])}</span>`}
       </div>
-      <div class="playlist-name">${escapeHtml(a.name)}</div>
-      <div class="playlist-desc">${escapeHtml(a.artist)}</div>
+      <div class="playlist-text">
+        <div class="playlist-name">${escapeHtml(a.name)}</div>
+        <div class="playlist-desc">${escapeHtml(a.artist)}</div>
+      </div>
       <div class="playlist-stats">
         <span>${a.trackCount} ${pluralTracks(a.trackCount)}</span>
         <span>·</span>
@@ -9667,10 +9702,19 @@ document.querySelectorAll('#view-albums .chip').forEach(chip => {
   });
 });
 $('albums-search').addEventListener('input', () => renderAlbums());
+document.querySelectorAll('#albums-view-seg .seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#albums-view-seg .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    albumsViewMode = btn.dataset.albumsView;
+    renderAlbums();
+  });
+});
 
 // ── Settings UI ──
 const TOGGLE_KEY_MAP = {
   'scan-subdirs': 'scanSubdirs',
+  'artist-min-tracks': 'artistMinTracksEnabled',
   'health-check': 'healthCheck',
   'reports': 'reports',
   'editor': 'editor',
@@ -9848,6 +9892,13 @@ function renderAccentPalette() {
 
 // The length row only means anything while crossfade is on, so it follows the
 // toggle the same way the background rows follow their source.
+function renderArtistMinTracks() {
+  const row = $('artist-min-tracks-row');
+  const el = $('artist-min-tracks-n');
+  if (row) row.hidden = !settings.artistMinTracksEnabled;
+  if (el && el !== document.activeElement) el.value = String(settings.artistMinTracks);
+}
+
 function renderCrossfadeLen() {
   const row = $('crossfade-len-row');
   const el = $('crossfade-len');
@@ -9881,6 +9932,7 @@ function renderSettings() {
     if (settings[key]) t.classList.add('on'); else t.classList.remove('on');
   });
   refreshHwAccelToggle();
+  renderArtistMinTracks();
   renderCrossfadeLen();
   const acoustKey = $('acoustid-key');
   if (acoustKey && acoustKey !== document.activeElement) acoustKey.value = settings.acoustidKey || '';
@@ -10114,8 +10166,25 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'editor') applyEditorVisibility();
     if (key === 'crossfade') renderCrossfadeLen();
     if (key === 'lanSharing') applyLanSharingVisibility();
+    if (key === 'artistMinTracksEnabled') {
+      renderArtistMinTracks();
+      if (currentView === 'artists') renderArtists();
+    }
   });
 });
+
+(() => {
+  const el = $('artist-min-tracks-n');
+  if (!el) return;
+  const commit = () => {
+    const n = Math.max(1, Math.min(99, Math.round(Number(el.value)) || 1));
+    settings.artistMinTracks = n;
+    el.value = String(n);
+    saveSettings();
+    if (currentView === 'artists') renderArtists();
+  };
+  el.addEventListener('change', commit);
+})();
 
 (() => {
   const el = $('crossfade-len');
