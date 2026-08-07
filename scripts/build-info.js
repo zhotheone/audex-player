@@ -31,6 +31,17 @@ if (commitCount > 0) {
   const pkgPath = path.join(root, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   pkg.version = `0.0.${commitCount}`;
+  // electron-builder has no ${gitHash} artifact-name macro, so the literal
+  // hash has to be baked into the filename template here, before
+  // electron-builder reads this file next build step. Scoped to build.win
+  // (not the root artifactName) so it can't touch the CI mac build's
+  // dmg/zip naming — pkg.version above stays real semver regardless, NSIS's
+  // embedded exe version and electron-updater's comparison both need that,
+  // a hash can't sort.
+  if (commit && pkg.build) {
+    if (pkg.build.nsis) pkg.build.nsis.artifactName = '${productName}-Setup-' + commit + '.${ext}';
+    if (pkg.build.win) pkg.build.win.artifactName = '${productName}-' + commit + '-${os}.${ext}';
+  }
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
   console.log(`package.json: version=${pkg.version} (commit count)`);
 }
