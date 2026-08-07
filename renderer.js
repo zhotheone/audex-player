@@ -669,6 +669,7 @@ const I18N = {
     'btn.deletePlaylist': 'Delete playlist',
     'btn.choose': 'Choose…',
     'btn.signIn': 'Sign in…',
+    'btn.signOut': 'Sign out',
     'btn.signingIn': 'Waiting…',
     'btn.checkUpdate': 'Check now',
     'btn.checking': 'Checking…',
@@ -1299,6 +1300,7 @@ const I18N = {
     'btn.deletePlaylist': 'Playlist löschen',
     'btn.choose': 'Auswählen…',
     'btn.signIn': 'Anmelden…',
+    'btn.signOut': 'Abmelden',
     'btn.signingIn': 'Warten…',
     'btn.checkUpdate': 'Jetzt prüfen',
     'btn.checking': 'Wird geprüft…',
@@ -1929,6 +1931,7 @@ const I18N = {
     'btn.deletePlaylist': 'Supprimer la playlist',
     'btn.choose': 'Choisir…',
     'btn.signIn': 'Se connecter…',
+    'btn.signOut': 'Se déconnecter',
     'btn.signingIn': 'En attente…',
     'btn.checkUpdate': 'Vérifier maintenant',
     'btn.checking': 'Vérification…',
@@ -2559,6 +2562,7 @@ const I18N = {
     'btn.deletePlaylist': 'Видалити плейлист',
     'btn.choose': 'Обрати…',
     'btn.signIn': 'Увійти…',
+    'btn.signOut': 'Вийти',
     'btn.signingIn': 'Очікування…',
     'btn.checkUpdate': 'Перевірити зараз',
     'btn.checking': 'Перевірка…',
@@ -4171,6 +4175,10 @@ window.addEventListener('online', () => {
   if (currentView === 'trending' && !trLoading && !trTracks.length) loadTrending(false);
 });
 
+function explicitBadge(flag) {
+  return flag === true ? '<span class="explicit-badge" title="Explicit">E</span>' : '';
+}
+
 function renderYtResults(results) {
   ytLastResults = results || [];
   // Save before any DOM checks — persistence shouldn't depend on the YT pane
@@ -4200,7 +4208,7 @@ function renderYtResults(results) {
     return `
       <div class="dl-row" data-yt-row="${i}">
         <div class="thumb" style="background-image: url('${escapeHtml(r.thumbnail || '')}')"></div>
-        <div class="title" title="${escapeHtml(r.title)}">${escapeHtml(r.title || '')}</div>
+        <div class="title" title="${escapeHtml(r.title)}">${explicitBadge(r.explicit)}${escapeHtml(r.title || '')}</div>
         <div class="channel" title="${escapeHtml(r.channel || '')}">${escapeHtml(r.channel || '')}</div>
         <div class="duration">${escapeHtml(r.durationStr || '')}</div>
         <div class="action">
@@ -4301,6 +4309,7 @@ async function downloadYtResult(idx, btn) {
       videoId: r.id,
       url: r.url,
       suggestedName: r.title,
+      explicit: r.explicit,
     });
     ytActiveDownloads.delete(r.id);
     if (!res || !res.success) {
@@ -4419,7 +4428,7 @@ function renderYtmResults(tracks) {
         <div class="num">${i + 1}</div>
         <div class="cover" style="${coverStyle}"></div>
         <div class="artist" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
-        <div class="title" title="${escapeHtml(t.title || '')}">${escapeHtml(t.title || '')}</div>
+        <div class="title" title="${escapeHtml(t.title || '')}">${explicitBadge(t.explicit)}${escapeHtml(t.title || '')}</div>
         <div class="duration">${escapeHtml(t.duration || '')}</div>
         <div class="action">
           <button type="button" class="dl-download-btn dl-queue-btn${queuedCls}" data-ytm-queue="${i}"${queueDis} title="${escapeHtml(queueLabel)}">
@@ -4483,7 +4492,7 @@ async function downloadYtmTrack(idx, btn) {
   const suggestedName = t.artist ? `${t.artist} - ${t.title}` : t.title;
 
   try {
-    const res = await ytDownload({ videoId: t.id, url: t.url, suggestedName, artist: t.artist || '', requestId });
+    const res = await ytDownload({ videoId: t.id, url: t.url, suggestedName, artist: t.artist || '', requestId, explicit: t.explicit });
     ytmActiveDownloads.delete(requestId);
     if (!res || !res.success) {
       restoreYtmDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
@@ -4554,6 +4563,7 @@ function buildQueueItemFromYtm(t, albumTrackNo) {
     suggestedName: t.artist ? `${t.artist} - ${t.title}` : (t.title || ''),
     videoId: t.id || '',
     url: t.url || '',
+    explicit: (t.explicit === true || t.explicit === false) ? t.explicit : null,
     status: 'queued',
     percent: 0,
     indeterminate: false,
@@ -4954,6 +4964,7 @@ function buildQueueItemFromYt(r) {
     suggestedName: r.title || '',
     videoId: r.id || '',
     url: r.url || '',
+    explicit: (r.explicit === true || r.explicit === false) ? r.explicit : null,
     status: 'queued',
     percent: 0,
     indeterminate: false,
@@ -5034,6 +5045,7 @@ async function processQueueItem(item) {
         suggestedName: item.suggestedName,
         artist: item.artist || '',
         requestId: item.requestId,
+        explicit: item.explicit,
       });
     } else {
       // Spotify (and any text-only source) goes through ytsearch1: by query.
@@ -10260,9 +10272,14 @@ $('btn-choose-default-folder').addEventListener('click', async () => {
 
 function refreshYtLoginStatus() {
   const el = $('yt-login-status');
+  const logoutBtn = $('btn-yt-logout');
   if (!el || !window.electronAPI || typeof window.electronAPI.youtubeCookiesStatus !== 'function') return;
   window.electronAPI.youtubeCookiesStatus()
-    .then(res => { el.textContent = tr(res && res.signedIn ? 'setting.ytLogin.signedIn' : 'setting.ytLogin.notSignedIn'); })
+    .then(res => {
+      const signedIn = !!(res && res.signedIn);
+      el.textContent = tr(signedIn ? 'setting.ytLogin.signedIn' : 'setting.ytLogin.notSignedIn');
+      if (logoutBtn) logoutBtn.hidden = !signedIn;
+    })
     .catch(() => {});
 }
 refreshYtLoginStatus();
@@ -10277,6 +10294,16 @@ if (ytLoginBtn && window.electronAPI && typeof window.electronAPI.youtubeLogin =
     try { await window.electronAPI.youtubeLogin(); } catch (_) {}
     ytLoginBtn.disabled = false;
     if (label) label.textContent = tr('btn.signIn');
+    refreshYtLoginStatus();
+  });
+}
+
+const ytLogoutBtn = $('btn-yt-logout');
+if (ytLogoutBtn && window.electronAPI && typeof window.electronAPI.youtubeLogout === 'function') {
+  ytLogoutBtn.addEventListener('click', async () => {
+    ytLogoutBtn.disabled = true;
+    try { await window.electronAPI.youtubeLogout(); } catch (_) {}
+    ytLogoutBtn.disabled = false;
     refreshYtLoginStatus();
   });
 }

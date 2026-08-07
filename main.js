@@ -925,6 +925,11 @@ const FFMPEG_TAG_KEYS = {
   trackNo: 'track',
   discNo: 'disc',
   comment: 'comment',
+  // ponytail: ffmpeg's mov muxer silently drops unrecognized metadata keys, so
+  // this never lands for m4a — fine everywhere else (ID3 TXXX, Vorbis comment).
+  // Upgrade: parse-and-remap the same key into a "----:com.apple.iTunes:" atom
+  // if m4a coverage ever matters.
+  explicit: 'itunesadvisory',
 };
 
 function isOggContainer(ext) {
@@ -1490,12 +1495,13 @@ function ytDlpCookieArgs() {
   return fs.existsSync(p) ? ['--cookies', p] : [];
 }
 
-function runYtDlp(args, { timeoutMs } = {}) {
+function runYtDlpOnce(args, { timeoutMs, useCookies } = {}) {
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
     let killed = false;
-    const proc = spawn(ytDlpPath(), [...ytDlpCookieArgs(), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const cookieArgs = useCookies ? ytDlpCookieArgs() : [];
+    const proc = spawn(ytDlpPath(), [...cookieArgs, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
     let timer = null;
     if (timeoutMs) {
       timer = setTimeout(() => { killed = true; try { proc.kill('SIGKILL'); } catch (_) {} }, timeoutMs);
@@ -1513,6 +1519,25 @@ function runYtDlp(args, { timeoutMs } = {}) {
   });
 }
 
+// A stale/bad yt-cookies.txt (expired session, half-finished login) makes
+// YouTube reject the *authenticated* request while an anonymous one would
+// have worked — so once the file exists, every single call fails the same
+// way until it's removed. Retry once without cookies on that specific
+// failure signature and, if that fixes it, delete the file so we stop
+// paying for a doomed cookie attempt on every future call.
+async function runYtDlpWithCookieFallback(runOnce, args, opts) {
+  const first = await runOnce(args, { ...opts, useCookies: true });
+  if (first.code === 0 || !ytDlpCookieArgs().length) return first;
+  if (classifyYtDlpError(first.stderr) !== 'signin') return first;
+  const retry = await runOnce(args, { ...opts, useCookies: false });
+  if (retry.code === 0) { try { fs.unlinkSync(youtubeCookiesPath()); } catch (_) {} }
+  return retry;
+}
+
+function runYtDlp(args, opts = {}) {
+  return runYtDlpWithCookieFallback(runYtDlpOnce, args, opts);
+}
+
 function fmtDuration(sec) {
   if (!sec || sec < 0) return '';
   const s = Math.floor(sec) % 60;
@@ -1520,6 +1545,18 @@ function fmtDuration(sec) {
   const h = Math.floor(sec / 3600);
   const pad = n => String(n).padStart(2, '0');
   return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+// yt-dlp exposes no structured "explicit" field (checked --dump-json on a
+// known-explicit YT Music watch page — not present for any container). The
+// only signal is the "(Explicit)"/"(Clean)" suffix uploaders themselves put
+// in the title, so that's what this reads. Titles that don't carry the
+// marker resolve to null (unknown), not false.
+function detectExplicitTag(title) {
+  const s = String(title || '');
+  if (/[([]\s*explicit\s*[)\]]/i.test(s)) return true;
+  if (/[([]\s*(clean|edited|radio edit)\s*[)\]]/i.test(s)) return false;
+  return null;
 }
 
 ipcMain.handle('downloads:ytSearch', async (event, query, count) => {
@@ -1554,6 +1591,7 @@ ipcMain.handle('downloads:ytSearch', async (event, query, count) => {
         durationStr: fmtDuration(j.duration || 0),
         thumbnail: thumb,
         url: j.url || j.webpage_url || `https://www.youtube.com/watch?v=${j.id}`,
+        explicit: detectExplicitTag(j.title),
       });
     } catch (_) { /* skip malformed lines */ }
   }
@@ -1648,6 +1686,7 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
       duration: fmtDuration(dur),
       cover,
       url: entryUrl || `https://music.youtube.com/watch?v=${j.id}`,
+      explicit: detectExplicitTag(j.title),
     });
   }
   if (tracks.length === 0) {
@@ -1671,12 +1710,13 @@ function sanitizeFsName(name) {
   return /^\.+$/.test(s) ? '' : s;
 }
 
-function streamYtDlp(args, { onProgress, onPhase, timeoutMs } = {}) {
+function streamYtDlpOnce(args, { onProgress, onPhase, timeoutMs, useCookies } = {}) {
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
     let stdoutBuf = '';
-    const proc = spawn(ytDlpPath(), [...ytDlpCookieArgs(), ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const cookieArgs = useCookies ? ytDlpCookieArgs() : [];
+    const proc = spawn(ytDlpPath(), [...cookieArgs, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
     let timer = null;
     if (timeoutMs) {
       timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch (_) {} }, timeoutMs);
@@ -1716,6 +1756,10 @@ function streamYtDlp(args, { onProgress, onPhase, timeoutMs } = {}) {
       resolve({ code, stdout, stderr });
     });
   });
+}
+
+function streamYtDlp(args, opts = {}) {
+  return runYtDlpWithCookieFallback(streamYtDlpOnce, args, opts);
 }
 
 function resolveDownloadsDir(requested) {
@@ -1826,7 +1870,7 @@ ipcMain.handle('lan:downloadTrack', async (event, payload) => {
 // Both download entry points differ only in what they hand yt-dlp: a concrete
 // video URL, or a "ytsearch1:…" query.
 async function runYtDownload(event, payload, target) {
-  const { videoId, url, suggestedName, artist, requestId, targetDir } = payload || {};
+  const { videoId, url, suggestedName, artist, requestId, targetDir, explicit } = payload || {};
   const format = AUDIO_FORMATS.has(payload && payload.format) ? payload.format : 'opus';
   const downloadsDir = resolveDownloadsDir(targetDir);
   const outPattern = path.join(downloadsDir, '%(title)s [%(id)s].%(ext)s');
@@ -1896,6 +1940,12 @@ async function runYtDownload(event, payload, target) {
   } catch (_) { /* keep the file where yt-dlp left it */ }
 
   await stripCoverIfCorrupt(filePath);
+
+  // Only known explicit/clean titles pay for a second ffmpeg pass — most
+  // videos carry no marker at all (explicit === null) and skip this.
+  if (explicit === true || explicit === false) {
+    try { await writeMetadataToFile(filePath, { explicit: explicit ? '1' : '0' }); } catch (_) {}
+  }
 
   return { success: true, filePath, downloadsDir };
 }
@@ -2276,6 +2326,17 @@ ipcMain.handle('youtube:cookiesStatus', async () => {
   } catch (_) {
     return { signedIn: false };
   }
+});
+
+// Clearing just yt-cookies.txt isn't a real logout: the persistent Chromium
+// profile (youtube-profile/) still has the signed-in session, so hitting
+// "Sign in…" again would silently reuse it and regenerate the same cookies
+// without ever showing a login screen. Both have to go.
+ipcMain.handle('youtube:logout', async () => {
+  if (youtubeLoginBrowser) return { success: false, error: 'Close the sign-in window first.' };
+  try { fs.rmSync(youtubeCookiesPath(), { force: true }); } catch (_) {}
+  try { fs.rmSync(path.join(app.getPath('userData'), 'youtube-profile'), { recursive: true, force: true }); } catch (_) {}
+  return { success: true };
 });
 
 // ── Discord Rich Presence ────────────────────────────────────────────────────

@@ -51,6 +51,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ytMusicParse: (payload) => ipcRenderer.invoke('downloads:ytMusicParse', payload),
   spotifyParse: (payload) => ipcRenderer.invoke('spotify:parsePlaylist', payload),
   youtubeLogin: () => ipcRenderer.invoke('youtube:login'),
+  youtubeLogout: () => ipcRenderer.invoke('youtube:logout'),
   youtubeCookiesStatus: () => ipcRenderer.invoke('youtube:cookiesStatus'),
   onSpotifyParseProgress: (cb) => {
     const listener = (_e, data) => cb(data);
