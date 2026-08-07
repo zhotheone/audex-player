@@ -1495,13 +1495,41 @@ function ytDlpCookieArgs() {
   return fs.existsSync(p) ? ['--cookies', p] : [];
 }
 
+// Once cookies exist, YouTube only offers yt-dlp clients (web/tv/mweb) that
+// cipher their stream URLs and need a JS engine to decipher — the no-cipher
+// clients (android_vr/ios) that anonymous requests fall back to are refused
+// outright when cookies are present ("does not support cookies"). yt-dlp can
+// drive any Node-shaped binary as that JS engine via --js-runtimes, and
+// Electron's own executable *is* one when ELECTRON_RUN_AS_NODE=1 — no extra
+// binary to bundle or package per-platform, just the app's own process.execPath
+// (works the same in dev and in the packaged app, since that's the Electron
+// binary either way). Applied to every call, not just cookie ones: it's free
+// when unneeded and covers YouTube ever requiring ciphered clients regardless
+// of login.
+// YouTube Music serves a 256kbps opus/AAC tier (itag 774/141) to Premium
+// accounts, but yt-dlp hides it from the format list by default — it's
+// tagged "MISSING POT" (no Proof-of-Origin token) and yt-dlp assumes that
+// makes it unreliable unless asked for explicitly. In practice a premium
+// account's own cookies are enough without a PO token (verified: downloads
+// cleanly at the real 257kbps). formats=missing_pot just un-hides it; the
+// existing bestaudio[acodec=opus] selector already prefers it over 251 on
+// its own once it's visible, so no format-selection changes needed. A no-op
+// for non-Premium/logged-out requests — the formats simply don't exist to
+// surface for them.
+function ytDlpJsRuntimeArgs() {
+  return ['--js-runtimes', `node:${process.execPath}`, '--extractor-args', 'youtube:formats=missing_pot'];
+}
+function ytDlpSpawnEnv() {
+  return { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+}
+
 function runYtDlpOnce(args, { timeoutMs, useCookies } = {}) {
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
     let killed = false;
     const cookieArgs = useCookies ? ytDlpCookieArgs() : [];
-    const proc = spawn(ytDlpPath(), [...cookieArgs, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(ytDlpPath(), [...cookieArgs, ...ytDlpJsRuntimeArgs(), ...args], { stdio: ['ignore', 'pipe', 'pipe'], env: ytDlpSpawnEnv() });
     let timer = null;
     if (timeoutMs) {
       timer = setTimeout(() => { killed = true; try { proc.kill('SIGKILL'); } catch (_) {} }, timeoutMs);
@@ -1519,19 +1547,26 @@ function runYtDlpOnce(args, { timeoutMs, useCookies } = {}) {
   });
 }
 
-// A stale/bad yt-cookies.txt (expired session, half-finished login) makes
-// YouTube reject the *authenticated* request while an anonymous one would
-// have worked — so once the file exists, every single call fails the same
-// way until it's removed. Retry once without cookies on that specific
-// failure signature and, if that fixes it, delete the file so we stop
-// paying for a doomed cookie attempt on every future call.
+// Two independent ways a cookie file can break every download, not just one:
+// (a) it's stale/half-finished and YouTube rejects the authenticated request
+// outright ("Sign in to confirm…"), or (b) it's perfectly valid but yt-dlp's
+// client selection changes once cookies exist — it drops the no-login clients
+// (android_vr, ios) that don't need signature/n-parameter deciphering and is
+// left only with clients (web, tv, mweb) that do, which fails here because
+// this bundle carries no JS runtime for yt-dlp's EJS solver ("Signature
+// solving failed" / "Requested format is not available" — reproduced even
+// logged out by forcing player_client=web, so it's a client capability gap,
+// not bad cookies). Both failure modes are fixed by the same move — drop
+// --cookies and retry — so retry on any failure rather than pattern-matching
+// error text that (b) doesn't share with (a). Unlike (a), (b) isn't caused by
+// a bad cookie file, so don't delete it on a successful retry — that would
+// wipe a perfectly good login after its very first use and leave the app
+// prompting to sign in again right after signing in.
 async function runYtDlpWithCookieFallback(runOnce, args, opts) {
+  if (!ytDlpCookieArgs().length) return runOnce(args, { ...opts, useCookies: false });
   const first = await runOnce(args, { ...opts, useCookies: true });
-  if (first.code === 0 || !ytDlpCookieArgs().length) return first;
-  if (classifyYtDlpError(first.stderr) !== 'signin') return first;
-  const retry = await runOnce(args, { ...opts, useCookies: false });
-  if (retry.code === 0) { try { fs.unlinkSync(youtubeCookiesPath()); } catch (_) {} }
-  return retry;
+  if (first.code === 0) return first;
+  return runOnce(args, { ...opts, useCookies: false });
 }
 
 function runYtDlp(args, opts = {}) {
@@ -1716,7 +1751,7 @@ function streamYtDlpOnce(args, { onProgress, onPhase, timeoutMs, useCookies } = 
     let stderr = '';
     let stdoutBuf = '';
     const cookieArgs = useCookies ? ytDlpCookieArgs() : [];
-    const proc = spawn(ytDlpPath(), [...cookieArgs, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const proc = spawn(ytDlpPath(), [...cookieArgs, ...ytDlpJsRuntimeArgs(), ...args], { stdio: ['ignore', 'pipe', 'pipe'], env: ytDlpSpawnEnv() });
     let timer = null;
     if (timeoutMs) {
       timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch (_) {} }, timeoutMs);
@@ -1799,14 +1834,20 @@ function classifyYtDlpError(text) {
 
 // Formats yt-dlp can extract to where the container extension equals the format
 // name — the fallback file scan and the final rename both rely on that.
-const AUDIO_FORMATS = new Set(['opus', 'mp3', 'flac', 'm4a', 'wav']);
-const THUMBNAIL_FORMATS = new Set(['opus', 'mp3', 'flac', 'm4a']);
+const AUDIO_FORMATS = new Set(['opus', 'flac', 'm4a']);
+const THUMBNAIL_FORMATS = new Set(['opus', 'flac', 'm4a']);
 // When the source stream already uses the target codec, yt-dlp only remuxes it
 // (-c copy) and the audio comes out bit-identical to what YouTube served. Asking
-// for such a stream first makes that the normal case instead of a coincidence:
-// picking by bitrate alone can land on the AAC stream and force a transcode.
-// Nothing to prefer for mp3/flac/wav — YouTube never serves those.
-const SOURCE_CODEC_FILTER = { opus: '[acodec=opus]', m4a: '[acodec^=mp4a]' };
+// for opus first makes that the normal case instead of a coincidence: picking
+// by bitrate alone can land on the (lower-bitrate) AAC stream and force a
+// pointless AAC-to-opus transcode. There's no equivalent win for m4a — YouTube's
+// AAC stream tops out around 128kbps while its opus stream commonly reaches
+// ~160kbps, so forcing an AAC-only source would remux cleanly but lock m4a
+// downloads to the worse of the two available streams. Let m4a fall through to
+// plain bestaudio/best so it picks by real bitrate and transcodes down from
+// opus when that's actually the better source. Nothing to prefer for
+// mp3/flac/wav either — YouTube never serves those natively.
+const SOURCE_CODEC_FILTER = { opus: '[acodec=opus]' };
 // Marks the one stdout line carrying the finished file's path and album, so it
 // can't be confused with anything else yt-dlp prints.
 const META_TAG = '[audexmeta]';
@@ -1889,7 +1930,16 @@ async function runYtDownload(event, payload, target) {
     '--print', `after_move:${META_TAG}%(artist|)s\t%(album|)s\t%(filepath)s`,
     target,
   ];
-  if (THUMBNAIL_FORMATS.has(format)) args.push('--embed-thumbnail');
+  // yt-dlp's own --embed-thumbnail goes through mutagen for every one of our
+  // formats (verified via --verbose: "[EmbedThumbnail] mutagen: Adding
+  // thumbnail…" fires for opus AND m4a alike) — and mutagen's Ogg/Opus
+  // METADATA_BLOCK_PICTURE writer reproducibly truncates the image (confirmed:
+  // ffmpeg decode of the embedded cover fails with "chunk too big" on a plain
+  // opus download, while the same source thumbnail embeds intact into m4a).
+  // Skip yt-dlp's embed step and do it ourselves below with the ffmpeg path
+  // already trusted for cover replacement (writeCoverToFile) — same mechanism
+  // for every format instead of leaving it to mutagen's per-container quirks.
+  if (THUMBNAIL_FORMATS.has(format)) args.push('--write-thumbnail');
   if (SOURCE_CODEC_FILTER[format]) args.push('-f', `bestaudio${SOURCE_CODEC_FILTER[format]}/bestaudio/best`);
   const ffmpeg = resolveBundledFfmpeg();
   if (ffmpeg) args.push('--ffmpeg-location', ffmpeg);
@@ -1933,6 +1983,21 @@ async function runYtDownload(event, payload, target) {
   }
   if (!filePath || !fs.existsSync(filePath)) {
     return { success: false, error: 'Downloaded file not found' };
+  }
+
+  if (THUMBNAIL_FORMATS.has(format)) {
+    try {
+      const base = path.basename(filePath, path.extname(filePath));
+      const thumbFile = fs.readdirSync(downloadsDir).find(f => f.startsWith(base) && /\.(webp|jpe?g|png)$/i.test(f));
+      if (thumbFile) {
+        const thumbPath = path.join(downloadsDir, thumbFile);
+        const ext = path.extname(thumbFile).toLowerCase();
+        const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+        const dataUrl = `data:${mime};base64,${fs.readFileSync(thumbPath).toString('base64')}`;
+        await writeCoverToFile(filePath, dataUrl);
+        try { fs.unlinkSync(thumbPath); } catch (_) {}
+      }
+    } catch (_) { /* no thumbnail on disk — ship without a cover rather than fail the download */ }
   }
 
   try {

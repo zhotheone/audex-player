@@ -42,7 +42,7 @@ let settings = Object.assign({
   defaultFolder: '',
   defaultView: 'library',    // view shown on startup: library | artists | albums | favorites | playlist-detail
   defaultPlaylistId: null,   // used when defaultView === 'playlist-detail'
-  dlFormat: 'opus',       // yt-dlp --audio-format: opus | mp3 | flac | m4a | wav
+  dlFormat: 'opus',       // yt-dlp --audio-format: opus | flac | m4a
   scanSubdirs: true,
   artistMinTracksEnabled: false,
   artistMinTracks: 2,     // artists with fewer tracks than this are hidden from the Artists view when the toggle above is on
@@ -72,7 +72,7 @@ let settings = Object.assign({
 }, JSON.parse(localStorage.getItem(LS.settings) || '{}'));
 let recents = JSON.parse(localStorage.getItem(LS.recents) || '[]');
 // Format names are the same in every language, so they stay out of the i18n tables.
-const DL_FORMAT_LABELS = { opus: 'Opus', mp3: 'MP3', flac: 'FLAC', m4a: 'M4A', wav: 'WAV' };
+const DL_FORMAT_LABELS = { opus: 'Opus', flac: 'FLAC', m4a: 'M4A' };
 const DEFAULT_VIEW_LABELS = {
   library: 'nav.library', artists: 'nav.artists', albums: 'nav.albums',
   favorites: 'nav.favorites', 'playlist-detail': 'setting.defaultViewPlaylist',
@@ -842,7 +842,7 @@ const I18N = {
     'setting.ytLogin.notSignedIn': 'Not signed in',
     'setting.ytLogin.waiting': 'Waiting for the browser window to close…',
     'setting.dlFormat': 'Download format',
-    'setting.dlFormatDesc': 'Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick mp3 if a device of yours cannot play it.',
+    'setting.dlFormatDesc': 'Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick M4A if a device of yours cannot play it.',
     'downloads.noFolder': 'Pick a default folder first — downloads are filed into it by artist and album.',
     'setting.showTrending': 'Show the “Trending” tab',
     'setting.showTrendingDesc': 'A section with YouTube Music charts by country and one-click downloads. Requires the internet.',
@@ -1473,7 +1473,7 @@ const I18N = {
     'setting.ytLogin.notSignedIn': 'Nicht angemeldet',
     'setting.ytLogin.waiting': 'Warte, bis das Browserfenster geschlossen wird…',
     'setting.dlFormat': 'Downloadformat',
-    'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle mp3, wenn eines deiner Geräte es nicht abspielen kann.',
+    'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle M4A, wenn eines deiner Geräte es nicht abspielen kann.',
     'downloads.noFolder': 'Wähle zuerst einen Standardordner — Downloads werden dort nach Interpret und Album einsortiert.',
     'setting.showTrending': 'Registerkarte „Im Trend“ anzeigen',
     'setting.showTrendingDesc': 'Ein Bereich mit YouTube-Music-Charts nach Ländern und Downloads mit einem Klick. Benötigt Internet.',
@@ -2104,7 +2104,7 @@ const I18N = {
     'setting.ytLogin.notSignedIn': 'Non connecté',
     'setting.ytLogin.waiting': 'En attente de la fermeture de la fenêtre du navigateur…',
     'setting.dlFormat': 'Format de téléchargement',
-    'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez mp3 si un de vos appareils ne le lit pas.',
+    'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez M4A si un de vos appareils ne le lit pas.',
     'downloads.noFolder': 'Choisissez d’abord un dossier par défaut — les téléchargements y sont classés par artiste et album.',
     'setting.showTrending': 'Afficher l’onglet « Tendances »',
     'setting.showTrendingDesc': 'Une section avec les classements YouTube Music par pays et des téléchargements en un clic. Nécessite Internet.',
@@ -2735,7 +2735,7 @@ const I18N = {
     'setting.ytLogin.notSignedIn': 'Вхід не виконано',
     'setting.ytLogin.waiting': 'Очікуємо закриття вікна браузера…',
     'setting.dlFormat': 'Формат завантаження',
-    'setting.dlFormatDesc': 'Файли зберігаються як {тека за замовчуванням}/{виконавець}/{альбом}/{виконавець} - {трек}. Opus дає найкращу якість на мегабайт; обери mp3, якщо якийсь із твоїх пристроїв його не програє.',
+    'setting.dlFormatDesc': 'Файли зберігаються як {тека за замовчуванням}/{виконавець}/{альбом}/{виконавець} - {трек}. Opus дає найкращу якість на мегабайт; обери M4A, якщо якийсь із твоїх пристроїв його не програє.',
     'downloads.noFolder': 'Спершу обери теку за замовчуванням — завантаження розкладаються в ній за виконавцем і альбомом.',
     'setting.showTrending': 'Показати вкладку «У тренді»',
     'setting.showTrendingDesc': 'Розділ із чартами YouTube Music за країнами та завантаженням у один клік. Потребує інтернету.',
