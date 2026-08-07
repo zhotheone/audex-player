@@ -1064,12 +1064,18 @@ function parseCoverSource(source) {
   return null;
 }
 
-async function writeCoverToFile(origPath, coverDataUrl) {
-  if (!origPath) return { success: false, error: 'File not found' };
+// The ffmpeg embed itself, split out from writeCoverToFile so a caller that
+// already trusts its own picture bytes (e.g. a thumbnail this same process
+// just had ffmpeg convert to png seconds earlier) can skip parseCoverSource's
+// isValidImage() gate — the same nativeImage.createFromBuffer() check that's
+// proven unreliable on some legitimate images (see the write-thumbnail
+// --convert-thumbnails png comment above runYtDownload's args): rejecting
+// bytes ffmpeg itself just produced would silently drop a perfectly good
+// cover with no error, which is exactly the kind of failure that's
+// impossible to diagnose after the fact.
+async function embedPicture(origPath, picture) {
   const filePath = resolveRealPath(origPath);
   if (!fs.existsSync(filePath)) return { success: false, error: 'File not found' };
-  const picture = parseCoverSource(coverDataUrl);
-  if (!picture) return { success: false, error: 'Bad cover data' };
   const ffmpeg = resolveBundledFfmpeg();
   if (!ffmpeg) return { success: false, error: 'ffmpeg not found' };
 
@@ -1110,6 +1116,13 @@ async function writeCoverToFile(origPath, coverDataUrl) {
     if (tmpImgPath) { try { fs.unlinkSync(tmpImgPath); } catch (_) {} }
     if (isOggContainer(ext)) { try { fs.unlinkSync(tmpPath + '.meta.txt'); } catch (_) {} }
   }
+}
+
+async function writeCoverToFile(origPath, coverDataUrl) {
+  if (!origPath) return { success: false, error: 'File not found' };
+  const picture = parseCoverSource(coverDataUrl);
+  if (!picture) return { success: false, error: 'Bad cover data' };
+  return embedPicture(origPath, picture);
 }
 
 ipcMain.handle('music:writeCover', async (event, { filePath, cover }) => writeCoverToFile(filePath, cover));
@@ -2010,11 +2023,17 @@ async function runYtDownload(event, payload, target) {
         const thumbPath = path.join(downloadsDir, thumbFile);
         const ext = path.extname(thumbFile).toLowerCase();
         const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
-        const dataUrl = `data:${mime};base64,${fs.readFileSync(thumbPath).toString('base64')}`;
-        await writeCoverToFile(filePath, dataUrl);
+        // embedPicture, not writeCoverToFile: these bytes came from ffmpeg's
+        // own --convert-thumbnails png a moment ago, so re-validating them
+        // through isValidImage() (nativeImage) would risk the exact silent
+        // drop this comment block exists to avoid. Log a real failure instead
+        // of swallowing it — "sometimes fails on the same url" is undiagnosable
+        // otherwise.
+        const embedResult = await embedPicture(filePath, { format: mime, data: fs.readFileSync(thumbPath) });
+        if (!embedResult.success) logAppError('runYtDownload:embedCover', embedResult.error);
         try { fs.unlinkSync(thumbPath); } catch (_) {}
       }
-    } catch (_) { /* no thumbnail on disk — ship without a cover rather than fail the download */ }
+    } catch (err) { logAppError('runYtDownload:embedCover', err); }
   }
 
   try {
