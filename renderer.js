@@ -2701,7 +2701,7 @@ const I18N = {
     'setting.checkUpdate': 'Перевірити оновлення',
     'setting.checkUpdateDesc': 'Перевіряє наявність новішої версії на GitHub прямо зараз.',
     'setting.openLogs': 'Журнали',
-    'setting.openLogsDesc': 'Відкриває папку з журналами помилок для діагностики невдалого оновлення.',
+    'setting.openLogsDesc': 'Відкриває папку з журналами помилок для діагностики помилок.',
     'update.checkFailed': 'Не вдалося перевірити оновлення.',
     'update.upToDate': 'У вас уже остання версія ({v}).',
     'badge.wip': 'у розробці',
@@ -7313,7 +7313,7 @@ async function importPaths(paths) {
 async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress' } = {}) {
   if (!tracks || !tracks.length) return;
   if (!settings.acoustidKey) { alert(tr('editor.idNoKey')); return; }
-  let fixed = 0, unchanged = 0, noMatch = 0, failed = 0;
+  let fixed = 0, unchanged = 0, noMatch = 0, failed = 0, ghosts = 0;
   for (let i = 0; i < tracks.length; i++) {
     setProgressBanner(i, tracks.length, labelKey);
     const t = tracks[i];
@@ -7328,6 +7328,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
         alert(tr(IDENTIFY_ERR_KEY[res.error] || 'editor.idFailed'));
         return;
       }
+      if (await purgeIfGhost(t.path)) { ghosts++; continue; }
       failed++;
       continue;
     }
@@ -7341,7 +7342,11 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
     }
     if (!Object.keys(newTags).length) { unchanged++; continue; }
     const wr = await window.electronAPI.writeMetadata(t.path, newTags);
-    if (!wr || !wr.success) { failed++; continue; }
+    if (!wr || !wr.success) {
+      if (await purgeIfGhost(t.path)) { ghosts++; continue; }
+      failed++;
+      continue;
+    }
     Object.assign(t, newTags);
     fixed++;
   }
@@ -7349,7 +7354,8 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
   saveLibrary();
   refreshCurrentViewRows();
   renderCounts();
-  alert(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length }));
+  alert(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length })
+    + (ghosts ? ' · ' + tr('library.ghostsRemoved', { count: ghosts }) : ''));
 }
 
 // ── Fix Tags menu (Artist/Album scopes) ──
@@ -7406,7 +7412,7 @@ async function runRegenerateAlbumCovers(tracks) {
   if (!targets.length) return;
   if (!confirm(tr('albumCover.confirm', { track: source.title, count: targets.length }))) return;
 
-  let updated = 0, failed = 0;
+  let updated = 0, failed = 0, ghosts = 0;
   for (let i = 0; i < targets.length; i++) {
     setProgressBanner(i, targets.length, 'albumCover.progress');
     const t = targets[i];
@@ -7416,6 +7422,8 @@ async function runRegenerateAlbumCovers(tracks) {
       t.hasCover = true;
       coverCache[t.path] = source.cover;
       updated++;
+    } else if (await purgeIfGhost(t.path)) {
+      ghosts++;
     } else {
       failed++;
       window.electronAPI.logError?.('albumCoverRegen', `${t.path}: ${(wr && wr.error) || 'no response'}`);
@@ -7424,7 +7432,8 @@ async function runRegenerateAlbumCovers(tracks) {
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
-  alert(tr('albumCover.summary', { updated, failed, total: targets.length }));
+  alert(tr('albumCover.summary', { updated, failed, total: targets.length })
+    + (ghosts ? ' · ' + tr('library.ghostsRemoved', { count: ghosts }) : ''));
 }
 
 // ── Fix album release year ──
@@ -7439,7 +7448,7 @@ async function runFixAlbumYear(tracks) {
   const targets = tracks.filter(t => !isRemotePath(t.path));
   if (!targets.length) return;
 
-  let updated = 0, failed = 0;
+  let updated = 0, failed = 0, ghosts = 0;
   for (let i = 0; i < targets.length; i++) {
     setProgressBanner(i, targets.length, 'albumYear.progress');
     const t = targets[i];
@@ -7447,6 +7456,8 @@ async function runFixAlbumYear(tracks) {
     if (wr && wr.success) {
       t.year = trimmed;
       updated++;
+    } else if (await purgeIfGhost(t.path)) {
+      ghosts++;
     } else {
       failed++;
       window.electronAPI.logError?.('albumYearFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
@@ -7455,7 +7466,8 @@ async function runFixAlbumYear(tracks) {
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
-  alert(tr('albumYear.summary', { updated, failed, total: targets.length }));
+  alert(tr('albumYear.summary', { updated, failed, total: targets.length })
+    + (ghosts ? ' · ' + tr('library.ghostsRemoved', { count: ghosts }) : ''));
 }
 
 // ── Fix album track numbers ──
@@ -7484,6 +7496,11 @@ function renderTrackNumberList(tracks) {
       el.classList.add('tn-done'); // guards against a double-click burning two numbers
       const wr = await window.electronAPI.writeMetadata(t.path, { trackNo: String(no) });
       if (!wr || !wr.success) {
+        if (await purgeIfGhost(t.path)) {
+          el.remove();
+          alert(tr('library.ghostsRemoved', { count: 1 }));
+          return;
+        }
         window.electronAPI.logError?.('albumTrackNoFix', `${t.path}: ${(wr && wr.error) || 'no response'}`);
         alert(tr('albumTrackNo.writeFailed'));
         el.classList.remove('tn-done');
@@ -8652,6 +8669,17 @@ async function revalidateLibrary() {
   return ghosts.size;
 }
 
+// A metadata/cover write (ffmpeg under the hood) fails identically whether
+// the file is locked, malformed, or simply gone — check which it was and drop
+// the track if it's the latter, so a moved/deleted file doesn't keep failing
+// every bulk-fix run forever. Returns true if the track was removed.
+async function purgeIfGhost(path) {
+  if (isRemotePath(path) || !window.electronAPI || !window.electronAPI.fileExists) return false;
+  if (await window.electronAPI.fileExists(path)) return false;
+  removeTracksFromState(new Set([path]));
+  return true;
+}
+
 function deletePlaylist(id) {
   playlists = playlists.filter(pl => pl.id !== id);
   savePlaylists();
@@ -9058,6 +9086,11 @@ $('btn-save-editor').addEventListener('click', async () => {
       if (currentTrack && currentTrack.path === pendingMetadataPath) updateNowPlayingUI(t);
     }
     setTimeout(() => $('metadata-modal').classList.remove('active'), 600);
+  } else if (await purgeIfGhost(pendingMetadataPath)) {
+    status.textContent = tr('library.ghostsRemoved', { count: 1 });
+    status.className = 'editor-foot-status error';
+    refreshCurrentViewRows();
+    setTimeout(() => $('metadata-modal').classList.remove('active'), 1200);
   } else {
     status.textContent = res.error || tr('editor.errorSave');
     status.className = 'editor-foot-status error';
@@ -10831,7 +10864,11 @@ function hideBootOverlay() {
   const brand = document.getElementById('brand-version');
   if (brand) brand.textContent = commit;
   const about = document.getElementById('about-version');
-  if (about && commit) about.textContent = `${commit} · Electron · Linux`;
+  if (about && commit) {
+    const plat = String(navigator.platform || '');
+    const osLabel = plat.startsWith('Win') ? 'Windows' : plat.startsWith('Mac') ? 'macOS' : plat.startsWith('Linux') ? 'Linux' : (plat || 'Desktop');
+    about.textContent = `${commit} · Electron · ${osLabel}`;
+  }
 })();
 // Hard fallback: never leave the overlay up if something in the boot chain throws.
 setTimeout(hideBootOverlay, 30000);
