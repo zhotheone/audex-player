@@ -886,6 +886,10 @@ const I18N = {
     'modal.deleteTrackFull.text': '“{title}” by {artist} will be removed from the library and the file moved to the trash.',
     'modal.deletePlaylist.title': 'Delete playlist?',
     'modal.deletePlaylist.text': 'Playlist “{name}” will be deleted. Tracks remain in the library.',
+    'modal.deleteAlbum.title': 'Delete album?',
+    'modal.deleteAlbum.text': '“{name}” ({count}) will be removed from the library and the files moved to the trash.',
+    'modal.deleteArtist.title': 'Delete artist?',
+    'modal.deleteArtist.text': 'Every track by “{name}” ({count}) will be removed from the library and the files moved to the trash.',
     'modal.clearLibrary.title': 'Clear the whole library?',
     'modal.clearLibrary.text': 'All tracks will be removed from Audex. The files themselves are not touched.',
     'modal.newPlaylist.title': 'New playlist',
@@ -936,6 +940,8 @@ const I18N = {
     'cm.applyCoverToAlbum': 'Apply cover to album…',
     'cm.fixYear': 'Fix release year…',
     'cm.fixTrackNumbers': 'Correct track numbers…',
+    'cm.deleteAlbum': 'Delete album…',
+    'cm.deleteArtist': 'Delete artist…',
     'btn.albumMenuTooltip': 'Fix tags, cover, release year & track numbers…',
     'albumCover.needSource': 'Right-click a track with the correct cover and choose "Use as album cover" first.',
     'albumCover.badSource': "This track has no cover art loaded — scroll it into view (or open it) so its art loads, then try again.",
@@ -1501,6 +1507,10 @@ const I18N = {
     'modal.deleteTrackFull.text': '„{title}“ von {artist} wird aus der Bibliothek entfernt und die Datei in den Papierkorb verschoben.',
     'modal.deletePlaylist.title': 'Playlist löschen?',
     'modal.deletePlaylist.text': 'Playlist „{name}“ wird gelöscht. Titel bleiben in der Bibliothek.',
+    'modal.deleteAlbum.title': 'Album löschen?',
+    'modal.deleteAlbum.text': '„{name}“ ({count}) wird aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
+    'modal.deleteArtist.title': 'Künstler löschen?',
+    'modal.deleteArtist.text': 'Alle Titel von „{name}“ ({count}) werden aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
     'modal.clearLibrary.title': 'Gesamte Bibliothek leeren?',
     'modal.clearLibrary.text': 'Alle Titel werden aus Audex entfernt. Die Dateien selbst bleiben unangetastet.',
     'modal.newPlaylist.title': 'Neue Playlist',
@@ -1551,6 +1561,8 @@ const I18N = {
     'cm.applyCoverToAlbum': 'Cover auf Album anwenden…',
     'cm.fixYear': 'Erscheinungsjahr korrigieren…',
     'cm.fixTrackNumbers': 'Titelnummern korrigieren…',
+    'cm.deleteAlbum': 'Album löschen…',
+    'cm.deleteArtist': 'Künstler löschen…',
     'btn.albumMenuTooltip': 'Tags, Cover, Erscheinungsjahr & Titelnummern korrigieren…',
     'albumCover.needSource': 'Rechtsklick auf den Titel mit dem richtigen Cover und „Als Album-Cover verwenden“ wählen.',
     'albumCover.badSource': 'Für diesen Titel ist noch kein Cover geladen — ins Sichtfeld scrollen (oder öffnen), damit es lädt, dann erneut versuchen.',
@@ -2116,6 +2128,10 @@ const I18N = {
     'modal.deleteTrackFull.text': '« {title} » de {artist} sera retirée de la bibliothèque et le fichier déplacé vers la corbeille.',
     'modal.deletePlaylist.title': 'Supprimer la playlist ?',
     'modal.deletePlaylist.text': 'La playlist « {name} » sera supprimée. Les pistes restent dans la bibliothèque.',
+    'modal.deleteAlbum.title': 'Supprimer l\'album ?',
+    'modal.deleteAlbum.text': '« {name} » ({count}) sera retiré de la bibliothèque et les fichiers déplacés vers la corbeille.',
+    'modal.deleteArtist.title': 'Supprimer l\'artiste ?',
+    'modal.deleteArtist.text': 'Toutes les pistes de « {name} » ({count}) seront retirées de la bibliothèque et les fichiers déplacés vers la corbeille.',
     'modal.clearLibrary.title': 'Vider toute la bibliothèque ?',
     'modal.clearLibrary.text': "Toutes les pistes seront retirées d'Audex. Les fichiers eux-mêmes ne sont pas touchés.",
     'modal.newPlaylist.title': 'Nouvelle playlist',
@@ -2166,6 +2182,8 @@ const I18N = {
     'cm.applyCoverToAlbum': "Appliquer la pochette à l'album…",
     'cm.fixYear': "Corriger l'année de sortie…",
     'cm.fixTrackNumbers': 'Corriger les numéros de piste…',
+    'cm.deleteAlbum': 'Supprimer l\'album…',
+    'cm.deleteArtist': 'Supprimer l\'artiste…',
     'btn.albumMenuTooltip': "Corriger les tags, la pochette, l'année de sortie et les numéros de piste…",
     'albumCover.needSource': 'Faites un clic droit sur le titre ayant la bonne pochette et choisissez « Utiliser comme pochette de l\'album ».',
     'albumCover.badSource': "Aucune pochette n'est chargée pour ce titre — faites-le défiler à l'écran (ou ouvrez-le) pour la charger, puis réessayez.",
@@ -2731,6 +2749,10 @@ const I18N = {
     'modal.deleteTrackFull.text': '«{title}» від {artist} буде вилучено з бібліотеки, а файл — переміщено у смітник.',
     'modal.deletePlaylist.title': 'Видалити плейлист?',
     'modal.deletePlaylist.text': 'Плейлист «{name}» буде вилучено. Треки в бібліотеці залишаться.',
+    'modal.deleteAlbum.title': 'Видалити альбом?',
+    'modal.deleteAlbum.text': '«{name}» ({count}) буде вилучено з бібліотеки, а файли — переміщено у смітник.',
+    'modal.deleteArtist.title': 'Видалити виконавця?',
+    'modal.deleteArtist.text': 'Усі треки виконавця «{name}» ({count}) буде вилучено з бібліотеки, а файли — переміщено у смітник.',
     'modal.clearLibrary.title': 'Очистити всю бібліотеку?',
     'modal.clearLibrary.text': 'Усі треки буде вилучено з Audex. Самі файли не постраждають.',
     'modal.newPlaylist.title': 'Новий плейлист',
@@ -2781,6 +2803,8 @@ const I18N = {
     'cm.applyCoverToAlbum': 'Застосувати обкладинку до альбому…',
     'cm.fixYear': 'Виправити рік випуску…',
     'cm.fixTrackNumbers': 'Виправити номери треків…',
+    'cm.deleteAlbum': 'Видалити альбом…',
+    'cm.deleteArtist': 'Видалити виконавця…',
     'btn.albumMenuTooltip': 'Виправити теги, обкладинку, рік випуску та номери треків…',
     'albumCover.needSource': 'Спершу клацніть правою кнопкою на трек із правильною обкладинкою та оберіть «Використати як обкладинку альбому».',
     'albumCover.badSource': 'Для цього треку ще не завантажено обкладинку — прогорніть до нього список (або відкрийте трек), щоб вона завантажилась, і спробуйте ще раз.',
@@ -6518,7 +6542,7 @@ function renderArtistDetail(name) {
       playTrackByPath(random.path, artist.tracks);
     }
   };
-  $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress');
+  $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
 }
 
 // ── Albums ──
@@ -6702,7 +6726,7 @@ function renderAlbumDetail(key) {
       playTrackByPath(random.path, tracks);
     }
   };
-  $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress', { albumActions: true });
+  $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress', { albumActions: true, name: album.name });
 }
 
 // ── Crossfade ──
@@ -7381,12 +7405,14 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
 let pendingFixTagsScope = null;
 // Album scope also gets the cover/year bulk actions grouped into the same
 // popover — Artist scope spans multiple albums, where neither one makes sense.
-function openFixTagsMenu(e, tracks, labelKey, { albumActions = false } = {}) {
+function openFixTagsMenu(e, tracks, labelKey, { albumActions = false, name = '' } = {}) {
   e.stopPropagation();
-  pendingFixTagsScope = { tracks, labelKey };
+  pendingFixTagsScope = { tracks, labelKey, name };
   $('ftm-apply-cover').hidden = !albumActions;
   $('ftm-fix-year').hidden = !albumActions;
   $('ftm-fix-tracknos').hidden = !albumActions;
+  $('ftm-delete-album').hidden = !albumActions;
+  $('ftm-delete-artist').hidden = albumActions;
   const menu = $('fix-tags-menu');
   menu.classList.add('open');
   const rect = e.currentTarget.getBoundingClientRect();
@@ -7412,6 +7438,18 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
     else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
+    else if (action === 'delete-album') confirmDelete({
+      kind: 'tracks',
+      payload: scope.tracks.map(t => t.path),
+      title: tr('modal.deleteAlbum.title'),
+      text: tr('modal.deleteAlbum.text', { name: scope.name, count: withCount('tracks', scope.tracks.length) }),
+    });
+    else if (action === 'delete-artist') confirmDelete({
+      kind: 'tracks',
+      payload: scope.tracks.map(t => t.path),
+      title: tr('modal.deleteArtist.title'),
+      text: tr('modal.deleteArtist.text', { name: scope.name, count: withCount('tracks', scope.tracks.length) }),
+    });
     else runFixTags(scope.tracks, { compare: true, labelKey: scope.labelKey });
   });
 });
