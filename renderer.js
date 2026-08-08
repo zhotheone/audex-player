@@ -1001,6 +1001,7 @@ const I18N = {
     'palette.action.fixTagsLibrary': 'Fix the tags (Library)…',
     'palette.action.volumeUp': 'Volume up',
     'palette.action.volumeDown': 'Volume down',
+    'palette.action.reloadApp': 'Refresh the app',
     'label.unknownArtist': 'Unknown artist',
     'label.noAlbum': 'No album',
     'label.tracksShort': 'tr.',
@@ -2919,6 +2920,7 @@ const I18N = {
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
     'palette.action.clearLibrary': 'Очистити бібліотеку…',
     'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)…',
+    'palette.action.reloadApp': 'Оновити застосунок',
     'label.unknownArtist': 'Невідомий виконавець',
     'label.noAlbum': 'Без альбому',
     'label.tracksShort': 'тр.',
@@ -9368,6 +9370,7 @@ function renderPaletteResults(query) {
     { label: tr('palette.action.fixTagsLibrary'), kind: 'fix-tags-library', icon: '#i-search' },
     { label: tr('palette.action.volumeUp'),   kind: 'volume-up',   icon: '#i-volume' },
     { label: tr('palette.action.volumeDown'), kind: 'volume-down', icon: '#i-volume-low' },
+    { label: tr('palette.action.reloadApp'),  kind: 'reload-app',  icon: '#i-activity' },
   ].filter(a => !q || a.label.toLowerCase().includes(q));
   if (actions.length > 0) {
     const lbl = document.createElement('div');
@@ -9427,6 +9430,7 @@ function runPaletteAction(action) {
   else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
   else if (action.kind === 'volume-up') setVolume(targetVolume + 0.05);
   else if (action.kind === 'volume-down') setVolume(targetVolume - 0.05);
+  else if (action.kind === 'reload-app') location.reload();
 }
 $('palette-input').addEventListener('input', e => renderPaletteResults(e.target.value));
 $('palette-input').addEventListener('keydown', e => {

@@ -68,7 +68,10 @@ async function lookupAlbumInfo({ artist, album, title } = {}) {
 }
 
 async function resolveAlbumInfo(A, AL) {
-  const out = { cover: null, genre: null };
+  // artistName/albumName carry MusicBrainz's canonical original-script title
+  // (e.g. Cyrillic), which YouTube usually romanizes — the caller prefers these
+  // for the album folder so the on-disk name matches the release, not YouTube.
+  const out = { cover: null, genre: null, artistName: null, albumName: null };
   let release = null;
   let artistMbid = null;
 
@@ -83,6 +86,8 @@ async function resolveAlbumInfo(A, AL) {
   if (release) {
     const credit = release['artist-credit'] && release['artist-credit'][0];
     artistMbid = credit && credit.artist && credit.artist.id;
+    out.albumName = release.title || null;
+    out.artistName = (credit && (credit.name || (credit.artist && credit.artist.name))) || null;
     out.cover = await fetchCover(release.id);
     const rgId = release['release-group'] && release['release-group'].id;
     if (rgId) {

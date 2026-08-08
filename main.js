@@ -2073,9 +2073,9 @@ async function runYtDownload(event, payload, target) {
   // artist \t album \t path — the path goes last so a stray tab in it can't
   // shift the fields, and the renderer's artist wins over yt-dlp's when both exist.
   const meta = (stdout.split('\n').map(l => l.trim()).filter(l => l.startsWith(META_TAG)).pop() || '').slice(META_TAG.length).split('\t');
-  const album = meta.length >= 3 ? meta[1] : '';
+  let album = meta.length >= 3 ? meta[1] : '';
   let filePath = meta.length >= 3 ? meta.slice(2).join('\t') : '';
-  const folderArtist = artist || (meta.length >= 3 ? meta[0] : '');
+  let folderArtist = artist || (meta.length >= 3 ? meta[0] : '');
   if (!filePath || !fs.existsSync(filePath)) {
     try {
       const files = fs.readdirSync(downloadsDir)
@@ -2100,6 +2100,10 @@ async function runYtDownload(event, payload, target) {
     const title = prefix && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName;
     const info = await lookupAlbumInfo({ artist: folderArtist, album, title });
     mbGenre = info.genre || null;
+    // Prefer MusicBrainz's original-script names (e.g. Cyrillic) for the album
+    // folder — YouTube usually hands us a romanized artist/album.
+    if (info.artistName) folderArtist = info.artistName;
+    if (info.albumName) album = info.albumName;
     if (info.cover) {
       const r = await embedPicture(filePath, info.cover);
       if (r.success) usedCover = info.cover;
