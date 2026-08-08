@@ -1566,7 +1566,13 @@ function ytDlpJsRuntimeArgs() {
   return ['--js-runtimes', `node:${process.execPath}`, '--extractor-args', 'youtube:formats=missing_pot'];
 }
 function ytDlpSpawnEnv() {
-  return { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+  // Force yt-dlp's stdout (the `--print` [audexmeta] line carrying artist/album/
+  // filepath) to UTF-8. Without this, on a non-UTF-8 Windows locale Python
+  // encodes that line in the console codepage; a Cyrillic album the codepage
+  // can't represent raises UnicodeEncodeError, the whole line is dropped, and
+  // album parses as empty — so no {artist}/{album} folder gets created. We read
+  // the pipe as UTF-8 (d.toString()), so make yt-dlp write UTF-8 to match.
+  return { ...process.env, ELECTRON_RUN_AS_NODE: '1', PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' };
 }
 
 function runYtDlpOnce(args, { timeoutMs, useCookies } = {}) {
