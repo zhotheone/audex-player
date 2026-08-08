@@ -57,23 +57,25 @@ const albumCache = new Map();
 // Returns { cover: {format, data}|null, genre: string|null }. Every network step
 // is best-effort: a miss on any one leaves that field null rather than throwing.
 async function lookupAlbumInfo({ artist, album, title } = {}) {
-  const A = esc(artist), AL = esc(album);
-  // Only album-keyed lookups are cacheable — a no-album call keys on the artist
-  // alone, which is still a stable genre result worth caching.
-  const cacheKey = `${A.toLowerCase()}|${AL.toLowerCase()}`;
+  const A = esc(artist), AL = esc(album), T = esc(title);
+  // With an album, one lookup serves every track on it → key on artist|album.
+  // Without one, each track resolves its own album via a recording search, so
+  // the title has to be in the key or two different tracks would collide.
+  const cacheKey = AL ? `${A.toLowerCase()}|${AL.toLowerCase()}` : `${A.toLowerCase()}||${T.toLowerCase()}`;
   if (albumCache.has(cacheKey)) return albumCache.get(cacheKey);
-  const result = await resolveAlbumInfo(A, AL);
+  const result = await resolveAlbumInfo(A, AL, T);
   albumCache.set(cacheKey, result);
   return result;
 }
 
-async function resolveAlbumInfo(A, AL) {
+async function resolveAlbumInfo(A, AL, T) {
   // artistName/albumName carry MusicBrainz's canonical original-script title
   // (e.g. Cyrillic), which YouTube usually romanizes — the caller prefers these
   // for the album folder so the on-disk name matches the release, not YouTube.
   const out = { cover: null, genre: null, artistName: null, albumName: null };
   let release = null;
   let artistMbid = null;
+  let recCredit = null; // recording's artist-credit — the release from a recording search often omits its own
 
   if (A && AL) {
     try {
@@ -83,8 +85,21 @@ async function resolveAlbumInfo(A, AL) {
     } catch (_) {}
   }
 
+  // No album tag (YouTube often has none) or no match — recover the album from
+  // the recording itself, so the download still lands in {artist}/{album} with
+  // MusicBrainz's original-script title instead of dumping in the artist root.
+  if (!release && A && T) {
+    try {
+      const q = `artist:"${A}" AND recording:"${T}"`;
+      const d = await mbFetch(`${MB}/recording/?query=${encodeURIComponent(q)}&fmt=json&limit=1`);
+      const rec = d.recordings && d.recordings[0];
+      release = (rec && rec.releases && rec.releases[0]) || null;
+      recCredit = (rec && rec['artist-credit'] && rec['artist-credit'][0]) || null;
+    } catch (_) {}
+  }
+
   if (release) {
-    const credit = release['artist-credit'] && release['artist-credit'][0];
+    const credit = (release['artist-credit'] && release['artist-credit'][0]) || recCredit;
     artistMbid = credit && credit.artist && credit.artist.id;
     out.albumName = release.title || null;
     out.artistName = (credit && (credit.name || (credit.artist && credit.artist.name))) || null;
