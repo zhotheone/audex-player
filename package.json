@@ -21,6 +21,7 @@
     "files": [
       "main.js",
       "lan.js",
+      "musicbrainz.js",
       "preload.js",
       "renderer.js",
       "index.html",
