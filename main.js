@@ -2094,7 +2094,7 @@ async function runYtDownload(event, payload, target) {
   // for whatever MB can't match (singles, missing album, obscure tracks). Genre
   // has no YouTube source at all, so it is MB-only.
   let mbGenre = null;
-  let coverEmbedded = false;
+  let usedCover = null; // the picture actually embedded — also dropped as the album folder cover
   try {
     const prefix = folderArtist ? `${folderArtist} - ` : '';
     const title = prefix && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName;
@@ -2102,7 +2102,7 @@ async function runYtDownload(event, payload, target) {
     mbGenre = info.genre || null;
     if (info.cover) {
       const r = await embedPicture(filePath, info.cover);
-      if (r.success) coverEmbedded = true;
+      if (r.success) usedCover = info.cover;
       else logAppError('runYtDownload:mbCover', r.error);
     }
   } catch (err) { logAppError('runYtDownload:musicbrainz', err); }
@@ -2113,17 +2113,19 @@ async function runYtDownload(event, payload, target) {
       const thumbFile = fs.readdirSync(downloadsDir).find(f => f.startsWith(base) && /\.(webp|jpe?g|png)$/i.test(f));
       if (thumbFile) {
         const thumbPath = path.join(downloadsDir, thumbFile);
-        if (!coverEmbedded) {
+        if (!usedCover) {
           const ext = path.extname(thumbFile).toLowerCase();
           const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          const picture = { format: mime, data: fs.readFileSync(thumbPath) };
           // embedPicture, not writeCoverToFile: these bytes came from ffmpeg's
           // own --convert-thumbnails png a moment ago, so re-validating them
           // through isValidImage() (nativeImage) would risk the exact silent
           // drop this comment block exists to avoid. Log a real failure instead
           // of swallowing it — "sometimes fails on the same url" is undiagnosable
           // otherwise.
-          const embedResult = await embedPicture(filePath, { format: mime, data: fs.readFileSync(thumbPath) });
-          if (!embedResult.success) logAppError('runYtDownload:embedCover', embedResult.error);
+          const embedResult = await embedPicture(filePath, picture);
+          if (embedResult.success) usedCover = picture;
+          else logAppError('runYtDownload:embedCover', embedResult.error);
         }
         try { fs.unlinkSync(thumbPath); } catch (_) {}
       }
@@ -2138,6 +2140,16 @@ async function runYtDownload(event, payload, target) {
   try {
     filePath = placeDownload(filePath, downloadsDir, { artist: folderArtist, album, suggestedName, format });
   } catch (_) { /* keep the file where yt-dlp left it */ }
+
+  // Drop the cover into the album folder as cover.<ext> so file browsers and
+  // other players find album art without decoding a track. First track of the
+  // album to land wins; later tracks skip an existing file (same as placeDownload).
+  if (usedCover) {
+    try {
+      const coverPath = path.join(path.dirname(filePath), 'cover.' + coverExt(usedCover.format));
+      if (!fs.existsSync(coverPath)) fs.writeFileSync(coverPath, Buffer.from(usedCover.data));
+    } catch (err) { logAppError('runYtDownload:folderCover', err); }
+  }
 
   await stripCoverIfCorrupt(filePath);
 
