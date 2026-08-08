@@ -422,9 +422,9 @@
       <section id="view-album-detail" class="view-section">
         <header class="topbar">
           <div class="crumb">
-            <span class="crumb-item link" data-view="albums" data-i18n="crumb.collection">Collection</span>
+            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item link" data-view="albums" data-i18n="nav.albums">Albums</span>
+            <span class="crumb-item link" id="album-detail-artist-crumb"></span>
             <span class="crumb-sep">/</span>
             <span class="crumb-item active" id="album-detail-crumb"></span>
           </div>
@@ -507,8 +507,6 @@
           <div class="crumb">
             <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
             <span class="crumb-sep">/</span>
-            <span class="crumb-item link" data-view="artists" data-i18n="nav.artists">Artists</span>
-            <span class="crumb-sep">/</span>
             <span class="crumb-item active" id="artist-detail-crumb"></span>
           </div>
           <div class="searchbox">
@@ -532,11 +530,16 @@
                 <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
                 <span data-i18n="btn.shuffle">Shuffle</span>
               </button>
-              <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-artist-fix-tags" data-i18n-title="btn.fixTagsTooltip" title="Fix the tags via AcoustID…">
-                <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+              <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-artist-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
+                <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
               </button>
             </div>
           </div>
+        </div>
+
+        <div class="filters">
+          <button class="chip active" data-artist-albums-sort="year-desc" data-i18n="sort.yearDesc">Newest first</button>
+          <button class="chip" data-artist-albums-sort="year-asc" data-i18n="sort.yearAsc">Oldest first</button>
         </div>
 
         <div id="artist-albums"></div>
@@ -1850,11 +1853,16 @@
 
   <!-- Fix Tags Menu — triggered from the Artist/Album hero "fix tags" button -->
   <div id="fix-tags-menu" class="context-menu">
-    <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix the tags</span></button>
-    <button class="cm-item" data-action="apply-cover" id="ftm-apply-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applyCoverToAlbum">Apply cover to album…</span></button>
-    <button class="cm-item" data-action="set-cover-file" id="ftm-set-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.setCoverFromFile">Set cover from file…</span></button>
-    <button class="cm-item" data-action="fix-year" id="ftm-fix-year" hidden><svg class="i" width="11" height="11"><use href="#i-clock"/></svg><span data-i18n="cm.fixYear">Fix release year…</span></button>
-    <button class="cm-item" data-action="fix-tracknos" id="ftm-fix-tracknos" hidden><svg class="i" width="11" height="11"><use href="#i-list"/></svg><span data-i18n="cm.fixTrackNumbers">Correct track numbers…</span></button>
+    <div class="cm-section" data-i18n="fixMenu.acoustid">AcoustID</div>
+    <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix tags</span></button>
+    <div class="cm-section" data-i18n="fixMenu.cover">Cover Image</div>
+    <button class="cm-item" data-action="apply-cover"><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applySelectedCover">Apply selected cover</span></button>
+    <button class="cm-item" data-action="set-cover-file"><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applyCoverFromFile">Apply cover from local file</span></button>
+    <div class="cm-section" data-i18n="fixMenu.metadata">Bulk metadata</div>
+    <button class="cm-item" data-action="fix-tracknos"><svg class="i" width="11" height="11"><use href="#i-list"/></svg><span data-i18n="cm.fixTrackNumbers">Fix track numbers</span></button>
+    <button class="cm-item" data-action="fix-year"><svg class="i" width="11" height="11"><use href="#i-clock"/></svg><span data-i18n="cm.fixYear">Set release year</span></button>
+    <button class="cm-item" data-action="set-genre"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.setGenre">Set genre tags</span></button>
+    <div class="cm-divider"></div>
     <button class="cm-item" data-action="download" id="ftm-download" hidden><svg class="i" width="11" height="11"><use href="#i-download"/></svg><span data-i18n="select.downloadFromHost">Download from Host</span></button>
     <button class="cm-item cm-danger" data-action="delete-album" id="ftm-delete-album" hidden><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.deleteAlbum">Delete album…</span></button>
     <button class="cm-item cm-danger" data-action="delete-artist" id="ftm-delete-artist" hidden><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.deleteArtist">Delete artist…</span></button>

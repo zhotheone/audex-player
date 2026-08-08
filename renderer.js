@@ -194,6 +194,7 @@ let activeAlbumKey = null;
 let albumsSort = 'alpha';            // 'alpha' | 'tracks' | 'recent'
 let albumsViewMode = 'cards';        // 'cards' | 'list'
 let artistsSort = 'alpha';           // 'alpha' | 'tracks' | 'recent'
+let artistAlbumsSort = 'year-desc';  // 'year-desc' | 'year-asc' — album order within an artist
 let artistsList = [];                // current filtered+sorted list of artist objects
 let artistsCursor = 0;               // how many of artistsList have been mounted in the grid
 let artistsObserver = null;          // IntersectionObserver on the sentinel
@@ -647,6 +648,8 @@ const I18N = {
     'sort.alpha': 'Alphabetical',
     'sort.byTracks': 'By track count',
     'sort.recent': 'Recently added',
+    'sort.yearDesc': 'Newest first',
+    'sort.yearAsc': 'Oldest first',
     'view.cards': 'Cards',
     'view.list': 'List',
     'table.title': 'Title',
@@ -942,7 +945,15 @@ const I18N = {
     'editor.saving': 'Saving…',
     'editor.idBadKey': 'AcoustID rejected the API key',
     'editor.idNoKey': 'Add your AcoustID API key in Settings to use Identify',
-    'cm.fixTags': 'Fix the tags',
+    'cm.fixTags': 'Fix tags',
+    'cm.applySelectedCover': 'Apply selected cover',
+    'cm.applyCoverFromFile': 'Apply cover from local file',
+    'cm.setGenre': 'Set genre tags',
+    'fixMenu.acoustid': 'AcoustID',
+    'fixMenu.cover': 'Cover Image',
+    'fixMenu.metadata': 'Bulk metadata',
+    'genre.prompt': 'Set the genre for every selected track:',
+    'genre.progress': 'Updating genres…',
     'cm.fixTagsAcoustid': 'Fix tags with AcoustID',
     'fixTags.progress': 'Fixing tags…',
     'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
@@ -957,8 +968,8 @@ const I18N = {
     'cm.useAsAlbumCover': 'Use as album cover',
     'cm.setCoverFromFile': 'Set cover from file…',
     'cm.applyCoverToAlbum': 'Apply cover to album…',
-    'cm.fixYear': 'Fix release year…',
-    'cm.fixTrackNumbers': 'Correct track numbers…',
+    'cm.fixYear': 'Set release year',
+    'cm.fixTrackNumbers': 'Fix track numbers',
     'cm.deleteAlbum': 'Delete album…',
     'cm.deleteArtist': 'Delete artist…',
     'btn.albumMenuTooltip': 'Fix tags, cover, release year & track numbers…',
@@ -2568,6 +2579,8 @@ const I18N = {
     'sort.alpha': 'За алфавітом',
     'sort.byTracks': 'За кількістю треків',
     'sort.recent': 'Нещодавно додані',
+    'sort.yearDesc': 'Спочатку нові',
+    'sort.yearAsc': 'Спочатку старі',
     'view.cards': 'Картки',
     'view.list': 'Список',
     'table.title': 'Назва',
@@ -2864,6 +2877,14 @@ const I18N = {
     'editor.idBadKey': 'AcoustID відхилив ключ API',
     'editor.idNoKey': 'Додайте свій ключ API AcoustID у Налаштуваннях, щоб користуватися Розпізнаванням',
     'cm.fixTags': 'Виправити теги',
+    'cm.applySelectedCover': 'Застосувати вибрану обкладинку',
+    'cm.applyCoverFromFile': 'Обкладинка з локального файлу',
+    'cm.setGenre': 'Встановити жанр',
+    'fixMenu.acoustid': 'AcoustID',
+    'fixMenu.cover': 'Обкладинка',
+    'fixMenu.metadata': 'Масові теги',
+    'genre.prompt': 'Встановити жанр для всіх вибраних треків:',
+    'genre.progress': 'Оновлюємо жанри…',
     'cm.fixTagsAcoustid': 'Виправити теги через AcoustID',
     'fixTags.progress': 'Виправляємо теги…',
     'fixTags.summary': '{fixed} оновлено · {unchanged} вже правильні · {noMatch} без збігів · {failed} невдало ({total} усього)',
@@ -2878,8 +2899,8 @@ const I18N = {
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
     'cm.setCoverFromFile': 'Вибрати обкладинку з файлу…',
     'cm.applyCoverToAlbum': 'Застосувати обкладинку до альбому…',
-    'cm.fixYear': 'Виправити рік випуску…',
-    'cm.fixTrackNumbers': 'Виправити номери треків…',
+    'cm.fixYear': 'Встановити рік випуску',
+    'cm.fixTrackNumbers': 'Виправити номери треків',
     'cm.deleteAlbum': 'Видалити альбом…',
     'cm.deleteArtist': 'Видалити виконавця…',
     'btn.albumMenuTooltip': 'Виправити теги, обкладинку, рік випуску та номери треків…',
@@ -3344,6 +3365,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 });
 document.querySelectorAll('.crumb-item.link').forEach(el => {
   el.addEventListener('click', () => {
+    if (!el.dataset.view) return; // dynamic crumbs (e.g. album→artist) wire their own click
     if (el.dataset.view === 'library') clearHealthFilter();
     setView(el.dataset.view);
   });
@@ -6615,6 +6637,13 @@ function renderArtistDetail(name) {
 
   byAlbum.forEach(alb => { alb.tracks = sortAlbumTracks(alb.tracks); });
 
+  // Sort the album blocks by release year; missing years sort to the bottom
+  // either way (0 vs Infinity depending on direction).
+  const yr = a => parseInt(a.year, 10) || 0;
+  byAlbum.sort((a, b) => artistAlbumsSort === 'year-asc'
+    ? (yr(a) || Infinity) - (yr(b) || Infinity)
+    : yr(b) - yr(a));
+
   const container = $('artist-albums');
   container.innerHTML = '';
   byAlbum.forEach((alb, gIdx) => {
@@ -6814,6 +6843,9 @@ function renderAlbumDetail(key) {
   if (!album) { setView('albums'); return; }
 
   $('album-detail-crumb').textContent = album.name;
+  const artistCrumb = $('album-detail-artist-crumb');
+  artistCrumb.textContent = album.artist;
+  artistCrumb.onclick = () => { activeArtistName = album.artist; setView('artist-detail'); };
   $('album-detail-title').textContent = album.name;
   if (album.cover) {
     $('album-hero-letter').textContent = '';
@@ -7540,12 +7572,10 @@ let pendingFixTagsScope = null;
 function openFixTagsMenu(e, tracks, labelKey, { albumActions = false, name = '' } = {}) {
   e.stopPropagation();
   pendingFixTagsScope = { tracks, labelKey, name };
-  $('ftm-apply-cover').hidden = !albumActions;
-  $('ftm-fix-year').hidden = !albumActions;
-  $('ftm-fix-tracknos').hidden = !albumActions;
+  // Cover + bulk-metadata actions are offered for both album and artist scopes
+  // (they all operate on scope.tracks); only download and the delete pair vary.
   $('ftm-download').hidden = !tracks.some(t => isRemotePath(t.path));
   const hasLocal = tracks.some(t => !isRemotePath(t.path));
-  $('ftm-set-cover').hidden = !hasLocal;
   $('ftm-delete-album').hidden = !albumActions || !hasLocal;
   $('ftm-delete-artist').hidden = albumActions || !hasLocal;
   const menu = $('fix-tags-menu');
@@ -7574,6 +7604,7 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
     else if (action === 'set-cover-file') setCoverFromFile(scope.tracks);
     else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
+    else if (action === 'set-genre') runSetGenre(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
     else if (action === 'download') downloadTracksFromHost(scope.tracks);
     else if (action === 'delete-album') confirmDelete({
@@ -7672,6 +7703,38 @@ async function runFixAlbumYear(tracks) {
       t.year = trimmed;
       updated++;
     } else if (await purgeOnWriteFailure(t.path, 'albumYearFix', wr && wr.error)) {
+      ghosts++;
+    } else {
+      failed++;
+    }
+  }
+  setProgressBanner(null);
+  saveLibrary();
+  refreshCurrentViewRows();
+  alert(tr('albumYear.summary', { updated, failed, total: targets.length })
+    + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
+}
+
+// ── Set genre (bulk) ──
+// Stamp one genre onto every track of the album/artist — MusicBrainz genres
+// only land on downloads, so this is the manual path for imported files.
+async function runSetGenre(tracks) {
+  const current = (tracks.find(t => t.genre) || {}).genre || '';
+  const genre = await promptModal(tr('genre.prompt'), String(current));
+  if (genre === null) return;
+  const trimmed = genre.trim();
+  const targets = tracks.filter(t => !isRemotePath(t.path));
+  if (!targets.length) return;
+
+  let updated = 0, failed = 0, ghosts = 0;
+  for (let i = 0; i < targets.length; i++) {
+    setProgressBanner(i, targets.length, 'genre.progress');
+    const t = targets[i];
+    const wr = await window.electronAPI.writeMetadata(t.path, { genre: trimmed });
+    if (wr && wr.success) {
+      t.genre = trimmed;
+      updated++;
+    } else if (await purgeOnWriteFailure(t.path, 'genreSet', wr && wr.error)) {
       ghosts++;
     } else {
       failed++;
@@ -9791,6 +9854,14 @@ document.querySelectorAll('#view-artists .chip').forEach(chip => {
 $('artists-search').addEventListener('input', () => renderArtists());
 $('artist-detail-search').addEventListener('input', () => {
   if (activeArtistName) renderArtistDetail(activeArtistName);
+});
+document.querySelectorAll('#view-artist-detail .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#view-artist-detail .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    artistAlbumsSort = chip.dataset.artistAlbumsSort;
+    if (activeArtistName) renderArtistDetail(activeArtistName);
+  });
 });
 
 // Albums sort chips + search

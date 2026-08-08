@@ -3634,6 +3634,14 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   background: var(--border);
   margin: 4px 6px;
 }
+.cm-section {
+  padding: 6px 8px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
 
 /* Connect menu (playbar device picker) reuses .context-menu/.device-row but
    needs more width for two action buttons per row. */
