@@ -679,6 +679,7 @@ const I18N = {
     'btn.openLogs': 'Open folder',
     'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
     'btn.cancel': 'Cancel',
+    'btn.confirm': 'Confirm',
     'btn.delete': 'Delete',
     'select.enter': 'Select',
     'select.count': 'Selected: {n}',
@@ -2610,6 +2611,7 @@ const I18N = {
     'btn.openLogs': 'Відкрити папку',
     'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
     'btn.cancel': 'Скасувати',
+    'btn.confirm': 'Підтвердити',
     'btn.delete': 'Видалити',
     'select.enter': 'Вибрати',
     'select.count': 'Вибрано: {n}',
@@ -7476,6 +7478,60 @@ function setProgressBanner(done, total, labelKey) {
   $('progress-banner-count').textContent = `${done}/${total}`;
 }
 
+// ── Toasts ──
+// In-app, non-blocking replacement for native alert()/confirm() — bulk actions
+// report their result here instead of popping an OS window. Persistent by
+// default (a close button, no auto-timeout); pass { duration } to auto-dismiss.
+function toast(message, { type = 'info', duration = 0 } = {}) {
+  const stack = $('toast-stack');
+  if (!stack) return null;
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  const body = document.createElement('div');
+  body.className = 'toast-body';
+  body.textContent = message;
+  const close = document.createElement('button');
+  close.className = 'toast-close';
+  close.setAttribute('aria-label', tr('btn.close'));
+  close.innerHTML = '<svg class="i" width="12" height="12"><use href="#i-close"/></svg>';
+  const dismiss = () => { el.classList.add('leaving'); setTimeout(() => el.remove(), 180); };
+  close.addEventListener('click', dismiss);
+  el.append(body, close);
+  stack.appendChild(el);
+  if (duration > 0) setTimeout(dismiss, duration);
+  return el;
+}
+
+// Toast-based yes/no — replaces native confirm(). Resolves true/false, and
+// stays until the user answers (no auto-timeout).
+function confirmToast(message, { type = 'warn' } = {}) {
+  return new Promise(resolve => {
+    const stack = $('toast-stack');
+    if (!stack) { resolve(false); return; }
+    const el = document.createElement('div');
+    el.className = `toast toast-${type} toast-confirm`;
+    const body = document.createElement('div');
+    body.className = 'toast-body';
+    body.textContent = message;
+    const actions = document.createElement('div');
+    actions.className = 'toast-actions';
+    const no = document.createElement('button');
+    no.className = 'toast-btn';
+    no.textContent = tr('btn.cancel');
+    const yes = document.createElement('button');
+    yes.className = 'toast-btn toast-btn-primary';
+    yes.textContent = tr('btn.confirm');
+    const done = (v) => { el.classList.add('leaving'); setTimeout(() => el.remove(), 180); resolve(v); };
+    no.addEventListener('click', () => done(false));
+    yes.addEventListener('click', () => done(true));
+    actions.append(no, yes);
+    el.append(body, actions);
+    stack.appendChild(el);
+    yes.focus();
+  });
+}
+
 async function importPaths(paths) {
   let added = 0;
   let sinceRefresh = 0;
@@ -7522,7 +7578,7 @@ async function importPaths(paths) {
 // wrong — they don't replace this automatic fill, just cover what it misses.
 async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress' } = {}) {
   if (!tracks || !tracks.length) return;
-  if (!settings.acoustidKey) { alert(tr('editor.idNoKey')); return; }
+  if (!settings.acoustidKey) { toast(tr('editor.idNoKey')); return; }
   let fixed = 0, unchanged = 0, noMatch = 0, failed = 0, ghosts = 0;
   for (let i = 0; i < tracks.length; i++) {
     setProgressBanner(i, tracks.length, labelKey);
@@ -7535,7 +7591,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
       // track either — stop instead of burning through the whole scope.
       if (res && (res.error === 'apiKey' || res.error === 'noFpcalc')) {
         setProgressBanner(null);
-        alert(tr(IDENTIFY_ERR_KEY[res.error] || 'editor.idFailed'));
+        toast(tr(IDENTIFY_ERR_KEY[res.error] || 'editor.idFailed'));
         return;
       }
       if (await purgeOnWriteFailure(t.path, 'fixTagsIdentify', res && res.error)) { ghosts++; continue; }
@@ -7564,7 +7620,7 @@ async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress
   saveLibrary();
   refreshCurrentViewRows();
   renderCounts();
-  alert(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length })
+  toast(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length })
     + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
@@ -7658,16 +7714,16 @@ async function applyCoverToTargets(targets, coverUrl, progressKey) {
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
-  alert(tr('albumCover.summary', { updated, failed, total: targets.length })
+  toast(tr('albumCover.summary', { updated, failed, total: targets.length })
     + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
 async function runRegenerateAlbumCovers(tracks) {
   const source = pendingAlbumCoverSource && tracks.find(t => t.path === pendingAlbumCoverSource);
-  if (!source || !source.cover) { alert(tr('albumCover.needSource')); return; }
+  if (!source || !source.cover) { toast(tr('albumCover.needSource')); return; }
   const targets = tracks.filter(t => t.path !== source.path && !isRemotePath(t.path));
   if (!targets.length) return;
-  if (!confirm(tr('albumCover.confirm', { track: source.title, count: targets.length }))) return;
+  if (!(await confirmToast(tr('albumCover.confirm', { track: source.title, count: targets.length })))) return;
   await applyCoverToTargets(targets, source.cover, 'albumCover.progress');
 }
 
@@ -7678,10 +7734,10 @@ async function setCoverFromFile(tracks) {
   if (!targets.length || !window.electronAPI.chooseImage) return;
   const res = await window.electronAPI.chooseImage();
   if (!res || res.canceled) return;
-  if (res.error || !res.dataUrl) { alert(tr('coverFile.error', { e: (res && res.error) || 'unknown' })); return; }
+  if (res.error || !res.dataUrl) { toast(tr('coverFile.error', { e: (res && res.error) || 'unknown' })); return; }
   // A single song applies instantly; an album/artist overwrites many files, so
   // confirm the count first to guard against a misclick.
-  if (targets.length > 1 && !confirm(tr('coverFile.confirm', { count: targets.length }))) return;
+  if (targets.length > 1 && !(await confirmToast(tr('coverFile.confirm', { count: targets.length })))) return;
   await applyCoverToTargets(targets, res.dataUrl, 'coverFile.progress');
 }
 
@@ -7714,7 +7770,7 @@ async function runFixAlbumYear(tracks) {
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
-  alert(tr('albumYear.summary', { updated, failed, total: targets.length })
+  toast(tr('albumYear.summary', { updated, failed, total: targets.length })
     + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
@@ -7746,7 +7802,7 @@ async function runSetGenre(tracks) {
   setProgressBanner(null);
   saveLibrary();
   refreshCurrentViewRows();
-  alert(tr('albumYear.summary', { updated, failed, total: targets.length })
+  toast(tr('albumYear.summary', { updated, failed, total: targets.length })
     + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
 }
 
@@ -7778,10 +7834,10 @@ function renderTrackNumberList(tracks) {
       if (!wr || !wr.success) {
         if (await purgeOnWriteFailure(t.path, 'albumTrackNoFix', wr && wr.error)) {
           el.remove();
-          alert(tr('library.purgedOnError', { count: 1 }));
+          toast(tr('library.purgedOnError', { count: 1 }));
           return;
         }
-        alert(tr('albumTrackNo.writeFailed'));
+        toast(tr('albumTrackNo.writeFailed'));
         el.classList.remove('tn-done');
         return;
       }
@@ -8387,7 +8443,7 @@ audio.addEventListener('error', async () => {
   revalidatingLibrary = true;
   const removed = await revalidateLibrary();
   revalidatingLibrary = false;
-  if (removed > 0) alert(tr('library.ghostsRemoved', { count: removed }));
+  if (removed > 0) toast(tr('library.ghostsRemoved', { count: removed }));
 });
 audio.addEventListener('timeupdate', () => {
   const cur = audio.currentTime, dur = audio.duration;
@@ -8875,7 +8931,7 @@ async function deleteTrack(path) {
   refreshCurrentViewRows();
   if (!res || !res.success) {
     window.electronAPI.logError?.('deleteTrack', `${path}: ${(res && res.error) || 'no response'}`);
-    alert(tr('error.deleteFile') + ((res && res.error) || tr('error.unknown')));
+    toast(tr('error.deleteFile') + ((res && res.error) || tr('error.unknown')));
   }
 }
 // Drops `paths` from the library, current queue, favorites, recents and
@@ -8927,7 +8983,7 @@ async function deleteTracks(paths) {
   setLibrarySelectMode(false); // clears selection and re-renders the library view
   refreshCurrentViewRows();
   if (firstError) {
-    alert(tr('error.deleteFile') + firstError + (failed > 1 ? ` (${failed})` : ''));
+    toast(tr('error.deleteFile') + firstError + (failed > 1 ? ` (${failed})` : ''));
   }
 }
 
@@ -9223,7 +9279,7 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     else if (action === 'edit-tags') openMetadataEditor(path);
     else if (action === 'fix-tags') { if (track) runFixTags([track], { compare: true }); }
     else if (action === 'use-cover') {
-      if (!track || !track.cover) { alert(tr('albumCover.badSource')); return; }
+      if (!track || !track.cover) { toast(tr('albumCover.badSource')); return; }
       pendingAlbumCoverSource = path;
     }
     else if (action === 'set-cover-file') { if (track) setCoverFromFile([track]); }
@@ -11381,7 +11437,7 @@ async function downloadTracksFromHost(tracks) {
   }
   setProgressBanner(null);
   setLibrarySelectMode(false);
-  alert(tr('lanDownload.summary', { done, failed, total: tracks.length }));
+  toast(tr('lanDownload.summary', { done, failed, total: tracks.length }));
 }
 
 async function lanRefresh() {
@@ -11525,10 +11581,10 @@ function applyLanCommand(cmd) {
 async function lanTakeOver(peer) {
   try {
     const res = await lanApi(peer, '/api/command', { type: 'transfer' });
-    if (!res.state || !res.state.track) { alert(tr('lan.nothingPlaying')); return; }
+    if (!res.state || !res.state.track) { toast(tr('lan.nothingPlaying')); return; }
     lanAdoptState(res.state, true);
   } catch (e) {
-    alert(tr('lan.errReach') + ' ' + (e.message || e));
+    toast(tr('lan.errReach') + ' ' + (e.message || e));
   }
 }
 
@@ -11546,16 +11602,16 @@ function lanMyAddressFor(peer) {
 async function lanPushTo(peer) {
   if (!currentTrack) return;
   const myHost = lanMyAddressFor(peer);
-  if (!myHost) { alert(tr('lan.errReach') + ' (no reachable local address)'); return; }
+  if (!myHost) { toast(tr('lan.errReach') + ' (no reachable local address)'); return; }
   try {
     const mine = await lanApi({ base: `http://${myHost}:${lanStatus.port}` }, '/api/state');
-    if (!mine.track) { alert(tr('lan.nothingPlaying')); return; }
+    if (!mine.track) { toast(tr('lan.nothingPlaying')); return; }
     await lanApi(peer, '/api/command', { type: 'playState', state: mine });
     // Handing the session off should stop it here too, same as a take-over
     // pauses the device being taken from.
     if (!audio.paused) togglePlay();
   } catch (e) {
-    alert(tr('lan.errReach') + ' ' + (e.message || e));
+    toast(tr('lan.errReach') + ' ' + (e.message || e));
   }
 }
 
@@ -11568,8 +11624,8 @@ async function lanSyncSettingsFrom(peer) {
   if (!peer) return;
   try {
     const cfg = await lanApi(peer, '/api/config');
-    if (!cfg || Object.keys(cfg).length === 0) { alert(tr('lan.syncSettingsNone')); return; }
-    if (!confirm(tr('lan.syncSettingsConfirm', { device: peer.name }))) return;
+    if (!cfg || Object.keys(cfg).length === 0) { toast(tr('lan.syncSettingsNone')); return; }
+    if (!(await confirmToast(tr('lan.syncSettingsConfirm', { device: peer.name })))) return;
     for (const k of LAN_SYNCABLE_SETTINGS) if (cfg[k] !== undefined) settings[k] = cfg[k];
     saveSettings();
     applyTheme(settings.theme);
@@ -11577,7 +11633,7 @@ async function lanSyncSettingsFrom(peer) {
     applyLanguage(settings.language);
     renderSettings();
   } catch (e) {
-    alert(tr('lan.errReach') + ' ' + (e.message || e));
+    toast(tr('lan.errReach') + ' ' + (e.message || e));
   }
 }
 
@@ -11653,7 +11709,7 @@ function renderDevices() {
   });
   $('lan-toggle').addEventListener('click', async () => {
     const key = $('lan-key').value.trim();
-    if (!key && !s.enabled) { alert(tr('lan.needKey')); return; }
+    if (!key && !s.enabled) { toast(tr('lan.needKey')); return; }
     lanStatus = await window.electronAPI.lanSetConfig({
       enabled: !s.enabled, key, name: $('lan-name').value.trim(),
     });

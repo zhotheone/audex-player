@@ -4007,6 +4007,70 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 }
 .update-banner-close:hover { background: var(--panel-alt); color: var(--text-strong); }
 
+/* ─── Toasts (non-blocking alert/confirm replacement) ─── */
+.toast-stack {
+  position: fixed;
+  bottom: 84px;               /* clear the playbar */
+  right: 16px;
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(380px, calc(100vw - 32px));
+  pointer-events: none;       /* stack is click-through; toasts re-enable it */
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  color: var(--text-strong);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: toast-in 0.18s ease;
+}
+.toast.leaving { animation: toast-out 0.18s ease forwards; }
+.toast-error { border-left-color: var(--danger); }
+.toast-warn { border-left-color: var(--accent); }
+.toast-body { flex: 1 1 auto; white-space: pre-wrap; word-break: break-word; }
+.toast-close {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -2px -3px 0 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.toast-close:hover { background: var(--panel-alt); color: var(--text-strong); }
+.toast-confirm { flex-direction: column; gap: 10px; }
+.toast-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.toast-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-strong);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.toast-btn:hover { background: var(--panel-alt); }
+.toast-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.toast-btn-primary:hover { filter: brightness(1.08); background: var(--accent); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+
 /* ─── Listening Report (on-device analytics) ─── */
 .report-privacy {
   display: inline-flex;
