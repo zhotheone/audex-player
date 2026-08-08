@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { pathToFileURL, fileURLToPath } = require('url');
 const musicMetadata = require('music-metadata');
 const lan = require('./lan');
+const { lookupAlbumInfo } = require('./musicbrainz');
 
 app.setName('Audex');
 
@@ -2088,25 +2089,50 @@ async function runYtDownload(event, payload, target) {
     return { success: false, error: 'Downloaded file not found' };
   }
 
+  // Preferred cover + genre come from MusicBrainz / Cover Art Archive, matched
+  // on artist+album. The YouTube thumbnail yt-dlp wrote stays only as a fallback
+  // for whatever MB can't match (singles, missing album, obscure tracks). Genre
+  // has no YouTube source at all, so it is MB-only.
+  let mbGenre = null;
+  let coverEmbedded = false;
+  try {
+    const prefix = folderArtist ? `${folderArtist} - ` : '';
+    const title = prefix && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName;
+    const info = await lookupAlbumInfo({ artist: folderArtist, album, title });
+    mbGenre = info.genre || null;
+    if (info.cover) {
+      const r = await embedPicture(filePath, info.cover);
+      if (r.success) coverEmbedded = true;
+      else logAppError('runYtDownload:mbCover', r.error);
+    }
+  } catch (err) { logAppError('runYtDownload:musicbrainz', err); }
+
   if (THUMBNAIL_FORMATS.has(format)) {
     try {
       const base = path.basename(filePath, path.extname(filePath));
       const thumbFile = fs.readdirSync(downloadsDir).find(f => f.startsWith(base) && /\.(webp|jpe?g|png)$/i.test(f));
       if (thumbFile) {
         const thumbPath = path.join(downloadsDir, thumbFile);
-        const ext = path.extname(thumbFile).toLowerCase();
-        const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
-        // embedPicture, not writeCoverToFile: these bytes came from ffmpeg's
-        // own --convert-thumbnails png a moment ago, so re-validating them
-        // through isValidImage() (nativeImage) would risk the exact silent
-        // drop this comment block exists to avoid. Log a real failure instead
-        // of swallowing it — "sometimes fails on the same url" is undiagnosable
-        // otherwise.
-        const embedResult = await embedPicture(filePath, { format: mime, data: fs.readFileSync(thumbPath) });
-        if (!embedResult.success) logAppError('runYtDownload:embedCover', embedResult.error);
+        if (!coverEmbedded) {
+          const ext = path.extname(thumbFile).toLowerCase();
+          const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          // embedPicture, not writeCoverToFile: these bytes came from ffmpeg's
+          // own --convert-thumbnails png a moment ago, so re-validating them
+          // through isValidImage() (nativeImage) would risk the exact silent
+          // drop this comment block exists to avoid. Log a real failure instead
+          // of swallowing it — "sometimes fails on the same url" is undiagnosable
+          // otherwise.
+          const embedResult = await embedPicture(filePath, { format: mime, data: fs.readFileSync(thumbPath) });
+          if (!embedResult.success) logAppError('runYtDownload:embedCover', embedResult.error);
+        }
         try { fs.unlinkSync(thumbPath); } catch (_) {}
       }
     } catch (err) { logAppError('runYtDownload:embedCover', err); }
+  }
+
+  if (mbGenre) {
+    const r = await writeMetadataToFile(filePath, { genre: mbGenre });
+    if (!r.success) logAppError('runYtDownload:genre', r.error);
   }
 
   try {
