@@ -1672,8 +1672,36 @@ function collectExplicit(node, map) {
   return map;
 }
 
-async function ytmExplicitBySearch(query) {
-  try { return collectExplicit(await ytmInnertube('search', { query }), {}); }
+// videoId -> { explicit, album }. The album is the flex-column run that links to
+// an album page (MUSIC_PAGE_TYPE_ALBUM); YT Music stores it in the release's
+// original script (Cyrillic, etc.), which is exactly the name we want for the
+// {artist}/{album} folder. yt-dlp's %(album)s is empty for the youtube.com URLs
+// a text search returns, so this API — the same one already queried for the
+// explicit badge — is the reliable album source.
+function collectTrackMeta(node, map) {
+  if (Array.isArray(node)) { for (const v of node) collectTrackMeta(v, map); return map; }
+  if (node && typeof node === 'object') {
+    const r = node.musicResponsiveListItemRenderer;
+    const vid = r && r.playlistItemData && r.playlistItemData.videoId;
+    if (r && vid) {
+      const explicit = JSON.stringify(r.badges || []).includes('MUSIC_EXPLICIT_BADGE');
+      let album = '';
+      for (const c of (r.flexColumns || [])) {
+        const runs = (((c.musicResponsiveListItemFlexColumnRenderer || {}).text || {}).runs) || [];
+        for (const run of runs) {
+          const cfg = (((((run.navigationEndpoint || {}).browseEndpoint || {})
+            .browseEndpointContextSupportedConfigs || {}).browseEndpointContextMusicConfig) || {});
+          if (cfg.pageType === 'MUSIC_PAGE_TYPE_ALBUM' && run.text) album = run.text;
+        }
+      }
+      map[vid] = { explicit, album };
+    }
+    for (const k in node) collectTrackMeta(node[k], map);
+  }
+  return map;
+}
+async function ytmMetaBySearch(query) {
+  try { return collectTrackMeta(await ytmInnertube('search', { query }), {}); }
   catch (_) { return {}; }
 }
 async function ytmExplicitByPlaylist(listId) {
@@ -1719,9 +1747,14 @@ ipcMain.handle('downloads:ytSearch', async (event, query, count) => {
   if (results.length === 0 && code !== 0) {
     return { success: false, error: (stderr.trim().split('\n').pop() || 'yt-dlp error').slice(0, 300) };
   }
-  // Annotate with YT Music's explicit badge (best-effort; null = unknown).
-  const explicitMap = await ytmExplicitBySearch(q);
-  for (const r of results) r.explicit = r.id in explicitMap ? explicitMap[r.id] : null;
+  // Annotate with YT Music's explicit badge + album (best-effort). explicit is
+  // null when unknown; album is '' when the row isn't a YTM song or has none.
+  const metaMap = await ytmMetaBySearch(q);
+  for (const r of results) {
+    const m = metaMap[r.id];
+    r.explicit = m ? m.explicit : null;
+    r.album = (m && m.album) || '';
+  }
   return { success: true, results };
 });
 
@@ -2004,7 +2037,7 @@ ipcMain.handle('lan:downloadTrack', async (event, payload) => {
 // Both download entry points differ only in what they hand yt-dlp: a concrete
 // video URL, or a "ytsearch1:…" query.
 async function runYtDownload(event, payload, target) {
-  const { videoId, url, suggestedName, artist, requestId, targetDir } = payload || {};
+  const { videoId, url, suggestedName, artist, requestId, targetDir, album: ytmAlbum } = payload || {};
   const format = AUDIO_FORMATS.has(payload && payload.format) ? payload.format : 'opus';
   const downloadsDir = resolveDownloadsDir(targetDir);
   const outPattern = path.join(downloadsDir, '%(title)s [%(id)s].%(ext)s');
@@ -2079,7 +2112,9 @@ async function runYtDownload(event, payload, target) {
   // artist \t album \t path — the path goes last so a stray tab in it can't
   // shift the fields, and the renderer's artist wins over yt-dlp's when both exist.
   const meta = (stdout.split('\n').map(l => l.trim()).filter(l => l.startsWith(META_TAG)).pop() || '').slice(META_TAG.length).split('\t');
-  let album = meta.length >= 3 ? meta[1] : '';
+  // Renderer's YT Music album (native script, e.g. Cyrillic) wins — yt-dlp's
+  // %(album)s is empty for the youtube.com URLs a text search downloads from.
+  let album = ytmAlbum || (meta.length >= 3 ? meta[1] : '');
   let filePath = meta.length >= 3 ? meta.slice(2).join('\t') : '';
   let folderArtist = artist || (meta.length >= 3 ? meta[0] : '');
   if (!filePath || !fs.existsSync(filePath)) {
@@ -2106,10 +2141,11 @@ async function runYtDownload(event, payload, target) {
     const title = prefix && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName;
     const info = await lookupAlbumInfo({ artist: folderArtist, album, title });
     mbGenre = info.genre || null;
-    // Prefer MusicBrainz's original-script names (e.g. Cyrillic) for the album
-    // folder — YouTube usually hands us a romanized artist/album.
-    if (info.artistName) folderArtist = info.artistName;
-    if (info.albumName) album = info.albumName;
+    // MusicBrainz only fills gaps — the YT Music album (and the renderer's
+    // artist) are already in the right script and match what the user saw, so
+    // don't let a fuzzy MB match overwrite them.
+    if (!folderArtist && info.artistName) folderArtist = info.artistName;
+    if (!album && info.albumName) album = info.albumName;
     if (info.cover) {
       const r = await embedPicture(filePath, info.cover);
       if (r.success) usedCover = info.cover;

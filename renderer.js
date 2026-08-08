@@ -4385,6 +4385,7 @@ async function downloadYtResult(idx, btn) {
       videoId: r.id,
       url: r.url,
       suggestedName: r.title,
+      album: r.album || '',
       explicit: r.explicit,
     });
     ytActiveDownloads.delete(r.id);
@@ -4570,7 +4571,7 @@ async function downloadYtmTrack(idx, btn) {
   const suggestedName = t.artist ? `${t.artist} - ${t.title}` : t.title;
 
   try {
-    const res = await ytDownload({ videoId: t.id, url: t.url, suggestedName, artist: t.artist || '', requestId, explicit: t.explicit });
+    const res = await ytDownload({ videoId: t.id, url: t.url, suggestedName, artist: t.artist || '', album: t.album || '', requestId, explicit: t.explicit });
     ytmActiveDownloads.delete(requestId);
     if (!res || !res.success) {
       restoreYtmDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
@@ -5036,6 +5037,7 @@ function buildQueueItemFromYt(r) {
     key: ytTrackKey(r),
     artist: r.channel || '',
     title: r.title || '',
+    album: r.album || '',
     duration: r.durationStr || '',
     query: r.title || '',
     suggestedName: r.title || '',
@@ -5120,6 +5122,7 @@ async function processQueueItem(item) {
         url: item.url,
         suggestedName: item.suggestedName,
         artist: item.artist || '',
+        album: item.album || '',
         requestId: item.requestId,
         explicit: item.explicit,
       });
