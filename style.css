@@ -4026,7 +4026,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   gap: 10px;
   padding: 11px 12px;
   border-radius: 10px;
-  background: var(--surface);
+  background: var(--panel-alt);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
