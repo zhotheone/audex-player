@@ -1992,6 +1992,21 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   gap: 12px;
   padding: 8px 12px;
 }
+/* Album art is the focal point here, so the Albums grid runs far wider tiles
+   than the shared .playlists-grid default and scales its text to match — the
+   cover is width:100% of the card, so the column width IS the cover size.
+   Note auto-fill columns are `1fr`, i.e. they stretch to fill the row: raising
+   the min only helps once it drops a whole column, which is why a small bump
+   off 180px changed nothing on a wide window. */
+#albums-grid:not(.list-mode) {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+}
+#albums-grid:not(.list-mode) .playlist-letter { font-size: 56px; }
+#albums-grid:not(.list-mode) .playlist-name { font-size: 16px; margin-bottom: 5px; }
+#albums-grid:not(.list-mode) .playlist-desc { font-size: 13px; min-height: 18px; }
+#albums-grid:not(.list-mode) .playlist-stats { font-size: 11.5px; }
+
 #albums-grid.list-mode .playlist-cover {
   width: 40px;
   height: 40px;
@@ -2076,6 +2091,23 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   gap: 10px;
   margin-bottom: 16px;
 }
+/* The album page leads with its artwork: a bigger hero cover than the shared
+   .pl-hero default, with the title/meta scaled up so the block stays balanced.
+   Scoped to #view-album-detail — playlist and artist heroes keep 168px. Sized
+   off the viewport so it keeps its presence on a wide window without crowding
+   the metadata at the 1024px minimum. */
+#view-album-detail .pl-hero { gap: 32px; padding-bottom: 32px; }
+#view-album-detail .pl-hero-cover {
+  width: clamp(320px, 26vw, 420px);
+  height: clamp(320px, 26vw, 420px);
+  border-radius: 10px;
+  padding: 18px;
+}
+#view-album-detail .pl-hero-cover span { font-size: 120px; }
+#view-album-detail .pl-title { font-size: clamp(56px, 5.2vw, 80px); margin-bottom: 16px; }
+#view-album-detail .pl-meta { font-size: 15px; gap: 14px; margin-bottom: 24px; }
+#view-album-detail .pl-eyebrow { font-size: 12.5px; margin-bottom: 12px; }
+
 .pl-meta-link { cursor: pointer; }
 .pl-meta-link:hover { color: var(--text-strong); text-decoration: underline; }
 .pl-actions {
@@ -3323,6 +3355,53 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: var(--accent);
   border-radius: 2px;
 }
+/* ── Lyrics view transport bar ──
+   The lyrics panel covers the whole fullscreen body, controls included. Rather
+   than duplicate a transport (and its progress/play-icon update paths), the
+   existing .fs-info column is lifted above the panel and laid out as a bar:
+   same elements, same handlers, nothing new to keep in sync. Defined after the
+   portrait/morph rules so it wins in both layouts. */
+.fs-overlay.is-lyrics .fs-info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  max-width: none;
+  min-width: 0;
+  align-items: center;
+  padding-top: 28px;
+  /* Lyrics scroll under the bar, so fade them out into it. */
+  background: linear-gradient(to top, var(--bg) 62%, transparent);
+}
+/* Everything the bar has no room for. */
+.fs-overlay.is-lyrics .eq-line,
+.fs-overlay.is-lyrics .fs-album,
+.fs-overlay.is-lyrics .fs-secondary,
+.fs-overlay.is-lyrics .fs-volume { display: none; }
+.fs-overlay.is-lyrics .fs-title {
+  font-size: 20px;
+  letter-spacing: 0;
+  margin-bottom: 2px;
+  max-width: 100%;
+}
+.fs-overlay.is-lyrics .fs-artist { font-size: 13px; margin-bottom: 12px; }
+.fs-overlay.is-lyrics .fs-title,
+.fs-overlay.is-lyrics .fs-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fs-overlay.is-lyrics .fs-progress {
+  width: min(720px, 100%);
+  margin-bottom: 10px;
+}
+.fs-overlay.is-lyrics .fs-ctrls { gap: 18px; margin-bottom: 14px; }
+.fs-overlay.is-lyrics .fs-btn-play { width: 44px; height: 44px; }
+.fs-overlay.is-lyrics .fs-play-i { width: 24px; height: 24px; }
+/* Room for the bar so the last lines can still scroll into view. */
+.fs-overlay.is-lyrics .fs-lyrics-panel { padding-bottom: 190px; }
+
 .fs-queue-title {
   font-size: 12.5px;
   font-weight: 500;

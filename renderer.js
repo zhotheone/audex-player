@@ -6779,12 +6779,16 @@ function updateFsLyricsActive(cur) {
 function openFsLyricsPanel() {
   fsLyricsOpen = true;
   $('fs-lyrics-panel').classList.add('active');
+  // Re-lays the existing progress bar + controls out as a transport bar above
+  // the panel, which otherwise covers them — see .fs-overlay.is-lyrics in CSS.
+  $('fullscreen-overlay').classList.add('is-lyrics');
   $('btn-fs-lyrics').classList.add('is-active');
   if (currentTrack) loadFsLyrics(currentTrack);
 }
 function closeFsLyricsPanel() {
   fsLyricsOpen = false;
   $('fs-lyrics-panel').classList.remove('active');
+  $('fullscreen-overlay').classList.remove('is-lyrics');
   $('btn-fs-lyrics').classList.remove('is-active');
 }
 function toggleFsLyricsPanel() { if (fsLyricsOpen) closeFsLyricsPanel(); else openFsLyricsPanel(); }
