@@ -144,10 +144,6 @@
           <span data-i18n="nav.library">Library</span>
           <span class="nav-meta" id="count-library">0</span>
         </a>
-        <a href="#" class="nav-item nav-trending" data-view="trending" id="nav-trending">
-          <svg class="i" width="14" height="14"><use href="#i-sparkle"/></svg>
-          <span data-i18n="nav.trending">Trending</span>
-        </a>
         <a href="#" class="nav-item" data-view="albums">
           <svg class="i" width="14" height="14"><use href="#i-image"/></svg>
           <span data-i18n="nav.albums">Albums</span>
@@ -549,6 +545,33 @@
         <div id="artist-albums"></div>
       </section>
 
+      <!-- In-app YouTube Music browser: search artist -> releases -> tracks -> queue -->
+      <section id="view-ytmusic" class="view-section">
+        <header class="topbar">
+          <div class="crumb">
+            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
+            <span class="crumb-sep">/</span>
+            <span class="crumb-item active">YouTube Music</span>
+          </div>
+          <div class="searchbox">
+            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+            <input type="text" id="ytm-search" placeholder="Search artists on YouTube Music…" autocomplete="off">
+          </div>
+        </header>
+
+        <div class="ytm-page-head">
+          <button class="btn-ghost icon-only ytm-back" id="ytm-back" title="Back" hidden>
+            <svg class="i" width="14" height="14"><use href="#i-prev"/></svg>
+          </button>
+          <div class="ytm-titles">
+            <div class="ytm-title" id="ytm-title">YouTube Music</div>
+            <div class="ytm-sub" id="ytm-sub">Search an artist, then add albums or singles to the queue</div>
+          </div>
+        </div>
+        <div class="ytm-status" id="ytm-status"></div>
+        <div class="ytm-body" id="ytm-body"></div>
+      </section>
+
       <!-- Favorites -->
       <section id="view-favorites" class="view-section">
         <header class="topbar">
@@ -744,57 +767,14 @@
         </header>
 
         <div class="dl-tabs" role="tablist">
-          <button type="button" class="dl-tab is-active" data-dl-tab="internet" role="tab" aria-selected="true" data-i18n="downloads.tab.internet">From the internet</button>
-          <button type="button" class="dl-tab" data-dl-tab="parsing" role="tab" aria-selected="false" data-i18n="downloads.tab.parsing">Parsing</button>
+          <button type="button" class="dl-tab is-active" data-dl-tab="parsing" role="tab" aria-selected="true" data-i18n="downloads.tab.parsing">Parsing</button>
           <button type="button" class="dl-tab" data-dl-tab="queue" role="tab" aria-selected="false">
             <span data-i18n="downloads.tab.queue">Queue</span>
             <span class="dl-tab-count" id="dl-queue-tab-count" hidden>0</span>
           </button>
         </div>
 
-        <div class="dl-pane" data-dl-pane="internet">
-          <div class="dl-search">
-            <div class="dl-search-row">
-              <label class="dl-search-field" for="dl-yt-query">
-                <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-                <input type="text" id="dl-yt-query" class="dl-search-input" data-i18n-placeholder="downloads.yt.placeholder" placeholder="Track name or &quot;artist — track&quot;">
-              </label>
-              <button type="button" id="dl-yt-search-btn" class="dl-search-btn">
-                <svg class="i" width="12" height="12"><use href="#i-search"/></svg>
-                <span data-i18n="downloads.yt.search">Search</span>
-              </button>
-            </div>
-            <div class="dl-search-hint" data-i18n="downloads.yt.hint">YouTube search · shows multiple options so you can pick the right one.</div>
-          </div>
-
-          <div id="dl-yt-status" class="dl-status" hidden></div>
-
-          <button type="button" id="dl-yt-queue-all" class="dl-search-btn dl-search-btn-secondary dl-queue-all" hidden>
-            <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-            <span data-i18n="downloads.queue.addAll">Queue all tracks</span>
-          </button>
-
-          <div id="dl-yt-results" class="dl-results" hidden>
-            <div class="dl-results-head">
-              <div class="dl-col-thumb"></div>
-              <div class="dl-col-title" data-i18n="downloads.yt.col.title">Title</div>
-              <div class="dl-col-channel" data-i18n="downloads.yt.col.channel">Channel</div>
-              <div class="dl-col-duration" data-i18n="downloads.yt.col.duration">Dur.</div>
-              <div class="dl-col-action"></div>
-            </div>
-            <div id="dl-yt-rows" class="dl-results-body"></div>
-          </div>
-
-          <div id="dl-yt-tag-note" class="dl-tag-note" hidden data-i18n="downloads.yt.tagNote">After downloading, you may need to manually fix the MP3 tags (title, artist, cover) via the track context menu.</div>
-
-          <div id="dl-yt-empty" class="empty-block show">
-            <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-download"/></svg></div>
-            <div class="empty-title-lg" data-i18n="downloads.yt.idle.title">Find a track on YouTube</div>
-            <div class="empty-text" data-i18n="downloads.yt.idle.text">Enter a name — a list of downloadable tracks will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.</div>
-          </div>
-        </div>
-
-        <div class="dl-pane" data-dl-pane="parsing" hidden>
+        <div class="dl-pane" data-dl-pane="parsing">
           <div class="dl-subtabs" role="tablist">
             <button type="button" class="dl-subtab is-active" data-dl-subtab="ytmusic" role="tab" aria-selected="true" data-i18n="downloads.parsing.subtab.ytmusic">YouTube Music</button>
             <button type="button" class="dl-subtab" data-dl-subtab="spotify" role="tab" aria-selected="false" data-i18n="downloads.parsing.subtab.spotify">Spotify</button>
@@ -914,69 +894,6 @@
             <div class="empty-title-lg" data-i18n="downloads.queue.empty.title">Queue is empty</div>
             <div class="empty-text" data-i18n="downloads.queue.empty.text">Add tracks from the Parsing tab and they will be downloaded one after another.</div>
           </div>
-        </div>
-      </section>
-
-      <!-- Trending -->
-      <section id="view-trending" class="view-section">
-        <header class="topbar">
-          <div class="crumb">
-            <span class="crumb-item active" data-i18n="nav.trending">Trending</span>
-          </div>
-          <button class="btn-ghost" id="tr-refresh">
-            <svg class="i" width="13" height="13"><use href="#i-activity"/></svg>
-            <span data-i18n="trending.refresh">Refresh</span>
-          </button>
-        </header>
-
-        <div class="tr-head">
-          <div class="select tr-select" id="tr-chart-select">
-            <button class="select-btn" type="button">
-              <span id="tr-chart-current">Global</span>
-              <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
-            </button>
-            <div class="select-menu tr-select-menu">
-              <div class="select-group" data-i18n="trending.group.countries">Countries</div>
-              <div class="select-opt" data-tr-chart="global" data-i18n="trending.region.global">Global</div>
-              <div class="select-opt" data-tr-chart="ukraine" data-i18n="trending.region.ukraine">Ukraine</div>
-              <div class="select-opt" data-tr-chart="usa" data-i18n="trending.region.usa">USA</div>
-              <div class="select-opt" data-tr-chart="uk" data-i18n="trending.region.uk">UK</div>
-              <div class="select-opt" data-tr-chart="germany" data-i18n="trending.region.germany">Germany</div>
-              <div class="select-opt" data-tr-chart="france" data-i18n="trending.region.france">France</div>
-              <div class="select-opt" data-tr-chart="turkey" data-i18n="trending.region.turkey">Turkey</div>
-              <div class="select-opt" data-tr-chart="poland" data-i18n="trending.region.poland">Poland</div>
-              <div class="select-group" data-i18n="trending.group.genres">Genres</div>
-              <div class="select-opt" data-tr-chart="g_pop" data-i18n="trending.genre.pop">Pop</div>
-              <div class="select-opt" data-tr-chart="g_hiphop" data-i18n="trending.genre.hiphop">Hip-hop</div>
-              <div class="select-opt" data-tr-chart="g_rock" data-i18n="trending.genre.rock">Rock</div>
-              <div class="select-opt" data-tr-chart="g_electronic" data-i18n="trending.genre.electronic">Electronic</div>
-              <div class="select-opt" data-tr-chart="g_phonk" data-i18n="trending.genre.phonk">Phonk</div>
-              <div class="select-opt" data-tr-chart="g_rnb" data-i18n="trending.genre.rnb">R&amp;B</div>
-              <div class="select-opt" data-tr-chart="g_chill" data-i18n="trending.genre.chill">Chill</div>
-              <div class="select-opt" data-tr-chart="g_metal" data-i18n="trending.genre.metal">Metal</div>
-              <div class="select-opt" data-tr-chart="g_latin" data-i18n="trending.genre.latin">Latin</div>
-              <div class="select-opt" data-tr-chart="g_kpop" data-i18n="trending.genre.kpop">K-pop</div>
-              <div class="select-opt" data-tr-chart="g_jazz" data-i18n="trending.genre.jazz">Jazz</div>
-              <div class="select-opt" data-tr-chart="g_classical" data-i18n="trending.genre.classical">Classical</div>
-              <div class="select-opt" data-tr-chart="g_country" data-i18n="trending.genre.country">Country</div>
-            </div>
-          </div>
-          <div class="tr-meta" id="tr-meta"></div>
-        </div>
-
-        <div id="tr-status" class="dl-status" hidden></div>
-
-        <!-- Skeleton rows shown while a chart is being fetched; filled by renderTrendingSkeleton(). -->
-        <div class="dl-results tr-skeleton" id="tr-loading" hidden></div>
-
-        <div class="dl-results" id="tr-results" hidden>
-          <div class="dl-rows" id="tr-rows"></div>
-        </div>
-
-        <div id="tr-empty" class="empty-block show">
-          <div class="empty-icon"><svg class="i" width="24" height="24"><use href="#i-sparkle"/></svg></div>
-          <div class="empty-title-lg" data-i18n="trending.empty.title">What people are listening to</div>
-          <div class="empty-text" data-i18n="trending.empty.text">YouTube Music charts by country and genre. Pick a chart and download tracks in one click.</div>
         </div>
       </section>
 
@@ -1502,13 +1419,6 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.showTrending">Show the “Trending” tab</div>
-              <div class="setting-desc" data-i18n="setting.showTrendingDesc">A section with YouTube Music charts by country and one-click downloads. Requires the internet.</div>
-            </div>
-            <button class="toggle" data-setting="trending"><div class="toggle-knob"></div></button>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
               <div class="setting-label">
                 <span data-i18n="setting.showDownloads">Show the “Downloads” tab</span>
                 <span class="setting-badge" data-i18n="badge.wip">in development</span>
@@ -1712,30 +1622,6 @@
       <div class="modal-actions">
         <button id="btn-cancel-add-pl" class="btn-ghost" data-i18n="btn.close">Close</button>
       </div>
-    </div>
-  </div>
-
-  <!-- In-app YouTube Music browser: search artist -> releases -> tracks -> queue -->
-  <div id="ytm-modal" class="modal-overlay ytm-modal">
-    <div class="ytm-card">
-      <div class="ytm-head">
-        <button class="btn-ic ytm-back" id="ytm-back" title="Back" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-prev"/></svg>
-        </button>
-        <div class="ytm-titles">
-          <div class="ytm-title" id="ytm-title">YouTube Music</div>
-          <div class="ytm-sub" id="ytm-sub">Search an artist, then add albums or singles to the queue</div>
-        </div>
-        <button class="btn-ic" id="ytm-close" title="Close">
-          <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
-        </button>
-      </div>
-      <div class="ytm-searchbar">
-        <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
-        <input type="text" id="ytm-search" placeholder="Search artists on YouTube Music…" autocomplete="off">
-      </div>
-      <div class="ytm-status" id="ytm-status"></div>
-      <div class="ytm-body" id="ytm-body"></div>
     </div>
   </div>
 

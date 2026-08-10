@@ -40,7 +40,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update:downloaded', listener);
     return () => ipcRenderer.removeListener('update:downloaded', listener);
   },
-  ytSearch: (query, count) => ipcRenderer.invoke('downloads:ytSearch', query, count),
   ytDownload: (payload) => ipcRenderer.invoke('downloads:ytDownload', payload),
   ytDownloadByQuery: (payload) => ipcRenderer.invoke('downloads:ytDownloadByQuery', payload),
   onYtDownloadProgress: (cb) => {
@@ -81,7 +80,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('tray:command', listener);
     return () => ipcRenderer.removeListener('tray:command', listener);
   },
-  trendingFetch: (region) => ipcRenderer.invoke('trending:fetch', { region }),
   pickBackground: () => ipcRenderer.invoke('appearance:pickBackground'),
   clearBackground: () => ipcRenderer.invoke('appearance:clearBackground'),
   lanStatus: () => ipcRenderer.invoke('lan:status'),

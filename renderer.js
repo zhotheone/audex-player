@@ -20,7 +20,6 @@ const LS = {
   settings: 'audex-settings',
   recents: 'audex-recents',
   updateDismiss: 'audex-update-dismiss',
-  ytState: 'audex-dl-yt-state',
   ytmState: 'audex-dl-ytm-state',
   spState: 'audex-dl-sp-state',
   queue: 'audex-dl-queue',
@@ -55,7 +54,6 @@ let settings = Object.assign({
   volumeWheelStep: 0.05,  // 0.01–0.2, volume change per mouse-wheel notch on the slider
   acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
-  trending: true,
   lanSharing: false,     // master switch for Devices/LAN sharing — off by default, opens a network port
   showParserBrowser: true,
   uiScale: 1,
@@ -472,51 +470,12 @@ const I18N = {
     'nav.tools': 'Tools',
     'nav.openFiles': 'Open files',
     'nav.settings': 'Settings',
-    'nav.trending': 'Trending',
-    'trending.refresh': 'Refresh',
-    'trending.loading': 'Loading the chart…',
-    'trending.error': 'Could not load the chart: {e}',
-    'trending.unavailable': 'Not available in this build',
-    'trending.count': '{n} tracks',
-    'trending.download': 'Download',
-    'trending.have': 'In library',
-    'trending.retry': 'Retry',
-    'trending.downloadOk': 'Downloaded: {t}',
-    'trending.downloadError': 'Download failed: {e}',
-    'trending.tryingAlt': 'Not available directly — looking for another source for “{t}”…',
-    'trending.downloadOkAlt': 'Downloaded from an alternative source: {t}',
     'dlErr.geo': 'This track is blocked in your country and no alternative was found.',
     'dlErr.unavailable': 'The video was removed or is unavailable, and no alternative was found.',
     'dlErr.signin': 'YouTube requires a signed-in account for this track. Sign in from Settings → Downloads.',
     'dlErr.members': 'This track is limited to channel members.',
     'dlErr.network': 'No connection to YouTube. Check your network.',
     'dlErr.transient': 'YouTube hiccuped partway through this download — usually works on a retry.',
-    'trending.offline': 'No internet connection. Check your network and try again.',
-    'trending.empty.title': 'What people are listening to',
-    'trending.empty.text': 'YouTube Music charts by country and genre. Pick a chart and download tracks in one click.',
-    'trending.region.global': 'Global',
-    'trending.region.ukraine': 'Ukraine',
-    'trending.region.usa': 'USA',
-    'trending.region.uk': 'UK',
-    'trending.region.germany': 'Germany',
-    'trending.region.france': 'France',
-    'trending.region.turkey': 'Turkey',
-    'trending.region.poland': 'Poland',
-    'trending.group.countries': 'Countries',
-    'trending.group.genres': 'Genres',
-    'trending.genre.pop': 'Pop',
-    'trending.genre.hiphop': 'Hip-hop',
-    'trending.genre.rock': 'Rock',
-    'trending.genre.electronic': 'Electronic',
-    'trending.genre.phonk': 'Phonk',
-    'trending.genre.rnb': 'R&B',
-    'trending.genre.chill': 'Chill',
-    'trending.genre.metal': 'Metal',
-    'trending.genre.latin': 'Latin',
-    'trending.genre.kpop': 'K-pop',
-    'trending.genre.jazz': 'Jazz',
-    'trending.genre.classical': 'Classical',
-    'trending.genre.country': 'Country',
     'nav.report': 'Report',
     'report.onDevice': 'Computed on this device',
     'report.eyebrow': 'Listening report',
@@ -725,23 +684,11 @@ const I18N = {
     'fs.lyrics': 'Lyrics',
     'fs.lyricsLoading': 'Loading lyrics…',
     'fs.lyricsNone': 'No lyrics found',
-    'downloads.tab.internet': 'From the internet',
     'downloads.tab.parsing': 'Parsing',
     'downloads.title': 'Download from the internet',
     'downloads.subtitle': 'The ability to save tracks by direct link will appear here. Section in development.',
     'downloads.parsing.title': 'Parsing',
     'downloads.parsing.subtitle': 'The ability to collect tracks by parsing pages will appear here. Section in development.',
-    'downloads.yt.placeholder': 'Track name or "artist — track"',
-    'downloads.yt.search': 'Search',
-    'downloads.yt.hint': 'YouTube search · shows multiple options so you can pick the right one.',
-    'downloads.yt.col.title': 'Title',
-    'downloads.yt.col.channel': 'Channel',
-    'downloads.yt.col.duration': 'Dur.',
-    'downloads.yt.idle.title': 'Find a track on YouTube',
-    'downloads.yt.idle.text': 'Enter a name — a list of downloadable tracks will appear below. Files are saved to your default folder (if set in Settings) or to "Audex Downloads", and added to your library.',
-    'downloads.yt.searching': 'Searching: "{q}"…',
-    'downloads.yt.empty': 'Nothing found for "{q}".',
-    'downloads.yt.error': 'Search error: {e}',
     'downloads.yt.action.download': 'Download',
     'downloads.yt.action.downloading': 'Downloading…',
     'downloads.yt.action.done': 'Done',
@@ -853,8 +800,6 @@ const I18N = {
     'setting.dlFormat': 'Download format',
     'setting.dlFormatDesc': 'Files are saved as {default folder}/{artist}/{album}/{artist} - {track}. Opus gives the best quality per megabyte; pick M4A if a device of yours cannot play it.',
     'downloads.noFolder': 'Pick a default folder first — downloads are filed into it by artist and album.',
-    'setting.showTrending': 'Show the “Trending” tab',
-    'setting.showTrendingDesc': 'A section with YouTube Music charts by country and one-click downloads. Requires the internet.',
     'section.system': 'System',
     'section.hotkeys': 'Hotkeys',
     'hotkeys.intro': 'Click a shortcut, then press a key or a mouse button. Esc cancels, Backspace clears it.',
@@ -1124,51 +1069,12 @@ const I18N = {
     'nav.tools': 'Werkzeuge',
     'nav.openFiles': 'Dateien öffnen',
     'nav.settings': 'Einstellungen',
-    'nav.trending': 'Im Trend',
-    'trending.refresh': 'Aktualisieren',
-    'trending.loading': 'Charts werden geladen…',
-    'trending.error': 'Charts konnten nicht geladen werden: {e}',
-    'trending.unavailable': 'In diesem Build nicht verfügbar',
-    'trending.count': '{n} Titel',
-    'trending.download': 'Laden',
-    'trending.have': 'In der Bibliothek',
-    'trending.retry': 'Erneut',
-    'trending.downloadOk': 'Geladen: {t}',
-    'trending.downloadError': 'Download fehlgeschlagen: {e}',
-    'trending.tryingAlt': 'Nicht direkt verfügbar — suche eine andere Quelle für „{t}“…',
-    'trending.downloadOkAlt': 'Aus einer anderen Quelle geladen: {t}',
     'dlErr.geo': 'Dieser Titel ist in Ihrem Land gesperrt, und es wurde keine Alternative gefunden.',
     'dlErr.unavailable': 'Das Video wurde entfernt oder ist nicht verfügbar; keine Alternative gefunden.',
     'dlErr.signin': 'YouTube verlangt für diesen Titel ein angemeldetes Konto. Melde dich unter Einstellungen → Downloads an.',
     'dlErr.members': 'Dieser Titel ist nur für Kanalmitglieder verfügbar.',
     'dlErr.network': 'Keine Verbindung zu YouTube. Prüfen Sie Ihr Netzwerk.',
     'dlErr.transient': 'YouTube hatte mitten im Download einen Aussetzer — ein erneuter Versuch klappt meist.',
-    'trending.offline': 'Keine Internetverbindung. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.',
-    'trending.empty.title': 'Was gerade gehört wird',
-    'trending.empty.text': 'YouTube-Music-Charts nach Ländern und Genres. Chart wählen und Titel mit einem Klick laden.',
-    'trending.region.global': 'Global',
-    'trending.region.ukraine': 'Ukraine',
-    'trending.region.usa': 'USA',
-    'trending.region.uk': 'GB',
-    'trending.region.germany': 'Deutschland',
-    'trending.region.france': 'Frankreich',
-    'trending.region.turkey': 'Türkei',
-    'trending.region.poland': 'Polen',
-    'trending.group.countries': 'Länder',
-    'trending.group.genres': 'Genres',
-    'trending.genre.pop': 'Pop',
-    'trending.genre.hiphop': 'Hip-Hop',
-    'trending.genre.rock': 'Rock',
-    'trending.genre.electronic': 'Electronic',
-    'trending.genre.phonk': 'Phonk',
-    'trending.genre.rnb': 'R&B',
-    'trending.genre.chill': 'Chill',
-    'trending.genre.metal': 'Metal',
-    'trending.genre.latin': 'Latin',
-    'trending.genre.kpop': 'K-Pop',
-    'trending.genre.jazz': 'Jazz',
-    'trending.genre.classical': 'Klassik',
-    'trending.genre.country': 'Country',
     'nav.report': 'Bericht',
     'report.onDevice': 'Auf diesem Gerät berechnet',
     'report.eyebrow': 'Hörbericht',
@@ -1374,23 +1280,11 @@ const I18N = {
     'fs.lyrics': 'Songtext',
     'fs.lyricsLoading': 'Songtext wird geladen…',
     'fs.lyricsNone': 'Kein Songtext gefunden',
-    'downloads.tab.internet': 'Aus dem Internet',
     'downloads.tab.parsing': 'Parsing',
     'downloads.title': 'Aus dem Internet herunterladen',
     'downloads.subtitle': 'Hier wird es möglich sein, Titel per Direktlink zu speichern. Bereich in Entwicklung.',
     'downloads.parsing.title': 'Parsing',
     'downloads.parsing.subtitle': 'Hier wird es möglich sein, Titel durch Parsen von Seiten zu sammeln. Bereich in Entwicklung.',
-    'downloads.yt.placeholder': 'Titel oder „Interpret — Titel"',
-    'downloads.yt.search': 'Suchen',
-    'downloads.yt.hint': 'YouTube-Suche · zeigt mehrere Treffer zur Auswahl.',
-    'downloads.yt.col.title': 'Titel',
-    'downloads.yt.col.channel': 'Kanal',
-    'downloads.yt.col.duration': 'Dauer',
-    'downloads.yt.idle.title': 'Titel auf YouTube finden',
-    'downloads.yt.idle.text': 'Gib einen Namen ein — unten erscheint eine Liste herunterladbarer Titel. Dateien werden im Standardordner (falls in den Einstellungen festgelegt) oder in „Audex Downloads" gespeichert und zur Bibliothek hinzugefügt.',
-    'downloads.yt.searching': 'Suche: „{q}"…',
-    'downloads.yt.empty': 'Nichts gefunden zu „{q}".',
-    'downloads.yt.error': 'Suchfehler: {e}',
     'downloads.yt.action.download': 'Herunterladen',
     'downloads.yt.action.downloading': 'Lädt…',
     'downloads.yt.action.done': 'Fertig',
@@ -1502,8 +1396,6 @@ const I18N = {
     'setting.dlFormat': 'Downloadformat',
     'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle M4A, wenn eines deiner Geräte es nicht abspielen kann.',
     'downloads.noFolder': 'Wähle zuerst einen Standardordner — Downloads werden dort nach Interpret und Album einsortiert.',
-    'setting.showTrending': 'Registerkarte „Im Trend“ anzeigen',
-    'setting.showTrendingDesc': 'Ein Bereich mit YouTube-Music-Charts nach Ländern und Downloads mit einem Klick. Benötigt Internet.',
     'section.system': 'System',
     'section.hotkeys': 'Tastenkürzel',
     'hotkeys.intro': 'Auf ein Kürzel klicken, dann Taste oder Maustaste drücken. Esc bricht ab, Backspace löscht es.',
@@ -1654,6 +1546,7 @@ const I18N = {
     'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)…',
     'palette.action.volumeUp': 'Lauter',
     'palette.action.volumeDown': 'Leiser',
+    'palette.action.reloadApp': 'App neu laden',
     'label.unknownArtist': 'Unbekannter Interpret',
     'label.noAlbum': 'Ohne Album',
     'label.tracksShort': 'Tit.',
@@ -1764,51 +1657,12 @@ const I18N = {
     'nav.tools': 'Outils',
     'nav.openFiles': 'Ouvrir des fichiers',
     'nav.settings': 'Paramètres',
-    'nav.trending': 'Tendances',
-    'trending.refresh': 'Actualiser',
-    'trending.loading': 'Chargement du classement…',
-    'trending.error': 'Impossible de charger le classement : {e}',
-    'trending.unavailable': 'Indisponible dans cette version',
-    'trending.count': '{n} titres',
-    'trending.download': 'Télécharger',
-    'trending.have': 'Dans la bibliothèque',
-    'trending.retry': 'Réessayer',
-    'trending.downloadOk': 'Téléchargé : {t}',
-    'trending.downloadError': 'Échec du téléchargement : {e}',
-    'trending.tryingAlt': 'Indisponible directement — recherche d’une autre source pour « {t} »…',
-    'trending.downloadOkAlt': 'Téléchargé depuis une autre source : {t}',
     'dlErr.geo': 'Ce titre est bloqué dans votre pays et aucune alternative n’a été trouvée.',
     'dlErr.unavailable': 'La vidéo a été supprimée ou est indisponible ; aucune alternative trouvée.',
     'dlErr.signin': 'YouTube exige un compte connecté pour ce titre. Connectez-vous depuis Paramètres → Téléchargements.',
     'dlErr.members': 'Ce titre est réservé aux membres de la chaîne.',
     'dlErr.network': 'Pas de connexion à YouTube. Vérifiez votre réseau.',
     'dlErr.transient': "YouTube a eu un raté en plein téléchargement — ça fonctionne généralement en réessayant.",
-    'trending.offline': 'Pas de connexion Internet. Vérifiez votre réseau et réessayez.',
-    'trending.empty.title': "Ce que l'on écoute en ce moment",
-    'trending.empty.text': 'Classements YouTube Music par pays et par genre. Choisissez un classement et téléchargez en un clic.',
-    'trending.region.global': 'Monde',
-    'trending.region.ukraine': 'Ukraine',
-    'trending.region.usa': 'États-Unis',
-    'trending.region.uk': 'R.-U.',
-    'trending.region.germany': 'Allemagne',
-    'trending.region.france': 'France',
-    'trending.region.turkey': 'Turquie',
-    'trending.region.poland': 'Pologne',
-    'trending.group.countries': 'Pays',
-    'trending.group.genres': 'Genres',
-    'trending.genre.pop': 'Pop',
-    'trending.genre.hiphop': 'Hip-hop',
-    'trending.genre.rock': 'Rock',
-    'trending.genre.electronic': 'Électronique',
-    'trending.genre.phonk': 'Phonk',
-    'trending.genre.rnb': 'R&B',
-    'trending.genre.chill': 'Chill',
-    'trending.genre.metal': 'Métal',
-    'trending.genre.latin': 'Latino',
-    'trending.genre.kpop': 'K-pop',
-    'trending.genre.jazz': 'Jazz',
-    'trending.genre.classical': 'Classique',
-    'trending.genre.country': 'Country',
     'nav.report': 'Rapport',
     'report.onDevice': 'Calculé sur cet appareil',
     'report.eyebrow': "Rapport d'écoute",
@@ -2014,23 +1868,11 @@ const I18N = {
     'fs.lyrics': 'Paroles',
     'fs.lyricsLoading': 'Chargement des paroles…',
     'fs.lyricsNone': 'Paroles introuvables',
-    'downloads.tab.internet': "Depuis Internet",
     'downloads.tab.parsing': 'Analyse',
     'downloads.title': "Téléchargement depuis Internet",
     'downloads.subtitle': "La possibilité d'enregistrer des pistes via un lien direct apparaîtra ici. Section en développement.",
     'downloads.parsing.title': 'Analyse',
     'downloads.parsing.subtitle': "La possibilité de collecter des pistes en analysant des pages apparaîtra ici. Section en développement.",
-    'downloads.yt.placeholder': "Nom de la piste ou « artiste — piste »",
-    'downloads.yt.search': 'Rechercher',
-    'downloads.yt.hint': 'Recherche YouTube · affiche plusieurs résultats au choix.',
-    'downloads.yt.col.title': 'Titre',
-    'downloads.yt.col.channel': 'Chaîne',
-    'downloads.yt.col.duration': 'Durée',
-    'downloads.yt.idle.title': 'Trouvez une piste sur YouTube',
-    'downloads.yt.idle.text': "Entrez un nom — la liste des pistes téléchargeables apparaîtra ci-dessous. Les fichiers sont enregistrés dans votre dossier par défaut (s'il est défini dans les paramètres) ou dans « Audex Downloads », et ajoutés à votre bibliothèque.",
-    'downloads.yt.searching': 'Recherche : « {q} »…',
-    'downloads.yt.empty': 'Aucun résultat pour « {q} ».',
-    'downloads.yt.error': 'Erreur de recherche : {e}',
     'downloads.yt.action.download': 'Télécharger',
     'downloads.yt.action.downloading': 'Téléchargement…',
     'downloads.yt.action.done': 'Terminé',
@@ -2142,8 +1984,6 @@ const I18N = {
     'setting.dlFormat': 'Format de téléchargement',
     'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez M4A si un de vos appareils ne le lit pas.',
     'downloads.noFolder': 'Choisissez d’abord un dossier par défaut — les téléchargements y sont classés par artiste et album.',
-    'setting.showTrending': 'Afficher l’onglet « Tendances »',
-    'setting.showTrendingDesc': 'Une section avec les classements YouTube Music par pays et des téléchargements en un clic. Nécessite Internet.',
     'section.system': 'Système',
     'section.hotkeys': 'Raccourcis clavier',
     'hotkeys.intro': "Cliquez sur un raccourci, puis appuyez sur une touche ou un bouton de souris. Échap annule, Retour arrière l'efface.",
@@ -2294,6 +2134,7 @@ const I18N = {
     'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)…',
     'palette.action.volumeUp': 'Monter le volume',
     'palette.action.volumeDown': 'Baisser le volume',
+    'palette.action.reloadApp': 'Recharger l’application',
     'label.unknownArtist': 'Artiste inconnu',
     'label.noAlbum': 'Sans album',
     'label.tracksShort': 'p.',
@@ -2404,51 +2245,12 @@ const I18N = {
     'nav.tools': 'Інструменти',
     'nav.openFiles': 'Відкрити файли',
     'nav.settings': 'Налаштування',
-    'nav.trending': 'У тренді',
-    'trending.refresh': 'Оновити',
-    'trending.loading': 'Завантажуємо чарт…',
-    'trending.error': 'Не вдалося завантажити чарт: {e}',
-    'trending.unavailable': 'Недоступно в цій збірці',
-    'trending.count': '{n} треків',
-    'trending.download': 'Завантажити',
-    'trending.have': 'У бібліотеці',
-    'trending.retry': 'Повторити',
-    'trending.downloadOk': 'Завантажено: {t}',
-    'trending.downloadError': 'Помилка завантаження: {e}',
-    'trending.tryingAlt': 'Недоступно напряму — шукаємо інше джерело для «{t}»…',
-    'trending.downloadOkAlt': 'Завантажено з іншого джерела: {t}',
     'dlErr.geo': 'Цей трек заблоковано для вашої країни, і заміни не знайдено.',
     'dlErr.unavailable': 'Відео видалено або недоступне, заміни не знайдено.',
     'dlErr.signin': 'YouTube вимагає вхід в акаунт для цього треку. Увійдіть у Налаштування → Завантаження.',
     'dlErr.members': 'Трек доступний лише підписникам каналу.',
     'dlErr.network': 'Немає зв’язку з YouTube. Перевірте підключення.',
     'dlErr.transient': 'YouTube дало збій посеред завантаження — зазвичай допомагає повторна спроба.',
-    'trending.offline': 'Немає підключення до інтернету. Перевірте з’єднання та повторіть.',
-    'trending.empty.title': 'Що зараз слухають',
-    'trending.empty.text': 'Чарти YouTube Music за країнами та жанрами. Оберіть чарт — і завантажуйте треки одним кліком.',
-    'trending.region.global': 'Світ',
-    'trending.region.ukraine': 'Україна',
-    'trending.region.usa': 'США',
-    'trending.region.uk': 'Британія',
-    'trending.region.germany': 'Німеччина',
-    'trending.region.france': 'Франція',
-    'trending.region.turkey': 'Туреччина',
-    'trending.region.poland': 'Польща',
-    'trending.group.countries': 'Країни',
-    'trending.group.genres': 'Жанри',
-    'trending.genre.pop': 'Поп',
-    'trending.genre.hiphop': 'Хіп-хоп',
-    'trending.genre.rock': 'Рок',
-    'trending.genre.electronic': 'Електроніка',
-    'trending.genre.phonk': 'Фонк',
-    'trending.genre.rnb': 'R&B',
-    'trending.genre.chill': 'Chill',
-    'trending.genre.metal': 'Метал',
-    'trending.genre.latin': 'Латина',
-    'trending.genre.kpop': 'K-pop',
-    'trending.genre.jazz': 'Джаз',
-    'trending.genre.classical': 'Класика',
-    'trending.genre.country': 'Кантрі',
     'nav.report': 'Звіт',
     'report.onDevice': 'Обчислюється на пристрої',
     'report.eyebrow': 'Звіт про прослуховування',
@@ -2657,23 +2459,11 @@ const I18N = {
     'fs.lyrics': 'Текст пісні',
     'fs.lyricsLoading': 'Завантаження тексту…',
     'fs.lyricsNone': 'Текст не знайдено',
-    'downloads.tab.internet': 'З інтернету',
     'downloads.tab.parsing': 'Парсинг',
     'downloads.title': 'Завантаження з інтернету',
     'downloads.subtitle': 'Тут з\'явиться можливість зберігати треки за прямим посиланням. Розділ у розробці.',
     'downloads.parsing.title': 'Парсинг',
     'downloads.parsing.subtitle': 'Тут з\'явиться можливість збирати треки парсингом зі сторінок. Розділ у розробці.',
-    'downloads.yt.placeholder': 'Назва треку або «виконавець — трек»',
-    'downloads.yt.search': 'Знайти',
-    'downloads.yt.hint': 'Пошук на YouTube · показує кілька варіантів на вибір.',
-    'downloads.yt.col.title': 'Назва',
-    'downloads.yt.col.channel': 'Канал',
-    'downloads.yt.col.duration': 'Трив.',
-    'downloads.yt.idle.title': 'Знайдіть трек на YouTube',
-    'downloads.yt.idle.text': 'Введіть назву — нижче з\'явиться список треків, доступних для завантаження. Файли зберігаються в теку за замовчуванням (якщо її задано в налаштуваннях) або в «Audex Downloads», і додаються до бібліотеки.',
-    'downloads.yt.searching': 'Шукаю: «{q}»…',
-    'downloads.yt.empty': 'Нічого не знайдено за запитом «{q}».',
-    'downloads.yt.error': 'Помилка пошуку: {e}',
     'downloads.yt.action.download': 'Завантажити',
     'downloads.yt.action.downloading': 'Завантаження…',
     'downloads.yt.action.done': 'Готово',
@@ -2785,8 +2575,6 @@ const I18N = {
     'setting.dlFormat': 'Формат завантаження',
     'setting.dlFormatDesc': 'Файли зберігаються як {тека за замовчуванням}/{виконавець}/{альбом}/{виконавець} - {трек}. Opus дає найкращу якість на мегабайт; обери M4A, якщо якийсь із твоїх пристроїв його не програє.',
     'downloads.noFolder': 'Спершу обери теку за замовчуванням — завантаження розкладаються в ній за виконавцем і альбомом.',
-    'setting.showTrending': 'Показати вкладку «У тренді»',
-    'setting.showTrendingDesc': 'Розділ із чартами YouTube Music за країнами та завантаженням у один клік. Потребує інтернету.',
     'section.system': 'Система',
     'section.hotkeys': 'Гарячі клавіші',
     'hotkeys.intro': 'Натисніть на сполучення, потім — клавішу або кнопку миші. Esc — скасувати, Backspace — очистити.',
@@ -2943,6 +2731,8 @@ const I18N = {
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
     'palette.action.clearLibrary': 'Очистити бібліотеку…',
     'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)…',
+    'palette.action.volumeUp': 'Гучніше',
+    'palette.action.volumeDown': 'Тихіше',
     'palette.action.reloadApp': 'Оновити застосунок',
     'label.unknownArtist': 'Невідомий виконавець',
     'label.noAlbum': 'Без альбому',
@@ -3341,8 +3131,6 @@ function setView(view) {
   else if (view === 'report') renderReport();
   else if (view === 'health') renderHealth();
   else if (view === 'devices') { renderDevices(); lanRefresh(); }
-  // Fetch the chart on first visit; afterwards the session cache answers.
-  else if (view === 'trending') { renderTrending(); loadTrending(false); }
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -3845,45 +3633,6 @@ document.querySelectorAll('.dl-tabs .dl-tab').forEach(btn => {
   });
 });
 
-// ── Downloads: YouTube search & download ──
-let ytSearchToken = 0;
-let ytLastResults = [];
-const ytActiveDownloads = new Map(); // videoId -> { rowEl, btnEl }
-
-if (window.electronAPI && window.electronAPI.onYtDownloadProgress) {
-  window.electronAPI.onYtDownloadProgress(({ videoId, phase, percent }) => {
-    const entry = videoId ? ytActiveDownloads.get(videoId) : null;
-    if (!entry) return;
-    const { rowEl } = entry;
-    const fill = rowEl.querySelector('.dl-progress-fill');
-    const pct = rowEl.querySelector('.dl-progress-pct');
-    const wrap = rowEl.querySelector('.dl-progress');
-    if (!fill || !pct || !wrap) return;
-    if (phase === 'postprocess') {
-      wrap.classList.add('is-indeterminate');
-      pct.textContent = '…';
-      return;
-    }
-    if (typeof percent === 'number' && !isNaN(percent)) {
-      wrap.classList.remove('is-indeterminate');
-      fill.style.width = percent.toFixed(1) + '%';
-      pct.textContent = Math.round(percent) + '%';
-    }
-  });
-}
-
-function setYtStatus(text, kind) {
-  const el = $('dl-yt-status');
-  if (!el) return;
-  el.classList.remove('is-error', 'is-ok', 'is-warn');
-  if (!text) { el.hidden = true; el.textContent = ''; return; }
-  if (kind === 'error') el.classList.add('is-error');
-  else if (kind === 'ok') el.classList.add('is-ok');
-  else if (kind === 'warn') el.classList.add('is-warn');
-  el.hidden = false;
-  el.textContent = text;
-}
-
 // A youtube.com / youtu.be link that isn't the music.youtube.com variant —
 // those miss the 256kbps Premium audio tier that only music.youtube.com URLs
 // expose, so warn the user to grab the YouTube Music link instead.
@@ -3899,295 +3648,12 @@ function updatePlainYtWarning(value, setStatus, statusId) {
   if (el && el.classList.contains('is-warn')) setStatus(null);
 }
 
-function saveYtState() {
-  try {
-    const q = $('dl-yt-query');
-    localStorage.setItem(LS.ytState, JSON.stringify({
-      query: q ? q.value : '',
-      results: ytLastResults,
-    }));
-  } catch (_) { /* ignore */ }
-}
-
-// ── Trending ──
-// Reads a YouTube Music chart through the main process and lets each row be
-// downloaded with one click, reusing the same yt-dlp download path (and the same
-// progress events) as the Downloads tab. A chart is either a per-country "Top
-// 100" or a per-genre "<Genre> Hits" playlist — both resolve to a playlist id in
-// TRENDING_CHARTS (main.js). Charts are cached per key for the session so
-// switching back and forth doesn't re-hit the network.
-let trChart = 'global';                  // selected chart key (country code or g_<genre>)
-let trTracks = [];
-const trCache = new Map();               // chart key -> { tracks, fetchedAt }
-const trActiveDownloads = new Map();     // videoId -> row element
-let trLoading = false;
-
-// chart key -> i18n key for the label shown in the ComboBox button. Kept in sync
-// with the option list in index.html (#tr-chart-select).
-const TR_CHART_LABEL = {
-  global: 'trending.region.global',
-  ukraine: 'trending.region.ukraine', usa: 'trending.region.usa',
-  uk: 'trending.region.uk', germany: 'trending.region.germany',
-  france: 'trending.region.france', turkey: 'trending.region.turkey',
-  poland: 'trending.region.poland',
-  g_pop: 'trending.genre.pop', g_hiphop: 'trending.genre.hiphop',
-  g_rock: 'trending.genre.rock', g_electronic: 'trending.genre.electronic',
-  g_phonk: 'trending.genre.phonk',
-  g_rnb: 'trending.genre.rnb', g_chill: 'trending.genre.chill',
-  g_metal: 'trending.genre.metal', g_latin: 'trending.genre.latin',
-  g_kpop: 'trending.genre.kpop', g_jazz: 'trending.genre.jazz',
-  g_classical: 'trending.genre.classical', g_country: 'trending.genre.country',
-};
-
-function setTrStatus(text, kind) {
-  const el = $('tr-status');
-  if (!el) return;
-  el.classList.remove('is-error', 'is-ok');
-  if (!text) { el.hidden = true; el.textContent = ''; return; }
-  if (kind) el.classList.add(kind === 'error' ? 'is-error' : 'is-ok');
-  el.hidden = false;
-  el.textContent = text;
-}
-
-// A chart row counts as "in the library" when a track with the same title and
-// artist is already there — the downloaded file name won't match the video id.
-function trAlreadyHave(t) {
-  const title = (t.title || '').trim().toLowerCase();
-  if (!title) return false;
-  const artist = (t.artist || '').trim().toLowerCase();
-  return library.some(x =>
-    (x.title || '').trim().toLowerCase() === title &&
-    (!artist || (x.artist || '').trim().toLowerCase() === artist));
-}
-
-// Placeholder rows drawn while a chart loads. Built once per load rather than
-// left in the markup so the count can match a full chart page.
-function renderTrendingSkeleton() {
-  const host = $('tr-loading');
-  if (!host || host.childElementCount) return;
-  host.innerHTML = Array.from({ length: 12 }, () => `
-    <div class="tr-skel-row">
-      <div class="tr-skel" style="width:14px"></div>
-      <div class="tr-skel tr-skel-thumb"></div>
-      <div class="tr-skel" style="width:${55 + Math.round(Math.random() * 35)}%"></div>
-      <div class="tr-skel" style="width:${40 + Math.round(Math.random() * 40)}%"></div>
-      <div class="tr-skel" style="width:34px"></div>
-      <div class="tr-skel" style="width:96px;height:26px;border-radius:6px"></div>
-    </div>`).join('');
-}
-
-function renderTrending() {
-  const cur = $('tr-chart-current');
-  if (cur) cur.textContent = tr(TR_CHART_LABEL[trChart] || 'trending.region.global');
-  document.querySelectorAll('#tr-chart-select .select-opt').forEach(o => {
-    o.classList.toggle('active', o.dataset.trChart === trChart);
-  });
-  const wrap = $('tr-results');
-  const rows = $('tr-rows');
-  const empty = $('tr-empty');
-  const meta = $('tr-meta');
-  const loading = $('tr-loading');
-  if (!wrap || !rows) return;
-
-  if (loading) {
-    if (trLoading) renderTrendingSkeleton();
-    loading.hidden = !trLoading;
-  }
-
-  if (!trTracks.length) {
-    wrap.hidden = true;
-    // While loading, the skeleton stands in for the list — showing the empty
-    // state too would read as "nothing found".
-    if (empty) empty.classList.toggle('show', !trLoading);
-    if (meta) meta.textContent = '';
-    return;
-  }
-  if (empty) empty.classList.remove('show');
-  if (meta) meta.textContent = tr('trending.count', { n: trTracks.length });
-
-  rows.innerHTML = trTracks.map((t, i) => {
-    const have = trAlreadyHave(t);
-    const label = have ? tr('trending.have') : tr('trending.download');
-    return `
-      <div class="dl-row tr-row" data-tr-row="${i}">
-        <div class="tr-rank">${i + 1}</div>
-        <div class="thumb" style="background-image: url('${escapeHtml(t.thumbnail || '')}')"></div>
-        <div class="title" title="${escapeHtml(t.rawTitle || t.title)}">${escapeHtml(t.title || '')}</div>
-        <div class="channel" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
-        <div class="duration">${escapeHtml(t.duration && isFinite(t.duration) ? formatTime(t.duration) : '')}</div>
-        <div class="action">
-          <button type="button" class="dl-download-btn${have ? ' is-done' : ''}" data-tr-dl="${i}"${have ? ' disabled' : ''}>
-            <svg class="i" width="12" height="12"><use href="#i-${have ? 'check' : 'download'}"/></svg>
-            <span>${escapeHtml(label)}</span>
-          </button>
-        </div>
-      </div>`;
-  }).join('');
-  wrap.hidden = false;
-  rows.querySelectorAll('[data-tr-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-tr-dl'), 10);
-      if (!isNaN(idx)) downloadTrendingTrack(idx, btn);
-    });
-  });
-}
-
-async function loadTrending(force) {
-  if (trLoading) return;
-  if (!force && trCache.has(trChart)) {
-    trTracks = trCache.get(trChart).tracks;
-    setTrStatus('');
-    renderTrending();
-    return;
-  }
-  // Charts live entirely on the network — when the OS reports no connection,
-  // say so plainly instead of spinning into a generic fetch failure. The
-  // 'online' listener below re-runs this the moment connectivity returns.
-  if (!navigator.onLine) {
-    trTracks = [];
-    trLoading = false;
-    renderTrending();
-    setTrStatus(tr('trending.offline'), 'error');
-    return;
-  }
-  if (!window.electronAPI || !window.electronAPI.trendingFetch) {
-    setTrStatus(tr('trending.unavailable'), 'error');
-    return;
-  }
-  trLoading = true;
-  trTracks = [];
-  renderTrending();
-  setTrStatus(tr('trending.loading'));
-  const chart = trChart;
-  try {
-    // The IPC parameter is still named `region` for backward compatibility; the
-    // main process matches any key (country or genre) against TRENDING_CHARTS.
-    const res = await window.electronAPI.trendingFetch(chart);
-    if (chart !== trChart) return; // user switched chart mid-fetch
-    if (!res || !res.success) {
-      setTrStatus(tr('trending.error', { e: (res && res.error) || 'unknown' }), 'error');
-      return;
-    }
-    trCache.set(chart, { tracks: res.tracks, fetchedAt: res.fetchedAt });
-    trTracks = res.tracks;
-    setTrStatus('');
-  } catch (err) {
-    if (chart === trChart) setTrStatus(tr('trending.error', { e: String(err) }), 'error');
-  } finally {
-    // Clear the flag before repainting, or the skeleton would survive the
-    // render that is supposed to replace it.
-    if (chart === trChart) {
-      trLoading = false;
-      renderTrending();
-    }
-  }
-}
-
-// Every download in the app goes through these two, so the target folder and
-// the audio format are decided in exactly one place. Without a default folder
-// there is nowhere sensible to file {artist}/{album}, so ask for one first and
-// abort if the user closes the picker.
-async function ensureDownloadArgs(args) {
-  if (!settings.defaultFolder) {
-    const folder = await window.electronAPI.chooseFolder();
-    if (!folder) return null;
-    settings.defaultFolder = folder;
-    saveSettings();
-    renderSettings();
-  }
-  return { ...args, targetDir: settings.defaultFolder, format: settings.dlFormat };
-}
-
-async function ytDownload(args) {
-  const full = await ensureDownloadArgs(args);
-  if (!full) return { success: false, error: tr('downloads.noFolder') };
-  return window.electronAPI.ytDownload(full);
-}
-
-async function ytDownloadByQuery(args) {
-  const full = await ensureDownloadArgs(args);
-  if (!full) return { success: false, error: tr('downloads.noFolder') };
-  return window.electronAPI.ytDownloadByQuery(full);
-}
-
-async function downloadTrendingTrack(idx, btn) {
-  const t = trTracks[idx];
-  if (!t || !btn || btn.disabled) return;
-  if (!navigator.onLine) { setTrStatus(tr('trending.offline'), 'error'); return; }
-  const rowEl = btn.closest('.dl-row');
-  const actionEl = rowEl && rowEl.querySelector('.action');
-  if (!actionEl) return;
-
-  actionEl.innerHTML = `
-    <div class="dl-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="dl-progress-bar"><div class="dl-progress-fill"></div></div>
-      <div class="dl-progress-pct">0%</div>
-    </div>`;
-  trActiveDownloads.set(t.id, rowEl);
-
-  const restore = (labelKey, cls) => {
-    actionEl.innerHTML = `
-      <button type="button" class="dl-download-btn${cls ? ' ' + cls : ''}" data-tr-dl="${idx}"${cls === 'is-done' ? ' disabled' : ''}>
-        <svg class="i" width="12" height="12"><use href="#i-${cls === 'is-done' ? 'check' : 'download'}"/></svg>
-        <span>${escapeHtml(tr(labelKey))}</span>
-      </button>`;
-    const b = actionEl.querySelector('[data-tr-dl]');
-    if (b && cls !== 'is-done') b.addEventListener('click', () => downloadTrendingTrack(idx, b));
-  };
-
-  const name = t.artist ? `${t.artist} - ${t.title}` : t.title;
-  try {
-    let res = await ytDownload({
-      videoId: t.id,
-      url: t.url,
-      suggestedName: name,
-      artist: t.artist || '',
-    });
-
-    // Charts list the official video, which is often blocked in some countries
-    // or pulled entirely. Both are properties of that one upload, not of the
-    // song, so look for another source before giving up — usually a lyric video
-    // or a topic-channel upload of the same track exists and plays fine.
-    if (res && !res.success && (res.reason === 'geo' || res.reason === 'unavailable') && t.title) {
-      setTrStatus(tr('trending.tryingAlt', { t: t.title }));
-      const query = t.artist ? `${t.artist} ${t.title}` : t.title;
-      res = await ytDownloadByQuery({
-        query,
-        suggestedName: name,
-        artist: t.artist || '',
-        requestId: 'tr-' + t.id,
-      });
-      if (res && res.success) {
-        trActiveDownloads.delete(t.id);
-        await importPaths([res.filePath]);
-        restore('trending.have', 'is-done');
-        setTrStatus(tr('trending.downloadOkAlt', { t: t.title }), 'ok');
-        return;
-      }
-    }
-
-    trActiveDownloads.delete(t.id);
-    if (!res || !res.success) {
-      restore('trending.retry', 'is-error');
-      setTrStatus(ytErrorText(res, 'trending.downloadError'), 'error');
-      return;
-    }
-    await importPaths([res.filePath]);
-    restore('trending.have', 'is-done');
-    setTrStatus(tr('trending.downloadOk', { t: t.title }), 'ok');
-  } catch (err) {
-    trActiveDownloads.delete(t.id);
-    restore('trending.retry', 'is-error');
-    setTrStatus(tr('trending.downloadError', { e: String(err) }), 'error');
-  }
-}
-
 // Prefer a plain explanation over yt-dlp's raw English output — the geo case
 // ends by suggesting a --proxy flag the user cannot pass here, and a
 // "transient" failure (a bare errno/traceback fragment from yt-dlp's own
 // postprocessing) reads like a crash when it usually just means "try again".
-// Shared by every yt-dlp-backed download flow (Trending, YT search, the YTM
-// parser, Spotify-via-YouTube) instead of each one showing the raw error.
+// Shared by the yt-dlp-backed download flows (YouTube Music parser,
+// Spotify-via-YouTube) instead of each one showing the raw error.
 function ytErrorText(res, fallbackKey) {
   const reason = res && res.reason;
   if (reason === 'geo') return tr('dlErr.geo');
@@ -4199,231 +3665,9 @@ function ytErrorText(res, fallbackKey) {
   return tr(fallbackKey, { e: (res && res.error) || 'unknown' });
 }
 
-if (window.electronAPI && window.electronAPI.onYtDownloadProgress) {
-  window.electronAPI.onYtDownloadProgress(({ videoId, phase, percent }) => {
-    const rowEl = videoId ? trActiveDownloads.get(videoId) : null;
-    if (!rowEl) return;
-    const fill = rowEl.querySelector('.dl-progress-fill');
-    const pct = rowEl.querySelector('.dl-progress-pct');
-    const wrap = rowEl.querySelector('.dl-progress');
-    if (!fill || !pct || !wrap) return;
-    if (phase === 'postprocess') {
-      wrap.classList.add('is-indeterminate');
-      pct.textContent = '…';
-      return;
-    }
-    if (typeof percent === 'number' && !isNaN(percent)) {
-      wrap.classList.remove('is-indeterminate');
-      const v = Math.max(0, Math.min(100, percent));
-      fill.style.width = v + '%';
-      pct.textContent = Math.round(v) + '%';
-      wrap.setAttribute('aria-valuenow', String(Math.round(v)));
-    }
-  });
-}
-
-// Chart ComboBox — country/genre picker. Same open/close idiom as the Settings
-// theme/language selects: toggle .open on the wrapper, close on outside click.
-const trChartSelect = $('tr-chart-select');
-if (trChartSelect) {
-  trChartSelect.querySelector('.select-btn').addEventListener('click', e => {
-    e.stopPropagation();
-    trChartSelect.classList.toggle('open');
-  });
-  document.addEventListener('click', e => {
-    if (!e.target.closest('#tr-chart-select')) trChartSelect.classList.remove('open');
-  });
-  trChartSelect.querySelectorAll('.select-opt').forEach(o => {
-    o.addEventListener('click', () => {
-      trChartSelect.classList.remove('open');
-      const key = o.dataset.trChart;
-      if (!key || key === trChart) return;
-      trChart = key;
-      renderTrending();       // update the button label immediately
-      loadTrending(false);
-    });
-  });
-}
-const trRefreshBtn = $('tr-refresh');
-if (trRefreshBtn) trRefreshBtn.addEventListener('click', () => loadTrending(true));
-
-// When connectivity comes back while the user is looking at an empty Trending
-// tab (blocked earlier by the offline check), load the chart automatically.
-window.addEventListener('online', () => {
-  if (currentView === 'trending' && !trLoading && !trTracks.length) loadTrending(false);
-});
-
 function explicitBadge(flag) {
   return flag === true ? '<span class="explicit-badge" title="Explicit">E</span>' : '';
 }
-
-function renderYtResults(results) {
-  ytLastResults = results || [];
-  // Save before any DOM checks — persistence shouldn't depend on the YT pane
-  // being currently mounted/visible.
-  saveYtState();
-  const wrap = $('dl-yt-results');
-  const rows = $('dl-yt-rows');
-  const empty = $('dl-yt-empty');
-  const note = $('dl-yt-tag-note');
-  const queueAllBtn = $('dl-yt-queue-all');
-  if (!wrap || !rows) return;
-  if (!ytLastResults.length) {
-    wrap.hidden = true;
-    if (note) note.hidden = true;
-    if (empty) empty.classList.add('show');
-    if (queueAllBtn) queueAllBtn.hidden = true;
-    return;
-  }
-  if (empty) empty.classList.remove('show');
-  if (note) note.hidden = false;
-  if (queueAllBtn) queueAllBtn.hidden = false;
-  rows.innerHTML = ytLastResults.map((r, i) => {
-    const queued = isYtResultInQueue(r);
-    const queuedCls = queued ? ' is-done' : '';
-    const queueDis = queued ? ' disabled' : '';
-    const queueLabel = queued ? tr('downloads.queue.queued') : tr('downloads.queue.add');
-    return `
-      <div class="dl-row" data-yt-row="${i}">
-        <div class="thumb" style="background-image: url('${escapeHtml(r.thumbnail || '')}')"></div>
-        <div class="title" title="${escapeHtml(r.title)}">${explicitBadge(r.explicit)}${escapeHtml(r.title || '')}</div>
-        <div class="channel" title="${escapeHtml(r.channel || '')}">${escapeHtml(r.channel || '')}</div>
-        <div class="duration">${escapeHtml(r.durationStr || '')}</div>
-        <div class="action">
-          <button type="button" class="dl-download-btn dl-queue-btn${queuedCls}" data-yt-queue="${i}"${queueDis} title="${escapeHtml(queueLabel)}">
-            <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
-            <span>${escapeHtml(queueLabel)}</span>
-          </button>
-          <button type="button" class="dl-download-btn" data-yt-dl="${i}">
-            <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-            <span>${escapeHtml(tr('downloads.yt.action.download'))}</span>
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
-  wrap.hidden = false;
-  rows.querySelectorAll('[data-yt-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-yt-dl'), 10);
-      if (!isNaN(idx)) downloadYtResult(idx, btn);
-    });
-  });
-  rows.querySelectorAll('[data-yt-queue]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-yt-queue'), 10);
-      if (!isNaN(idx)) enqueueYtResult(idx);
-    });
-  });
-}
-
-async function runYtSearch() {
-  const input = $('dl-yt-query');
-  const btn = $('dl-yt-search-btn');
-  if (!input) return;
-  const q = input.value.trim();
-  if (!q) { input.focus(); return; }
-  const token = ++ytSearchToken;
-  if (btn) btn.disabled = true;
-  setYtStatus(tr('downloads.yt.searching', { q }));
-  const wrap = $('dl-yt-results');
-  if (wrap) wrap.hidden = true;
-  try {
-    const res = await window.electronAPI.ytSearch(q, 8);
-    if (token !== ytSearchToken) return;
-    if (!res || !res.success) {
-      setYtStatus(tr('downloads.yt.error', { e: (res && res.error) || 'unknown' }), 'error');
-      renderYtResults([]);
-      return;
-    }
-    if (!res.results.length) {
-      setYtStatus(tr('downloads.yt.empty', { q }), 'error');
-      renderYtResults([]);
-      return;
-    }
-    setYtStatus(null);
-    renderYtResults(res.results);
-  } catch (err) {
-    if (token !== ytSearchToken) return;
-    setYtStatus(tr('downloads.yt.error', { e: String(err) }), 'error');
-  } finally {
-    if (token === ytSearchToken && btn) btn.disabled = false;
-  }
-}
-
-function restoreDownloadButton(actionEl, idx, labelKey, cls) {
-  actionEl.innerHTML = `
-    <button type="button" class="dl-download-btn ${cls || ''}" data-yt-dl="${idx}">
-      <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-      <span>${escapeHtml(tr(labelKey))}</span>
-    </button>
-  `;
-  const newBtn = actionEl.querySelector('[data-yt-dl]');
-  if (newBtn) {
-    newBtn.addEventListener('click', () => downloadYtResult(idx, newBtn));
-  }
-  return newBtn;
-}
-
-async function downloadYtResult(idx, btn) {
-  const r = ytLastResults[idx];
-  if (!r || !btn) return;
-  if (btn.classList.contains('is-done')) return;
-  const rowEl = btn.closest('.dl-row');
-  if (!rowEl) return;
-  const actionEl = rowEl.querySelector('.action');
-  if (!actionEl) return;
-
-  actionEl.innerHTML = `
-    <div class="dl-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="dl-progress-bar"><div class="dl-progress-fill"></div></div>
-      <div class="dl-progress-pct">0%</div>
-    </div>
-  `;
-  ytActiveDownloads.set(r.id, { rowEl, btnEl: null });
-
-  try {
-    const res = await ytDownload({
-      videoId: r.id,
-      url: r.url,
-      suggestedName: r.title,
-      album: r.album || '',
-      explicit: r.explicit,
-    });
-    ytActiveDownloads.delete(r.id);
-    if (!res || !res.success) {
-      restoreDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
-      setYtStatus(ytErrorText(res, 'downloads.yt.downloadError'), 'error');
-      return;
-    }
-    await importPaths([res.filePath]);
-    const doneBtn = restoreDownloadButton(actionEl, idx, 'downloads.yt.action.done', 'is-done');
-    if (doneBtn) doneBtn.disabled = true;
-    setYtStatus(tr('downloads.yt.downloadOk', { t: r.title }), 'ok');
-  } catch (err) {
-    ytActiveDownloads.delete(r.id);
-    restoreDownloadButton(actionEl, idx, 'downloads.yt.action.retry', 'is-error');
-    setYtStatus(tr('downloads.yt.downloadError', { e: String(err) }), 'error');
-  }
-}
-
-(function wireYtSearchControls() {
-  const btn = $('dl-yt-search-btn');
-  const input = $('dl-yt-query');
-  const queueAll = $('dl-yt-queue-all');
-  if (btn) btn.addEventListener('click', runYtSearch);
-  if (input) {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); runYtSearch(); }
-    });
-    // Persist the typed query as the user types so a reload before pressing
-    // Enter doesn't drop their input. Light-touch: just rewrites the same
-    // JSON blob, no debouncing needed at human typing speed.
-    input.addEventListener('input', saveYtState);
-    input.addEventListener('input', () => updatePlainYtWarning(input.value, setYtStatus, 'dl-yt-status'));
-  }
-  if (queueAll) queueAll.addEventListener('click', enqueueAllYtResults);
-})();
 
 // ── Downloads: Parsing sub-tabs ──
 document.querySelectorAll('.dl-subtabs .dl-subtab').forEach(btn => {
@@ -5032,55 +4276,6 @@ function isYtResultInQueue(r) {
   return downloadQueue.some(it => it.source === 'youtube' && it.key === key && it.status !== 'error');
 }
 
-function buildQueueItemFromYt(r) {
-  return {
-    id: 'q-' + (++queueIdSeq),
-    source: 'youtube',
-    key: ytTrackKey(r),
-    artist: r.channel || '',
-    title: r.title || '',
-    album: r.album || '',
-    duration: r.durationStr || '',
-    query: r.title || '',
-    suggestedName: r.title || '',
-    videoId: r.id || '',
-    url: r.url || '',
-    explicit: (r.explicit === true || r.explicit === false) ? r.explicit : null,
-    status: 'queued',
-    percent: 0,
-    indeterminate: false,
-    filePath: '',
-    error: '',
-    requestId: '',
-  };
-}
-
-function enqueueYtResult(idx) {
-  const r = ytLastResults[idx];
-  if (!r || isYtResultInQueue(r)) return;
-  downloadQueue.push(buildQueueItemFromYt(r));
-  renderQueue();
-  renderYtResults(ytLastResults);
-  updateQueueTabBadge();
-  startQueueWorker();
-}
-
-function enqueueAllYtResults() {
-  if (!ytLastResults || !ytLastResults.length) return;
-  let added = 0;
-  for (const r of ytLastResults) {
-    if (isYtResultInQueue(r)) continue;
-    downloadQueue.push(buildQueueItemFromYt(r));
-    added++;
-  }
-  if (added > 0) {
-    renderQueue();
-    renderYtResults(ytLastResults);
-    updateQueueTabBadge();
-    startQueueWorker();
-  }
-}
-
 function nextQueuedItem() {
   if (queuePaused) return null;
   return downloadQueue.find(it => it.status === 'queued');
@@ -5158,7 +4353,6 @@ async function processQueueItem(item) {
   renderQueue();
   renderYtmResults(ytmTracks);
   renderSpResults(spTracks);
-  renderYtResults(ytLastResults);
   updateQueueTabBadge();
 }
 
@@ -5426,19 +4620,10 @@ function activateDlTab(target) {
 })();
 
 // ── Downloads: session restore ──
-// Restores YT search results, YM parsed tracks, and the download queue from
+// Restores YouTube Music / Spotify parsed tracks and the download queue from
 // localStorage. Items that were mid-download when the session ended are reset
 // to 'queued' so the worker re-attempts them.
 function restoreDownloadsState() {
-  try {
-    const raw = localStorage.getItem(LS.ytState);
-    if (raw) {
-      const yt = JSON.parse(raw);
-      const queryEl = $('dl-yt-query');
-      if (queryEl && typeof yt.query === 'string') queryEl.value = yt.query;
-      if (Array.isArray(yt.results) && yt.results.length) renderYtResults(yt.results);
-    }
-  } catch (_) { /* ignore */ }
   try {
     const raw = localStorage.getItem(LS.ytmState);
     if (raw) {
@@ -5492,7 +4677,6 @@ function restoreDownloadsState() {
     // Re-render result rows so any "queued" badges reflect the restored queue.
     if (ytmTracks && ytmTracks.length) renderYtmResults(ytmTracks);
     if (spTracks && spTracks.length) renderSpResults(spTracks);
-    if (ytLastResults && ytLastResults.length) renderYtResults(ytLastResults);
     updateQueueTabBadge();
     startQueueWorker();
   } catch (_) { /* ignore */ }
@@ -9952,7 +9136,6 @@ const TOGGLE_KEY_MAP = {
   'crossfade': 'crossfade',
   'repeat-one-reset': 'repeatOneResetOnSkip',
   'downloads': 'downloads',
-  'trending': 'trending',
   'lan-sharing': 'lanSharing',
   'show-parser-browser': 'showParserBrowser',
 };
@@ -10391,7 +9574,6 @@ document.querySelectorAll('.toggle').forEach(t => {
     saveSettings();
     t.classList.toggle('on', settings[key]);
     if (key === 'downloads') applyDownloadsVisibility();
-    if (key === 'trending') applyTrendingVisibility();
     if (key === 'healthCheck') applyHealthCheckVisibility();
     if (key === 'reports') applyReportsVisibility();
     if (key === 'editor') applyEditorVisibility();
@@ -10670,7 +9852,6 @@ document.querySelectorAll('#lang-select .select-opt').forEach(o => {
     // Re-render dynamic surfaces so plurals, counts, and rendered strings update.
     refreshCurrentViewRows();
     if (currentView === 'playlists') renderPlaylists();
-    if (currentView === 'trending') renderTrending(); // refresh ComboBox label + count
     renderCounts();
     renderRecents();
     if (currentTrack) updateNowPlayingUI(currentTrack);
@@ -10689,14 +9870,6 @@ function applyDownloadsVisibility() {
 }
 applyDownloadsVisibility();
 
-// Toggle for the Trending (charts) tab: hides the nav item and redirects away
-// from the view when off. On by default.
-function applyTrendingVisibility() {
-  const navTrending = $('nav-trending');
-  if (navTrending) navTrending.hidden = !settings.trending;
-  if (!settings.trending && currentView === 'trending') setView('library');
-}
-applyTrendingVisibility();
 
 // Report and Health share a "Tools" sidebar group (index.html #nav-tools-group)
 // that's hidden whenever neither feature is on, so an empty heading doesn't
@@ -11462,7 +10635,7 @@ async function lanRefresh() {
 const LAN_SYNCABLE_SETTINGS = [
   'theme', 'accent', 'language', 'dlFormat', 'scanSubdirs', 'healthCheck',
   'reports', 'editor', 'crossfade', 'crossfadeSec', 'volumeWheelStep',
-  'downloads', 'trending', 'showParserBrowser',
+  'downloads', 'showParserBrowser',
 ];
 function lanConfigSnapshot() {
   const out = {};
@@ -11901,7 +11074,7 @@ const ytmBrowser = (function () {
   };
 
   function open(prefillArtist) {
-    el('ytm-modal').classList.add('active');
+    setView('ytmusic');
     const input = el('ytm-search');
     if (prefillArtist) {
       input.value = prefillArtist;
@@ -11914,7 +11087,6 @@ const ytmBrowser = (function () {
       setTimeout(() => input.focus(), 50);
     }
   }
-  function close() { el('ytm-modal').classList.remove('active'); }
 
   function goSearch() {
     state = 'search';
@@ -12052,19 +11224,16 @@ const ytmBrowser = (function () {
   }
 
   (function wire() {
-    el('ytm-close').addEventListener('click', close);
     el('ytm-back').addEventListener('click', () => {
       if (state === 'album' && curArtist) openArtist(curArtist);
       else { goSearch(); runSearch(el('ytm-search').value); }
     });
-    el('ytm-modal').addEventListener('mousedown', e => { if (e.target === el('ytm-modal')) close(); });
     const input = el('ytm-search');
     input.addEventListener('input', () => { clearTimeout(searchTimer); const v = input.value; searchTimer = setTimeout(() => runSearch(v), 350); });
     input.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(input.value); } });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && el('ytm-modal').classList.contains('active')) close(); });
     const btn = el('btn-artist-ytm');
     if (btn) btn.addEventListener('click', () => open(activeArtistName || el('artist-detail-title').textContent || ''));
   })();
 
-  return { open, close };
+  return { open };
 })();
