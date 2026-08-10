@@ -73,6 +73,198 @@
   --modal-scrim: rgba(16, 14, 28, 0.65);
 }
 
+/* ─── Catppuccin ─── */
+
+:root[data-theme="catppuccin-mocha"] {
+  --bg: #181825;
+  --panel: #1e1e2e;
+  --panel-alt: #292a3d;
+  --panel-elev: #313244;
+  --border: rgba(205, 214, 244, 0.07);
+  --border-strong: rgba(205, 214, 244, 0.13);
+  --text: #cdd6f4;
+  --text-strong: #f0f2ff;
+  --text-muted: #a6adc8;
+  --text-dim: #7f849c;
+  --text-faint: rgba(108, 112, 134, 0.8);
+  --hover-bg: rgba(205, 214, 244, 0.035);
+  --active-bg: rgba(205, 214, 244, 0.07);
+  --row-active-bg: rgba(205, 214, 244, 0.05);
+  --accent: #cba6f7;
+  --accent-fav: #f38ba8;
+  --accent-ok: #a6e3a1;
+  --accent-warn: #f9e2af;
+  --danger: #f38ba8;
+  --modal-scrim: rgba(17, 17, 27, 0.65);
+}
+
+:root[data-theme="catppuccin-latte"] {
+  --bg: #e6e9ef;
+  --panel: #eff1f5;
+  --panel-alt: #dce0e8;
+  --panel-elev: #eff1f5;
+  --border: rgba(76, 79, 105, 0.12);
+  --border-strong: rgba(76, 79, 105, 0.2);
+  --text: #4c4f69;
+  --text-strong: #3a3d54;
+  --text-muted: #6c6f85;
+  --text-dim: #9ca0b0;
+  --text-faint: rgba(156, 160, 176, 0.75);
+  --hover-bg: rgba(76, 79, 105, 0.04);
+  --active-bg: rgba(76, 79, 105, 0.08);
+  --row-active-bg: rgba(76, 79, 105, 0.06);
+  --accent: #8839ef;
+  --accent-fav: #d20f39;
+  --accent-ok: #40a02b;
+  --accent-warn: #df8e1d;
+  --danger: #d20f39;
+  --modal-scrim: rgba(76, 79, 105, 0.35);
+}
+
+/* ─── Gruvbox ─── */
+
+:root[data-theme="gruvbox-dark"] {
+  --bg: #1d2021;
+  --panel: #282828;
+  --panel-alt: #32302f;
+  --panel-elev: #3c3836;
+  --border: rgba(235, 219, 178, 0.08);
+  --border-strong: rgba(235, 219, 178, 0.15);
+  --text: #ebdbb2;
+  --text-strong: #fbf1c7;
+  --text-muted: #bdae93;
+  --text-dim: #a89984;
+  --text-faint: rgba(146, 131, 116, 0.85);
+  --hover-bg: rgba(235, 219, 178, 0.04);
+  --active-bg: rgba(235, 219, 178, 0.08);
+  --row-active-bg: rgba(235, 219, 178, 0.06);
+  --accent: #fabd2f;
+  --accent-fav: #fb4934;
+  --accent-ok: #b8bb26;
+  --accent-warn: #fe8019;
+  --danger: #fb4934;
+  --modal-scrim: rgba(16, 18, 19, 0.65);
+}
+
+:root[data-theme="gruvbox-light"] {
+  --bg: #fbf1c7;
+  --panel: #f9f5d7;
+  --panel-alt: #ebdbb2;
+  --panel-elev: #f9f5d7;
+  --border: rgba(60, 56, 54, 0.13);
+  --border-strong: rgba(60, 56, 54, 0.22);
+  --text: #3c3836;
+  --text-strong: #282828;
+  --text-muted: #665c54;
+  --text-dim: #7c6f64;
+  --text-faint: rgba(124, 111, 100, 0.7);
+  --hover-bg: rgba(60, 56, 54, 0.05);
+  --active-bg: rgba(60, 56, 54, 0.09);
+  --row-active-bg: rgba(60, 56, 54, 0.07);
+  --accent: #b57614;
+  --accent-fav: #9d0006;
+  --accent-ok: #79740e;
+  --accent-warn: #af3a03;
+  --danger: #9d0006;
+  --modal-scrim: rgba(60, 56, 54, 0.35);
+}
+
+/* ─── Dracula (the light variant is the official Alucard palette) ─── */
+
+:root[data-theme="dracula"] {
+  --bg: #21222c;
+  --panel: #282a36;
+  --panel-alt: #343746;
+  --panel-elev: #44475a;
+  --border: rgba(248, 248, 242, 0.07);
+  --border-strong: rgba(248, 248, 242, 0.13);
+  --text: #f8f8f2;
+  --text-strong: #ffffff;
+  --text-muted: rgba(248, 248, 242, 0.6);
+  --text-dim: rgba(248, 248, 242, 0.42);
+  --text-faint: #6272a4;
+  --hover-bg: rgba(248, 248, 242, 0.035);
+  --active-bg: rgba(248, 248, 242, 0.07);
+  --row-active-bg: rgba(248, 248, 242, 0.05);
+  --accent: #bd93f9;
+  --accent-fav: #ff79c6;
+  --accent-ok: #50fa7b;
+  --accent-warn: #ffb86c;
+  --danger: #ff5555;
+  --modal-scrim: rgba(20, 21, 28, 0.65);
+}
+
+:root[data-theme="dracula-light"] {
+  --bg: #f8f4e2;
+  --panel: #fffbeb;
+  --panel-alt: #efead4;
+  --panel-elev: #fffbeb;
+  --border: rgba(31, 31, 31, 0.12);
+  --border-strong: rgba(31, 31, 31, 0.2);
+  --text: #1f1f1f;
+  --text-strong: #101010;
+  --text-muted: #6c664b;
+  --text-dim: #8a8470;
+  --text-faint: rgba(108, 102, 75, 0.6);
+  --hover-bg: rgba(31, 31, 31, 0.04);
+  --active-bg: rgba(31, 31, 31, 0.08);
+  --row-active-bg: rgba(31, 31, 31, 0.06);
+  --accent: #644ac9;
+  --accent-fav: #a3144d;
+  --accent-ok: #14710a;
+  --accent-warn: #a34d14;
+  --danger: #cb3a2a;
+  --modal-scrim: rgba(60, 55, 40, 0.35);
+}
+
+/* ─── Tokyo Night ─── */
+
+:root[data-theme="tokyo-night"] {
+  --bg: #16161e;
+  --panel: #1a1b26;
+  --panel-alt: #24283b;
+  --panel-elev: #292e42;
+  --border: rgba(192, 202, 245, 0.07);
+  --border-strong: rgba(192, 202, 245, 0.13);
+  --text: #c0caf5;
+  --text-strong: #e8ecff;
+  --text-muted: #a9b1d6;
+  --text-dim: #7982a9;
+  --text-faint: #565f89;
+  --hover-bg: rgba(192, 202, 245, 0.035);
+  --active-bg: rgba(192, 202, 245, 0.07);
+  --row-active-bg: rgba(192, 202, 245, 0.05);
+  --accent: #7aa2f7;
+  --accent-fav: #f7768e;
+  --accent-ok: #9ece6a;
+  --accent-warn: #e0af68;
+  --danger: #f7768e;
+  --modal-scrim: rgba(10, 10, 16, 0.68);
+}
+
+:root[data-theme="tokyo-night-day"] {
+  --bg: #e1e2e7;
+  --panel: #eaebef;
+  --panel-alt: #d8dae3;
+  --panel-elev: #eaebef;
+  --border: rgba(55, 96, 191, 0.14);
+  --border-strong: rgba(55, 96, 191, 0.22);
+  --text: #3760bf;
+  --text-strong: #2a4a9e;
+  --text-muted: #6172b0;
+  --text-dim: #848cb5;
+  --text-faint: rgba(132, 140, 181, 0.7);
+  --hover-bg: rgba(55, 96, 191, 0.05);
+  --active-bg: rgba(55, 96, 191, 0.09);
+  --row-active-bg: rgba(55, 96, 191, 0.07);
+  --accent: #2e7de9;
+  --accent-fav: #f52a65;
+  --accent-ok: #587539;
+  --accent-warn: #b15c00;
+  --danger: #f52a65;
+  --modal-scrim: rgba(40, 50, 90, 0.35);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
@@ -735,9 +927,9 @@ input { font-family: inherit; color: inherit; }
 .q-low        { color: rgba(231,231,232,0.5); background: transparent; border-color: rgba(255,255,255,0.08); }
 .q-suspicious { color: #e8a045; background: rgba(232,160,69,0.10); border-color: rgba(232,160,69,0.32); }
 /* In light theme the near-white tiers need darker ink to stay legible. */
-:root[data-theme="light"] .q-high { color: #3a3a3f; }
-:root[data-theme="light"] .q-good { color: rgba(30,30,32,0.68); }
-:root[data-theme="light"] .q-low  { color: rgba(30,30,32,0.5); }
+:root[data-mode="light"] .q-high { color: #3a3a3f; }
+:root[data-mode="light"] .q-good { color: rgba(30,30,32,0.68); }
+:root[data-mode="light"] .q-low  { color: rgba(30,30,32,0.5); }
 
 /* Marks a row streamed from another device's library rather than played from
    local disk — reuses the quality-badge look so it reads as "one more pill",
@@ -868,7 +1060,7 @@ input { font-family: inherit; color: inherit; }
   border-radius: 11px;
   padding: 18px 20px;
 }
-:root[data-theme="light"] .health-score {
+:root[data-mode="light"] .health-score {
   background: linear-gradient(140deg, #fffaf3 0%, #f2e9e1 100%);
 }
 .health-score-label {
@@ -2358,7 +2550,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-radius: 5px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
   z-index: 30;
-  overflow: hidden;
+  overflow: hidden auto;
+  max-height: 46vh;
 }
 .select.open .select-menu { display: block; }
 .select-opt {
@@ -2985,7 +3178,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   height: 6px;
   background: rgba(255, 255, 255, 0.16);
 }
-[data-theme="light"] .fs-overlay.is-portrait .fs-vol-track {
+[data-mode="light"] .fs-overlay.is-portrait .fs-vol-track {
   background: rgba(0, 0, 0, 0.16);
 }
 
@@ -3061,7 +3254,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   position: relative;
   cursor: pointer;
 }
-[data-theme="light"] .fs-vol-track { background: rgba(0, 0, 0, 0.08); }
+[data-mode="light"] .fs-vol-track { background: rgba(0, 0, 0, 0.08); }
 .fs-vol-fill {
   position: absolute;
   left: 0;
@@ -3651,7 +3844,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   letter-spacing: -1px;
   line-height: 1;
 }
-:root[data-theme="light"] .artist-avatar-letter { color: rgba(20, 20, 30, 0.22); }
+:root[data-mode="light"] .artist-avatar-letter { color: rgba(20, 20, 30, 0.22); }
 .artist-card-name {
   font-size: 13px;
   font-weight: 500;
@@ -3705,7 +3898,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   letter-spacing: -1px;
   line-height: 1;
 }
-:root[data-theme="light"] .artist-hero-avatar span { color: rgba(20, 20, 30, 0.22); }
+:root[data-mode="light"] .artist-hero-avatar span { color: rgba(20, 20, 30, 0.22); }
 .artist-hero-body {
   display: flex;
   flex-direction: column;

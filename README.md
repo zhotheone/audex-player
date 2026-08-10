@@ -39,7 +39,7 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 
 - **It's yours.** Point it at a folder and it just works — offline, forever. Nothing is uploaded anywhere.
 - **It's quick.** Thousands of tracks scroll without a stutter — the list is virtualized and every cover is cached to disk after the first scan.
-- **It looks good.** Rosé Pine throughout, any accent color you like, your own wallpaper behind the interface.
+- **It looks good.** Eleven palettes, any accent color you like, your own wallpaper behind the interface.
 - **It fills the gaps.** Missing a track? Search YouTube, paste a Spotify playlist, or grab what's charting today — without leaving the app.
 - **It respects you.** Your listening stats are computed on your device and never leave it.
 
@@ -61,9 +61,9 @@ Listening time, top artists and tracks, a streak counter, and a clock showing wh
 
 ![Listening report](docs/screenshots/report.png)
 
-### Rosé Pine, one click
+### Eleven palettes, one click
 
-Dark is Rosé Pine, Light is Rosé Pine Dawn, Default follows your OS between the two — plus Rosé Pine Moon if you want the softer dark. Pick any accent color to go with them.
+Dark is Rosé Pine and Light is Rosé Pine Dawn, with Default following your OS between the two. Then Rosé Pine Moon, Catppuccin (Mocha/Latte), Gruvbox (dark/light), Dracula (and its light Alucard variant) and Tokyo Night (night/day). Turn on **Random theme** and the app picks one for you at every launch. Pick any accent color to go with them.
 
 <table>
   <tr>
@@ -123,7 +123,7 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 <summary><b>🎨 Interface</b></summary>
 
 - **Two languages** — English, Ukrainian.
-- **Rosé Pine themes** (Pine, Dawn, Moon) and a **customizable accent color**.
+- **Eleven palettes** — Rosé Pine, Catppuccin, Gruvbox, Dracula, Tokyo Night, each with a light and dark variant, optionally randomized per launch — and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
 - **UI scale** and a **responsive layout**, with a **portrait "mobile player"** mode for the fullscreen view.
 

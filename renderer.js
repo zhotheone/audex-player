@@ -37,6 +37,7 @@ let playlists = JSON.parse(localStorage.getItem(LS.playlists) || '[]');
 let settings = Object.assign({
   theme: 'dark',          // 'dark' | 'light' | 'system' | 'rose-pine' | 'rose-pine-moon' | 'rose-pine-dawn'
   accent: '',             // '' = theme default; otherwise a hex like '#5b9eff'
+  randomTheme: false,     // pick a random palette on every launch
   language: 'en',
   defaultFolder: '',
   defaultView: 'library',    // view shown on startup: library | artists | albums | favorites | playlist-detail
@@ -218,30 +219,47 @@ function focusModalInput(el, { select = false } = {}) {
 
 // ── Theme ──
 // 'system' (= Default) follows the OS and resolves to dark/light, which are
-// Rosé Pine and Rosé Pine Dawn. `emoji` shows in the menu and the trigger.
+// Rosé Pine and Rosé Pine Dawn. `emoji` shows in the menu and the trigger;
+// `light` marks the palettes that need the dark-ink overrides in style.css.
 const THEME_OPTIONS = [
-  { id: 'system',          emoji: '🖥️', i18n: 'theme.system' },
-  { id: 'light',           emoji: '🌅', i18n: 'theme.light' },
-  { id: 'dark',            emoji: '🌹', i18n: 'theme.dark' },
-  { id: 'rose-pine-moon',  emoji: '🌒', name: 'Rosé Pine Moon' },
+  { id: 'system',            emoji: '🖥️', i18n: 'theme.system' },
+  { id: 'light',             emoji: '🌅', i18n: 'theme.light', light: true },
+  { id: 'dark',              emoji: '🌹', i18n: 'theme.dark' },
+  { id: 'rose-pine-moon',    emoji: '🌒', name: 'Rosé Pine Moon' },
+  { id: 'catppuccin-mocha',  emoji: '🐱', name: 'Catppuccin Mocha' },
+  { id: 'catppuccin-latte',  emoji: '☕', name: 'Catppuccin Latte', light: true },
+  { id: 'gruvbox-dark',      emoji: '🟫', name: 'Gruvbox Dark' },
+  { id: 'gruvbox-light',     emoji: '🟨', name: 'Gruvbox Light', light: true },
+  { id: 'dracula',           emoji: '🧛', name: 'Dracula' },
+  { id: 'dracula-light',     emoji: '🕯️', name: 'Dracula Light (Alucard)', light: true },
+  { id: 'tokyo-night',       emoji: '🗼', name: 'Tokyo Night' },
+  { id: 'tokyo-night-day',   emoji: '🏙️', name: 'Tokyo Night Day', light: true },
 ];
 function themeLabel(id) {
   const o = THEME_OPTIONS.find(t => t.id === id) || THEME_OPTIONS[0];
   return `${o.emoji} ${o.i18n ? tr(o.i18n) : o.name}`;
 }
+// Everything except 'system', which is not a palette of its own.
+function randomThemeId() {
+  const pool = THEME_OPTIONS.filter(o => o.id !== 'system');
+  return pool[Math.floor(Math.random() * pool.length)].id;
+}
 function applyTheme(t) {
   // A theme removed since the settings were written (or synced from another
   // device) has no CSS block — fall back to dark instead of losing every var.
-  if (!THEME_OPTIONS.some(o => o.id === t)) t = 'dark';
-  const resolved = t === 'system'
+  const opt = THEME_OPTIONS.find(o => o.id === t) || THEME_OPTIONS[2];
+  const resolved = opt.id === 'system'
     ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-    : t;
+    : opt.id;
   root.setAttribute('data-theme', resolved);
+  root.setAttribute('data-mode', THEME_OPTIONS.find(o => o.id === resolved).light ? 'light' : 'dark');
 }
 if (!THEME_OPTIONS.some(o => o.id === settings.theme)) settings.theme = 'dark';
-applyTheme(settings.theme);
+// Random only paints this launch — the picked theme is never written back, so
+// the menu keeps showing (and returning to) whatever the user actually chose.
+applyTheme(settings.randomTheme ? randomThemeId() : settings.theme);
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-  if (settings.theme === 'system') applyTheme('system');
+  if (settings.theme === 'system' && !settings.randomTheme) applyTheme('system');
 });
 
 // ── Accent color ──
@@ -747,6 +765,8 @@ const I18N = {
     'theme.system': 'Default',
     'setting.theme': 'Theme',
     'setting.themeDesc': 'Application color scheme.',
+    'setting.randomTheme': 'Random theme',
+    'setting.randomThemeDesc': 'Pick a random palette every time the app starts.',
     'setting.accent': 'Accent color',
     'setting.accentDesc': 'Highlights active items and the currently playing track.',
     'setting.accentDefault': 'Default',
@@ -1346,6 +1366,8 @@ const I18N = {
     'theme.system': 'Типова',
     'setting.theme': 'Тема',
     'setting.themeDesc': 'Колірна схема застосунку.',
+    'setting.randomTheme': 'Випадкова тема',
+    'setting.randomThemeDesc': 'Обирати випадкову палітру під час кожного запуску.',
     'setting.accent': 'Колір акценту',
     'setting.accentDesc': 'Підсвічування активних елементів і поточного треку.',
     'setting.accentDefault': 'За замовчуванням',
@@ -7931,6 +7953,7 @@ document.querySelectorAll('#albums-view-seg .seg-btn').forEach(btn => {
 
 // ── Settings UI ──
 const TOGGLE_KEY_MAP = {
+  'random-theme': 'randomTheme',
   'scan-subdirs': 'scanSubdirs',
   'artist-min-tracks': 'artistMinTracksEnabled',
   'health-check': 'healthCheck',
@@ -8381,6 +8404,7 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'reports') applyReportsVisibility();
     if (key === 'editor') applyEditorVisibility();
     if (key === 'crossfade') renderCrossfadeLen();
+    if (key === 'randomTheme') applyTheme(settings.randomTheme ? randomThemeId() : settings.theme);
     if (key === 'lanSharing') applyLanSharingVisibility();
     if (key === 'artistMinTracksEnabled') {
       renderArtistMinTracks();
