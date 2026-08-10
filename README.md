@@ -8,7 +8,7 @@
 
 A fast, beautiful desktop player for the music you actually own — and a one-click way to get more of it.
 
-[![Version](https://img.shields.io/badge/version-05e1ad8-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
+[![Version](https://img.shields.io/badge/version-24b3121-e8a33d?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![Platforms](https://img.shields.io/badge/Linux%20·%20macOS%20·%20Windows-2b2b2b?style=for-the-badge)](https://github.com/zhotheone/audex-player/releases/latest)
 [![License](https://img.shields.io/badge/MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -24,7 +24,8 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 
 - **Devices (LAN & Tailscale)** — see every device's library live, stream from it, and one-click **take over** its playback session. Libraries and settings sync across your devices automatically.
 - **AcoustID track ID** — auto-fill missing tags and track/disc numbers; bulk "fix the tags" for a song, artist, album, or the whole library.
-- **More download formats** — Opus, FLAC, M4A and WAV, not just MP3.
+- **More download formats** — Opus, FLAC and M4A, not just MP3.
+- **In-app YouTube Music browser** — search an artist, walk their albums and singles, and queue a whole release without touching a link.
 - **YouTube sign-in** — pass yt-dlp your cookies for age-restricted or private videos.
 - **Real auto-updates** — downloads and installs the new version instead of just linking to the releases page.
 - **Fullscreen lyrics, an Albums view**, and cross-links between tracks, artists and albums.
@@ -40,7 +41,7 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 - **It's yours.** Point it at a folder and it just works — offline, forever. Nothing is uploaded anywhere.
 - **It's quick.** Thousands of tracks scroll without a stutter — the list is virtualized and every cover is cached to disk after the first scan.
 - **It looks good.** Eleven palettes, any accent color you like, your own wallpaper behind the interface.
-- **It fills the gaps.** Missing a track? Search YouTube, paste a Spotify playlist, or grab what's charting today — without leaving the app.
+- **It fills the gaps.** Missing a track? Search YouTube Music by artist or paste a Spotify link, and it lands in your library tagged, covered and ready — without leaving the app.
 - **It respects you.** Your listening stats are computed on your device and never leave it.
 
 *Not fully offline: identifying a track queries [AcoustID](https://acoustid.org/), lyrics come from [LRCLIB](https://lrclib.net/), and search/parsing/downloads talk to YouTube — only when you use those features. The LAN/Tailscale device server (below) is optional and off by default.*
@@ -48,12 +49,6 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 ---
 
 ## See it in action
-
-### Charts by country *and* genre
-
-Browse what's trending worldwide or dive into a genre — Pop, Hip-hop, Phonk, Metal, K-pop and more. One click downloads the track, tags and cover art included.
-
-![Trending charts](docs/screenshots/trending.png)
 
 ### Your year in music, computed locally
 
@@ -77,7 +72,9 @@ Dark is Rosé Pine and Light is Rosé Pine Dawn, with Default following your OS 
 
 ### A player worth going fullscreen for
 
-A full-bleed seek bar, an upcoming-queue panel, and a portrait "mobile player" mode for when the window is narrow.
+A floating playbar island at the bottom, and a fullscreen view with the queue
+alongside, karaoke-style synced lyrics that keep the transport in reach, and a
+portrait "mobile player" mode for when the window is narrow.
 
 <table>
   <tr>
@@ -97,10 +94,10 @@ A full-bleed seek bar, an upcoming-queue panel, and a portrait "mobile player" m
 <details open>
 <summary><b>🎵 Library &amp; playback</b></summary>
 
-- Recursive import of `.mp3`, `.wav`, `.ogg`, `.flac`, `.m4a`, `.aac`.
-- Tags and cover art via `music-metadata`; **AcoustID** fills in what's missing. **MP3 tag editing** written back with `node-id3`.
+- Recursive import of `.mp3`, `.wav`, `.ogg`, `.opus`, `.flac`, `.m4a`, `.aac`.
+- Tags and cover art read with `music-metadata`; **AcoustID** fills in what's missing. **Tag editing** is written back through ffmpeg, so it isn't MP3-only.
 - **Playlists, Favorites, Recents**, and **Artists/Albums** views grouped automatically — including tracks streamed from other devices.
-- **Command palette** (<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>) — jump to any track or view instantly.
+- **Command palette** (<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>) — tracks, artists, albums and every action in one box, ranked so an exact artist or album name comes out on top. Actions match in both interface languages.
 - Shuffle, repeat, sorting, filtering, and **resume on launch**.
 - **Crossfade** and a **track trimmer** with a waveform fragment picker *(both optional)*.
 - **Library health-check** *(optional)* — finds suspected transcodes, low bitrates, missing covers, incomplete tags and duplicates.
@@ -110,12 +107,11 @@ A full-bleed seek bar, an upcoming-queue panel, and a portrait "mobile player" m
 <details open>
 <summary><b>⬇️ Get new music</b></summary>
 
-- **YouTube** — search and download by query, with cover art and metadata embedded automatically. Sign in to unlock age-restricted or private videos.
-- **YouTube Music** — paste an album, single or artist link and parse the full track list.
-- **Spotify** — parse playlists and albums, then download them through the shared queue.
-- **Trending** — YouTube Music charts for 8 countries and 13 genres, downloadable in one click.
+- **YouTube Music browser** — its own sidebar tab: search an artist, open an album or single, and queue one track or the whole release. No link, no login, no browser window.
+- **Link parsing** — paste a YouTube Music album/single/artist URL or a Spotify playlist/album URL and get the full track list.
+- **YouTube sign-in** — hand yt-dlp your cookies to unlock age-restricted or private videos.
 - **Download queue** with live progress; queue state survives restarts.
-- Downloads in MP3, Opus, FLAC, M4A or WAV, saved wherever you like.
+- Cover art and metadata are embedded automatically; downloads land in Opus, FLAC or M4A wherever you like.
 
 </details>
 
@@ -126,6 +122,7 @@ A full-bleed seek bar, an upcoming-queue panel, and a portrait "mobile player" m
 - **Eleven palettes** — Rosé Pine, Catppuccin, Gruvbox, Dracula, Tokyo Night, each with a light and dark variant, optionally randomized per launch — and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
 - **UI scale** and a **responsive layout**, with a **portrait "mobile player"** mode for the fullscreen view.
+- **A sidebar you choose** — Downloads, YouTube Music, Devices, Report, Health-check and the Editor are each a switch in **Settings → Sidebar**, so the nav only shows what you use.
 
 </details>
 
@@ -175,6 +172,7 @@ Authorization: Bearer <network key>
 | `GET /api/info` | device id, name, track count |
 | `GET /api/library` | every track, each with a signed `url` and `coverUrl` |
 | `GET /api/state` | what's playing, position, volume, shuffle/repeat, and the next 50 queued tracks |
+| `GET /api/config` | the shared settings blob peers sync between themselves |
 | `GET /api/track/<id>?s=…` | the audio, with `Range` support so clients can seek |
 | `GET /api/cover/<id>?s=…` | cover art |
 | `POST /api/command` | `play` · `pause` · `next` · `prev` · `seek` · `volume` · `playState` · `transfer` |
@@ -196,10 +194,14 @@ playing it.
 
 | Shortcut | Action |
 | --- | --- |
-| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> | Open the search command palette |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> | Open the command palette |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>E</kbd> | Edit tags of the current track |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>,</kbd> | Open settings |
 | <kbd>Space</kbd> | Play / pause |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>←</kbd> / <kbd>→</kbd> | Previous / next track |
+| <kbd>←</kbd> / <kbd>→</kbd> | Seek 5 seconds |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | Volume |
+| <kbd>F</kbd> · <kbd>M</kbd> · <kbd>L</kbd> · <kbd>S</kbd> · <kbd>R</kbd> | Fullscreen · mute · like · shuffle · repeat |
 | <kbd>Esc</kbd> | Close the fullscreen view or any dialog |
 | <kbd>↑</kbd> / <kbd>↓</kbd> · <kbd>Enter</kbd> | Navigate and run palette results |
 
@@ -213,9 +215,13 @@ Grab the latest build from the [**Releases page**](https://github.com/zhotheone/
 
 | Platform | File |
 | --- | --- |
-| **Linux** | `Audex-1.3.0.AppImage` (portable) or `audex-player_1.3.0_amd64.deb` |
-| **macOS** (Apple Silicon) | `Audex-1.3.0-arm64.dmg` |
-| **Windows** | `Audex.Setup.1.3.0.exe` |
+| **Linux** | `Audex-0.0.<n>.AppImage` (portable) or `audex-player_0.0.<n>_amd64.deb` |
+| **macOS** (Apple Silicon) | `Audex-0.0.<n>-arm64.dmg` (or the `-mac.zip`) |
+| **Windows** | `Audex-Setup-<commit>.exe` |
+
+Releases are tagged `v-<commit>` — the short git hash is this fork's version, and
+it's what Settings → About shows. `0.0.<n>` is the commit count, an
+always-increasing number the auto-updater compares; nobody hand-bumps it.
 
 **Nothing else to install.** `yt-dlp` and `ffmpeg` ship inside the app, and parsing runs in Electron's own Chromium — downloading and parsing work out of the box.
 
@@ -243,7 +249,8 @@ sudo apt install libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0 libg
 ```
 
 ```bash
-npm run dist   # Linux AppImage + .deb into release/
+npm run dist    # Linux AppImage + .deb into release/
+npm test        # the LAN/API and library self-checks
 ```
 
 macOS and Windows builds are produced by GitHub Actions on tag push.
@@ -252,7 +259,7 @@ macOS and Windows builds are produced by GitHub Actions on tag push.
 
 ## 🧰 Built with
 
-**[Electron 42](https://www.electronjs.org/)** · vanilla HTML/CSS/JS — no framework, no bundler · **[music-metadata](https://github.com/borewit/music-metadata)** · **[node-id3](https://github.com/Zazama/node-id3)** · **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** · **[ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)**
+**[Electron 42](https://www.electronjs.org/)** · vanilla HTML/CSS/JS — no framework, no bundler · **[music-metadata](https://github.com/borewit/music-metadata)** · **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** · **[ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)** · **[fpcalc/Chromaprint](https://acoustid.org/chromaprint)** · **[electron-updater](https://www.electron.build/auto-update)**
 
 ---
 
