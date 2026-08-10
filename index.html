@@ -1231,8 +1231,6 @@
               </button>
               <div class="select-menu">
                 <div class="select-opt" data-lang="en">English</div>
-                <div class="select-opt" data-lang="de">Deutsch</div>
-                <div class="select-opt" data-lang="fr">Français</div>
                 <div class="select-opt" data-lang="uk">Українська</div>
               </div>
             </div>
@@ -1568,35 +1566,10 @@
   </div>
 
   <!-- Confirm Delete Modal -->
-  <div id="confirm-modal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-icon-bad"><svg class="i" width="16" height="16"><use href="#i-close"/></svg></div>
-      <div class="modal-title" id="confirm-title">Delete track?</div>
-      <div class="modal-text" id="confirm-text">The track will be removed from the library and the file moved to the trash.</div>
-      <div class="modal-actions">
-        <button id="btn-cancel-delete" class="btn-ghost" data-i18n="btn.cancel">Cancel</button>
-        <button id="btn-confirm-delete" class="btn-danger" data-i18n="btn.delete">Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- New Playlist Modal -->
-  <div id="new-playlist-modal" class="modal-overlay">
-    <div class="modal-card modal-card-md">
-      <div class="modal-title" data-i18n="modal.newPlaylist.title">New playlist</div>
-      <input type="text" class="modal-input" id="new-playlist-name" placeholder="Playlist name" data-i18n-placeholder="modal.newPlaylist.namePh">
-      <input type="text" class="modal-input" id="new-playlist-desc" placeholder="Description (optional)" data-i18n-placeholder="modal.newPlaylist.descPh">
-      <div class="modal-actions">
-        <button id="btn-cancel-new-playlist" class="btn-ghost" data-i18n="btn.cancel">Cancel</button>
-        <button id="btn-create-playlist" class="btn-solid" data-i18n="btn.create">Create</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit-playlist Modal -->
+  <!-- New/edit playlist modal (same modal; create mode has nothing loaded) -->
   <div id="edit-playlist-modal" class="modal-overlay">
     <div class="modal-card modal-card-md">
-      <div class="modal-title" data-i18n="modal.editPlaylist.title">Edit playlist</div>
+      <div class="modal-title" id="edit-playlist-title" data-i18n="modal.editPlaylist.title">Edit playlist</div>
       <div class="pl-avatar-row">
         <div class="pl-avatar-preview" id="edit-playlist-avatar-preview"></div>
         <div class="pl-avatar-btns">

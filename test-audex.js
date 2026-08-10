@@ -25,7 +25,7 @@ const grabConst = (name) => {
 };
 const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS } = new Function('fs', 'path',
   grab('sanitizeFsName') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('isOggContainer') +
-  grab('oggCoverMetaFile') + grab('ffmpegTagArgs') +
+  grab('oggCoverMetaFile') + grab('toFfmpegPath') + grab('ffmpegTagArgs') +
   grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') +
   'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS };')(fs, path);
 

@@ -1,8 +1,0 @@
-{
-  "appId": "com.audex.player.mobile",
-  "appName": "Audex",
-  "webDir": "www",
-  "android": {
-    "allowMixedContent": true
-  }
-}

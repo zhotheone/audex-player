@@ -122,7 +122,7 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 <details open>
 <summary><b>🎨 Interface</b></summary>
 
-- **Four languages** — English, German, French, Ukrainian.
+- **Two languages** — English, Ukrainian.
 - **Nine themes** and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
 - **UI scale** and a **responsive layout**, with a **portrait "mobile player"** mode for the fullscreen view.
@@ -152,7 +152,7 @@ On a LAN devices find each other automatically (UDP broadcast on 8422). Tailscal
 broadcast traffic, so there you add the address by hand — `100.x.y.z` or a MagicDNS name. The
 server binds `0.0.0.0`, so one switch covers both.
 
-Two Android clients speak this API today: the in-repo [`mobile/`](mobile/) Capacitor app, and
+One Android client speaks this API today:
 [PixelPlayer](https://github.com/zhotheone/PixelPlayer) — a fork of the excellent
 [PixelPlayerHQ/PixelPlayer](https://github.com/PixelPlayerHQ/PixelPlayer) with an added Audex
 source: pair with a device's network key and its library syncs straight into PixelPlayer's own
@@ -217,7 +217,7 @@ Grab the latest build from the [**Releases page**](https://github.com/zhotheone/
 | **macOS** (Apple Silicon) | `Audex-1.3.0-arm64.dmg` |
 | **Windows** | `Audex.Setup.1.3.0.exe` |
 
-**Nothing else to install.** `yt-dlp`, `ffmpeg` and Chromium all ship inside the app — downloading and parsing work out of the box.
+**Nothing else to install.** `yt-dlp` and `ffmpeg` ship inside the app, and parsing runs in Electron's own Chromium — downloading and parsing work out of the box.
 
 > **Builds are unsigned**, so the OS will ask once:
 > - **macOS** — right-click the app → **Open**, or run `xattr -d com.apple.quarantine /Applications/Audex.app`.
@@ -236,6 +236,12 @@ npm start
 
 `npm start` runs `electron . --no-sandbox` (the flag avoids sandbox permission issues on some Linux setups).
 
+On a bare Debian/Ubuntu box, Electron needs a few system libraries first:
+
+```bash
+sudo apt install libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libgtk-3-0 libgbm1
+```
+
 ```bash
 npm run dist   # Linux AppImage + .deb into release/
 ```
@@ -246,7 +252,7 @@ macOS and Windows builds are produced by GitHub Actions on tag push.
 
 ## 🧰 Built with
 
-**[Electron 42](https://www.electronjs.org/)** · vanilla HTML/CSS/JS — no framework, no bundler · **[music-metadata](https://github.com/borewit/music-metadata)** · **[node-id3](https://github.com/Zazama/node-id3)** · **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** · **[ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)** · **[Puppeteer](https://pptr.dev/)**
+**[Electron 42](https://www.electronjs.org/)** · vanilla HTML/CSS/JS — no framework, no bundler · **[music-metadata](https://github.com/borewit/music-metadata)** · **[node-id3](https://github.com/Zazama/node-id3)** · **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** · **[ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)**
 
 ---
 

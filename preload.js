@@ -87,7 +87,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lanPublish: (snapshot) => ipcRenderer.invoke('lan:publish', snapshot),
   lanAddPeer: (addr) => ipcRenderer.invoke('lan:addPeer', addr),
   lanRemovePeer: (id) => ipcRenderer.invoke('lan:removePeer', id),
-  lanWsRequest: (deviceId, route, body) => ipcRenderer.invoke('lan:wsRequest', deviceId, route, body),
   lanDownloadTrack: (payload) => ipcRenderer.invoke('lan:downloadTrack', payload),
   onLanPeers: (cb) => {
     const listener = (_e, data) => cb(data);

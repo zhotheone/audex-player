@@ -2,7 +2,7 @@
   "name": "audex-player",
   "productName": "Audex",
   "version": "1.3.0",
-  "description": "Audex — minimal desktop music player",
+  "description": "Audex \u2014 minimal desktop music player",
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
@@ -14,7 +14,7 @@
   "build": {
     "appId": "com.audex.player",
     "productName": "Audex",
-    "copyright": "Copyright © 2026 Heorhii Litovskyi",
+    "copyright": "Copyright \u00a9 2026 Heorhii Litovskyi",
     "directories": {
       "output": "release"
     },
@@ -29,15 +29,12 @@
       "LICENSE",
       "package.json",
       "build-info.json",
-      ".puppeteerrc.cjs",
       "build/icon.png",
       "build/icon.svg",
-      "chromium-bundle/**",
       "yt-dlp-bundle/**",
       "fpcalc-bundle/**"
     ],
     "asarUnpack": [
-      "chromium-bundle/**",
       "yt-dlp-bundle/**",
       "fpcalc-bundle/**",
       "node_modules/ffmpeg-static/**"
@@ -89,12 +86,6 @@
           "arch": [
             "x64"
           ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64"
-          ]
         }
       ],
       "icon": "build/icon.ico"
@@ -116,8 +107,7 @@
   "dependencies": {
     "electron-updater": "^6.8.9",
     "ffmpeg-static": "^5.3.0",
-    "music-metadata": "^11.12.3",
-    "puppeteer": "^23.11.1"
+    "music-metadata": "^11.12.3"
   },
   "devDependencies": {
     "electron": "^42.1.0",

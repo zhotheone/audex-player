@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Audex</string>
-    <string name="title_activity_main">Audex</string>
-    <string name="package_name">com.audex.player.mobile</string>
-    <string name="custom_url_scheme">com.audex.player.mobile</string>
-    <string name="audio_player_service_description">Keeps music playing in the background.</string>
-</resources>

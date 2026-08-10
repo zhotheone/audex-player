@@ -1,6 +1,6 @@
 // Refuses to package for a platform whose bundled binaries are not present.
 //
-// yt-dlp, fpcalc and Chromium are fetched by `postinstall` for whatever machine
+// yt-dlp and fpcalc are fetched by `postinstall` for whatever machine
 // runs npm — so cross-building (say, --win from Linux) happily produces an
 // installer carrying Linux binaries. Nothing downstream complains: the app
 // installs, launches, and only fails once the user tries to download or

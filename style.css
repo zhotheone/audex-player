@@ -694,7 +694,6 @@ input { font-family: inherit; color: inherit; }
   gap: 8px;
   align-items: center;
 }
-.sort-active { color: var(--text); cursor: pointer; }
 
 .sort-select { position: relative; }
 .sort-btn {
@@ -1131,7 +1130,6 @@ input { font-family: inherit; color: inherit; }
 .health-issue-btn:hover { background: var(--hover-bg); }
 .health-issue-btn .i { flex-shrink: 0; }
 
-.health-empty-card,
 .health-nodata {
   background: var(--panel);
   border: 1px solid var(--border-strong);
@@ -1139,16 +1137,6 @@ input { font-family: inherit; color: inherit; }
   padding: 32px;
   text-align: center;
   color: var(--text-muted);
-}
-.health-empty-card .health-empty-title {
-  font-size: 15px;
-  color: var(--text-strong);
-  margin-bottom: 6px;
-}
-.health-rescan-progress {
-  font-size: 11px;
-  color: #e8a045;
-  font-variant-numeric: tabular-nums;
 }
 #health-rescan-btn.is-scanning { opacity: 0.6; pointer-events: none; }
 
@@ -1800,17 +1788,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .btn-ghost.icon-only { padding: 7px 10px; }
 
-.btn-danger {
-  padding: 8px 14px;
-  background: var(--danger);
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 12.5px;
-  font-weight: 500;
-}
-.btn-danger:hover { opacity: 0.92; }
-
 .row-actions {
   display: flex;
   align-items: center;
@@ -2067,10 +2044,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   gap: 8px;
 }
 .lang-glyph { font-size: 13px; font-weight: 700; letter-spacing: 0; }
-.section-label-toggle { cursor: pointer; user-select: none; }
-.section-label-toggle:hover { color: var(--text); }
-.section-chevron { margin-left: auto; transition: transform .2s ease; }
-.setting-section.is-collapsed .section-chevron { transform: rotate(-90deg); }
 .setting-section.is-collapsed #discord-body { display: none; }
 
 .setting-card {
@@ -3337,29 +3310,11 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
 .modal-card-md { width: 440px; }
-.modal-icon-bad {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: rgba(255, 100, 130, 0.12);
-  border: 1px solid rgba(255, 100, 130, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-fav);
-  margin-bottom: 14px;
-}
 .modal-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-strong);
   margin-bottom: 6px;
-}
-.modal-text {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: 20px;
 }
 .modal-actions {
   display: flex;
@@ -4303,7 +4258,6 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 .rep-rank-empty { font-size: 12px; color: var(--text-dim); }
 
 /* ─── Discord Rich Presence (Settings) ─── */
-.dc-blurple { color: #5865f2; }
 .dc-conn {
   display: flex;
   align-items: center;

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, screen, Tray, Menu, nativeImage, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, screen, Tray, Menu, nativeImage, globalShortcut, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
@@ -430,7 +430,6 @@ ipcMain.handle('lan:setConfig', (event, next) => lan.setConfig(next || {}));
 ipcMain.handle('lan:publish', (event, snap) => { lan.publish(snap); return true; });
 ipcMain.handle('lan:addPeer', (event, addr) => lan.addManualPeer(addr));
 ipcMain.handle('lan:removePeer', (event, id) => lan.removePeer(id));
-ipcMain.handle('lan:wsRequest', (event, deviceId, route, body) => lan.wsRequest(deviceId, route, body));
 
 // Tray keeps the app alive when all windows are closed — don't quit on
 // window-all-closed (mac already kept the app alive; we now do the same
@@ -2180,44 +2179,6 @@ ipcMain.handle('downloads:getDir', async (event, payload) => {
   return resolveDownloadsDir(payload && payload.targetDir);
 });
 
-// ── Shared Puppeteer helpers ─────────────────────────────────────────────────
-// Bundled-Chromium resolution and duration parsing, shared with the Spotify parser.
-
-function resolveBundledChromium() {
-  const bundleRoot = app.isPackaged
-    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'chromium-bundle')
-    : path.join(__dirname, 'chromium-bundle');
-
-  let dirPrefix;
-  let relExe;
-  if (process.platform === 'linux') {
-    dirPrefix = 'linux';
-    relExe = path.join('chrome-linux64', 'chrome');
-  } else if (process.platform === 'win32') {
-    dirPrefix = 'win64';
-    relExe = path.join('chrome-win64', 'chrome.exe');
-  } else if (process.platform === 'darwin') {
-    dirPrefix = process.arch === 'arm64' ? 'mac_arm' : 'mac';
-    const inner = process.arch === 'arm64' ? 'chrome-mac-arm64' : 'chrome-mac-x64';
-    relExe = path.join(inner, 'Google Chrome for Testing.app', 'Contents', 'MacOS', 'Google Chrome for Testing');
-  } else {
-    return null;
-  }
-
-  try {
-    const chromeRoot = path.join(bundleRoot, 'chrome');
-    const subdirs = fs.readdirSync(chromeRoot).filter(d => d.startsWith(dirPrefix + '-'));
-    if (subdirs.length) {
-      subdirs.sort();
-      const versionDir = subdirs[subdirs.length - 1];
-      const candidate = path.join(chromeRoot, versionDir, relExe);
-      if (fs.existsSync(candidate)) return candidate;
-    }
-  } catch (_) { /* fall through */ }
-
-  try { return require('puppeteer').executablePath(); } catch (_) { return null; }
-}
-
 function durationToSeconds(dur) {
   if (!dur) return 0;
   const parts = String(dur).trim().split(/[:.]/);
@@ -2228,30 +2189,48 @@ function durationToSeconds(dur) {
   return 0;
 }
 
-// ── Spotify playlist parser (Puppeteer) ───────────────────────────────────────
-// Puppeteer + bundled Chromium, scroll-and-collect over a virtualized list, with
+// ── Spotify playlist parser ───────────────────────────────────────────────────
+// A plain BrowserWindow doing scroll-and-collect over a virtualized list, with
 // Spotify-specific extraction: open.spotify.com
 // uses hashed class names, so rows are located via data-testid attributes and
 // href patterns instead of class fragments. Spotify has no yt-dlp extractor, so
 // downloading goes through ytsearch1:"artist title".
+//
+// Electron *is* Chromium, so there is no second browser to bundle or drive: the
+// window runs on a `persist:spotify` session (a sign-in survives across runs the
+// way the old separate profile dir did) and page code goes in through
+// executeJavaScript. Nothing here needs the old automation flags —
+// Electron isn't a CDP-automated Chrome, so navigator.webdriver is already
+// undefined.
 
-let spotifyBrowser = null;
+let spotifyWin = null;
 
 const SPOTIFY_TRACK_SEL = '[data-testid="tracklist-row"]';
 
-async function dismissSpotifyOverlays(page) {
-  // Cookie consent (OneTrust) and the occasional promo dialog.
-  for (const sel of ['#onetrust-accept-btn-handler', 'button[data-testid="close-button"]']) {
-    try {
-      const h = await page.$(sel);
-      if (h) { await h.click({ delay: 30 }).catch(() => {}); await new Promise(r => setTimeout(r, 300)); }
-    } catch (_) {}
-  }
-  try { await page.keyboard.press('Escape'); } catch (_) {}
+// Page functions are shipped as source text: `run(fn, arg)` stringifies the
+// function and calls it in the page, so the bodies below stay real, readable
+// JS in this file instead of string blobs.
+function run(win, fn, arg) {
+  return win.webContents.executeJavaScript(`(${fn.toString()})(${JSON.stringify(arg ?? null)})`, true);
 }
 
-async function extractSpotifyTracksFromDom(page) {
-  return await page.evaluate((TRACK_SEL) => {
+async function dismissSpotifyOverlays(win) {
+  // Cookie consent (OneTrust) and the occasional promo dialog.
+  await run(win, () => {
+    for (const sel of ['#onetrust-accept-btn-handler', 'button[data-testid="close-button"]']) {
+      const h = document.querySelector(sel);
+      if (h) h.click();
+    }
+    document.activeElement?.blur?.();
+  }).catch(() => {});
+  try {
+    win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+    win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
+  } catch (_) {}
+}
+
+function extractSpotifyTracksFromDom(win) {
+  return run(win, (TRACK_SEL) => {
     // Artist links that live outside any track row belong to the page header
     // (album artist / artist page name). Used as fallback for rows that omit
     // the artist (album pages, artist "Popular" sections).
@@ -2347,58 +2326,39 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     } catch (_) {}
   };
 
-  let puppeteer;
-  try { puppeteer = require('puppeteer'); } catch (err) {
-    return { success: false, error: 'puppeteer not installed' };
-  }
-
-  const executablePath = resolveBundledChromium();
-  if (!executablePath || !fs.existsSync(executablePath)) {
-    return { success: false, error: 'Bundled Chromium not found. Run "npm install puppeteer" before packaging.' };
-  }
-
-  const userDataDir = path.join(app.getPath('userData'), 'spotify-profile');
-  try { fs.mkdirSync(userDataDir, { recursive: true }); } catch (_) {}
-
   send({ phase: 'launching', message: showBrowser ? 'Launching browser…' : 'Starting the parser…' });
 
   try {
-    spotifyBrowser = await puppeteer.launch({
-      executablePath,
-      headless: !showBrowser,
-      userDataDir,
-      args: [
-        '--no-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-notifications',
-        ...(showBrowser ? ['--window-size=1440,900'] : []),
-      ],
-      defaultViewport: showBrowser ? null : { width: 1440, height: 900 },
+    spotifyWin = new BrowserWindow({
+      width: 1440,
+      height: 900,
+      show: showBrowser,
+      title: 'Spotify',
+      webPreferences: {
+        partition: 'persist:spotify',
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
     });
+    spotifyWin.setMenu(null);
   } catch (err) {
-    return { success: false, error: 'Failed to launch Chromium: ' + String(err).slice(0, 200) };
+    return { success: false, error: 'Failed to open the parser window: ' + String(err).slice(0, 200) };
   }
 
   const collected = new Map();
 
   try {
-    const pages = await spotifyBrowser.pages();
-    const page = pages[0] || await spotifyBrowser.newPage();
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-    });
-
     send({ phase: 'loading', message: 'Opening the page…' });
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
+      await spotifyWin.loadURL(url);
     } catch (navErr) {
       // The "wait for tracks" loop below is
-      // the real gate, DOMContentLoaded on heavy SPAs is unreliable.
+      // the real gate, load events on heavy SPAs are unreliable.
       send({ phase: 'loading', message: 'The page is loading slower than usual, continuing…' });
     }
     await new Promise(r => setTimeout(r, 2500));
 
-    await dismissSpotifyOverlays(page);
+    await dismissSpotifyOverlays(spotifyWin);
 
     send({
       phase: 'loading',
@@ -2409,8 +2369,9 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     const deadline = Date.now() + 90_000;
     let appeared = false;
     while (Date.now() < deadline) {
-      await dismissSpotifyOverlays(page);
-      const count = await page.$$eval(SPOTIFY_TRACK_SEL, els => els.length).catch(() => 0);
+      if (spotifyWin.isDestroyed()) throw new Error('The parser window was closed');
+      await dismissSpotifyOverlays(spotifyWin);
+      const count = await run(spotifyWin, (sel) => document.querySelectorAll(sel).length, SPOTIFY_TRACK_SEL).catch(() => 0);
       if (count > 0) { appeared = true; break; }
       await new Promise(r => setTimeout(r, 1500));
     }
@@ -2421,7 +2382,8 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     let noNew = 0;
     const SCROLL_RETRIES = 6;
     while (noNew < SCROLL_RETRIES) {
-      const tracks = await extractSpotifyTracksFromDom(page);
+      if (spotifyWin.isDestroyed()) throw new Error('The parser window was closed');
+      const tracks = await extractSpotifyTracksFromDom(spotifyWin);
       let added = 0;
       for (const t of tracks) {
         const key = `${t.title}|${t.artist}`;
@@ -2438,18 +2400,14 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
         added,
         tracks: Array.from(collected.values()),
       });
-      try {
-        // Spotify virtualizes the list inside its own scroll container —
-        // scrollIntoView on the last visible row advances it reliably.
-        await page.evaluate((sel) => {
-          const els = document.querySelectorAll(sel);
-          if (els.length) { els[els.length - 1].scrollIntoView({ block: 'center' }); return; }
-          const sc = document.querySelector('[data-overlayscrollbars-viewport], .main-view-container__scroll-node');
-          if (sc) sc.scrollBy(0, 800); else window.scrollBy(0, 600);
-        }, SPOTIFY_TRACK_SEL);
-      } catch (_) {
-        await page.evaluate(() => window.scrollBy(0, 600));
-      }
+      // Spotify virtualizes the list inside its own scroll container —
+      // scrollIntoView on the last visible row advances it reliably.
+      await run(spotifyWin, (sel) => {
+        const els = document.querySelectorAll(sel);
+        if (els.length) { els[els.length - 1].scrollIntoView({ block: 'center' }); return; }
+        const sc = document.querySelector('[data-overlayscrollbars-viewport], .main-view-container__scroll-node');
+        if (sc) sc.scrollBy(0, 800); else window.scrollBy(0, 600);
+      }, SPOTIFY_TRACK_SEL).catch(() => {});
       await new Promise(r => setTimeout(r, 1500));
     }
 
@@ -2461,75 +2419,57 @@ ipcMain.handle('spotify:parsePlaylist', async (event, payload) => {
     send({ phase: 'error', message: msg });
     return { success: false, error: msg, tracks: Array.from(collected.values()) };
   } finally {
-    try { if (spotifyBrowser) await spotifyBrowser.close(); } catch (_) {}
-    spotifyBrowser = null;
+    try { if (spotifyWin && !spotifyWin.isDestroyed()) spotifyWin.destroy(); } catch (_) {}
+    spotifyWin = null;
   }
 });
 
 // ── YouTube sign-in (for yt-dlp cookies) ──────────────────────────────────────
-// Same trick as the Spotify parser: a real, visible, bundled-Chromium window
-// with a profile that persists across runs, so the user only has to sign in
-// once. Unlike Spotify there's no page to scrape afterward — the whole point
-// is the cookie jar — so instead of waiting for one specific action to finish,
-// snapshot cookies periodically while the window is open and keep whatever
-// the last snapshot was once the user closes it (closing is the "done" signal;
-// cookies can't be read from Chromium anymore once it has disconnected).
-let youtubeLoginBrowser = null;
+// Same trick as the Spotify parser: a real, visible window on a persistent
+// session, so the user only has to sign in once. Unlike Spotify there's no page
+// to scrape afterward — the whole point is the cookie jar. The session outlives
+// the window it was shown in, so cookies are read once after the user closes it
+// (closing is the "done" signal) rather than polled while it's open.
+const YOUTUBE_PARTITION = 'persist:youtube';
+let youtubeLoginWin = null;
 
 function cookiesToNetscape(cookies) {
   const lines = ['# Netscape HTTP Cookie File'];
   for (const c of cookies) {
     const domain = c.domain.startsWith('.') ? c.domain : '.' + c.domain;
-    const expires = c.expires > 0 ? Math.round(c.expires) : Math.round(Date.now() / 1000) + 365 * 24 * 3600;
+    const expires = c.expirationDate > 0 ? Math.round(c.expirationDate) : Math.round(Date.now() / 1000) + 365 * 24 * 3600;
     lines.push([domain, 'TRUE', c.path || '/', c.secure ? 'TRUE' : 'FALSE', expires, c.name, c.value].join('\t'));
   }
   return lines.join('\n') + '\n';
 }
 
 ipcMain.handle('youtube:login', async () => {
-  if (youtubeLoginBrowser) return { success: false, error: 'A sign-in window is already open.' };
+  if (youtubeLoginWin) return { success: false, error: 'A sign-in window is already open.' };
 
-  let puppeteer;
-  try { puppeteer = require('puppeteer'); } catch (_) { return { success: false, error: 'puppeteer not installed' }; }
-  const executablePath = resolveBundledChromium();
-  if (!executablePath || !fs.existsSync(executablePath)) {
-    return { success: false, error: 'Bundled Chromium not found. Run "npm install puppeteer" before packaging.' };
-  }
-
-  const userDataDir = path.join(app.getPath('userData'), 'youtube-profile');
-  try { fs.mkdirSync(userDataDir, { recursive: true }); } catch (_) {}
-
-  let interval = null;
   try {
-    youtubeLoginBrowser = await puppeteer.launch({
-      executablePath,
-      headless: false,
-      userDataDir,
-      args: ['--no-sandbox', '--disable-blink-features=AutomationControlled', '--disable-notifications', '--window-size=1200,840'],
-      defaultViewport: null,
+    youtubeLoginWin = new BrowserWindow({
+      width: 1200,
+      height: 840,
+      title: 'Sign in to YouTube',
+      webPreferences: {
+        partition: YOUTUBE_PARTITION,
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
     });
-    const pages = await youtubeLoginBrowser.pages();
-    const page = pages[0] || await youtubeLoginBrowser.newPage();
-    await page.goto('https://www.youtube.com', { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+    youtubeLoginWin.setMenu(null);
+    await youtubeLoginWin.loadURL('https://www.youtube.com').catch(() => {});
 
-    const client = await page.target().createCDPSession();
-    const saveCookies = async () => {
-      try {
-        const { cookies } = await client.send('Network.getAllCookies');
-        fs.writeFileSync(youtubeCookiesPath(), cookiesToNetscape(cookies));
-      } catch (_) { /* browser may already be closing */ }
-    };
-    await saveCookies();
-    interval = setInterval(saveCookies, 3000);
+    await new Promise((resolve) => youtubeLoginWin.once('closed', resolve));
 
-    await new Promise((resolve) => youtubeLoginBrowser.once('disconnected', resolve));
+    const cookies = await session.fromPartition(YOUTUBE_PARTITION).cookies.get({});
+    fs.writeFileSync(youtubeCookiesPath(), cookiesToNetscape(cookies));
     return { success: true };
   } catch (err) {
     return { success: false, error: String(err && err.message || err).slice(0, 300) };
   } finally {
-    if (interval) clearInterval(interval);
-    try { if (youtubeLoginBrowser) await youtubeLoginBrowser.close(); } catch (_) {}
-    youtubeLoginBrowser = null;
+    try { if (youtubeLoginWin && !youtubeLoginWin.isDestroyed()) youtubeLoginWin.destroy(); } catch (_) {}
+    youtubeLoginWin = null;
     premiumCache = null; // account may have changed — re-probe on next check
   }
 });
@@ -2570,14 +2510,15 @@ async function probeYoutubePremium() {
 }
 ipcMain.handle('youtube:premiumStatus', () => probeYoutubePremium());
 
-// Clearing just yt-cookies.txt isn't a real logout: the persistent Chromium
-// profile (youtube-profile/) still has the signed-in session, so hitting
-// "Sign in…" again would silently reuse it and regenerate the same cookies
-// without ever showing a login screen. Both have to go.
+// Clearing just yt-cookies.txt isn't a real logout: the persistent session
+// still has the signed-in state, so hitting "Sign in…" again would silently
+// reuse it and regenerate the same cookies without ever showing a login
+// screen. Both have to go.
 ipcMain.handle('youtube:logout', async () => {
-  if (youtubeLoginBrowser) return { success: false, error: 'Close the sign-in window first.' };
+  if (youtubeLoginWin) return { success: false, error: 'Close the sign-in window first.' };
   try { fs.rmSync(youtubeCookiesPath(), { force: true }); } catch (_) {}
-  try { fs.rmSync(path.join(app.getPath('userData'), 'youtube-profile'), { recursive: true, force: true }); } catch (_) {}
+  try { await session.fromPartition(YOUTUBE_PARTITION).clearStorageData(); } catch (_) {}
+  premiumCache = null;
   return { success: true };
 });
 

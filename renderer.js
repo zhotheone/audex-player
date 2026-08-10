@@ -182,7 +182,6 @@ let isPlaying = false;
 let isShuffle = false;
 let repeatMode = 0;                  // 0 off · 1 all · 2 one
 
-let pendingDelete = null;            // { kind: 'track'|'playlist', payload }
 let pendingContextTrackPath = null;
 let pendingMetadataPath = null;
 let pendingAddPath = null;
@@ -404,7 +403,6 @@ const I18N = {
     'lan.peers': "Other devices",
     'lan.noPeers': "No devices found yet.",
     'lan.manual': "added by hand",
-    'lan.mobileConnected': "Mobile · Connected",
     'lan.inbound': "Connected · read-only",
     'lan.connect': "Connect to a device",
     'lan.networkBadge': "NETWORK",
@@ -986,1182 +984,6 @@ const I18N = {
     'downloads.queue.stats.paused': 'paused',
     'downloads.queue.pause': 'Pause',
     'downloads.queue.resume': 'Resume',
-  },
-  de: {
-    'nav.devices': "Geräte",
-    'lan.thisDevice': "Dieses Gerät",
-    'lan.namePh': "Gerätename",
-    'lan.keyPh': "Netzwerkschlüssel",
-    'lan.generate': "Erzeugen",
-    'lan.enable': "Freigabe einschalten",
-    'lan.disable': "Freigabe ausschalten",
-    'lan.needKey': "Zuerst einen Netzwerkschlüssel setzen — auf allen Geräten derselbe.",
-    'lan.hint': "Wählen Sie hier einen Netzwerkschlüssel — er funktioniert wie ein WLAN-Passwort: Nur Geräte mit genau demselben Schlüssel finden sich. Freigabe einschalten, und die Bibliothek dieses Geräts wird für den Rest der Gruppe erreichbar.",
-    'lan.hintPeers': "Geräte im selben LAN mit demselben Schlüssel erscheinen hier automatisch — nichts hinzuzufügen. In einem anderen Netzwerk (z. B. über Tailscale) die Adresse oben von Hand hinzufügen. Bleibt das manuelle Hinzufügen unter Windows hängen, gilt die Firewall-Regel meist nur für private Netzwerke — Windows meldet den Tailscale-Adapter als öffentlich, also die App auch dort zulassen.",
-    'lan.on': "Freigabe aktiv",
-    'lan.off': "Freigabe ist aus",
-    'lan.starting': "Wird gestartet…",
-    'lan.error': "Fehler",
-    'lan.peers': "Andere Geräte",
-    'lan.noPeers': "Noch keine Geräte gefunden.",
-    'lan.manual': "von Hand hinzugefügt",
-    'lan.connect': "Mit einem Gerät verbinden",
-    'lan.networkBadge': "NETZWERK",
-    'lan.networkFrom': "Von {device}",
-    'lan.syncSettings': "Einstellungen abgleichen",
-    'lan.syncSettingsHint': "Die App-Einstellungen dieses Geräts (Theme, Sprache, Downloadformat usw.) übernehmen",
-    'lan.syncSettingsConfirm': "Ihre App-Einstellungen durch die von {device} ersetzen? Bibliothek und Dateien bleiben unberührt.",
-    'lan.syncSettingsNone': "Dieses Gerät hat noch keine Einstellungen geteilt.",
-    'lan.takeOver': "Übernehmen",
-    'lan.takeOverHint': "Die laufende Sitzung dieses Geräts hierher übernehmen, genau dort weiter, wo sie war",
-    'lan.push': 'Hierher senden',
-    'lan.pushHint': "Die hier laufende Wiedergabe an dieses Gerät senden",
-    'lan.remove': "Entfernen",
-    'lan.add': "Hinzufügen",
-    'lan.addPh': "Adresse, z. B. 100.90.1.2 oder 192.168.1.5:8422",
-    'lan.nothingPlaying': "Dieses Gerät spielt nichts ab.",
-    'lan.errKey': "Falscher Netzwerkschlüssel",
-    'lan.errReach': "Gerät nicht erreichbar:",
-    'nav.library': 'Bibliothek',
-    'update.available': 'Update verfügbar',
-    'update.download': 'Herunterladen',
-    'update.downloading': 'Wird heruntergeladen… {pct}%',
-    'update.restart': 'Zum Installieren neu starten',
-    'update.failed': 'Download fehlgeschlagen — Release-Seite wird geöffnet',
-    'update.dismiss': 'Schließen',
-    'import.progress': 'Titel werden importiert…',
-    'nav.albums': 'Alben',
-    'nav.artists': 'Interpreten',
-    'nav.playlists': 'Playlists',
-    'nav.favorites': 'Favoriten',
-    'nav.downloads': 'Downloads',
-    'nav.editor': 'Editor',
-    'cm.trim': 'Titel zuschneiden…',
-    'setting.editor': 'Editor (Titel zuschneiden)',
-    'setting.editorDesc': 'Der Bereich „Editor“ zum Zuschneiden von Titeln: Ausschnitt in der Wellenform wählen und als neue Datei speichern.',
-    'editor.pick': 'Titel wählen',
-    'editor.pickSearch': 'Suche nach Titel oder Interpret',
-    'editor.pickEmpty': 'Nichts gefunden',
-    'editor.empty.title': 'Titel zuschneiden',
-    'editor.empty.text': 'Wähle einen Titel, markiere Anfang und Ende in der Wellenform und speichere den Ausschnitt als eigene Datei. Das Original bleibt unangetastet, sofern Überschreiben nicht aktiviert ist.',
-    'editor.start': 'Anfang',
-    'editor.end': 'Ende',
-    'editor.selection': 'Länge des Ausschnitts',
-    'editor.preview': 'Ausschnitt anhören',
-    'editor.previewStop': 'Stoppen',
-    'editor.reset': 'Zurücksetzen',
-    'editor.fadeIn': 'Einblenden, s',
-    'editor.fadeOut': 'Ausblenden, s',
-    'editor.gain': 'Lautstärke, dB',
-    'editor.gainHint': 'Minus ist leiser, Plus ist lauter. 0 dB lässt sie unverändert.',
-    'editor.gainClip': 'Spitze überschreitet 0 dB um {d} dB — Übersteuerung wahrscheinlich',
-    'editor.overwrite': 'Original überschreiben',
-    'editor.overwriteDesc': 'Standardmäßig wird daneben eine neue Datei „— (trimmed)“ erstellt. Aktivieren, um die Quelldatei zu ersetzen.',
-    'editor.save': 'Zuschneiden und speichern',
-    'editor.decoding': 'Audio wird gelesen…',
-    'editor.decodeError': 'Audio konnte nicht gelesen werden',
-    'editor.trimming': 'Wird zugeschnitten…',
-    'editor.trimSaved': 'Gespeichert: {f}',
-    'editor.saveError': 'Zuschneiden fehlgeschlagen: {e}',
-    'editor.tooShort': 'Ausschnitt ist zu kurz',
-    'nav.search': 'Suche',
-    'nav.recents': 'Zuletzt',
-    'nav.tools': 'Werkzeuge',
-    'nav.openFiles': 'Dateien öffnen',
-    'nav.settings': 'Einstellungen',
-    'dlErr.geo': 'Dieser Titel ist in Ihrem Land gesperrt, und es wurde keine Alternative gefunden.',
-    'dlErr.unavailable': 'Das Video wurde entfernt oder ist nicht verfügbar; keine Alternative gefunden.',
-    'dlErr.signin': 'YouTube verlangt für diesen Titel ein angemeldetes Konto. Melde dich unter Einstellungen → Downloads an.',
-    'dlErr.members': 'Dieser Titel ist nur für Kanalmitglieder verfügbar.',
-    'dlErr.network': 'Keine Verbindung zu YouTube. Prüfen Sie Ihr Netzwerk.',
-    'dlErr.transient': 'YouTube hatte mitten im Download einen Aussetzer — ein erneuter Versuch klappt meist.',
-    'nav.report': 'Bericht',
-    'report.onDevice': 'Auf diesem Gerät berechnet',
-    'report.eyebrow': 'Hörbericht',
-    'report.period.day': 'Tag',
-    'report.period.week': 'Woche',
-    'report.period.month': 'Monat',
-    'report.period.year': 'Jahr',
-    'report.period.all': 'Gesamt',
-    'report.allTime': 'Gesamte Zeit',
-    'report.today': 'Heute',
-    'report.thisWeek': 'Diese Woche',
-    'report.listeningTime': 'Hörzeit',
-    'report.vsPrev': 'ggü. Vorperiode',
-    'report.tracksPlayed': 'Titel gespielt',
-    'report.artists': 'Interpreten',
-    'report.added': 'Zur Sammlung hinzugefügt',
-    'report.streak': 'Hörserie',
-    'report.days': 'Tage',
-    'report.whenListen': 'Wann du hörst',
-    'report.topArtists': 'Top-Interpreten',
-    'report.topTracks': 'Top-Titel',
-    'report.plays': 'Wdg.',
-    'report.minUnit': 'Min',
-    'report.hoursUnit': 'Stunden',
-    'report.hShort': 'Std',
-    'report.mShort': 'Min',
-    'report.empty.title': 'Hier erscheint deine Statistik',
-    'report.empty.text': 'Höre Musik — der Bericht entsteht aus dem Verlauf auf diesem Gerät.',
-    'table.quality': 'Qualität',
-    'quality.kbps': 'kbit/s',
-    'quality.note': 'Ein Qualitäts-Badge an jedem Titel · ',
-    'quality.noteAmber': 'bernstein = verdächtige Umkodierung',
-    'quality.cutoffMarker': 'Grenze',
-    'health.khz': 'kHz',
-    'nav.health': 'Zustand',
-    'health.crumb': 'Bibliothekszustand',
-    'health.lastScan': 'Letzte Prüfung:',
-    'health.never': 'noch nicht geprüft',
-    'health.rescan': 'Neu scannen',
-    'health.scanning': 'Prüfe {n} von {m}…',
-    'health.scoreLabel': 'Zustand der Sammlung',
-    'health.ok': 'in Ordnung',
-    'health.okLegend': 'in Ordnung',
-    'health.flaggedLegend': 'brauchen Aufmerksamkeit',
-    'health.transcodeTitle': 'Sieht nach Umkodierung aus',
-    'health.claimed': 'Angegeben',
-    'health.real': 'real ≈',
-    'health.spectrumCaption': 'Das Spektrum bricht bei {cut} kHz ab, obwohl eine echte hohe Bitrate Frequenzen bis ~20 kHz hält.{lame}',
-    'health.noLame': ' Kein LAME-Tag vorhanden.',
-    'health.issuesLabel': 'Gefundene Probleme',
-    'health.show': 'Anzeigen',
-    'health.fix': 'Beheben',
-    'health.allGood': 'Keine Probleme gefunden',
-    'health.allGoodText': 'Deine Sammlung ist in bestem Zustand.',
-    'health.noData': 'Starte eine Prüfung, um den Zustand zu beurteilen.',
-    'health.analyzing': 'Spektrum wird analysiert…',
-    'health.filterNote': 'Zustandsfilter: {label}',
-    'health.clearFilter': 'Zurücksetzen',
-    'issue.transcode.title': 'Verdächtige Umkodierung',
-    'issue.transcode.desc': 'Die Bitrate ist hoch angegeben, aber das Spektrum bricht früh ab — wahrscheinlich aus geringer Qualität hochgerechnet.',
-    'issue.lowbitrate.title': 'Niedrige Bitrate (< 192 kbit/s)',
-    'issue.lowbitrate.desc': 'Dateien mit 128 kbit/s und weniger. Durch bessere Versionen ersetzbar.',
-    'issue.nocover.title': 'Ohne Cover',
-    'issue.nocover.desc': 'Titel ohne eingebettetes Albumbild.',
-    'issue.tags.title': 'Unvollständige Tags',
-    'issue.tags.desc': 'Leere Felder für Interpret, Album oder Jahr.',
-    'issue.notrackno.title': 'Fehlende Titelnummer',
-    'issue.notrackno.desc': 'Titel ohne Titelnummer-Tag, das die Albumreihenfolge durcheinanderbringt.',
-    'issue.dupes.title': 'Mögliche Duplikate',
-    'issue.dupes.desc': 'Gleicher Interpret und Titel in verschiedenen Dateien.',
-    'section.discord': 'Discord Rich Presence',
-    'discord.subtitle': 'Zeige Freunden direkt im Discord-Profil, was du hörst — mit Cover, Timer und Buttons zum Titel.',
-    'discord.statusConnected': 'Verbunden',
-    'discord.statusDisconnected': 'Nicht verbunden',
-    'discord.connect': 'Discord verbinden',
-    'discord.disconnect': 'Trennen',
-    'discord.connectHint': 'Verknüpfe dein Konto, um deine Wiedergabe im Profil zu zeigen.',
-    'discord.sessionActive': 'Sitzung aktiv',
-    'discord.connecting': 'Verbinde…',
-    'discord.connectError': 'Verbindung fehlgeschlagen. Stelle sicher, dass Discord läuft.',
-    'discord.waitingForDiscord': 'Discord läuft nicht — ich verbinde mich automatisch, sobald es geöffnet ist.',
-    'discord.noClientId': 'Keine Discord Client ID gesetzt. Trage sie in DISCORD_CLIENT_ID in renderer.js ein.',
-    'discord.show': 'Was anzeigen',
-    'discord.showTitle': 'Titelname',
-    'discord.showTitleDesc': 'Die Hauptzeile der Aktivität.',
-    'discord.showArtist': 'Interpret und Album',
-    'discord.showArtistDesc': 'Die zweite Zeile unter dem Titel.',
-    'discord.showCover': 'Albumcover',
-    'discord.showCoverDesc': 'Das große Bild auf der Karte.',
-    'discord.showTimer': 'Titel-Timer',
-    'discord.showTimerDesc': 'Vergangene und Gesamtzeit mit Fortschritt.',
-    'discord.showPaused': 'Bei Pause anzeigen',
-    'discord.showPausedDesc': 'Status beibehalten, wenn die Wiedergabe gestoppt ist.',
-    'discord.buttons': 'Profil-Buttons',
-    'discord.buttonsHint': 'Discord erlaubt höchstens zwei Buttons pro Aktivität. Links müssen mit http(s):// beginnen',
-    'discord.btnLabel': 'Beschriftung',
-    'discord.btnUrl': 'Link',
-    'discord.btnLabelPh': 'Button-Text',
-    'discord.btnUrlPh': 'https://…',
-    'discord.privacy': 'Privatsphäre',
-    'discord.privacyInvisible': 'Bei «Unsichtbar» verbergen',
-    'discord.privacyInvisibleDesc': 'Status nicht senden, wenn du auf Discord offline erscheinst.',
-    'discord.privacyPrivate': 'Für private Playlists deaktivieren',
-    'discord.privacyPrivateDesc': 'Titel aus privaten Playlists erscheinen nicht im Profil.',
-    'discord.preview': 'Was Freunde sehen',
-    'discord.previewListening': 'Hört Audex',
-    'discord.previewPaused': 'Hörte · pausiert',
-    'discord.previewPlaceholder': 'Der Status erscheint im Profil, sobald Discord verbunden ist',
-    'discord.previewNote': 'Die Karte aktualisiert sich live bei Titelwechsel, Pause und Spulen.',
-    'discord.previewOnline': 'Online',
-    'discord.previewEmptyTrack': 'Nichts wird abgespielt',
-    'crumb.collection': 'Sammlung',
-    'search.placeholder': 'Suche…',
-    'search.artistPlaceholder': 'Interpreten suchen…',
-    'search.albumPlaceholder': 'Album suchen…',
-    'search.trackPlaceholder': 'Titel suchen…',
-    'filter.all': 'Alle',
-    'filter.recent': 'Kürzlich hinzugefügt',
-    'filter.favorites': 'Nur Favoriten',
-    'sort.label': 'Sortierung:',
-    'sort.dateDesc': 'Hinzugefügt ↓',
-    'sort.dateAsc': 'Hinzugefügt ↑',
-    'sort.titleAsc': 'Titel A→Z',
-    'sort.titleDesc': 'Titel Z→A',
-    'sort.artistAsc': 'Interpret A→Z',
-    'sort.artistDesc': 'Interpret Z→A',
-    'sort.durationAsc': 'Dauer ↑',
-    'sort.durationDesc': 'Dauer ↓',
-    'sort.alpha': 'Alphabetisch',
-    'sort.byTracks': 'Nach Titelanzahl',
-    'sort.recent': 'Kürzlich hinzugefügt',
-    'view.cards': 'Karten',
-    'view.list': 'Liste',
-    'table.title': 'Titel',
-    'table.artist': 'Interpret',
-    'table.album': 'Album',
-    'table.time': 'Zeit',
-    'empty.library.title': 'Bibliothek ist leer',
-    'empty.library.text': 'Öffne Dateien oder einen Ordner, um zu beginnen.',
-    'empty.playlists.title': 'Noch keine Playlists',
-    'empty.playlists.text': 'Erstelle deine erste Playlist — sammle Titel nach Stimmung, Tageszeit oder Album.',
-    'empty.artists.title': 'Noch keine Interpreten',
-    'empty.artists.text': 'Füge Titel zur Bibliothek hinzu, um hier Interpreten zu sehen.',
-    'empty.albums.title': 'Noch keine Alben',
-    'empty.albums.text': 'Füge Titel zur Bibliothek hinzu, um hier Alben zu sehen.',
-    'empty.favorites.title': 'Keine Favoriten',
-    'empty.favorites.text': 'Tippe auf das Herz eines Titels, um ihn hier hinzuzufügen.',
-    'btn.newPlaylist': 'Neue Playlist',
-    'btn.playAll': 'Alle abspielen',
-    'btn.shuffle': 'Zufall',
-    'btn.deletePlaylist': 'Playlist löschen',
-    'btn.choose': 'Auswählen…',
-    'btn.signIn': 'Anmelden…',
-    'btn.signOut': 'Abmelden',
-    'btn.signingIn': 'Warten…',
-    'btn.checkUpdate': 'Jetzt prüfen',
-    'btn.checking': 'Wird geprüft…',
-    'btn.openLogs': 'Ordner öffnen',
-    'btn.fixTagsTooltip': 'Tags über AcoustID korrigieren…',
-    'btn.cancel': 'Abbrechen',
-    'btn.delete': 'Löschen',
-    'select.enter': 'Auswählen',
-    'select.count': 'Ausgewählt: {n}',
-    'library.count.split': '{local} lokal, {network} Netzwerk-{tracks}',
-    'select.all': 'Alle auswählen',
-    'select.downloadFromHost': 'Vom Host herunterladen',
-    'lanDownload.progress': 'Herunterladen vom Host…',
-    'lanDownload.summary': '{done} heruntergeladen · {failed} fehlgeschlagen ({total} insgesamt)',
-    'modal.deleteTracks.title': 'Ausgewählte Titel löschen?',
-    'modal.deleteTracks.text': '{count} werden aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
-    'btn.create': 'Erstellen',
-    'btn.close': 'Schließen',
-    'btn.save': 'Speichern',
-    'btn.minimize': 'Minimieren',
-    'btn.portrait': 'Mobiler Modus',
-    'btn.album': 'Album',
-    'btn.favorite': 'Zu Favoriten',
-    'btn.unfavorite': 'Aus Favoriten entfernen',
-    'btn.favoriteOn': 'In Favoriten',
-    'btn.addToPlaylist': 'Zur Playlist',
-    'tooltip.favorite': 'Zu Favoriten',
-    'tooltip.shuffle': 'Zufällige Reihenfolge',
-    'tooltip.prev': 'Vorheriger',
-    'tooltip.playPause': 'Wiedergabe / Pause',
-    'tooltip.next': 'Nächster',
-    'tooltip.repeat': 'Wiederholen',
-    'tooltip.fullscreen': 'Vollbild',
-    'tooltip.volume': 'Lautstärke',
-    'tooltip.wip': 'Funktion in Entwicklung',
-    'hint.favorites': 'Gespeicherte Titel erscheinen hier',
-    'eyebrow.playlist': 'Playlist',
-    'eyebrow.album': 'Album',
-    'eyebrow.artist': 'Interpret',
-    'autoChip.artists': 'Die Liste wird automatisch aus deiner Bibliothek erstellt',
-    'autoChip.albums': 'Die Liste wird automatisch aus deiner Bibliothek erstellt',
-    'np.empty.title': 'Nichts ausgewählt',
-    'np.empty.artist': '—',
-    'fs.nowPlayingFrom': 'Wird abgespielt · aus',
-    'fs.fromLibrary': 'Bibliothek',
-    'fs.nowPlaying': 'Wird abgespielt',
-    'fs.queue': 'Warteschlange',
-    'fs.queueAhead': '{n} folgen',
-    'fs.lyrics': 'Songtext',
-    'fs.lyricsLoading': 'Songtext wird geladen…',
-    'fs.lyricsNone': 'Kein Songtext gefunden',
-    'downloads.tab.parsing': 'Parsing',
-    'downloads.title': 'Aus dem Internet herunterladen',
-    'downloads.subtitle': 'Hier wird es möglich sein, Titel per Direktlink zu speichern. Bereich in Entwicklung.',
-    'downloads.parsing.title': 'Parsing',
-    'downloads.parsing.subtitle': 'Hier wird es möglich sein, Titel durch Parsen von Seiten zu sammeln. Bereich in Entwicklung.',
-    'downloads.yt.action.download': 'Herunterladen',
-    'downloads.yt.action.downloading': 'Lädt…',
-    'downloads.yt.action.done': 'Fertig',
-    'downloads.yt.action.retry': 'Erneut',
-    'downloads.yt.downloadError': 'Fehlgeschlagen: {e}',
-    'downloads.yt.downloadOk': 'Heruntergeladen und zur Bibliothek hinzugefügt: {t}',
-    'downloads.yt.tagNote': 'Nach dem Download müssen die MP3-Tags (Titel, Interpret, Cover) eventuell manuell über das Kontextmenü des Titels angepasst werden.',
-    'downloads.parsing.start': 'Parsen',
-    'downloads.parsing.col.artist': 'Interpret',
-    'downloads.parsing.col.title': 'Titel',
-    'downloads.parsing.col.duration': 'Dauer',
-    'downloads.parsing.subtab.ytmusic': 'YouTube Music',
-    'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
-    'downloads.warnPlainYoutube': '⚠ Das ist ein youtube.com-Link. Nutze die music.youtube.com-Version für höhere Qualität (Premium, 256 kbit/s) — in YouTube Music öffnen und diesen Link kopieren.',
-    'downloads.ytm.hint': 'Link zu einem Album, einer Single oder einem Interpreten auf YouTube Music. Kein Login oder Browser nötig.',
-    'downloads.ytm.idle.title': 'YouTube-Music-Parsing',
-    'downloads.ytm.idle.text': 'Füge einen Link zu einem Album, einer Single oder einer Interpretenseite von YouTube Music ein. Die App sammelt die Titelliste, und du kannst jeden Titel mit einem Klick herunterladen.',
-    'downloads.parsing.subtab.spotify': 'Spotify',
-    'downloads.sp.urlPlaceholder': 'https://open.spotify.com/playlist/…',
-    'downloads.sp.hint': 'Link zu einer Playlist, einem Album oder einem Interpreten auf Spotify. Der Parser läuft im Hintergrund.',
-    'downloads.sp.idle.title': 'Spotify-Parsing',
-    'downloads.sp.idle.text': 'Füge einen Playlist- oder Album-Link von Spotify ein. Die App öffnet einen Browser, sammelt die Titelliste, und du kannst jeden Titel mit einem Klick herunterladen.',
-    'downloads.parsing.starting': 'Parser wird gestartet…',
-    'downloads.parsing.done': 'Fertig — {n} Titel gesammelt',
-    'downloads.parsing.error': 'Parsing-Fehler: {e}',
-    'settings.title': 'Einstellungen',
-    'settings.subtitle': 'Aussehen, Musikquellen und App-Verhalten.',
-    'section.appearance': 'Aussehen',
-    'section.background': 'Hintergrund',
-    'setting.bgSource': 'Hintergrundbild',
-    'setting.bgSourceDesc': 'Eigenes Bild oder das Cover des laufenden Titels hinter der Oberfläche.',
-    'bg.none': 'Keiner',
-    'bg.image': 'Bild',
-    'bg.cover': 'Cover',
-    'setting.bgFile': 'Datei',
-    'setting.bgFileDesc': 'Wird in die App kopiert, das Original kann danach verschoben werden.',
-    'bg.noFile': 'Keine Datei gewählt',
-    'bg.clear': 'Entfernen',
-    'setting.bgFit': 'Anpassung',
-    'bg.fit.cover': 'Füllen',
-    'bg.fit.contain': 'Ganz',
-    'bg.fit.center': 'Zentriert',
-    'bg.fit.tile': 'Kacheln',
-    'setting.bgBlur': 'Unschärfe',
-    'setting.bgDim': 'Abdunkeln',
-    'setting.bgDimDesc': 'Je höher, desto lesbarer bleibt Text über dem Bild.',
-    'setting.surfaceAlpha': 'Deckkraft der Flächen',
-    'setting.surfaceAlphaDesc': 'Wie stark der Hintergrund durch Seitenleiste und Player-Leiste scheint.',
-    'section.music': 'Musik',
-    'section.downloads': 'Aus dem Internet herunterladen',
-    'section.sidebar': 'Seitenleiste',
-    'section.language': 'Sprache',
-    'section.about': 'Über die App',
-    'section.contacts': 'Kontakte',
-    'setting.github': 'GitHub',
-    'setting.githubDesc': 'Quellcode des Projekts auf GitHub.',
-    'setting.telegram': 'Telegram',
-    'setting.telegramDesc': 'Bug gefunden oder Vorschlag — schreib auf Telegram.',
-    'theme.dark': 'Dunkel',
-    'theme.light': 'Hell',
-    'theme.system': 'System',
-    'setting.theme': 'Design',
-    'setting.themeDesc': 'Farbschema der Anwendung.',
-    'setting.accent': 'Akzentfarbe',
-    'setting.accentDesc': 'Hervorhebung aktiver Elemente und des aktuellen Titels.',
-    'setting.accentDefault': 'Standard',
-    'setting.accentCustom': 'Eigene Farbe',
-    'setting.defaultFolder': 'Standardordner',
-    'setting.defaultFolderDesc': 'Woher Titel beim Start geladen werden.',
-    'setting.defaultView': 'Startseite',
-    'setting.defaultViewDesc': 'Welche Seite beim Start der App geöffnet wird.',
-    'setting.defaultViewPlaylist': 'Eigene Playlist…',
-    'setting.defaultPlaylist': 'Playlist',
-    'setting.uiScale': 'Oberflächenskalierung',
-    'setting.uiScaleDesc': 'Vergrößert oder verkleinert die gesamte Oberfläche. Wird sofort angewendet.',
-    'setting.uiScaleReset': 'Zurücksetzen',
-    'setting.scanSubdirs': 'Unterordner durchsuchen',
-    'setting.scanSubdirsDesc': 'Verschachtelte Verzeichnisse beim Indizieren einbeziehen.',
-    'setting.artistMinTracks': 'Kleine Interpreten ausblenden',
-    'setting.artistMinTracksDesc': 'Interpreten mit nur ein oder zwei Titeln aus der Interpreten-Ansicht ausblenden — meist nur ein vereinzelter Feature-Credit statt eines eigenen Eintrags.',
-    'setting.artistMinTracksN': 'Mindestanzahl Titel',
-    'setting.healthCheck': 'Qualitätsprüfung (Health-check)',
-    'setting.healthCheckDesc': 'Der Bereich „Bibliothekszustand“ und die Spalte „Qualität“ in den Titellisten. Wenn deaktiviert, sind Spalte und Bereich vollständig ausgeblendet.',
-    'setting.reports': 'Hörbericht',
-    'setting.reportsDesc': 'Der Bereich „Bericht“ mit Hörstatistiken. Statistiken werden immer erfasst, auch wenn der Bereich ausgeblendet ist.',
-    'setting.crossfadeLen': 'Überblendungsdauer',
-    'setting.volWheelStep': 'Lautstärke-Scrollschritt',
-    'setting.volWheelStepDesc': 'Wie stark jede Mausrad-Rasterung die Lautstärke ändert, während der Regler unter dem Mauszeiger liegt.',
-    'unit.sec': 's',
-    'setting.crossfade': 'Überblendung zwischen Titeln',
-    'setting.crossfadeDesc': 'Titel gehen ineinander über: der aktuelle wird ausgeblendet, während der nächste einsetzt. Gilt sowohl am Titelende als auch beim manuellen Wechseln.',
-    'setting.repeatOneReset': '„Titel wiederholen“ beim Überspringen zurücksetzen',
-    'setting.repeatOneResetDesc': 'Wird manuell zum nächsten oder vorherigen Titel gewechselt, während „Titel wiederholen“ aktiv ist, schaltet es auf „Wiederholen“ um, statt auch den neuen Titel zu wiederholen.',
-    'setting.showDownloads': 'Tab „Downloads“ anzeigen',
-    'setting.showDownloadsDesc': 'Öffnet einen Bereich in der Seitenleiste zum Herunterladen von Titeln per URL.',
-    'setting.showDevices': 'Registerkarte „Geräte“ anzeigen',
-    'setting.showDevicesDesc': 'Lässt diese App von Ihren anderen Geräten im selben LAN oder Tailscale-Netzwerk gefunden und gesteuert werden. Öffnet einen lokalen Netzwerkport; standardmäßig aus.',
-    'setting.showParserBrowser': 'Browserfenster beim Parsen anzeigen',
-    'setting.showParserBrowserDesc': 'Nützlich, um sich beim ersten Start bei Spotify anzumelden, ein Captcha zu lösen oder zu sehen, wo der Parser hängengeblieben ist. Ausschalten, damit der Browser unsichtbar im Hintergrund läuft.',
-    'setting.ytLogin': 'Bei YouTube anmelden',
-    'setting.ytLoginDesc': 'Behebt den Download-Fehler „Sign in to confirm you\'re not a bot“. Öffnet ein Browserfenster — anmelden und dann schließen.',
-    'setting.ytLogin.signedIn': 'Angemeldet',
-    'setting.ytLogin.notSignedIn': 'Nicht angemeldet',
-    'setting.ytLogin.waiting': 'Warte, bis das Browserfenster geschlossen wird…',
-    'setting.ytPremium.checking': 'Premium wird geprüft…',
-    'setting.ytPremium.active': 'YouTube Premium · 256 kbit/s',
-    'setting.ytPremium.none': 'Kein Premium · bis zu 160 kbit/s',
-    'setting.ytPremium.unknown': 'Premium-Status unbekannt',
-    'setting.dlFormat': 'Downloadformat',
-    'setting.dlFormatDesc': 'Dateien werden als {Standardordner}/{Interpret}/{Album}/{Interpret} - {Titel} gespeichert. Opus bietet die beste Qualität pro Megabyte; wähle M4A, wenn eines deiner Geräte es nicht abspielen kann.',
-    'downloads.noFolder': 'Wähle zuerst einen Standardordner — Downloads werden dort nach Interpret und Album einsortiert.',
-    'section.system': 'System',
-    'section.hotkeys': 'Tastenkürzel',
-    'hotkeys.intro': 'Auf ein Kürzel klicken, dann Taste oder Maustaste drücken. Esc bricht ab, Backspace löscht es.',
-    'hotkeys.globalNote': 'Das Monitor-Symbol lässt ein Kürzel auch bei minimiertem Fenster wirken. Es braucht einen Modifikator (Ctrl, Alt oder Shift); Maustasten können das nicht.',
-    'hotkeys.escNote': 'Esc schließt immer das oberste Fenster und lässt sich nicht neu belegen.',
-    'hotkeys.resetAll': 'Alle zurücksetzen',
-    'hotkeys.press': 'Tasten drücken…',
-    'hotkeys.revert': 'Standard wiederherstellen',
-    'hotkeys.global': 'Funktioniert auch bei minimiertem Fenster (systemweit)',
-    'hotkeys.globalNeedsMod': 'Ein globales Kürzel braucht einen Modifikator: Ctrl, Alt oder Shift',
-    'hotkeys.globalNoMouse': 'Maustasten können nicht global funktionieren',
-    'hotkeys.globalUnsupported': 'Diese Taste lässt sich nicht global registrieren',
-    'hotkeys.globalFailed': 'Kürzel bereits von einer anderen Anwendung belegt',
-    'hotkeys.globalUnavailable': 'Globale Kürzel sind in einer Wayland-Sitzung nicht verfügbar. Nutzen Sie die Medientasten — sie laufen über MPRIS.',
-    'mouse.middle': 'Mittlere Taste',
-    'mouse.back': 'Maus «Zurück»',
-    'mouse.forward': 'Maus «Vor»',
-    'mouse.other': 'Maus {n}',
-    'hotkey.playPause': 'Wiedergabe / Pause',
-    'hotkey.nextTrack': 'Nächster Titel',
-    'hotkey.prevTrack': 'Vorheriger Titel',
-    'hotkey.seekForward': '5 s vorspulen',
-    'hotkey.seekBackward': '5 s zurückspulen',
-    'hotkey.volumeUp': 'Lauter',
-    'hotkey.volumeDown': 'Leiser',
-    'hotkey.mute': 'Stummschalten',
-    'hotkey.favorite': 'Zu Favoriten',
-    'hotkey.shuffle': 'Zufallswiedergabe',
-    'hotkey.repeat': 'Wiederholmodus',
-    'hotkey.fullscreen': 'Vollbild-Player',
-    'hotkey.palette': 'Befehlspalette',
-    'hotkey.editTags': 'Tags bearbeiten',
-    'hotkey.settings': 'Einstellungen öffnen',
-    'setting.hardwareAcceleration': 'Hardwarebeschleunigung',
-    'setting.hardwareAccelerationDesc': 'Nutzt die Grafikkarte zum Rendern der Oberfläche. Wenn die App beim Start hängt oder Grafikfehler zeigt, schalten Sie sie aus. Wird nach einem Neustart wirksam.',
-    'setting.uiLanguage': 'Sprache der Oberfläche',
-    'setting.uiLanguageDesc': 'Wird sofort angewendet.',
-    'setting.version': 'Version',
-    'setting.checkUpdate': 'Nach Updates suchen',
-    'setting.checkUpdateDesc': 'Sucht jetzt sofort nach einer neueren Version auf GitHub.',
-    'setting.openLogs': 'Protokolle',
-    'setting.openLogsDesc': 'Öffnet den Ordner mit Fehlerprotokollen zur Fehlersuche bei einem fehlgeschlagenen Update.',
-    'update.checkFailed': 'Update-Prüfung fehlgeschlagen.',
-    'update.upToDate': 'Du hast bereits die neueste Version ({v}).',
-    'badge.wip': 'in Entwicklung',
-    'placeholder.noFolder': '— nicht ausgewählt —',
-    'placeholder.noPlaylists': 'Noch keine Playlists',
-    'placeholder.choosePlaylist': 'Playlist wählen…',
-    'modal.deleteTrack.title': 'Titel löschen?',
-    'modal.deleteTrack.text': 'Der Titel wird aus der Bibliothek entfernt und die Datei in den Papierkorb verschoben.',
-    'modal.deleteTrackFull.text': '„{title}“ von {artist} wird aus der Bibliothek entfernt und die Datei in den Papierkorb verschoben.',
-    'modal.deletePlaylist.title': 'Playlist löschen?',
-    'modal.deletePlaylist.text': 'Playlist „{name}“ wird gelöscht. Titel bleiben in der Bibliothek.',
-    'modal.deleteAlbum.title': 'Album löschen?',
-    'modal.deleteAlbum.text': '„{name}“ ({count}) wird aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
-    'modal.deleteArtist.title': 'Künstler löschen?',
-    'modal.deleteArtist.text': 'Alle Titel von „{name}“ ({count}) werden aus der Bibliothek entfernt und die Dateien in den Papierkorb verschoben.',
-    'modal.clearLibrary.title': 'Gesamte Bibliothek leeren?',
-    'modal.clearLibrary.text': 'Alle Titel werden aus Audex entfernt. Die Dateien selbst bleiben unangetastet.',
-    'modal.newPlaylist.title': 'Neue Playlist',
-    'modal.newPlaylist.namePh': 'Playlist-Name',
-    'modal.newPlaylist.descPh': 'Beschreibung (optional)',
-    'modal.editPlaylist.title': 'Playlist bearbeiten',
-    'modal.editPlaylist.avatarChoose': 'Bild auswählen',
-    'modal.editPlaylist.avatarRemove': 'Cover entfernen',
-    'cm.plEdit': 'Playlist bearbeiten…',
-    'splash.loading': 'Oberfläche wird geladen',
-    'splash.covers': 'Cover werden geladen',
-    'splash.caching': 'Cover werden gecacht {n} / {total}',
-    'splash.scanning': 'Bibliothek wird durchsucht',
-    'cm.plDelete': 'Playlist löschen',
-    'modal.addToPlaylist.title': 'Zur Playlist hinzufügen',
-    'modal.addToPlaylist.empty': 'Erstelle zuerst eine Playlist im Tab „Playlists“.',
-    'modal.addToPlaylist.alreadyAdded': 'bereits hinzugefügt',
-    'editor.title': 'Tags bearbeiten',
-    'editor.cover': 'Cover',
-    'editor.field.title': 'Titel',
-    'editor.field.artist': 'Interpret',
-    'editor.field.album': 'Album',
-    'editor.field.albumArtist': 'Album-Interpret',
-    'editor.field.year': 'Jahr',
-    'editor.field.genre': 'Genre',
-    'editor.field.trackNo': 'Titel-Nr.',
-    'editor.field.discNo': 'CD-Nr.',
-    'editor.field.comment': 'Kommentar',
-    'editor.commentPh': 'Notiz zum Titel…',
-    'editor.coverEmbed': 'Eingebettetes Cover',
-    'editor.noCover': 'Kein Cover',
-    'editor.saving': 'Speichern…',
-    'editor.idBadKey': 'AcoustID hat den API-Schlüssel abgelehnt',
-    'editor.idNoKey': 'Füge deinen AcoustID-API-Schlüssel in den Einstellungen hinzu, um Erkennen zu nutzen',
-    'cm.fixTags': 'Tags korrigieren',
-    'cm.fixTagsAcoustid': 'Tags über AcoustID korrigieren',
-    'fixTags.progress': 'Tags werden korrigiert…',
-    'fixTags.summary': '{fixed} aktualisiert · {unchanged} bereits korrekt · {noMatch} ohne Treffer · {failed} fehlgeschlagen ({total} insgesamt)',
-    'setting.acoustidKey': 'AcoustID-API-Schlüssel',
-    'setting.acoustidKeyDesc': 'Wird von „Erkennen“ genutzt, um Titel per Audio-Fingerabdruck nachzuschlagen. Erforderlich — einen eigenen gibt es kostenlos auf acoustid.org/api-key.',
-    'setting.acoustidKeyPh': 'Dein API-Schlüssel',
-    'editor.identify': 'Erkennen',
-    'editor.identifyHint': 'Audio-Fingerabdruck erstellen und den Titel bei AcoustID nachschlagen',
-    'editor.identifying': 'Fingerabdruck wird erstellt…',
-    'editor.idFilled': 'Treffer gefunden — prüfen und speichern',
-    'editor.idNoMatch': 'Kein Treffer bei AcoustID',
-    'cm.useAsAlbumCover': 'Als Album-Cover verwenden',
-    'cm.setCoverFromFile': 'Cover aus Datei wählen…',
-    'cm.applyCoverToAlbum': 'Cover auf Album anwenden…',
-    'cm.fixYear': 'Erscheinungsjahr korrigieren…',
-    'cm.fixTrackNumbers': 'Titelnummern korrigieren…',
-    'cm.deleteAlbum': 'Album löschen…',
-    'cm.deleteArtist': 'Künstler löschen…',
-    'btn.albumMenuTooltip': 'Tags, Cover, Erscheinungsjahr & Titelnummern korrigieren…',
-    'albumCover.needSource': 'Rechtsklick auf den Titel mit dem richtigen Cover und „Als Album-Cover verwenden“ wählen.',
-    'albumCover.badSource': 'Für diesen Titel ist noch kein Cover geladen — ins Sichtfeld scrollen (oder öffnen), damit es lädt, dann erneut versuchen.',
-    'albumCover.confirm': 'Cover von „{track}“ auf die restlichen {count} Titel dieses Albums übertragen?',
-    'albumCover.progress': 'Album-Cover werden aktualisiert…',
-    'coverFile.progress': 'Cover wird gesetzt…',
-    'coverFile.confirm': 'Dieses Bild als Cover für alle {count} Titel setzen?',
-    'coverFile.error': 'Bild konnte nicht gelesen werden: {e}',
-    'albumCover.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
-    'albumYear.prompt': 'Erscheinungsjahr für alle Titel dieses Albums festlegen:',
-    'albumYear.progress': 'Erscheinungsjahre werden aktualisiert…',
-    'albumYear.summary': '{updated} aktualisiert · {failed} fehlgeschlagen ({total} insgesamt)',
-    'albumTrackNo.pickTitle': 'Titel in Hörreihenfolge anklicken — der erste Klick wird Titel 1',
-    'albumTrackNo.writeFailed': 'Die Titelnummer konnte nicht aktualisiert werden.',
-    'editor.idNoFpcalc': 'fpcalc nicht gefunden — libchromaprint-tools installieren',
-    'editor.idFailed': 'Abfrage fehlgeschlagen',
-    'editor.saved': 'Gespeichert ✓',
-    'editor.errorSave': 'Speicherfehler',
-    'cm.play': 'Abspielen',
-    'cm.addToPlaylist': 'Zur Playlist hinzufügen',
-    'cm.removeFromPlaylist': 'Aus Playlist entfernen',
-    'cm.reveal': 'Im Ordner anzeigen',
-    'cm.editTags': 'Tags bearbeiten…',
-    'cm.delete': 'Aus Bibliothek entfernen',
-    'palette.placeholder': 'Suche Titel, Alben, Aktionen…',
-    'palette.nav': '↑↓ Navigation',
-    'palette.choose': '↵ auswählen',
-    'palette.close': 'ESC schließen',
-    'palette.tracks': 'Titel',
-    'palette.actions': 'Aktionen',
-    'palette.itemHint': '↵ abspielen',
-    'palette.empty': 'Nichts gefunden',
-    'palette.action.openFiles': 'Dateien öffnen…',
-    'palette.action.gotoSettings': 'Zu den Einstellungen',
-    'palette.action.gotoPlaylists': 'Zu den Playlists',
-    'palette.action.gotoFavorites': 'Zu den Favoriten',
-    'palette.action.clearLibrary': 'Bibliothek leeren…',
-    'palette.action.fixTagsLibrary': 'Tags korrigieren (Bibliothek)…',
-    'palette.action.volumeUp': 'Lauter',
-    'palette.action.volumeDown': 'Leiser',
-    'palette.action.reloadApp': 'App neu laden',
-    'label.unknownArtist': 'Unbekannter Interpret',
-    'label.noAlbum': 'Ohne Album',
-    'label.tracksShort': 'Tit.',
-    'error.deleteFile': 'Datei konnte nicht gelöscht werden: ',
-    'error.unknown': 'unbekannter Fehler',
-    'library.ghostsRemoved': '{count} Titel wurden nicht mehr auf der Festplatte gefunden — aus der Bibliothek entfernt.',
-    'library.purgedOnError': '{count} Titel wurden aus der Bibliothek entfernt — konnten nicht gelesen oder geschrieben werden (fehlende oder beschädigte Datei).',
-    'downloads.tab.queue': 'Warteschlange',
-    'downloads.queue.add': 'In Warteschlange',
-    'downloads.queue.queued': 'In Warteschlange',
-    'downloads.queue.addAll': 'Alle in die Warteschlange',
-    'downloads.queue.remove': 'Aus Warteschlange entfernen',
-    'downloads.queue.clearDone': 'Fertige entfernen',
-    'downloads.queue.clearAll': 'Alle entfernen',
-    'downloads.queue.empty.title': 'Warteschlange ist leer',
-    'downloads.queue.empty.text': 'Füge Titel im Tab „Parsen" hinzu — sie werden nacheinander heruntergeladen.',
-    'downloads.queue.status.queued': 'Wartet',
-    'downloads.queue.status.downloading': 'Lädt',
-    'downloads.queue.status.done': 'Fertig',
-    'downloads.queue.status.error': 'Fehler',
-    'downloads.queue.stats.downloading': 'lädt: {n}',
-    'downloads.queue.stats.queued': 'wartet: {n}',
-    'downloads.queue.stats.done': 'fertig: {n}',
-    'downloads.queue.stats.error': 'Fehler: {n}',
-    'downloads.queue.stats.paused': 'pausiert',
-    'downloads.queue.pause': 'Pause',
-    'downloads.queue.resume': 'Fortsetzen',
-  },
-  fr: {
-    'nav.devices': "Appareils",
-    'lan.thisDevice': "Cet appareil",
-    'lan.namePh': "Nom de l'appareil",
-    'lan.keyPh': "Clé réseau",
-    'lan.generate': "Générer",
-    'lan.enable': "Activer le partage",
-    'lan.disable': "Désactiver le partage",
-    'lan.needKey': "Définissez d'abord une clé réseau — la même sur tous vos appareils.",
-    'lan.hint': "Choisissez une clé réseau ici — elle fonctionne comme un mot de passe Wi-Fi : seuls les appareils ayant exactement la même clé se voient entre eux. Activez le partage et la bibliothèque de cet appareil devient accessible au reste du groupe.",
-    'lan.hintPeers': "Les appareils sur le même réseau local avec la même clé apparaissent ici automatiquement — rien à ajouter. Sur un autre réseau (par ex. via Tailscale), ajoutez son adresse à la main ci-dessus. Sous Windows, si l'ajout manuel reste bloqué, la règle de pare-feu ne couvre souvent que les réseaux privés — Windows signale l'adaptateur Tailscale comme public, autorisez donc aussi l'app pour ce profil.",
-    'lan.on': "Partage actif",
-    'lan.off': "Partage désactivé",
-    'lan.starting': "Démarrage…",
-    'lan.error': "Erreur",
-    'lan.peers': "Autres appareils",
-    'lan.noPeers': "Aucun appareil trouvé pour le moment.",
-    'lan.manual': "ajouté à la main",
-    'lan.connect': "Se connecter à un appareil",
-    'lan.networkBadge': "RÉSEAU",
-    'lan.networkFrom': "Depuis {device}",
-    'lan.syncSettings': "Synchroniser les réglages",
-    'lan.syncSettingsHint': "Reprendre les préférences de cet appareil (thème, langue, format de téléchargement, etc.)",
-    'lan.syncSettingsConfirm': "Remplacer vos préférences par celles de {device} ? Votre bibliothèque et vos fichiers ne seront pas touchés.",
-    'lan.syncSettingsNone': "Cet appareil n'a pas encore partagé de réglages.",
-    'lan.takeOver': "Reprendre",
-    'lan.takeOverHint': "Récupérer ici la session en cours de cet appareil, exactement là où elle en était",
-    'lan.push': 'Envoyer ici',
-    'lan.pushHint': "Envoyer la lecture en cours ici vers cet appareil",
-    'lan.remove': "Retirer",
-    'lan.add': "Ajouter",
-    'lan.addPh': "Adresse, ex. 100.90.1.2 ou 192.168.1.5:8422",
-    'lan.nothingPlaying': "Cet appareil ne lit rien.",
-    'lan.errKey': "Clé réseau incorrecte",
-    'lan.errReach': "Appareil injoignable :",
-    'nav.library': 'Bibliothèque',
-    'update.available': 'Mise à jour disponible',
-    'update.download': 'Télécharger',
-    'update.downloading': 'Téléchargement… {pct}%',
-    'update.restart': 'Redémarrer pour installer',
-    'update.failed': "Échec du téléchargement — ouverture de la page de version",
-    'update.dismiss': 'Fermer',
-    'import.progress': 'Importation des titres…',
-    'nav.albums': 'Albums',
-    'nav.artists': 'Artistes',
-    'nav.playlists': 'Playlists',
-    'nav.favorites': 'Favoris',
-    'nav.downloads': 'Téléchargements',
-    'nav.editor': 'Éditeur',
-    'cm.trim': 'Découper la piste…',
-    'setting.editor': 'Éditeur (découpe de pistes)',
-    'setting.editorDesc': "La section « Éditeur » pour découper des pistes : choisissez un extrait sur la forme d'onde et enregistrez-le dans un nouveau fichier.",
-    'editor.pick': 'Choisir une piste',
-    'editor.pickSearch': 'Rechercher par titre ou artiste',
-    'editor.pickEmpty': 'Aucun résultat',
-    'editor.empty.title': 'Découper des pistes',
-    'editor.empty.text': "Choisissez une piste, marquez le début et la fin d'un extrait sur la forme d'onde et enregistrez-le dans un fichier séparé. L'original reste intact sauf si vous activez l'écrasement.",
-    'editor.start': 'Début',
-    'editor.end': 'Fin',
-    'editor.selection': "Durée de l'extrait",
-    'editor.preview': "Écouter l'extrait",
-    'editor.previewStop': 'Arrêter',
-    'editor.reset': 'Réinitialiser',
-    'editor.fadeIn': 'Fondu entrant, s',
-    'editor.fadeOut': 'Fondu sortant, s',
-    'editor.gain': 'Volume, dB',
-    'editor.gainHint': 'Moins pour baisser, plus pour monter. 0 dB ne change rien.',
-    'editor.gainClip': 'Le pic dépassera 0 dB de {d} dB — saturation probable',
-    'editor.overwrite': "Écraser l'original",
-    'editor.overwriteDesc': "Par défaut, un nouveau fichier « — (trimmed) » est créé à côté. Activez pour remplacer le fichier source.",
-    'editor.save': 'Découper et enregistrer',
-    'editor.decoding': "Lecture de l'audio…",
-    'editor.decodeError': "Impossible de lire l'audio",
-    'editor.trimming': 'Découpe en cours…',
-    'editor.trimSaved': 'Enregistré : {f}',
-    'editor.saveError': 'Échec de la découpe : {e}',
-    'editor.tooShort': "L'extrait est trop court",
-    'nav.search': 'Recherche',
-    'nav.recents': 'Récents',
-    'nav.tools': 'Outils',
-    'nav.openFiles': 'Ouvrir des fichiers',
-    'nav.settings': 'Paramètres',
-    'dlErr.geo': 'Ce titre est bloqué dans votre pays et aucune alternative n’a été trouvée.',
-    'dlErr.unavailable': 'La vidéo a été supprimée ou est indisponible ; aucune alternative trouvée.',
-    'dlErr.signin': 'YouTube exige un compte connecté pour ce titre. Connectez-vous depuis Paramètres → Téléchargements.',
-    'dlErr.members': 'Ce titre est réservé aux membres de la chaîne.',
-    'dlErr.network': 'Pas de connexion à YouTube. Vérifiez votre réseau.',
-    'dlErr.transient': "YouTube a eu un raté en plein téléchargement — ça fonctionne généralement en réessayant.",
-    'nav.report': 'Rapport',
-    'report.onDevice': 'Calculé sur cet appareil',
-    'report.eyebrow': "Rapport d'écoute",
-    'report.period.day': 'Jour',
-    'report.period.week': 'Semaine',
-    'report.period.month': 'Mois',
-    'report.period.year': 'Année',
-    'report.period.all': 'Tout le temps',
-    'report.allTime': 'Tout le temps',
-    'report.today': "Aujourd'hui",
-    'report.thisWeek': 'Cette semaine',
-    'report.listeningTime': "Temps d'écoute",
-    'report.vsPrev': 'vs période précédente',
-    'report.tracksPlayed': 'Titres écoutés',
-    'report.artists': 'Artistes',
-    'report.added': 'Ajoutés à la collection',
-    'report.streak': "Série d'écoute",
-    'report.days': 'jours',
-    'report.whenListen': 'Quand tu écoutes',
-    'report.topArtists': 'Top artistes',
-    'report.topTracks': 'Top titres',
-    'report.plays': 'éc.',
-    'report.minUnit': 'min',
-    'report.hoursUnit': 'heures',
-    'report.hShort': 'h',
-    'report.mShort': 'm',
-    'report.empty.title': 'Tes statistiques apparaîtront ici',
-    'report.empty.text': "Écoute de la musique — le rapport se construit à partir de l'historique conservé sur cet appareil.",
-    'table.quality': 'Qualité',
-    'quality.kbps': 'kbit/s',
-    'quality.note': 'Un badge de qualité sur chaque piste · ',
-    'quality.noteAmber': 'ambre = transcodage suspect',
-    'quality.cutoffMarker': 'coupure',
-    'health.khz': 'kHz',
-    'nav.health': 'État',
-    'health.crumb': 'État de la bibliothèque',
-    'health.lastScan': 'Dernière vérification :',
-    'health.never': 'pas encore vérifié',
-    'health.rescan': 'Rescanner',
-    'health.scanning': 'Vérification {n} sur {m}…',
-    'health.scoreLabel': 'Santé de la collection',
-    'health.ok': 'en bon état',
-    'health.okLegend': 'en bon état',
-    'health.flaggedLegend': "demandent de l'attention",
-    'health.transcodeTitle': 'Ressemble à un transcodage',
-    'health.claimed': 'Annoncé',
-    'health.real': 'réel ≈',
-    'health.spectrumCaption': 'Le spectre se coupe à {cut} kHz, alors qu’un vrai débit élevé tient les fréquences jusqu’à ~20 kHz.{lame}',
-    'health.noLame': ' Aucune balise LAME présente.',
-    'health.issuesLabel': 'Problèmes détectés',
-    'health.show': 'Afficher',
-    'health.fix': 'Réparer',
-    'health.allGood': 'Aucun problème détecté',
-    'health.allGoodText': 'Votre collection est en excellent état.',
-    'health.noData': "Lance une vérification pour évaluer l'état de la bibliothèque.",
-    'health.analyzing': 'Analyse du spectre…',
-    'health.filterNote': 'Filtre d’état : {label}',
-    'health.clearFilter': 'Effacer',
-    'issue.transcode.title': 'Transcodage suspect',
-    'issue.transcode.desc': 'Le débit est annoncé élevé, mais le spectre se coupe tôt — probablement suréchantillonné depuis une source de faible qualité.',
-    'issue.lowbitrate.title': 'Faible débit (< 192 kbit/s)',
-    'issue.lowbitrate.desc': 'Fichiers à 128 kbit/s et moins. À remplacer par de meilleures versions.',
-    'issue.nocover.title': 'Sans pochette',
-    'issue.nocover.desc': 'Pistes sans image d’album intégrée.',
-    'issue.tags.title': 'Tags incomplets',
-    'issue.tags.desc': 'Champs artiste, album ou année vides.',
-    'issue.notrackno.title': 'Numéro de piste manquant',
-    'issue.notrackno.desc': "Pistes sans numéro de piste, ce qui perturbe l'ordre de l'album.",
-    'issue.dupes.title': 'Doublons possibles',
-    'issue.dupes.desc': 'Même artiste et titre sur des fichiers différents.',
-    'section.discord': 'Discord Rich Presence',
-    'discord.subtitle': 'Montrez à vos amis ce que vous écoutez directement dans votre profil Discord — avec pochette, minuteur et boutons vers le morceau.',
-    'discord.statusConnected': 'Connecté',
-    'discord.statusDisconnected': 'Non connecté',
-    'discord.connect': 'Connecter Discord',
-    'discord.disconnect': 'Déconnecter',
-    'discord.connectHint': 'Liez votre compte pour diffuser votre écoute dans votre profil.',
-    'discord.sessionActive': 'session active',
-    'discord.connecting': 'Connexion…',
-    'discord.connectError': 'Connexion impossible. Vérifiez que Discord est lancé.',
-    'discord.waitingForDiscord': 'Discord n’est pas lancé — je me connecterai automatiquement dès son ouverture.',
-    'discord.noClientId': "Aucun Discord Client ID défini. Ajoutez-le dans DISCORD_CLIENT_ID dans renderer.js.",
-    'discord.show': 'Quoi afficher',
-    'discord.showTitle': 'Titre du morceau',
-    'discord.showTitleDesc': "La ligne principale de l'activité.",
-    'discord.showArtist': 'Artiste et album',
-    'discord.showArtistDesc': 'La deuxième ligne sous le titre.',
-    'discord.showCover': "Pochette d'album",
-    'discord.showCoverDesc': 'La grande image de la carte.',
-    'discord.showTimer': 'Minuteur du morceau',
-    'discord.showTimerDesc': 'Temps écoulé et total avec progression.',
-    'discord.showPaused': 'Afficher en pause',
-    'discord.showPausedDesc': 'Garder le statut quand la lecture est arrêtée.',
-    'discord.buttons': 'Boutons du profil',
-    'discord.buttonsHint': 'Discord autorise au plus deux boutons par activité. Les liens doivent commencer par http(s)://',
-    'discord.btnLabel': 'Libellé',
-    'discord.btnUrl': 'Lien',
-    'discord.btnLabelPh': 'Texte du bouton',
-    'discord.btnUrlPh': 'https://…',
-    'discord.privacy': 'Confidentialité',
-    'discord.privacyInvisible': 'Masquer en mode « Invisible »',
-    'discord.privacyInvisibleDesc': 'Ne pas diffuser le statut quand vous êtes hors ligne sur Discord.',
-    'discord.privacyPrivate': 'Désactiver pour les playlists privées',
-    'discord.privacyPrivateDesc': "Les morceaux des playlists privées n'apparaîtront pas dans le profil.",
-    'discord.preview': 'Ce que voient vos amis',
-    'discord.previewListening': 'Écoute Audex',
-    'discord.previewPaused': 'Écoutait · en pause',
-    'discord.previewPlaceholder': 'Le statut apparaîtra dans votre profil une fois Discord connecté',
-    'discord.previewNote': 'La carte se met à jour en direct au changement de morceau, en pause et au défilement.',
-    'discord.previewOnline': 'En ligne',
-    'discord.previewEmptyTrack': 'Rien en lecture',
-    'crumb.collection': 'Collection',
-    'search.placeholder': 'Recherche…',
-    'search.artistPlaceholder': 'Rechercher un artiste…',
-    'search.albumPlaceholder': 'Rechercher un album…',
-    'search.trackPlaceholder': 'Rechercher une piste…',
-    'filter.all': 'Tout',
-    'filter.recent': 'Récemment ajoutés',
-    'filter.favorites': 'Favoris uniquement',
-    'sort.label': 'Tri :',
-    'sort.dateDesc': "Date d'ajout ↓",
-    'sort.dateAsc': "Date d'ajout ↑",
-    'sort.titleAsc': 'Titre A→Z',
-    'sort.titleDesc': 'Titre Z→A',
-    'sort.artistAsc': 'Artiste A→Z',
-    'sort.artistDesc': 'Artiste Z→A',
-    'sort.durationAsc': 'Durée ↑',
-    'sort.durationDesc': 'Durée ↓',
-    'sort.alpha': 'Alphabétique',
-    'sort.byTracks': 'Par nombre de pistes',
-    'sort.recent': 'Récemment ajoutés',
-    'view.cards': 'Cartes',
-    'view.list': 'Liste',
-    'table.title': 'Titre',
-    'table.artist': 'Artiste',
-    'table.album': 'Album',
-    'table.time': 'Durée',
-    'empty.library.title': 'Bibliothèque vide',
-    'empty.library.text': 'Ouvre des fichiers ou un dossier pour commencer.',
-    'empty.playlists.title': 'Aucune playlist pour le moment',
-    'empty.playlists.text': "Crée ta première playlist — rassemble des pistes par humeur, moment de la journée ou album.",
-    'empty.artists.title': "Aucun artiste pour l'instant",
-    'empty.artists.text': 'Ajoute des pistes à la bibliothèque pour voir des artistes ici.',
-    'empty.albums.title': "Aucun album pour l'instant",
-    'empty.albums.text': 'Ajoute des pistes à la bibliothèque pour voir des albums ici.',
-    'empty.favorites.title': 'Aucune piste favorite',
-    'empty.favorites.text': "Clique sur le cœur d'une piste pour l'ajouter ici.",
-    'btn.newPlaylist': 'Nouvelle playlist',
-    'btn.playAll': 'Tout lire',
-    'btn.shuffle': 'Aléatoire',
-    'btn.deletePlaylist': 'Supprimer la playlist',
-    'btn.choose': 'Choisir…',
-    'btn.signIn': 'Se connecter…',
-    'btn.signOut': 'Se déconnecter',
-    'btn.signingIn': 'En attente…',
-    'btn.checkUpdate': 'Vérifier maintenant',
-    'btn.checking': 'Vérification…',
-    'btn.openLogs': 'Ouvrir le dossier',
-    'btn.fixTagsTooltip': 'Corriger les tags via AcoustID…',
-    'btn.cancel': 'Annuler',
-    'btn.delete': 'Supprimer',
-    'select.enter': 'Sélectionner',
-    'select.count': 'Sélection : {n}',
-    'library.count.split': '{local} locales, {network} réseau ({tracks})',
-    'select.all': 'Tout sélectionner',
-    'select.downloadFromHost': "Télécharger depuis l'hôte",
-    'lanDownload.progress': "Téléchargement depuis l'hôte…",
-    'lanDownload.summary': '{done} téléchargé(s) · {failed} échoué(s) ({total} au total)',
-    'modal.deleteTracks.title': 'Supprimer les pistes sélectionnées ?',
-    'modal.deleteTracks.text': '{count} seront retirées de la bibliothèque et les fichiers déplacés vers la corbeille.',
-    'btn.create': 'Créer',
-    'btn.close': 'Fermer',
-    'btn.save': 'Enregistrer',
-    'btn.minimize': 'Réduire',
-    'btn.portrait': 'Mode mobile',
-    'btn.album': 'Album',
-    'btn.favorite': 'Ajouter aux favoris',
-    'btn.unfavorite': 'Retirer des favoris',
-    'btn.favoriteOn': 'Dans les favoris',
-    'btn.addToPlaylist': 'À la playlist',
-    'tooltip.favorite': 'Ajouter aux favoris',
-    'tooltip.shuffle': 'Ordre aléatoire',
-    'tooltip.prev': 'Précédent',
-    'tooltip.playPause': 'Lecture / Pause',
-    'tooltip.next': 'Suivant',
-    'tooltip.repeat': 'Répéter',
-    'tooltip.fullscreen': 'Plein écran',
-    'tooltip.volume': 'Volume',
-    'tooltip.wip': 'Fonctionnalité en développement',
-    'hint.favorites': 'Les pistes enregistrées apparaissent ici',
-    'eyebrow.playlist': 'Playlist',
-    'eyebrow.album': 'Album',
-    'eyebrow.artist': 'Artiste',
-    'autoChip.artists': 'La liste est générée automatiquement depuis ta bibliothèque',
-    'autoChip.albums': 'La liste est générée automatiquement depuis ta bibliothèque',
-    'np.empty.title': 'Rien de sélectionné',
-    'np.empty.artist': '—',
-    'fs.nowPlayingFrom': 'En cours de lecture · depuis',
-    'fs.fromLibrary': 'la Bibliothèque',
-    'fs.nowPlaying': 'En cours de lecture',
-    'fs.queue': 'File',
-    'fs.queueAhead': '{n} à venir',
-    'fs.lyrics': 'Paroles',
-    'fs.lyricsLoading': 'Chargement des paroles…',
-    'fs.lyricsNone': 'Paroles introuvables',
-    'downloads.tab.parsing': 'Analyse',
-    'downloads.title': "Téléchargement depuis Internet",
-    'downloads.subtitle': "La possibilité d'enregistrer des pistes via un lien direct apparaîtra ici. Section en développement.",
-    'downloads.parsing.title': 'Analyse',
-    'downloads.parsing.subtitle': "La possibilité de collecter des pistes en analysant des pages apparaîtra ici. Section en développement.",
-    'downloads.yt.action.download': 'Télécharger',
-    'downloads.yt.action.downloading': 'Téléchargement…',
-    'downloads.yt.action.done': 'Terminé',
-    'downloads.yt.action.retry': 'Réessayer',
-    'downloads.yt.downloadError': 'Échec : {e}',
-    'downloads.yt.downloadOk': 'Téléchargé et ajouté à la bibliothèque : {t}',
-    'downloads.yt.tagNote': "Après le téléchargement, il peut être nécessaire de corriger manuellement les tags MP3 (titre, artiste, pochette) via le menu contextuel de la piste.",
-    'downloads.parsing.start': 'Analyser',
-    'downloads.parsing.col.artist': 'Artiste',
-    'downloads.parsing.col.title': 'Titre',
-    'downloads.parsing.col.duration': 'Durée',
-    'downloads.parsing.subtab.ytmusic': 'YouTube Music',
-    'downloads.ytm.urlPlaceholder': 'https://music.youtube.com/playlist?list=…',
-    'downloads.warnPlainYoutube': '⚠ Ceci est un lien youtube.com. Utilisez la version music.youtube.com pour une meilleure qualité (Premium 256 kbit/s) — ouvrez-le dans YouTube Music et copiez ce lien.',
-    'downloads.ytm.hint': 'Lien vers un album, un single ou un artiste sur YouTube Music. Aucune connexion ni navigateur requis.',
-    'downloads.ytm.idle.title': 'Analyse YouTube Music',
-    'downloads.ytm.idle.text': "Collez un lien vers un album, un single ou une page d'artiste de YouTube Music. L'application récupérera la liste des pistes et vous pourrez en télécharger n'importe laquelle en un clic.",
-    'downloads.parsing.subtab.spotify': 'Spotify',
-    'downloads.sp.urlPlaceholder': 'https://open.spotify.com/playlist/…',
-    'downloads.sp.hint': "Lien vers une playlist, un album ou un artiste sur Spotify. L'analyseur fonctionne en arrière-plan.",
-    'downloads.sp.idle.title': 'Analyse Spotify',
-    'downloads.sp.idle.text': "Collez un lien de playlist ou d'album depuis Spotify. L'application ouvrira un navigateur, récupérera la liste des pistes, et vous pourrez en télécharger n'importe laquelle en un clic.",
-    'downloads.parsing.starting': "Démarrage de l'analyseur…",
-    'downloads.parsing.done': 'Terminé — {n} pistes collectées',
-    'downloads.parsing.error': "Erreur d'analyse : {e}",
-    'settings.title': 'Paramètres',
-    'settings.subtitle': "Apparence, sources musicales et comportement de l'application.",
-    'section.appearance': 'Apparence',
-    'section.background': 'Arrière-plan',
-    'setting.bgSource': "Image d'arrière-plan",
-    'setting.bgSourceDesc': "Votre image, ou la pochette du morceau en cours, derrière l'interface.",
-    'bg.none': 'Aucun',
-    'bg.image': 'Image',
-    'bg.cover': 'Pochette',
-    'setting.bgFile': 'Fichier',
-    'setting.bgFileDesc': "Copiée dans l'application : l'original peut ensuite être déplacé.",
-    'bg.noFile': 'Aucun fichier choisi',
-    'bg.clear': 'Retirer',
-    'setting.bgFit': 'Ajustement',
-    'bg.fit.cover': 'Remplir',
-    'bg.fit.contain': 'Entière',
-    'bg.fit.center': 'Centrée',
-    'bg.fit.tile': 'Mosaïque',
-    'setting.bgBlur': 'Flou',
-    'setting.bgDim': 'Assombrissement',
-    'setting.bgDimDesc': "Plus il est élevé, plus le texte reste lisible sur l'image.",
-    'setting.surfaceAlpha': 'Opacité des panneaux',
-    'setting.surfaceAlphaDesc': "Dans quelle mesure l'arrière-plan transparaît sous la barre latérale et le lecteur.",
-    'section.music': 'Musique',
-    'section.downloads': "Téléchargement depuis Internet",
-    'section.sidebar': 'Barre latérale',
-    'section.language': 'Langue',
-    'section.about': "À propos",
-    'section.contacts': 'Contacts',
-    'setting.github': 'GitHub',
-    'setting.githubDesc': 'Code source du projet sur GitHub.',
-    'setting.telegram': 'Telegram',
-    'setting.telegramDesc': "Trouvé un bug ou une suggestion — écrivez sur Telegram.",
-    'theme.dark': 'Sombre',
-    'theme.light': 'Clair',
-    'theme.system': 'Système',
-    'setting.theme': 'Thème',
-    'setting.themeDesc': 'Schéma de couleurs de l’application.',
-    'setting.accent': 'Couleur d’accent',
-    'setting.accentDesc': 'Met en évidence les éléments actifs et le morceau en cours.',
-    'setting.accentDefault': 'Par défaut',
-    'setting.accentCustom': 'Couleur personnalisée',
-    'setting.defaultFolder': 'Dossier par défaut',
-    'setting.defaultFolderDesc': "D'où charger les pistes au démarrage.",
-    'setting.defaultView': 'Page par défaut',
-    'setting.defaultViewDesc': "Quelle page s'ouvre au démarrage de l'application.",
-    'setting.defaultViewPlaylist': 'Playlist personnalisée…',
-    'setting.defaultPlaylist': 'Playlist',
-    'setting.uiScale': "Échelle de l'interface",
-    'setting.uiScaleDesc': "Agrandit ou réduit toute l'interface. Appliqué immédiatement.",
-    'setting.uiScaleReset': 'Réinitialiser',
-    'setting.scanSubdirs': 'Analyser les sous-dossiers',
-    'setting.scanSubdirsDesc': "Inclure les répertoires imbriqués lors de l'indexation.",
-    'setting.artistMinTracks': 'Masquer les petits artistes',
-    'setting.artistMinTracksDesc': "Exclure de la vue Artistes les artistes n'ayant qu'un ou deux titres — souvent un simple featuring plutôt qu'un artiste méritant sa propre entrée.",
-    'setting.artistMinTracksN': 'Titres minimum',
-    'setting.healthCheck': 'Contrôle de qualité (Health-check)',
-    'setting.healthCheckDesc': 'La section « État de la bibliothèque » et la colonne « Qualité » dans les listes de pistes. Désactivé, la colonne et la section sont entièrement masquées.',
-    'setting.reports': "Rapport d'écoute",
-    'setting.reportsDesc': "La section « Rapport » avec les statistiques d'écoute. Les statistiques sont toujours collectées, même lorsque la section est masquée.",
-    'setting.crossfadeLen': 'Durée du fondu',
-    'setting.volWheelStep': 'Pas du volume à la molette',
-    'setting.volWheelStepDesc': 'De combien chaque cran de la molette change le volume quand le curseur survole le curseur de volume.',
-    'unit.sec': 's',
-    'setting.crossfade': 'Fondu enchaîné entre les pistes',
-    'setting.crossfadeDesc': "Les pistes se fondent l'une dans l'autre : la piste en cours s'estompe pendant que la suivante monte. S'applique en fin de piste comme lors d'un changement manuel.",
-    'setting.repeatOneReset': 'Réinitialiser « répéter le titre » lors d\'un changement',
-    'setting.repeatOneResetDesc': 'Passer manuellement au titre suivant ou précédent alors que « répéter le titre » est actif le fait basculer sur « répéter » au lieu de reboucler aussi sur le nouveau titre.',
-    'setting.showDownloads': "Afficher l'onglet « Téléchargements »",
-    'setting.showDownloadsDesc': 'Ajoute une section à la barre latérale pour télécharger des pistes par URL.',
-    'setting.showDevices': 'Afficher l’onglet « Appareils »',
-    'setting.showDevicesDesc': 'Permet à cette application d’être trouvée et contrôlée par vos autres appareils sur le même réseau local ou Tailscale. Ouvre un port réseau local ; désactivé par défaut.',
-    'setting.showParserBrowser': "Afficher la fenêtre du navigateur pendant l'analyse",
-    'setting.showParserBrowserDesc': "Utile pour se connecter à Spotify au premier lancement, résoudre un captcha ou voir où l'analyseur s'est bloqué. Désactivez pour exécuter le navigateur silencieusement en arrière-plan.",
-    'setting.ytLogin': 'Se connecter à YouTube',
-    'setting.ytLoginDesc': "Corrige l'erreur de téléchargement « Sign in to confirm you're not a bot ». Ouvre une fenêtre de navigateur — connectez-vous, puis fermez-la.",
-    'setting.ytLogin.signedIn': 'Connecté',
-    'setting.ytLogin.notSignedIn': 'Non connecté',
-    'setting.ytLogin.waiting': 'En attente de la fermeture de la fenêtre du navigateur…',
-    'setting.ytPremium.checking': 'Vérification de Premium…',
-    'setting.ytPremium.active': 'YouTube Premium · 256 kbit/s',
-    'setting.ytPremium.none': 'Pas de Premium · jusqu\'à 160 kbit/s',
-    'setting.ytPremium.unknown': 'Statut Premium inconnu',
-    'setting.dlFormat': 'Format de téléchargement',
-    'setting.dlFormatDesc': 'Les fichiers sont enregistrés sous {dossier par défaut}/{artiste}/{album}/{artiste} - {titre}. Opus offre la meilleure qualité par mégaoctet ; choisissez M4A si un de vos appareils ne le lit pas.',
-    'downloads.noFolder': 'Choisissez d’abord un dossier par défaut — les téléchargements y sont classés par artiste et album.',
-    'section.system': 'Système',
-    'section.hotkeys': 'Raccourcis clavier',
-    'hotkeys.intro': "Cliquez sur un raccourci, puis appuyez sur une touche ou un bouton de souris. Échap annule, Retour arrière l'efface.",
-    'hotkeys.globalNote': "L'icône moniteur fait fonctionner un raccourci même fenêtre réduite. Il faut un modificateur (Ctrl, Alt ou Shift) ; les boutons de souris ne le permettent pas.",
-    'hotkeys.escNote': 'Échap ferme toujours la fenêtre au premier plan et ne peut pas être redéfini.',
-    'hotkeys.resetAll': 'Tout réinitialiser',
-    'hotkeys.press': 'Appuyez sur les touches…',
-    'hotkeys.revert': 'Rétablir par défaut',
-    'hotkeys.global': 'Fonctionne même fenêtre réduite (au niveau du système)',
-    'hotkeys.globalNeedsMod': 'Un raccourci global exige un modificateur : Ctrl, Alt ou Shift',
-    'hotkeys.globalNoMouse': 'Les boutons de souris ne peuvent pas fonctionner globalement',
-    'hotkeys.globalUnsupported': 'Cette touche ne peut pas être enregistrée globalement',
-    'hotkeys.globalFailed': 'Raccourci déjà utilisé par une autre application',
-    'hotkeys.globalUnavailable': 'Les raccourcis globaux ne sont pas disponibles sous Wayland. Utilisez les touches multimédia : elles passent par MPRIS.',
-    'mouse.middle': 'Clic milieu',
-    'mouse.back': 'Souris « Retour »',
-    'mouse.forward': 'Souris « Avant »',
-    'mouse.other': 'Souris {n}',
-    'hotkey.playPause': 'Lecture / pause',
-    'hotkey.nextTrack': 'Piste suivante',
-    'hotkey.prevTrack': 'Piste précédente',
-    'hotkey.seekForward': 'Avancer de 5 s',
-    'hotkey.seekBackward': 'Reculer de 5 s',
-    'hotkey.volumeUp': 'Monter le volume',
-    'hotkey.volumeDown': 'Baisser le volume',
-    'hotkey.mute': 'Couper le son',
-    'hotkey.favorite': 'Ajouter aux favoris',
-    'hotkey.shuffle': 'Lecture aléatoire',
-    'hotkey.repeat': 'Mode répétition',
-    'hotkey.fullscreen': 'Lecteur plein écran',
-    'hotkey.palette': 'Palette de commandes',
-    'hotkey.editTags': 'Modifier les tags',
-    'hotkey.settings': 'Ouvrir les paramètres',
-    'setting.hardwareAcceleration': 'Accélération matérielle',
-    'setting.hardwareAccelerationDesc': "Utilise la carte graphique pour afficher l'interface. Si l'application se bloque au démarrage ou présente des artefacts graphiques, désactivez-la. Prend effet après un redémarrage.",
-    'setting.uiLanguage': "Langue de l'interface",
-    'setting.uiLanguageDesc': 'Appliquée immédiatement.',
-    'setting.version': 'Version',
-    'setting.checkUpdate': 'Vérifier les mises à jour',
-    'setting.checkUpdateDesc': "Recherche immédiatement une version plus récente sur GitHub.",
-    'setting.openLogs': 'Journaux',
-    'setting.openLogsDesc': "Ouvre le dossier des journaux d'erreurs, pour diagnostiquer une mise à jour échouée.",
-    'update.checkFailed': 'Impossible de vérifier les mises à jour.',
-    'update.upToDate': 'Vous avez déjà la dernière version ({v}).',
-    'badge.wip': 'en développement',
-    'placeholder.noFolder': '— non sélectionné —',
-    'placeholder.noPlaylists': 'Pas encore de playlist',
-    'placeholder.choosePlaylist': 'Choisir une playlist…',
-    'modal.deleteTrack.title': 'Supprimer la piste ?',
-    'modal.deleteTrack.text': 'La piste sera retirée de la bibliothèque et le fichier déplacé vers la corbeille.',
-    'modal.deleteTrackFull.text': '« {title} » de {artist} sera retirée de la bibliothèque et le fichier déplacé vers la corbeille.',
-    'modal.deletePlaylist.title': 'Supprimer la playlist ?',
-    'modal.deletePlaylist.text': 'La playlist « {name} » sera supprimée. Les pistes restent dans la bibliothèque.',
-    'modal.deleteAlbum.title': 'Supprimer l\'album ?',
-    'modal.deleteAlbum.text': '« {name} » ({count}) sera retiré de la bibliothèque et les fichiers déplacés vers la corbeille.',
-    'modal.deleteArtist.title': 'Supprimer l\'artiste ?',
-    'modal.deleteArtist.text': 'Toutes les pistes de « {name} » ({count}) seront retirées de la bibliothèque et les fichiers déplacés vers la corbeille.',
-    'modal.clearLibrary.title': 'Vider toute la bibliothèque ?',
-    'modal.clearLibrary.text': "Toutes les pistes seront retirées d'Audex. Les fichiers eux-mêmes ne sont pas touchés.",
-    'modal.newPlaylist.title': 'Nouvelle playlist',
-    'modal.newPlaylist.namePh': 'Nom de la playlist',
-    'modal.newPlaylist.descPh': 'Description (facultatif)',
-    'modal.editPlaylist.title': 'Modifier la playlist',
-    'modal.editPlaylist.avatarChoose': 'Choisir une image',
-    'modal.editPlaylist.avatarRemove': 'Retirer la pochette',
-    'cm.plEdit': 'Modifier la playlist…',
-    'splash.loading': 'Chargement de l\'interface',
-    'splash.covers': 'Chargement des pochettes',
-    'splash.caching': 'Mise en cache des pochettes {n} / {total}',
-    'splash.scanning': 'Analyse de la bibliothèque',
-    'cm.plDelete': 'Supprimer la playlist',
-    'modal.addToPlaylist.title': 'Ajouter à la playlist',
-    'modal.addToPlaylist.empty': "Crée d'abord une playlist dans l'onglet « Playlists ».",
-    'modal.addToPlaylist.alreadyAdded': 'déjà ajoutée',
-    'editor.title': 'Modifier les tags',
-    'editor.cover': 'Pochette',
-    'editor.field.title': 'Titre',
-    'editor.field.artist': 'Artiste',
-    'editor.field.album': 'Album',
-    'editor.field.albumArtist': "Artiste de l'album",
-    'editor.field.year': 'Année',
-    'editor.field.genre': 'Genre',
-    'editor.field.trackNo': 'Piste №',
-    'editor.field.discNo': 'Disque №',
-    'editor.field.comment': 'Commentaire',
-    'editor.commentPh': 'Note sur la piste…',
-    'editor.coverEmbed': 'Pochette intégrée',
-    'editor.noCover': 'Pas de pochette',
-    'editor.saving': 'Enregistrement…',
-    'editor.idBadKey': "AcoustID a refusé la clé API",
-    'editor.idNoKey': "Ajoutez votre clé API AcoustID dans les Paramètres pour utiliser Identifier",
-    'cm.fixTags': 'Corriger les tags',
-    'cm.fixTagsAcoustid': 'Corriger les tags avec AcoustID',
-    'fixTags.progress': 'Correction des tags…',
-    'fixTags.summary': '{fixed} mis à jour · {unchanged} déjà corrects · {noMatch} sans correspondance · {failed} échoués ({total} au total)',
-    'setting.acoustidKey': 'Clé API AcoustID',
-    'setting.acoustidKeyDesc': "Utilisée par « Identifier » pour rechercher les pistes par empreinte audio. Requise — obtenez la vôtre gratuitement sur acoustid.org/api-key.",
-    'setting.acoustidKeyPh': 'Votre clé API',
-    'editor.identify': 'Identifier',
-    'editor.identifyHint': "Créer l'empreinte audio et rechercher la piste sur AcoustID",
-    'editor.identifying': 'Empreinte et recherche en cours…',
-    'editor.idFilled': 'Correspondance trouvée — vérifiez puis enregistrez',
-    'editor.idNoMatch': 'Aucune correspondance sur AcoustID',
-    'cm.useAsAlbumCover': "Utiliser comme pochette de l'album",
-    'cm.setCoverFromFile': 'Choisir une pochette depuis un fichier…',
-    'cm.applyCoverToAlbum': "Appliquer la pochette à l'album…",
-    'cm.fixYear': "Corriger l'année de sortie…",
-    'cm.fixTrackNumbers': 'Corriger les numéros de piste…',
-    'cm.deleteAlbum': 'Supprimer l\'album…',
-    'cm.deleteArtist': 'Supprimer l\'artiste…',
-    'btn.albumMenuTooltip': "Corriger les tags, la pochette, l'année de sortie et les numéros de piste…",
-    'albumCover.needSource': 'Faites un clic droit sur le titre ayant la bonne pochette et choisissez « Utiliser comme pochette de l\'album ».',
-    'albumCover.badSource': "Aucune pochette n'est chargée pour ce titre — faites-le défiler à l'écran (ou ouvrez-le) pour la charger, puis réessayez.",
-    'albumCover.confirm': 'Appliquer la pochette de « {track} » aux {count} autre(s) titre(s) de cet album ?',
-    'albumCover.progress': 'Mise à jour des pochettes…',
-    'coverFile.progress': 'Application de la pochette…',
-    'coverFile.confirm': 'Définir cette image comme pochette pour les {count} titres ?',
-    'coverFile.error': "Impossible de lire cette image : {e}",
-    'albumCover.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
-    'albumYear.prompt': "Définir l'année de sortie pour tous les titres de cet album :",
-    'albumYear.progress': 'Mise à jour des années de sortie…',
-    'albumYear.summary': '{updated} mises à jour · {failed} échouées ({total} au total)',
-    'albumTrackNo.pickTitle': "Cliquez les pistes dans l'ordre d'écoute — le premier clic est la piste 1",
-    'albumTrackNo.writeFailed': 'Impossible de mettre à jour le numéro de piste.',
-    'editor.idNoFpcalc': 'fpcalc introuvable — installez libchromaprint-tools',
-    'editor.idFailed': 'Échec de la recherche',
-    'editor.saved': 'Enregistré ✓',
-    'editor.errorSave': "Erreur d'enregistrement",
-    'cm.play': 'Lire',
-    'cm.addToPlaylist': 'Ajouter à la playlist',
-    'cm.removeFromPlaylist': 'Retirer de la playlist',
-    'cm.reveal': 'Afficher dans le dossier',
-    'cm.editTags': 'Modifier les tags…',
-    'cm.delete': 'Retirer de la bibliothèque',
-    'palette.placeholder': 'Rechercher pistes, albums, actions…',
-    'palette.nav': '↑↓ navigation',
-    'palette.choose': '↵ sélectionner',
-    'palette.close': 'ESC fermer',
-    'palette.tracks': 'Pistes',
-    'palette.actions': 'Actions',
-    'palette.itemHint': '↵ lire',
-    'palette.empty': 'Aucun résultat',
-    'palette.action.openFiles': 'Ouvrir des fichiers…',
-    'palette.action.gotoSettings': 'Aller aux Paramètres',
-    'palette.action.gotoPlaylists': 'Aller aux Playlists',
-    'palette.action.gotoFavorites': 'Aller aux Favoris',
-    'palette.action.clearLibrary': 'Vider la bibliothèque…',
-    'palette.action.fixTagsLibrary': 'Corriger les tags (Bibliothèque)…',
-    'palette.action.volumeUp': 'Monter le volume',
-    'palette.action.volumeDown': 'Baisser le volume',
-    'palette.action.reloadApp': 'Recharger l’application',
-    'label.unknownArtist': 'Artiste inconnu',
-    'label.noAlbum': 'Sans album',
-    'label.tracksShort': 'p.',
-    'error.deleteFile': "Impossible de supprimer le fichier du disque : ",
-    'error.unknown': 'erreur inconnue',
-    'library.ghostsRemoved': "{count} morceau(x) introuvable(s) sur le disque — retiré(s) de votre bibliothèque.",
-    'library.purgedOnError': "{count} morceau(x) retiré(s) de votre bibliothèque — illisible(s) ou impossible(s) à écrire (fichier manquant ou endommagé).",
-    'downloads.tab.queue': 'File d\'attente',
-    'downloads.queue.add': 'À la file',
-    'downloads.queue.queued': 'En file',
-    'downloads.queue.addAll': 'Tout mettre en file',
-    'downloads.queue.remove': 'Retirer de la file',
-    'downloads.queue.clearDone': 'Effacer les terminés',
-    'downloads.queue.clearAll': 'Tout effacer',
-    'downloads.queue.empty.title': 'File d\'attente vide',
-    'downloads.queue.empty.text': 'Ajoutez des pistes depuis l\'onglet « Analyse » — elles seront téléchargées les unes après les autres.',
-    'downloads.queue.status.queued': 'En attente',
-    'downloads.queue.status.downloading': 'Téléchargement',
-    'downloads.queue.status.done': 'Terminé',
-    'downloads.queue.status.error': 'Échec',
-    'downloads.queue.stats.downloading': 'téléchargement : {n}',
-    'downloads.queue.stats.queued': 'en file : {n}',
-    'downloads.queue.stats.done': 'terminés : {n}',
-    'downloads.queue.stats.error': 'erreurs : {n}',
-    'downloads.queue.stats.paused': 'en pause',
-    'downloads.queue.pause': 'Pause',
-    'downloads.queue.resume': 'Reprendre',
   },
   uk: {
     'nav.devices': "Пристрої",
@@ -2764,48 +1586,28 @@ const I18N = {
   },
 };
 
-// Slavic-style 3-form plural (uk): n%10==1 && n%100!=11 → one;
-// n%10 in 2..4 && n%100 not in 12..14 → few; else → many.
-function slavicPluralIdx(n) {
-  const mod10 = n % 10, mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 0;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 1;
-  return 2;
-}
-// Pluralized noun forms for "tracks/albums/artists/playlists" per language.
-// uk uses [one, few, many]; en/de/fr use [one, other].
+// Pluralized noun forms for "tracks/albums/artists/playlists", keyed by the
+// CLDR plural category Intl.PluralRules picks for the count — so uk's
+// one/few/many and en's one/other come out of the same lookup with no
+// per-language index maths here.
 const PLURAL_FORMS = {
   uk: {
-    tracks:    ['трек', 'треки', 'треків'],
-    albums:    ['альбом', 'альбоми', 'альбомів'],
-    artists:   ['виконавець', 'виконавці', 'виконавців'],
-    playlists: ['плейлист', 'плейлисти', 'плейлистів'],
+    tracks:    { one: 'трек', few: 'треки', many: 'треків' },
+    albums:    { one: 'альбом', few: 'альбоми', many: 'альбомів' },
+    artists:   { one: 'виконавець', few: 'виконавці', many: 'виконавців' },
+    playlists: { one: 'плейлист', few: 'плейлисти', many: 'плейлистів' },
   },
   en: {
-    tracks:    ['track', 'tracks'],
-    albums:    ['album', 'albums'],
-    artists:   ['artist', 'artists'],
-    playlists: ['playlist', 'playlists'],
-  },
-  de: {
-    tracks:    ['Titel', 'Titel'],
-    albums:    ['Album', 'Alben'],
-    artists:   ['Interpret', 'Interpreten'],
-    playlists: ['Playlist', 'Playlists'],
-  },
-  fr: {
-    tracks:    ['piste', 'pistes'],
-    albums:    ['album', 'albums'],
-    artists:   ['artiste', 'artistes'],
-    playlists: ['playlist', 'playlists'],
+    tracks:    { one: 'track', other: 'tracks' },
+    albums:    { one: 'album', other: 'albums' },
+    artists:   { one: 'artist', other: 'artists' },
+    playlists: { one: 'playlist', other: 'playlists' },
   },
 };
 // "h X min" / "X min" — total duration formatting.
 const DURATION_UNITS = {
   uk: { h: 'год', m: 'хв' },
   en: { h: 'h', m: 'min' },
-  de: { h: 'h', m: 'Min' },
-  fr: { h: 'h', m: 'min' },
 };
 
 let currentLang = I18N[settings.language] ? settings.language : 'en';
@@ -2822,10 +1624,10 @@ function tr(key, params) {
 
 function plural(kind, n) {
   const forms = (PLURAL_FORMS[currentLang] || PLURAL_FORMS.en)[kind];
-  const idx = currentLang === 'uk'
-    ? slavicPluralIdx(n)
-    : (n === 1 ? 0 : 1);
-  return forms[idx];
+  const cat = new Intl.PluralRules(currentLang).select(n);
+  // uk has no 'other' below 1e6 and en has no 'few' — fall back to the form
+  // every language in the table does define.
+  return forms[cat] || forms.other || forms.many;
 }
 function withCount(kind, n) { return `${n} ${plural(kind, n)}`; }
 
@@ -2869,10 +1671,8 @@ function escapeHtml(s) {
 // `listEl` is the row container; rows are absolutely positioned inside it.
 // `scrollEl` is the actual scroll container (here: .main-content).
 // Fixed-height virtualizer — has to match .trow's actual rendered height (see
-// style.css's own padding/line-height math) or rows overlap. mobile.css's
-// two-line row (title, then artist+time) is taller than desktop's one-line
-// row, so bridge.js sets window.AUDEX_ROW_HEIGHT before this runs.
-const ROW_HEIGHT = window.AUDEX_ROW_HEIGHT || 42;
+// style.css's own padding/line-height math) or rows overlap.
+const ROW_HEIGHT = 42;
 const OVERSCAN = 8;
 
 function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan = OVERSCAN }) {
@@ -3999,7 +2799,7 @@ async function runYtmParse() {
 })();
 
 // ── Downloads: Spotify parsing ──
-// Track lists come from Puppeteer scraping the
+// Track lists come from a background BrowserWindow scraping the
 // Spotify web player, downloads go through ytsearch1: by "artist title" query
 // (Spotify itself serves no downloadable audio). Rows reuse the YTM layout
 // because Spotify pages give us per-track covers.
@@ -5464,15 +4264,11 @@ $('btn-download-selected').addEventListener('click', () => {
   const remoteByPath = new Map(lanAllRemoteTracks().map(t => [t.path, t]));
   downloadTracksFromHost([...selectedPaths].map(p => remoteByPath.get(p)).filter(Boolean));
 });
-$('btn-delete-selected').addEventListener('click', () => {
+$('btn-delete-selected').addEventListener('click', async () => {
   const paths = [...selectedPaths].filter(p => !isRemotePath(p));
   if (paths.length === 0) return;
-  confirmDelete({
-    kind: 'tracks',
-    payload: paths,
-    title: tr('modal.deleteTracks.title'),
-    text: tr('modal.deleteTracks.text', { count: withCount('tracks', paths.length) }),
-  });
+  if (await confirmDelete('modal.deleteTracks.title',
+    tr('modal.deleteTracks.text', { count: withCount('tracks', paths.length) }))) deleteTracks(paths);
 });
 
 // ── Render: favorites ──
@@ -5590,11 +4386,10 @@ function renderPlaylistDetail(plId) {
       playTrackByPath(random.path, tracks);
     }
   };
-  $('btn-pl-delete').onclick = () => confirmDelete({
-    kind: 'playlist', payload: pl.id,
-    title: tr('modal.deletePlaylist.title'),
-    text: tr('modal.deletePlaylist.text', { name: pl.name }),
-  });
+  $('btn-pl-delete').onclick = async () => {
+    if (await confirmDelete('modal.deletePlaylist.title',
+      tr('modal.deletePlaylist.text', { name: pl.name }))) deletePlaylist(pl.id);
+  };
 }
 
 // ── Artists ──
@@ -6870,7 +5665,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#fix-tags-menu') && !e.target.closest('.btn-fix-tags-trigger')) closeFixTagsMenu();
 });
 document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const scope = pendingFixTagsScope;
     const action = btn.dataset.action;
     closeFixTagsMenu();
@@ -6882,18 +5677,16 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     else if (action === 'set-genre') runSetGenre(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
     else if (action === 'download') downloadTracksFromHost(scope.tracks);
-    else if (action === 'delete-album') confirmDelete({
-      kind: 'tracks',
-      payload: localTracks.map(t => t.path),
-      title: tr('modal.deleteAlbum.title'),
-      text: tr('modal.deleteAlbum.text', { name: scope.name, count: withCount('tracks', localTracks.length) }),
-    });
-    else if (action === 'delete-artist') confirmDelete({
-      kind: 'tracks',
-      payload: localTracks.map(t => t.path),
-      title: tr('modal.deleteArtist.title'),
-      text: tr('modal.deleteArtist.text', { name: scope.name, count: withCount('tracks', localTracks.length) }),
-    });
+    else if (action === 'delete-album') {
+      if (await confirmDelete('modal.deleteAlbum.title',
+        tr('modal.deleteAlbum.text', { name: scope.name, count: withCount('tracks', localTracks.length) })))
+        deleteTracks(localTracks.map(t => t.path));
+    }
+    else if (action === 'delete-artist') {
+      if (await confirmDelete('modal.deleteArtist.title',
+        tr('modal.deleteArtist.text', { name: scope.name, count: withCount('tracks', localTracks.length) })))
+        deleteTracks(localTracks.map(t => t.path));
+    }
     else runFixTags(scope.tracks, { compare: true, labelKey: scope.labelKey });
   });
 });
@@ -8115,26 +6908,13 @@ $('text-prompt-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); closeTextPromptModal($('text-prompt-input').value); }
 });
 
-// ── Confirm delete modal ──
-function confirmDelete({ kind, payload, title, text }) {
-  pendingDelete = { kind, payload };
-  $('confirm-title').textContent = title || tr('modal.deleteTrack.title');
-  $('confirm-text').textContent = text || tr('modal.deleteTrack.text');
-  $('confirm-modal').classList.add('active');
+// ── Confirm delete ──
+// Destructive actions all have the same shape: a question, the consequence, and
+// a yes/no. confirmToast() already is exactly that and resolves true/false, so
+// callers just await it — no pending-action global, no second confirm dialog.
+function confirmDelete(titleKey, text) {
+  return confirmToast(`${tr(titleKey)} ${text}`);
 }
-$('btn-cancel-delete').addEventListener('click', () => {
-  $('confirm-modal').classList.remove('active');
-  pendingDelete = null;
-});
-$('btn-confirm-delete').addEventListener('click', () => {
-  if (!pendingDelete) return;
-  if (pendingDelete.kind === 'track') deleteTrack(pendingDelete.payload);
-  else if (pendingDelete.kind === 'tracks') deleteTracks(pendingDelete.payload);
-  else if (pendingDelete.kind === 'playlist') deletePlaylist(pendingDelete.payload);
-  else if (pendingDelete.kind === 'clear-library') clearLibrary();
-  $('confirm-modal').classList.remove('active');
-  pendingDelete = null;
-});
 
 async function deleteTrack(path) {
   if (trackIndexByPath(path) < 0) return;
@@ -8257,34 +7037,13 @@ function clearLibrary() {
   renderRecents();
 }
 
-// ── New playlist modal ──
-$('btn-new-playlist').addEventListener('click', openNewPlaylistModal);
-$('btn-new-playlist-empty').addEventListener('click', openNewPlaylistModal);
-function openNewPlaylistModal() {
-  $('new-playlist-name').value = '';
-  $('new-playlist-desc').value = '';
-  $('new-playlist-modal').classList.add('active');
-  focusModalInput($('new-playlist-name'));
-}
-$('btn-cancel-new-playlist').addEventListener('click', () => {
-  $('new-playlist-modal').classList.remove('active');
-});
-$('btn-create-playlist').addEventListener('click', () => {
-  const name = $('new-playlist-name').value.trim();
-  if (!name) return;
-  const desc = $('new-playlist-desc').value.trim();
-  playlists.push({
-    id: crypto.randomUUID(),
-    name, desc,
-    color: PL_COVERS[playlists.length % PL_COVERS.length],
-    trackPaths: [],
-  });
-  savePlaylists();
-  $('new-playlist-modal').classList.remove('active');
-  renderPlaylists();
-});
+// Creating a playlist is the edit modal with nothing loaded into it — same
+// fields, same avatar picker — so it opens in "create" mode instead of having
+// a near-identical second modal of its own.
+$('btn-new-playlist').addEventListener('click', () => openEditPlaylistModal(null));
+$('btn-new-playlist-empty').addEventListener('click', () => openEditPlaylistModal(null));
 
-// ── Playlist context menu + edit modal ──
+// ── Playlist context menu + new/edit modal ──
 // Right-clicking a card in the playlists grid opens a small menu: edit the
 // name/description in a modal, or delete via the shared confirm dialog.
 let pendingContextPlaylistId = null;
@@ -8310,7 +7069,7 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#playlist-context-menu')) closePlaylistContextMenu();
 });
 document.querySelectorAll('#playlist-context-menu .cm-item').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const action = btn.dataset.action;
     const plId = pendingContextPlaylistId;
     closePlaylistContextMenu();
@@ -8318,11 +7077,10 @@ document.querySelectorAll('#playlist-context-menu .cm-item').forEach(btn => {
     const pl = playlists.find(p => p.id === plId);
     if (!pl) return;
     if (action === 'edit') openEditPlaylistModal(plId);
-    else if (action === 'delete') confirmDelete({
-      kind: 'playlist', payload: plId,
-      title: tr('modal.deletePlaylist.title'),
-      text: tr('modal.deletePlaylist.text', { name: pl.name }),
-    });
+    else if (action === 'delete') {
+      if (await confirmDelete('modal.deletePlaylist.title',
+        tr('modal.deletePlaylist.text', { name: pl.name }))) deletePlaylist(plId);
+    }
   });
 });
 
@@ -8337,9 +7095,12 @@ function renderEditAvatarPreview() {
     preview.style.background = `url(${cover}) center/cover`;
     preview.innerHTML = '';
   } else {
-    const idx = Math.max(0, playlists.findIndex(p => p.id === editingPlaylistId));
+    // Create mode has no playlist to look up — preview the swatch the new one
+    // will actually get (same index newPlaylistColor() picks on save).
+    const idx = pl ? playlists.indexOf(pl) : playlists.length;
     preview.style.background = (pl && pl.color) || PL_COVERS[idx % PL_COVERS.length];
-    preview.innerHTML = `<span>${escapeHtml(((pl && pl.name) || '?')[0])}</span>`;
+    const label = (pl ? pl.name : $('edit-playlist-name').value.trim()) || '?';
+    preview.innerHTML = `<span>${escapeHtml(label[0])}</span>`;
   }
   $('btn-edit-playlist-avatar-remove').hidden = !cover;
 }
@@ -8372,13 +7133,21 @@ $('btn-edit-playlist-avatar-remove').addEventListener('click', () => {
   pendingEditAvatar = '';
   renderEditAvatarPreview();
 });
+// plId === null opens the same modal in "create" mode.
 function openEditPlaylistModal(plId) {
-  const pl = playlists.find(p => p.id === plId);
-  if (!pl) return;
-  editingPlaylistId = plId;
+  const pl = plId ? playlists.find(p => p.id === plId) : null;
+  if (plId && !pl) return;
+  editingPlaylistId = pl ? plId : null;
   pendingEditAvatar = undefined;
-  $('edit-playlist-name').value = pl.name || '';
-  $('edit-playlist-desc').value = pl.desc || '';
+  $('edit-playlist-name').value = pl ? (pl.name || '') : '';
+  $('edit-playlist-desc').value = pl ? (pl.desc || '') : '';
+  // Set data-i18n too, not just the text — applyLanguage() re-reads the
+  // attribute, so a language switch while this is open keeps the right label.
+  const titleEl = $('edit-playlist-title'), saveEl = $('btn-save-edit-playlist');
+  titleEl.dataset.i18n = pl ? 'modal.editPlaylist.title' : 'modal.newPlaylist.title';
+  saveEl.dataset.i18n = pl ? 'btn.save' : 'btn.create';
+  titleEl.textContent = tr(titleEl.dataset.i18n);
+  saveEl.textContent = tr(saveEl.dataset.i18n);
   renderEditAvatarPreview();
   $('edit-playlist-modal').classList.add('active');
   focusModalInput($('edit-playlist-name'));
@@ -8389,9 +7158,13 @@ $('btn-cancel-edit-playlist').addEventListener('click', () => {
   pendingEditAvatar = undefined;
 });
 $('btn-save-edit-playlist').addEventListener('click', () => {
-  const pl = playlists.find(p => p.id === editingPlaylistId);
   const name = $('edit-playlist-name').value.trim();
-  if (!pl || !name) return;
+  if (!name) return;
+  let pl = playlists.find(p => p.id === editingPlaylistId);
+  if (!pl) {
+    pl = { id: crypto.randomUUID(), name, desc: '', color: PL_COVERS[playlists.length % PL_COVERS.length], trackPaths: [] };
+    playlists.push(pl);
+  }
   pl.name = name;
   pl.desc = $('edit-playlist-desc').value.trim();
   if (pendingEditAvatar !== undefined) {
@@ -8404,6 +7177,7 @@ $('btn-save-edit-playlist').addEventListener('click', () => {
   editingPlaylistId = null;
   if (currentView === 'playlists') renderPlaylists();
   else if (currentView === 'playlist-detail' && activePlaylistId === pl.id) renderPlaylistDetail(pl.id);
+  else renderPlaylists();
 });
 
 // ── Add-to-playlist modal ──
@@ -8479,7 +7253,7 @@ document.addEventListener('click', e => {
   }
 });
 document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const action = btn.dataset.action;
     const path = pendingContextTrackPath;
     closeContextMenu();
@@ -8510,11 +7284,10 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
         renderCounts();
       }
     }
-    else if (action === 'delete') confirmDelete({
-      kind: 'track', payload: path,
-      title: tr('modal.deleteTrack.title'),
-      text: tr('modal.deleteTrackFull.text', { title: track.title, artist: track.artist }),
-    });
+    else if (action === 'delete') {
+      if (await confirmDelete('modal.deleteTrack.title',
+        tr('modal.deleteTrackFull.text', { title: track.title, artist: track.artist }))) deleteTrack(path);
+    }
   });
 });
 
@@ -8759,11 +7532,8 @@ function runPaletteAction(action) {
   else if (action.kind === 'goto-playlists') setView('playlists');
   else if (action.kind === 'goto-favorites') setView('favorites');
   else if (action.kind === 'clear-library') {
-    confirmDelete({
-      kind: 'clear-library',
-      title: tr('modal.clearLibrary.title'),
-      text: tr('modal.clearLibrary.text'),
-    });
+    confirmDelete('modal.clearLibrary.title', tr('modal.clearLibrary.text'))
+      .then(ok => { if (ok) clearLibrary(); });
   }
   else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
   else if (action.kind === 'volume-up') setVolume(targetVolume + 0.05);
@@ -9002,12 +7772,16 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if ($('fullscreen-overlay').classList.contains('active')) closeFullscreen();
     else if (isSettingsOpen()) closeSettings();
-    else if ($('metadata-modal').classList.contains('active')) $('metadata-modal').classList.remove('active');
-    else if ($('new-playlist-modal').classList.contains('active')) $('new-playlist-modal').classList.remove('active');
-    else if ($('add-to-playlist-modal').classList.contains('active')) $('add-to-playlist-modal').classList.remove('active');
+    // The text prompt owns a pending promise, so it has to be resolved rather
+    // than just hidden. Every other modal is plain markup — close whichever is
+    // open instead of naming them one by one (the old list had already drifted
+    // out of date and missed the edit-playlist and track-picker modals).
     else if ($('text-prompt-modal').classList.contains('active')) closeTextPromptModal(null);
-    else if ($('track-number-modal').classList.contains('active')) $('track-number-modal').classList.remove('active');
-    else if (librarySelectMode) setLibrarySelectMode(false);
+    else {
+      const open = document.querySelector('.modal-overlay.active');
+      if (open) open.classList.remove('active');
+      else if (librarySelectMode) setLibrarySelectMode(false);
+    }
     return;
   }
 
@@ -9401,7 +8175,7 @@ function renderSettings() {
     o.classList.toggle('active', o.dataset.dlfmt === settings.dlFormat);
   });
   // Language — labels stay in their native language regardless of currentLang.
-  const lblMap = { en: 'English', de: 'Deutsch', fr: 'Français', uk: 'Українська' };
+  const lblMap = { en: 'English', uk: 'Українська' };
   $('lang-current').textContent = lblMap[settings.language] || lblMap.en;
   document.querySelectorAll('#lang-select .select-opt').forEach(o => {
     o.classList.toggle('active', o.dataset.lang === settings.language);
@@ -10572,10 +9346,6 @@ let lanPollTimer = null;
 function lanPeer(id) { return lanStatus.peers.find(p => p.deviceId === id) || null; }
 
 async function lanApi(peer, route, body) {
-  // A mobile peer has no HTTP server to fetch() (see lan.js's "mobile clients"
-  // section) — main.js relays the same request over the WebSocket it's
-  // already holding open instead.
-  if (peer.mobile) return window.electronAPI.lanWsRequest(peer.deviceId, route, body);
   const res = await fetch(peer.base + route, {
     method: body ? 'POST' : 'GET',
     headers: { 'Authorization': 'Bearer ' + lanStatus.key, 'Content-Type': 'application/json' },
@@ -10650,10 +9420,10 @@ async function lanRefresh() {
   $('count-devices').textContent = lanStatus.peers.length;
   const ids = new Set(lanStatus.peers.map(p => p.deviceId));
   for (const id of Object.keys(lanPeerLibraries)) if (!ids.has(id)) delete lanPeerLibraries[id];
-  // Inbound-only entries (see lan.js's `inbound` map) have no base URL and no
-  // WS to reach them through — they only ever pull from us, so there's no
-  // library to fetch back.
-  for (const p of lanStatus.peers) if (!lanPeerLibraries[p.deviceId] && (p.mobile || p.base)) lanSyncPeerLibrary(p);
+  // Inbound-only entries (see lan.js's `inbound` map) have no base URL to
+  // reach them through — they only ever pull from us, so there's no library
+  // to fetch back.
+  for (const p of lanStatus.peers) if (!lanPeerLibraries[p.deviceId] && p.base) lanSyncPeerLibrary(p);
   if (currentView === 'devices') renderDevices();
   if (currentView === 'library') renderLibrary();
   if ($('connect-menu').classList.contains('open')) renderConnectMenu();
@@ -10862,10 +9632,9 @@ function renderDevices() {
     const trackCount = lib ? ` · ${withCount('tracks', lib.tracks.length)}` : '';
     // Inbound-only entries are one-way (they connected to us; we have no
     // address to reach them back at) — no port, no sync/remove actions.
-    const meta = p.mobile ? tr('lan.mobileConnected')
-      : p.inbound ? `${escapeHtml(p.host)} · ${tr('lan.inbound')}`
+    const meta = p.inbound ? `${escapeHtml(p.host)} · ${tr('lan.inbound')}`
       : `${escapeHtml(p.host)}:${p.port}${p.manual ? ' · ' + tr('lan.manual') : ''}${trackCount}`;
-    const icon = p.mobile ? 'i-smartphone' : p.inbound ? 'i-link' : 'i-monitor';
+    const icon = p.inbound ? 'i-link' : 'i-monitor';
     return `
     <div class="device-row" data-peer="${escapeHtml(p.deviceId)}" style="cursor:default">
       <svg class="i" width="14" height="14"><use href="#${icon}"/></svg>
@@ -10873,7 +9642,7 @@ function renderDevices() {
         <div class="device-name">${escapeHtml(p.name)}</div>
         <div class="device-meta">${meta}</div>
       </div>
-      ${!p.mobile && !p.inbound ? `<button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>` : ''}
+      ${!p.inbound ? `<button class="btn-ghost" data-act="sync-settings" title="${escapeHtml(tr('lan.syncSettingsHint'))}">${tr('lan.syncSettings')}</button>` : ''}
       ${p.manual ? `<button class="btn-ghost" data-act="remove">${tr('lan.remove')}</button>` : ''}
     </div>`;
   }).join('') || `<div class="device-empty">${tr('lan.noPeers')}</div>`;
@@ -10959,10 +9728,10 @@ function renderConnectMenu() {
   const rows = lanStatus.peers.filter(p => !p.inbound).map(p => `
     <div class="cm-device" data-peer="${escapeHtml(p.deviceId)}">
       <div class="device-row" style="cursor:default">
-        <svg class="i" width="14" height="14"><use href="#${p.mobile ? 'i-smartphone' : 'i-monitor'}"/></svg>
+        <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
         <div class="device-body">
           <div class="device-name">${escapeHtml(p.name)}</div>
-          <div class="device-meta">${p.mobile ? tr('lan.mobileConnected') : escapeHtml(p.host) + (p.manual ? ' · ' + tr('lan.manual') : '')}</div>
+          <div class="device-meta">${escapeHtml(p.host) + (p.manual ? ' · ' + tr('lan.manual') : '')}</div>
         </div>
       </div>
       <div class="cm-device-actions">
