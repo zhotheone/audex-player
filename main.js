@@ -1426,9 +1426,28 @@ function resolveBundledFfmpeg() {
 function youtubeCookiesPath() {
   return path.join(app.getPath('userData'), 'yt-cookies.txt');
 }
+// YouTube hands out anonymous cookies (VISITOR_INFO1_LIVE, CONSENT, YSC…) on
+// the very first page load, so a non-empty jar is NOT proof of a sign-in —
+// only an account cookie is. Everything that asks "are we signed in?" routes
+// through here rather than through fs.existsSync, which would call an
+// anonymous jar a session and light up the Logout button (and hand yt-dlp
+// cookies that authenticate nothing).
+const YT_AUTH_COOKIES = ['SID', '__Secure-1PSID', '__Secure-3PSID', 'LOGIN_INFO'];
+
+// Netscape jar columns: domain, flag, path, secure, expires, name, value.
+function hasYtAuthCookie() {
+  try {
+    return fs.readFileSync(youtubeCookiesPath(), 'utf8').split('\n').some((line) => {
+      const f = line.split('\t');
+      return f.length >= 7 && YT_AUTH_COOKIES.includes(f[5]) && f[6].trim();
+    });
+  } catch (_) {
+    return false; // no jar at all
+  }
+}
+
 function ytDlpCookieArgs() {
-  const p = youtubeCookiesPath();
-  return fs.existsSync(p) ? ['--cookies', p] : [];
+  return hasYtAuthCookie() ? ['--cookies', youtubeCookiesPath()] : [];
 }
 
 // Once cookies exist, YouTube only offers yt-dlp clients (web/tv/mweb) that
@@ -2464,7 +2483,12 @@ ipcMain.handle('youtube:login', async () => {
 
     const cookies = await session.fromPartition(YOUTUBE_PARTITION).cookies.get({});
     fs.writeFileSync(youtubeCookiesPath(), cookiesToNetscape(cookies));
-    return { success: true };
+    // Closing the window without signing in (or after signing out inside it)
+    // leaves an anonymous jar — drop it so the file's presence keeps meaning
+    // "there is a session here".
+    const signedIn = hasYtAuthCookie();
+    if (!signedIn) { try { fs.rmSync(youtubeCookiesPath(), { force: true }); } catch (_) {} }
+    return { success: true, signedIn };
   } catch (err) {
     return { success: false, error: String(err && err.message || err).slice(0, 300) };
   } finally {
@@ -2475,9 +2499,9 @@ ipcMain.handle('youtube:login', async () => {
 });
 
 ipcMain.handle('youtube:cookiesStatus', async () => {
+  if (!hasYtAuthCookie()) return { signedIn: false };
   try {
-    const stat = fs.statSync(youtubeCookiesPath());
-    return { signedIn: true, updatedAt: stat.mtimeMs };
+    return { signedIn: true, updatedAt: fs.statSync(youtubeCookiesPath()).mtimeMs };
   } catch (_) {
     return { signedIn: false };
   }

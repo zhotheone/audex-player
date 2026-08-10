@@ -19,15 +19,49 @@ const grab = (name) => {
   return src.slice(start, end + 3);
 };
 const grabConst = (name) => {
-  const start = src.indexOf(`const ${name} = {`);
+  const start = src.indexOf(`const ${name} = `);
   assert.ok(start > 0, `${name} not found in main.js`);
-  return src.slice(start, src.indexOf(';\n', start) + 2); // object literals here have no inner semicolons
+  return src.slice(start, src.indexOf(';\n', start) + 2); // literals here have no inner semicolons
 };
 const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS } = new Function('fs', 'path',
   grab('sanitizeFsName') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('isOggContainer') +
   grab('oggCoverMetaFile') + grab('toFfmpegPath') + grab('ffmpegTagArgs') +
   grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') +
   'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS };')(fs, path);
+
+// Sign-in detection: an anonymous YouTube jar must not read as a session.
+// youtubeCookiesPath() is stubbed to a temp file so hasYtAuthCookie() can be
+// exercised without an Electron app object.
+const cookieJar = path.join(os.tmpdir(), `audex-yt-${process.pid}.txt`);
+const { cookiesToNetscape, hasYtAuthCookie } = new Function('fs', 'path', 'JAR',
+  'function youtubeCookiesPath() { return JAR; }' +
+  grabConst('YT_AUTH_COOKIES') + grab('hasYtAuthCookie') + grab('cookiesToNetscape') +
+  'return { cookiesToNetscape, hasYtAuthCookie };')(fs, path, cookieJar);
+
+const writeJar = (cookies) => fs.writeFileSync(cookieJar, cookiesToNetscape(cookies));
+const anon = [
+  { name: 'VISITOR_INFO1_LIVE', value: 'abc', domain: '.youtube.com', path: '/', secure: true, expirationDate: 2e9 },
+  { name: 'CONSENT', value: 'YES+1', domain: '.youtube.com', path: '/', secure: false, expirationDate: 2e9 },
+  { name: 'YSC', value: 'xyz', domain: '.youtube.com', path: '/', secure: true, expirationDate: 0 },
+];
+
+fs.rmSync(cookieJar, { force: true });
+assert.strictEqual(hasYtAuthCookie(), false, 'no jar at all is not signed in');
+
+writeJar(anon);
+assert.strictEqual(hasYtAuthCookie(), false,
+  'a jar of only anonymous cookies must not read as signed in (this is what put a Logout button on screen)');
+
+writeJar([...anon, { name: 'LOGIN_INFO', value: 'realsession', domain: '.youtube.com', path: '/', secure: true, expirationDate: 2e9 }]);
+assert.strictEqual(hasYtAuthCookie(), true, 'LOGIN_INFO means a real session');
+
+writeJar([...anon, { name: '__Secure-3PSID', value: 'sess', domain: '.google.com', path: '/', secure: true, expirationDate: 2e9 }]);
+assert.strictEqual(hasYtAuthCookie(), true, '__Secure-3PSID means a real session');
+
+// An auth cookie present but blank is a cleared session, not a live one.
+writeJar([...anon, { name: 'SID', value: '', domain: '.youtube.com', path: '/', secure: true, expirationDate: 2e9 }]);
+assert.strictEqual(hasYtAuthCookie(), false, 'an empty auth cookie is not a session');
+fs.rmSync(cookieJar, { force: true });
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audex-dl-'));
 const drop = (name) => {
