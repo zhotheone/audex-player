@@ -431,8 +431,14 @@ input { font-family: inherit; color: inherit; }
 .nav-menu {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  /* Gap between groups; items inside a group stay tight at 2px. */
+  gap: 12px;
   margin-bottom: 22px;
+}
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .nav-item[hidden] { display: none; }
@@ -2693,6 +2699,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transition: transform 0.1s;
 }
 .btn-play:hover { transform: scale(1.06); }
+/* The glyph only fills ~half its 24px viewBox, so the svg has to be oversized
+   relative to the button for the triangle to read at normal weight. */
+.play-i { width: 22px; height: 22px; }
 
 .time-pair {
   font-size: 10.5px;
@@ -2806,7 +2815,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .fs-overlay .fs-album,
 .fs-overlay .fs-progress,
 .fs-overlay .fs-ctrls,
-.fs-overlay .fs-secondary {
+.fs-overlay .fs-secondary,
+.fs-overlay .fs-volume {
   opacity: 0;
   transform: translateY(14px);
   transition:
@@ -2822,6 +2832,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .fs-overlay.is-in .fs-progress   { opacity: 1; transform: none; transition-delay: 300ms; }
 .fs-overlay.is-in .fs-ctrls      { opacity: 1; transform: none; transition-delay: 330ms; }
 .fs-overlay.is-in .fs-secondary  { opacity: 1; transform: none; transition-delay: 360ms; }
+.fs-overlay.is-in .fs-volume     { opacity: 1; transform: none; transition-delay: 390ms; }
 .fs-overlay.is-in .fs-queue      { opacity: 1; transform: none; transition-delay: 220ms; }
 
 /* During the cover morph the JS drives fs-cover via Web Animations API.
@@ -2982,6 +2993,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 .fs-btn-play:hover { transform: scale(1.04); }
+.fs-play-i { width: 30px; height: 30px; }
 
 .fs-secondary {
   display: flex;
@@ -3258,10 +3270,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 /* ── Morph transition: portrait toggle ── */
 /* The fs-title etc. already have a transition for the open/close stagger
    (380ms). We reuse it: just toggle opacity + translateY via .is-morphing and
-   the existing transition handles the fade in both directions. fs-info and
-   fs-volume aren't in the stagger list, so define their own here. */
-.fs-overlay .fs-info,
-.fs-overlay .fs-volume {
+   the existing transition handles the fade in both directions. fs-info isn't
+   in the stagger list, so it defines its own here. */
+.fs-overlay .fs-info {
   transition: opacity 240ms ease, transform 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .fs-overlay.is-morphing .fs-info,

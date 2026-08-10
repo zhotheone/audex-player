@@ -138,52 +138,57 @@
         </div>
       </div>
 
+      <!-- Grouped in pairs (see .nav-group in style.css). Every group keeps at
+           least one always-visible item, so a group can never collapse to an
+           empty box that still eats the inter-group gap. -->
       <nav class="nav-menu">
-        <a href="#" class="nav-item active" data-view="library">
-          <svg class="i" width="14" height="14"><use href="#i-library"/></svg>
-          <span data-i18n="nav.library">Library</span>
-          <span class="nav-meta" id="count-library">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="albums">
-          <svg class="i" width="14" height="14"><use href="#i-image"/></svg>
-          <span data-i18n="nav.albums">Albums</span>
-          <span class="nav-meta" id="count-albums">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="artists">
-          <svg class="i" width="14" height="14"><use href="#i-mic"/></svg>
-          <span data-i18n="nav.artists">Artists</span>
-          <span class="nav-meta" id="count-artists">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="playlists">
-          <svg class="i" width="14" height="14"><use href="#i-list"/></svg>
-          <span data-i18n="nav.playlists">Playlists</span>
-          <span class="nav-meta" id="count-playlists">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="favorites">
-          <svg class="i" width="14" height="14"><use href="#i-heart"/></svg>
-          <span data-i18n="nav.favorites">Favorites</span>
-          <span class="nav-meta" id="count-favorites">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="devices" id="nav-devices" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
-          <span data-i18n="nav.devices">Devices</span>
-          <span class="nav-meta" id="count-devices">0</span>
-        </a>
-        <a href="#" class="nav-item" data-view="editor" id="nav-editor" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-scissors"/></svg>
-          <span data-i18n="nav.editor">Editor</span>
-        </a>
-        <a href="#" class="nav-item nav-downloads" data-view="downloads" id="nav-downloads" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-download"/></svg>
-          <span data-i18n="nav.downloads">Downloads</span>
-        </a>
-        <a href="#" class="nav-item nav-search" data-action="open-palette">
-          <span class="nav-search-icon">
-            <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
-          </span>
-          <span data-i18n="nav.search">Search</span>
-          <span class="nav-shortcut nav-search-shortcut">⌘K</span>
-        </a>
+        <div class="nav-group">
+          <a href="#" class="nav-item active" data-view="library">
+            <svg class="i" width="14" height="14"><use href="#i-library"/></svg>
+            <span data-i18n="nav.library">Library</span>
+            <span class="nav-meta" id="count-library">0</span>
+          </a>
+          <a href="#" class="nav-item nav-downloads" data-view="downloads" id="nav-downloads" hidden>
+            <svg class="i" width="14" height="14"><use href="#i-download"/></svg>
+            <span data-i18n="nav.downloads">Downloads</span>
+          </a>
+        </div>
+        <div class="nav-group">
+          <a href="#" class="nav-item" data-view="artists">
+            <svg class="i" width="14" height="14"><use href="#i-mic"/></svg>
+            <span data-i18n="nav.artists">Artists</span>
+            <span class="nav-meta" id="count-artists">0</span>
+          </a>
+          <a href="#" class="nav-item" data-view="albums">
+            <svg class="i" width="14" height="14"><use href="#i-image"/></svg>
+            <span data-i18n="nav.albums">Albums</span>
+            <span class="nav-meta" id="count-albums">0</span>
+          </a>
+          <a href="#" class="nav-item" data-view="favorites">
+            <svg class="i" width="14" height="14"><use href="#i-heart"/></svg>
+            <span data-i18n="nav.favorites">Favorites</span>
+            <span class="nav-meta" id="count-favorites">0</span>
+          </a>
+          <a href="#" class="nav-item" data-view="playlists">
+            <svg class="i" width="14" height="14"><use href="#i-list"/></svg>
+            <span data-i18n="nav.playlists">Playlists</span>
+            <span class="nav-meta" id="count-playlists">0</span>
+          </a>
+        </div>
+        <div class="nav-group">
+          <a href="#" class="nav-item" data-view="devices" id="nav-devices" hidden>
+            <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
+            <span data-i18n="nav.devices">Devices</span>
+            <span class="nav-meta" id="count-devices">0</span>
+          </a>
+          <a href="#" class="nav-item nav-search" data-action="open-palette">
+            <span class="nav-search-icon">
+              <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
+            </span>
+            <span data-i18n="nav.search">Search</span>
+            <span class="nav-shortcut nav-search-shortcut">⌘K</span>
+          </a>
+        </div>
       </nav>
 
       <div class="nav-section recents">
@@ -200,6 +205,10 @@
         <a href="#" class="nav-item" data-view="health" id="nav-health" hidden>
           <svg class="i" width="14" height="14"><use href="#i-shield"/></svg>
           <span data-i18n="nav.health">Health</span>
+        </a>
+        <a href="#" class="nav-item" data-view="editor" id="nav-editor" hidden>
+          <svg class="i" width="14" height="14"><use href="#i-scissors"/></svg>
+          <span data-i18n="nav.editor">Editor</span>
         </a>
       </div>
 

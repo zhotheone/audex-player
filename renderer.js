@@ -8527,13 +8527,13 @@ function applyDownloadsVisibility() {
 applyDownloadsVisibility();
 
 
-// Report and Health share a "Tools" sidebar group (index.html #nav-tools-group)
-// that's hidden whenever neither feature is on, so an empty heading doesn't
-// float in the sidebar for users who enable neither.
+// Report, Health and Editor share a "Tools" sidebar group (index.html
+// #nav-tools-group) that's hidden whenever none of them is on, so an empty
+// heading doesn't float in the sidebar for users who enable neither.
 function updateToolsGroupVisibility() {
   const group = $('nav-tools-group');
   if (!group) return;
-  group.hidden = $('nav-report').hidden && $('nav-health').hidden;
+  group.hidden = $('nav-report').hidden && $('nav-health').hidden && $('nav-editor').hidden;
 }
 
 // Master switch for the Library Health-check feature: hides the Health nav item,
@@ -8573,6 +8573,7 @@ applyReportsVisibility();
 function applyEditorVisibility() {
   const navEditor = $('nav-editor');
   if (navEditor) navEditor.hidden = !settings.editor;
+  updateToolsGroupVisibility();
   if (!settings.editor) {
     stopEditorPreview();
     if (currentView === 'editor') setView('library');
