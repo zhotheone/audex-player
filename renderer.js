@@ -6461,14 +6461,19 @@ function updateNowPlayingUI(track) {
 
   // Fullscreen
   const fsCover = $('fs-cover');
+  const fsOverlay = $('fullscreen-overlay');
   if (coverSrc) {
     fsCover.style.backgroundImage = `url('${coverSrc}')`;
     $('fs-cover-letter').textContent = '';
     $('fs-backdrop').style.background = `url('${coverSrc}') center/cover`;
+    // Shared with the lyrics panel's backdrop so both wear the same blurred
+    // album-art wash (see .fs-lyrics-panel::before).
+    if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', `url('${coverSrc}')`);
   } else {
     fsCover.style.backgroundImage = '';
     $('fs-cover-letter').textContent = (track.title || '?')[0];
     $('fs-backdrop').style.background = 'transparent';
+    if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', 'none');
   }
   $('fs-title').textContent = track.title;
   $('fs-artist').textContent = track.artist;
