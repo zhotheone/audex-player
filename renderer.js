@@ -3795,6 +3795,32 @@ function restoreYtmDownloadButton(actionEl, idx, labelKey, cls) {
   return newBtn;
 }
 
+// Shared by every download flow (YouTube Music parser, Spotify-via-YouTube,
+// and the queue worker): make sure a target folder is set (prompting once if
+// not) and stamp the chosen folder + format onto the args before the download.
+async function ensureDownloadArgs(args) {
+  if (!settings.defaultFolder) {
+    const folder = await window.electronAPI.chooseFolder();
+    if (!folder) return null;
+    settings.defaultFolder = folder;
+    saveSettings();
+    renderSettings();
+  }
+  return { ...args, targetDir: settings.defaultFolder, format: settings.dlFormat };
+}
+
+async function ytDownload(args) {
+  const full = await ensureDownloadArgs(args);
+  if (!full) return { success: false, error: tr('downloads.noFolder') };
+  return window.electronAPI.ytDownload(full);
+}
+
+async function ytDownloadByQuery(args) {
+  const full = await ensureDownloadArgs(args);
+  if (!full) return { success: false, error: tr('downloads.noFolder') };
+  return window.electronAPI.ytDownloadByQuery(full);
+}
+
 async function downloadYtmTrack(idx, btn) {
   const t = ytmTracks[idx];
   if (!t || !btn) return;
