@@ -3883,6 +3883,7 @@ function buildQueueItemFromYtm(t, albumTrackNo) {
     key: ytTrackKey({ id: t.id, url: t.url }),
     artist: t.artist || '',
     title: t.title || '',
+    album: t.album || '',
     duration: t.duration || '',
     query: t.artist ? `${t.artist} ${t.title}` : (t.title || ''),
     suggestedName: t.artist ? `${t.artist} - ${t.title}` : (t.title || ''),
@@ -11211,6 +11212,11 @@ const ytmBrowser = (function () {
         id: t.id,
         title: t.title,
         artist: t.artist || (album && album.artist) || '',
+        // The album name from the YT Music API is authoritative (native script,
+        // correct release) — thread it through so the download tags/folders the
+        // track by album instead of falling back to yt-dlp's often-empty
+        // %(album)s for these ids (which reads as a stray "by name" download).
+        album: (album && album.album) || '',
         duration: t.duration || '',
         explicit: t.explicit,
         url: `https://music.youtube.com/watch?v=${t.id}`,

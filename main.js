@@ -2116,9 +2116,17 @@ async function runYtDownload(event, payload, target) {
     } catch (err) { logAppError('runYtDownload:embedCover', err); }
   }
 
-  if (mbGenre) {
-    const r = await writeMetadataToFile(filePath, { genre: mbGenre });
-    if (!r.success) logAppError('runYtDownload:genre', r.error);
+  // Write the tags we hold an authoritative value for. The album especially:
+  // the renderer's YT Music album (native script, the release the user picked)
+  // must land in the embedded tag, not just the folder name — the library
+  // groups by the tag, and yt-dlp's %(album)s is often empty for these ids, so
+  // without this the track reads as "Unknown Album" no matter the folder.
+  const tagsToWrite = {};
+  if (mbGenre) tagsToWrite.genre = mbGenre;
+  if (album && album.trim()) tagsToWrite.album = album.trim();
+  if (Object.keys(tagsToWrite).length) {
+    const r = await writeMetadataToFile(filePath, tagsToWrite);
+    if (!r.success) logAppError('runYtDownload:tags', r.error);
   }
 
   try {
