@@ -1789,7 +1789,23 @@ ipcMain.handle('ytm:albumTracks', async (event, browseId) => {
       const explicit = JSON.stringify(r.badges || []).includes('MUSIC_EXPLICIT_BADGE');
       tracks.push({ id: vid, title: ytmFlexText(r, 0), duration, explicit, artist });
     });
-    return { success: true, album, artist, year, cover, tracks };
+    // The album's canonical share link (…/playlist?list=OLAK5uy…). This is the
+    // exact URL the Downloads "Parsing" tab consumes, so handing it back lets
+    // the artist-page "+" route downloads through the identical yt-dlp path
+    // instead of a second, divergent extraction. Prefer the microformat's
+    // urlCanonical; fall back to the first OLAK5uy playlistId found anywhere.
+    let shareUrl = '';
+    ytmWalk(data, n => {
+      if (shareUrl) return;
+      const u = (n.microformatDataRenderer || {}).urlCanonical;
+      if (typeof u === 'string' && /[?&]list=OLAK5uy/i.test(u)) shareUrl = u;
+    });
+    if (!shareUrl) {
+      let plid = '';
+      ytmWalk(data, n => { if (!plid && typeof n.playlistId === 'string' && /^OLAK5uy/i.test(n.playlistId)) plid = n.playlistId; });
+      if (plid) shareUrl = `https://music.youtube.com/playlist?list=${plid}`;
+    }
+    return { success: true, album, artist, year, cover, tracks, shareUrl };
   } catch (e) {
     return { success: false, error: String(e.message || e) };
   }

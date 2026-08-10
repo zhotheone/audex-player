@@ -11176,17 +11176,59 @@ const ytmBrowser = (function () {
     });
   }
 
+  // Album metadata (cover/artist/year) + the canonical share URL, from the fast
+  // innertube endpoint — drives the browse UI.
   async function loadAlbum(r) {
     try { return await window.electronAPI.ytmAlbumTracks(r.albumBrowseId); }
     catch (e) { return { success: false, error: String(e) }; }
   }
 
+  // Resolve a release to the SAME track list the Downloads "Parsing" tab would
+  // produce from its share link, so downloads go through one identical yt-dlp
+  // path instead of a second, divergent metadata extraction. Cached per URL.
+  const parseCache = new Map();
+  async function parsedTracksFor(al) {
+    if (!al || !al.shareUrl) return null;
+    if (parseCache.has(al.shareUrl)) return parseCache.get(al.shareUrl);
+    let tracks = null;
+    try {
+      const res = await window.electronAPI.ytMusicParse({ url: al.shareUrl });
+      if (res && res.success && Array.isArray(res.tracks)) tracks = res.tracks;
+    } catch (_) { /* fall back to innertube ids below */ }
+    parseCache.set(al.shareUrl, tracks);
+    return tracks;
+  }
+
+  // Innertube track → the parse-tab track shape, as a fallback when a release
+  // has no OLAK5uy share URL (or parsing failed). Still downloads by exact id.
+  const asParseTrack = t => ({ id: t.id, title: t.title, artist: t.artist, duration: t.duration, explicit: t.explicit, url: `https://music.youtube.com/watch?v=${t.id}` });
+
+  // Enqueue exactly like the Parsing tab's "Queue all": parsed track → the
+  // shared buildQueueItemFromYtm → downloadQueue. One path, no album threading.
+  function enqueueParsed(tracks, startNo = 1) {
+    let added = 0;
+    tracks.forEach((t, i) => {
+      if (isYtmTrackInQueue(t)) return;
+      downloadQueue.push(buildQueueItemFromYtm(t, startNo + i));
+      added++;
+    });
+    if (added) { renderQueue(); updateQueueTabBadge(); startQueueWorker(); }
+    return added;
+  }
+
+  async function addWholeRelease(al) {
+    const parsed = await parsedTracksFor(al);
+    const tracks = parsed && parsed.length ? parsed : al.tracks.map(asParseTrack);
+    return enqueueParsed(tracks);
+  }
+
   async function quickAdd(r) {
     setStatus(`Loading ${r.title}…`);
-    const res = await loadAlbum(r);
-    if (!res || !res.success) { setStatus((res && res.error) || 'Failed to load album', 'error'); return; }
-    const n = enqueueTracks(res.tracks, res);
-    setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''} from ${res.album || r.title}` : 'Already in queue');
+    const al = await loadAlbum(r);
+    if (!al || !al.success) { setStatus((al && al.error) || 'Failed to load album', 'error'); return; }
+    setStatus(`Adding ${al.album || r.title}…`);
+    const n = await addWholeRelease(al);
+    setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''} from ${al.album || r.title}` : 'Already in queue');
   }
 
   async function openAlbum(r) {
@@ -11219,40 +11261,25 @@ const ytmBrowser = (function () {
         <button class="btn-ic ytm-add" title="Add to queue"><svg class="i" width="14" height="14"><use href="#i-plus"/></svg></button>
       </div>`).join('');
     body().innerHTML = head + rows;
-    el('ytm-add-album').addEventListener('click', () => {
-      const n = enqueueTracks(al.tracks, al);
+    el('ytm-add-album').addEventListener('click', async () => {
+      setStatus('Adding…');
+      const n = await addWholeRelease(al);
       setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''}` : 'Already in queue');
       renderAlbum(al);
     });
     body().querySelectorAll('.ytm-track').forEach(row => {
-      row.querySelector('.ytm-add').addEventListener('click', () => {
-        if (enqueueTracks([al.tracks[+row.dataset.i]], al)) { row.classList.add('queued'); setStatus('Added to queue'); }
+      row.querySelector('.ytm-add').addEventListener('click', async () => {
+        const i = +row.dataset.i;
+        const t = al.tracks[i];
+        setStatus('Adding…');
+        // Prefer the parse-tab track for this exact id so its download handling
+        // is identical to the direct-link path; fall back to the id itself.
+        const parsed = await parsedTracksFor(al);
+        const track = (parsed && parsed.find(p => p.id === t.id)) || asParseTrack(t);
+        if (enqueueParsed([track], i + 1)) { row.classList.add('queued'); setStatus('Added to queue'); }
+        else setStatus('Already in queue');
       });
     });
-  }
-
-  function enqueueTracks(tracks, album) {
-    let added = 0;
-    tracks.forEach((t, i) => {
-      const item = {
-        id: t.id,
-        title: t.title,
-        artist: t.artist || (album && album.artist) || '',
-        // The album name from the YT Music API is authoritative (native script,
-        // correct release) — thread it through so the download tags/folders the
-        // track by album instead of falling back to yt-dlp's often-empty
-        // %(album)s for these ids (which reads as a stray "by name" download).
-        album: (album && album.album) || '',
-        duration: t.duration || '',
-        explicit: t.explicit,
-        url: `https://music.youtube.com/watch?v=${t.id}`,
-      };
-      if (isYtmTrackInQueue(item)) return;
-      downloadQueue.push(buildQueueItemFromYtm(item, i + 1));
-      added++;
-    });
-    if (added) { renderQueue(); updateQueueTabBadge(); startQueueWorker(); }
-    return added;
   }
 
   (function wire() {
