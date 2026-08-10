@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   chooseFolder: () => ipcRenderer.invoke('dialog:chooseFolder'),
   chooseImage: () => ipcRenderer.invoke('dialog:chooseImage'),
   scanFolder: (folderPath) => ipcRenderer.invoke('music:scanFolder', folderPath),
+  readStoreSync: (name) => ipcRenderer.sendSync('store:readSync', name),
+  writeStore: (name, json) => ipcRenderer.invoke('store:write', { name, json }),
   fileExists: (filePath) => ipcRenderer.invoke('music:fileExists', filePath),
   parseMetadata: (filePath) => ipcRenderer.invoke('music:parseMetadata', filePath),
   loadCoverCache: (paths) => ipcRenderer.invoke('covers:load', paths),

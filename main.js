@@ -596,6 +596,42 @@ ipcMain.handle('music:scanFolder', async (event, folderPath) => {
   return scanDir(folderPath);
 });
 
+// ── Renderer store ──
+// The library index and the play log outgrew localStorage's ~5MB origin cap (a
+// 10k-track library is ~4MB of JSON by itself) and were failing to save with
+// nothing but a console warning. They live in <userData>/store/<name>.json
+// instead. The read is sendSync so the renderer can still load them at module
+// scope; writes are async and go through a tmp file + rename, so a crash or a
+// full disk mid-write leaves the previous store intact rather than a truncated
+// file that parses as an empty library.
+function storeDir() {
+  return path.join(app.getPath('userData'), 'store');
+}
+// basename() so a store name can only ever name a file inside the store dir.
+function storePath(name) {
+  return path.join(storeDir(), path.basename(String(name)) + '.json');
+}
+async function writeStoreFile(name, json) {
+  const dest = storePath(name);
+  const tmp = dest + '.tmp';
+  try {
+    await fs.promises.mkdir(storeDir(), { recursive: true });
+    await fs.promises.writeFile(tmp, json, 'utf8');
+    await fs.promises.rename(tmp, dest);
+    return { success: true };
+  } catch (e) {
+    try { await fs.promises.unlink(tmp); } catch (_) {}
+    logAppError('store:write', `${name}: ${e && e.message}`);
+    return { success: false, error: e && e.message };
+  }
+}
+
+ipcMain.on('store:readSync', (event, name) => {
+  try { event.returnValue = fs.readFileSync(storePath(name), 'utf8'); }
+  catch (_) { event.returnValue = null; }   // missing file — first run, or not migrated yet
+});
+ipcMain.handle('store:write', (event, { name, json }) => writeStoreFile(name, json));
+
 // Lets the renderer tell "file moved/deleted out from under us" apart from
 // "file's here but won't decode" after a playback error, without reading the
 // whole thing the way readAudioFile would.

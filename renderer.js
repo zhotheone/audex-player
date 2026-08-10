@@ -30,8 +30,51 @@ const LS = {
   session: 'audex-session',
 };
 
+// ── Big-state store ──
+// The library index and the play log live in <userData>/store (see main.js).
+// They outgrow localStorage — a 10k-track library is ~4MB of JSON against a
+// ~5MB origin cap — and localStorage answers that by throwing, which used to
+// mean the library silently stopped persisting. Anything small enough to fit
+// (settings, playlists, favorites, caches) stays in localStorage. An older
+// preload without the store IPC keeps using localStorage for everything.
+const hasStore = !!(window.electronAPI && window.electronAPI.readStoreSync);
+function readStore(name, lsKey) {
+  if (hasStore) {
+    const raw = window.electronAPI.readStoreSync(name);
+    // No file yet: read the localStorage copy this version replaced. The first
+    // write moves it into the file and drops the stale key.
+    if (raw != null) { try { return JSON.parse(raw); } catch (_) { return null; } }
+  }
+  try { return JSON.parse(localStorage.getItem(lsKey) || 'null'); } catch (_) { return null; }
+}
+// ponytail: rewrites the whole store on every save, same as localStorage did.
+// Debounce (or append-only) if a big import starts feeling slow.
+function writeStore(name, value, lsKey) {
+  const json = JSON.stringify(value);
+  if (!hasStore) {
+    try { localStorage.setItem(lsKey, json); } catch (e) { warnSaveFailed(lsKey, e); }
+    return;
+  }
+  window.electronAPI.writeStore(name, json)
+    .then(res => {
+      if (res && res.success) localStorage.removeItem(lsKey);  // migrated — reclaim the quota
+      else warnSaveFailed(lsKey, res && res.error);
+    })
+    .catch(e => warnSaveFailed(lsKey, e));
+}
+// A failed save used to be a console.warn nobody sees. Toast it — but once per
+// store per session, since a full disk or a blown quota fails on every save and
+// a wall of identical toasts helps nobody.
+const saveFailedOnce = new Set();
+function warnSaveFailed(what, err) {
+  console.warn('save failed:', what, err);
+  if (saveFailedOnce.has(what)) return;
+  saveFailedOnce.add(what);
+  toast(tr('toast.saveFailed'), { type: 'error' });
+}
+
 // State
-let libraryMeta = JSON.parse(localStorage.getItem(LS.libraryMeta) || '[]');
+let libraryMeta = readStore('library-meta', LS.libraryMeta) || [];
 let favorites = JSON.parse(localStorage.getItem(LS.favorites) || '[]');
 let playlists = JSON.parse(localStorage.getItem(LS.playlists) || '[]');
 let settings = Object.assign({
@@ -165,7 +208,7 @@ const PLAYLOG_MAX = 4000;
 const PLAYLOG_MAX_AGE_MS = 400 * 24 * 60 * 60 * 1000; // ~13 months
 let playLog = (() => {
   try {
-    const arr = JSON.parse(localStorage.getItem(LS.playLog) || '[]');
+    const arr = readStore('play-log', LS.playLog);
     const cutoff = Date.now() - PLAYLOG_MAX_AGE_MS;
     return Array.isArray(arr) ? arr.filter(e => e && e.t >= cutoff) : [];
   } catch (_) { return []; }
@@ -350,19 +393,18 @@ applyAppearance();
 function saveLibrary() {
   lanTracksDirty = true;   // peers are serving a copy of this list
   libraryMeta = library.map(({ cover, ...rest }) => rest);
-  try {
-    localStorage.setItem(LS.libraryMeta, JSON.stringify(libraryMeta));
-    localStorage.setItem(LS.favorites, JSON.stringify(favorites));
-  } catch (e) {
-    console.warn('localStorage full:', e);
-  }
+  writeStore('library-meta', libraryMeta, LS.libraryMeta);
+  saveFavorites();
+}
+// Separate from saveLibrary on purpose: these used to share a try block, so a
+// library write that blew the quota took the favorites write down with it.
+function saveFavorites() {
+  try { localStorage.setItem(LS.favorites, JSON.stringify(favorites)); }
+  catch (e) { warnSaveFailed(LS.favorites, e); }
 }
 function savePlaylists() {
-  try {
-    localStorage.setItem(LS.playlists, JSON.stringify(playlists));
-  } catch (e) {
-    console.warn('localStorage full:', e);
-  }
+  try { localStorage.setItem(LS.playlists, JSON.stringify(playlists)); }
+  catch (e) { warnSaveFailed(LS.playlists, e); }
 }
 function saveSettings() {
   lanConfigDirty = true;   // peers are serving a copy of the syncable subset
@@ -372,12 +414,8 @@ function saveRecents() {
   localStorage.setItem(LS.recents, JSON.stringify(recents.slice(0, 4)));
 }
 function savePlayLog() {
-  try {
-    if (playLog.length > PLAYLOG_MAX) playLog = playLog.slice(-PLAYLOG_MAX);
-    localStorage.setItem(LS.playLog, JSON.stringify(playLog));
-  } catch (e) {
-    console.warn('play log save failed:', e);
-  }
+  if (playLog.length > PLAYLOG_MAX) playLog = playLog.slice(-PLAYLOG_MAX);
+  writeStore('play-log', playLog, LS.playLog);
 }
 // Waveform peaks are persisted as compact 0..255 ints (path -> int[]), capped to
 // the most-recently-decoded tracks so the cache can't grow without bound.
@@ -765,6 +803,7 @@ const I18N = {
     'theme.system': 'Default',
     'setting.theme': 'Theme',
     'setting.themeDesc': 'Application color scheme.',
+    'toast.saveFailed': "Couldn't save your changes to disk — they may be lost when the app closes.",
     'setting.randomTheme': 'Random theme',
     'setting.randomThemeDesc': 'Pick a random palette every time the app starts.',
     'setting.accent': 'Accent color',
@@ -1366,6 +1405,7 @@ const I18N = {
     'theme.system': 'Типова',
     'setting.theme': 'Тема',
     'setting.themeDesc': 'Колірна схема застосунку.',
+    'toast.saveFailed': 'Не вдалося зберегти зміни на диск — вони можуть втратитися після закриття застосунку.',
     'setting.randomTheme': 'Випадкова тема',
     'setting.randomThemeDesc': 'Обирати випадкову палітру під час кожного запуску.',
     'setting.accent': 'Колір акценту',
@@ -9119,10 +9159,12 @@ async function restoreCovers() {
   if (currentTrack) updateNowPlayingUI(currentTrack);
 }
 
-// On startup, pull tracks from the app's own downloads folder ("Audex Downloads")
-// and, if the user has set one, from their default folder. This keeps the library
-// in sync with both sources without requiring manual import.
-async function rescanOnBoot() {
+// Pull tracks from the app's own downloads folder ("Audex Downloads") and, if
+// the user has set one, from their default folder. This keeps the library in
+// sync with both sources without requiring manual import. importPaths skips
+// paths already in the library, so re-running this is idempotent.
+async function rescanFolders() {
+  lastRescan = Date.now();   // also at the end: a slow scan shouldn't let a re-focus start a second one
   const folders = [];
   try {
     const downloadsDir = await window.electronAPI.getDownloadsDir();
@@ -9137,7 +9179,20 @@ async function rescanOnBoot() {
       if (files && files.length > 0) await importPaths(files);
     } catch (_) { /* ignore */ }
   }
+  lastRescan = Date.now();
 }
+
+// Files that appeared while the app was open — a download in another app, a
+// copy from a file manager — stay invisible until the next launch otherwise.
+// Cheaper than a file watcher: rescan when the window is focused again, at
+// most once every few minutes so tabbing back and forth doesn't re-walk the
+// whole folder tree.
+const RESCAN_MIN_INTERVAL_MS = 5 * 60 * 1000;
+let lastRescan = 0;
+window.addEventListener('focus', () => {
+  if (Date.now() - lastRescan < RESCAN_MIN_INTERVAL_MS) return;
+  rescanFolders().catch(() => {});
+});
 
 // ── Update check ──
 // Asks the main process whether a newer GitHub release exists and, if so,
@@ -9865,7 +9920,7 @@ function openDefaultView() {
   splashStatus('splash.scanning');
   try { await restoreCovers(); } catch (_) { /* ignore */ }
   restoreDownloadsState();
-  try { await rescanOnBoot(); } catch (_) { /* ignore */ }
+  try { await rescanFolders(); } catch (_) { /* ignore */ }
   hideBootOverlay();
   checkForUpdates();
   warmMissingCoversInBackground();

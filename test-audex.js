@@ -12,8 +12,9 @@ const { execFileSync } = require('child_process');
 
 const src = fs.readFileSync(path.join(__dirname, 'main.js'), 'utf8');
 const grab = (name) => {
-  const start = src.indexOf(`function ${name}(`);
+  let start = src.indexOf(`function ${name}(`);
   assert.ok(start > 0, `${name} not found in main.js`);
+  if (src.slice(start - 6, start) === 'async ') start -= 6;   // keep the async keyword
   const end = src.indexOf('\n}\n', start);
   assert.ok(end > start, `${name} has no top-level end in main.js`);
   return src.slice(start, end + 3);
@@ -225,6 +226,91 @@ const tags = {
   assert.deepStrictEqual(split('Artist A; Artist B'), ['Artist A', 'Artist B'], '";" did not split');
   assert.deepStrictEqual(split('Featherweight'), ['Featherweight'], '"feat" inside a word wrongly split');
   assert.deepStrictEqual(split('Deftones'), ['Deftones'], '"ft" inside a word wrongly split');
+
+  // The store that replaced localStorage for the library index: a truncated or
+  // escaped write here loses someone's whole library, so lock the two rules —
+  // the write is atomic (tmp + rename, nothing half-written under the real
+  // name), and a store name can't point outside the store directory.
+  const storeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'audex-store-'));
+  const { storePath, writeStoreFile } = new Function('fs', 'path', 'ROOT',
+    'function storeDir() { return ROOT; }' +
+    'function logAppError() {}' +
+    grab('storePath') + grab('writeStoreFile') +
+    'return { storePath, writeStoreFile };')(fs, path, storeRoot);
+
+  assert.deepStrictEqual(await writeStoreFile('library-meta', '[{"path":"/a.mp3"}]'), { success: true });
+  assert.strictEqual(fs.readFileSync(path.join(storeRoot, 'library-meta.json'), 'utf8'), '[{"path":"/a.mp3"}]');
+
+  await writeStoreFile('library-meta', '[]');
+  assert.strictEqual(fs.readFileSync(path.join(storeRoot, 'library-meta.json'), 'utf8'), '[]', 'overwrite did not replace');
+  assert.deepStrictEqual(fs.readdirSync(storeRoot).filter(f => f.endsWith('.tmp')), [], 'left a .tmp behind');
+
+  assert.strictEqual(storePath('../../escape'), path.join(storeRoot, 'escape.json'), 'store name escaped the store dir');
+
+  // A write that cannot land must fail loudly and leave the previous store intact.
+  fs.mkdirSync(path.join(storeRoot, 'blocked.json'));
+  const blocked = await writeStoreFile('blocked', '[]');
+  assert.strictEqual(blocked.success, false, 'an impossible write reported success');
+  assert.strictEqual(fs.readFileSync(path.join(storeRoot, 'library-meta.json'), 'utf8'), '[]', 'a failed write damaged another store');
+  fs.rmSync(storeRoot, { recursive: true, force: true });
+
+  // The renderer half of that store: the migration read (file wins, else the
+  // localStorage copy this version replaced) and the rule that the old key is
+  // dropped only after a write actually lands. Getting either backwards loses
+  // an existing user's library on upgrade.
+  const grabFn = (name) => {
+    const start = rendererSrc.indexOf(`function ${name}(`);
+    assert.ok(start > 0, `${name} not found in renderer.js`);
+    return rendererSrc.slice(start, rendererSrc.indexOf('\n}\n', start) + 3);
+  };
+  const makeStore = (api) => {
+    const ls = new Map();
+    const toasts = [];
+    const env = {
+      electronAPI: api,
+      localStorage: {
+        getItem: (k) => (ls.has(k) ? ls.get(k) : null),
+        setItem: (k, v) => ls.set(k, String(v)),
+        removeItem: (k) => ls.delete(k),
+      },
+    };
+    const mod = new Function('window', 'localStorage', 'toast', 'tr', 'console',
+      'const hasStore = !!(window.electronAPI && window.electronAPI.readStoreSync);' +
+      grabFn('readStore') + grabFn('writeStore') +
+      'const saveFailedOnce = new Set();' + grabFn('warnSaveFailed') +
+      'return { readStore, writeStore };'
+    )(env, env.localStorage, (m) => toasts.push(m), (k) => k, { warn() {} });
+    return { ...mod, ls, toasts };
+  };
+
+  let file = '[{"path":"/from-file.mp3"}]';
+  let store = makeStore({ readStoreSync: () => file, writeStore: async () => ({ success: true }) });
+  store.ls.set('ambevor-library-meta', '[{"path":"/stale.mp3"}]');
+  assert.deepStrictEqual(store.readStore('library-meta', 'ambevor-library-meta'),
+    [{ path: '/from-file.mp3' }], 'the file must win over the localStorage copy it replaced');
+
+  file = null;   // not migrated yet
+  assert.deepStrictEqual(store.readStore('library-meta', 'ambevor-library-meta'),
+    [{ path: '/stale.mp3' }], 'with no file yet, the old localStorage library must still load');
+
+  const written = [];
+  store = makeStore({
+    readStoreSync: () => null,
+    writeStore: async (name, json) => { written.push([name, json]); return { success: true }; },
+  });
+  store.ls.set('ambevor-library-meta', '[]');
+  store.writeStore('library-meta', [{ path: '/a.mp3' }], 'ambevor-library-meta');
+  await new Promise(r => setImmediate(r));
+  assert.deepStrictEqual(written, [['library-meta', '[{"path":"/a.mp3"}]']]);
+  assert.strictEqual(store.ls.has('ambevor-library-meta'), false, 'a landed write should reclaim the localStorage quota');
+
+  store = makeStore({ readStoreSync: () => null, writeStore: async () => ({ success: false, error: 'ENOSPC' }) });
+  store.ls.set('ambevor-library-meta', '[]');
+  store.writeStore('library-meta', [], 'ambevor-library-meta');
+  store.writeStore('library-meta', [], 'ambevor-library-meta');
+  await new Promise(r => setImmediate(r));
+  assert.strictEqual(store.ls.has('ambevor-library-meta'), true, 'a failed write must not drop the last good copy');
+  assert.deepStrictEqual(store.toasts, ['toast.saveFailed'], 'a failing save should warn once, not once per save');
 
   console.log('ok');
 })();
