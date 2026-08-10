@@ -97,6 +97,7 @@ let settings = Object.assign({
   volumeWheelStep: 0.05,  // 0.01–0.2, volume change per mouse-wheel notch on the slider
   acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
+  ytMusic: false,        // "YouTube Music" sidebar tab (the in-app browser)
   lanSharing: false,     // master switch for Devices/LAN sharing — off by default, opens a network port
   showParserBrowser: true,
   uiScale: 1,
@@ -462,10 +463,39 @@ const I18N = {
     'nav.playlists': 'Playlists',
     'nav.favorites': 'Favorites',
     'nav.downloads': 'Downloads',
+    'nav.ytmusic': 'YouTube Music',
+    'ytm.sub': 'Search an artist, then add albums or singles to the queue',
+    'ytm.searchPh': 'Search artists on YouTube Music…',
+    'ytm.results': 'Results for “{q}”',
+    'ytm.searching': 'Searching…',
+    'ytm.searchFailed': 'Search failed',
+    'ytm.noArtists': 'No artists found',
+    'ytm.releases': 'Albums & singles',
+    'ytm.loadingReleases': 'Loading releases…',
+    'ytm.releasesFailed': 'Failed to load releases',
+    'ytm.noReleases': 'No releases found',
+    'ytm.albums': 'Albums',
+    'ytm.singles': 'Singles & EPs',
+    'ytm.loading': 'Loading…',
+    'ytm.loadingName': 'Loading {name}…',
+    'ytm.loadingTracks': 'Loading tracks…',
+    'ytm.albumFailed': 'Failed to load album',
+    'ytm.adding': 'Adding…',
+    'ytm.addingName': 'Adding {name}…',
+    'ytm.added': 'Added {count}',
+    'ytm.addedFrom': 'Added {count} from {name}',
+    'ytm.addedOne': 'Added to queue',
+    'ytm.already': 'Already in queue',
+    'ytm.addAll': 'Add all to queue',
+    'ytm.addOne': 'Add to queue',
+    'ytm.back': 'Back',
+    'ytm.browseArtist': 'Browse this artist on YouTube Music',
     'nav.editor': 'Editor',
     'cm.trim': 'Trim track…',
     'setting.editor': 'Editor (track trimming)',
     'setting.editorDesc': 'The “Editor” section for trimming tracks: pick a fragment on the waveform and save it as a new file.',
+    'setting.ytMusic': 'YouTube Music',
+    'setting.ytMusicDesc': 'The “YouTube Music” section for searching artists and adding their albums or singles to the download queue.',
     'editor.pick': 'Choose track',
     'editor.pickSearch': 'Search by title or artist',
     'editor.pickEmpty': 'Nothing found',
@@ -976,11 +1006,21 @@ const I18N = {
     'palette.choose': '↵ select',
     'palette.close': 'ESC close',
     'palette.tracks': 'Tracks',
-    'palette.actions': 'Actions',
+    'palette.group.general': 'General',
+    'palette.group.nav': 'Navigation',
+    'palette.group.music': 'Music',
     'palette.itemHint': '↵ play',
     'palette.empty': 'Nothing found',
     'palette.action.openFiles': 'Open files…',
     'palette.action.gotoSettings': 'Go to Settings',
+    'palette.action.gotoLibrary': 'Go to Library',
+    'palette.action.gotoDownloads': 'Go to Downloads',
+    'palette.action.gotoYtMusic': 'Go to YouTube Music',
+    'palette.action.gotoArtists': 'Go to Artists',
+    'palette.action.gotoAlbums': 'Go to Albums',
+    'palette.action.gotoDevices': 'Go to Devices',
+    'palette.action.gotoReport': 'Go to Stats',
+    'palette.action.gotoHealth': 'Go to Health',
     'palette.action.gotoPlaylists': 'Go to Playlists',
     'palette.action.gotoFavorites': 'Go to Favorites',
     'palette.action.clearLibrary': 'Clear library…',
@@ -1064,10 +1104,39 @@ const I18N = {
     'nav.playlists': 'Плейлисти',
     'nav.favorites': 'Улюблене',
     'nav.downloads': 'Завантаження',
+    'nav.ytmusic': 'YouTube Music',
+    'ytm.sub': 'Знайдіть виконавця, а потім додайте його альбоми чи сингли в чергу завантажень.',
+    'ytm.searchPh': 'Пошук виконавців на YouTube Music…',
+    'ytm.results': 'Результати для «{q}»',
+    'ytm.searching': 'Шукаємо…',
+    'ytm.searchFailed': 'Не вдалося виконати пошук',
+    'ytm.noArtists': 'Виконавців не знайдено',
+    'ytm.releases': 'Альбоми та сингли',
+    'ytm.loadingReleases': 'Завантажуємо релізи…',
+    'ytm.releasesFailed': 'Не вдалося завантажити релізи',
+    'ytm.noReleases': 'Релізів не знайдено',
+    'ytm.albums': 'Альбоми',
+    'ytm.singles': 'Сингли та EP',
+    'ytm.loading': 'Завантаження…',
+    'ytm.loadingName': 'Завантажуємо {name}…',
+    'ytm.loadingTracks': 'Завантажуємо треки…',
+    'ytm.albumFailed': 'Не вдалося завантажити альбом',
+    'ytm.adding': 'Додаємо…',
+    'ytm.addingName': 'Додаємо {name}…',
+    'ytm.added': 'Додано {count}',
+    'ytm.addedFrom': 'Додано {count} з {name}',
+    'ytm.addedOne': 'Додано в чергу',
+    'ytm.already': 'Уже в черзі',
+    'ytm.addAll': 'Додати всі в чергу',
+    'ytm.addOne': 'Додати в чергу',
+    'ytm.back': 'Назад',
+    'ytm.browseArtist': 'Переглянути цього виконавця на YouTube Music',
     'nav.editor': 'Редактор',
     'cm.trim': 'Обрізати трек…',
     'setting.editor': 'Редактор (обрізання треків)',
     'setting.editorDesc': 'Розділ «Редактор» для обрізання треків: обираєте фрагмент на хвилі та зберігаєте його в новий файл.',
+    'setting.ytMusic': 'YouTube Music',
+    'setting.ytMusicDesc': 'Розділ «YouTube Music» для пошуку виконавців і додавання їхніх альбомів чи синглів у чергу завантажень.',
     'editor.pick': 'Вибрати трек',
     'editor.pickSearch': 'Пошук за назвою або виконавцем',
     'editor.pickEmpty': 'Нічого не знайдено',
@@ -1578,11 +1647,21 @@ const I18N = {
     'palette.choose': '↵ обрати',
     'palette.close': 'ESC закрити',
     'palette.tracks': 'Треки',
-    'palette.actions': 'Дії',
+    'palette.group.general': 'Загальне',
+    'palette.group.nav': 'Навігація',
+    'palette.group.music': 'Музика',
     'palette.itemHint': '↵ грати',
     'palette.empty': 'Нічого не знайдено',
     'palette.action.openFiles': 'Відкрити файли…',
     'palette.action.gotoSettings': 'Перейти в Налаштування',
+    'palette.action.gotoLibrary': 'Перейти в Бібліотеку',
+    'palette.action.gotoDownloads': 'Перейти в Завантаження',
+    'palette.action.gotoYtMusic': 'Перейти в YouTube Music',
+    'palette.action.gotoArtists': 'Перейти у Виконавців',
+    'palette.action.gotoAlbums': 'Перейти в Альбоми',
+    'palette.action.gotoDevices': 'Перейти в Пристрої',
+    'palette.action.gotoReport': 'Перейти в Статистику',
+    'palette.action.gotoHealth': 'Перейти в Стан бібліотеки',
     'palette.action.gotoPlaylists': 'Перейти в Плейлисти',
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
     'palette.action.clearLibrary': 'Очистити бібліотеку…',
@@ -1983,6 +2062,9 @@ document.querySelectorAll('.nav-item').forEach(item => {
       // A direct click on the Library nav item shows the full library, not a
       // lingering Health-check result filter.
       if (item.dataset.view === 'library') clearHealthFilter();
+      // The YT Music view is inert until the browser resets its header/search,
+      // so go through its own entry point rather than a bare setView.
+      if (item.dataset.view === 'ytmusic') return ytmBrowser.open();
       setView(item.dataset.view);
     }
   });
@@ -7272,6 +7354,41 @@ $('btn-save-editor').addEventListener('click', async () => {
 let paletteResults = [];
 let paletteHighlight = 0;
 
+// Grouped in the order they render. `nav` names a sidebar item whose visibility
+// gates the action — an opt-in feature that's switched off shouldn't be
+// reachable from the palette either.
+const PALETTE_ACTIONS = [
+  { group: 'general', key: 'palette.action.reloadApp',     kind: 'reload-app',    icon: '#i-activity' },
+  { group: 'general', key: 'palette.action.openFiles',     kind: 'open-files',    icon: '#i-folder' },
+  { group: 'general', key: 'palette.action.gotoSettings',  kind: 'goto-settings', icon: '#i-settings' },
+  { group: 'general', key: 'palette.action.clearLibrary',  kind: 'clear-library', icon: '#i-trash' },
+  { group: 'nav', key: 'palette.action.gotoLibrary',   kind: 'goto-library',   icon: '#i-library' },
+  { group: 'nav', key: 'palette.action.gotoDownloads', kind: 'goto-downloads', icon: '#i-download', nav: 'nav-downloads' },
+  { group: 'nav', key: 'palette.action.gotoYtMusic',   kind: 'goto-ytmusic',   icon: '#i-youtube',  nav: 'nav-ytmusic' },
+  { group: 'nav', key: 'palette.action.gotoArtists',   kind: 'goto-artists',   icon: '#i-mic' },
+  { group: 'nav', key: 'palette.action.gotoAlbums',    kind: 'goto-albums',    icon: '#i-image' },
+  { group: 'nav', key: 'palette.action.gotoFavorites', kind: 'goto-favorites', icon: '#i-heart' },
+  { group: 'nav', key: 'palette.action.gotoPlaylists', kind: 'goto-playlists', icon: '#i-list' },
+  { group: 'nav', key: 'palette.action.gotoDevices',   kind: 'goto-devices',   icon: '#i-monitor', nav: 'nav-devices' },
+  { group: 'nav', key: 'palette.action.gotoReport',    kind: 'goto-report',    icon: '#i-report',  nav: 'nav-report' },
+  { group: 'nav', key: 'palette.action.gotoHealth',    kind: 'goto-health',    icon: '#i-shield',  nav: 'nav-health' },
+  { group: 'music', key: 'palette.action.fixTagsLibrary', kind: 'fix-tags-library', icon: '#i-search' },
+  { group: 'music', key: 'palette.action.volumeUp',       kind: 'volume-up',        icon: '#i-volume' },
+  { group: 'music', key: 'palette.action.volumeDown',     kind: 'volume-down',      icon: '#i-volume-low' },
+];
+const PALETTE_GROUPS = [
+  ['general', 'palette.group.general'],
+  ['nav', 'palette.group.nav'],
+  ['music', 'palette.group.music'],
+];
+
+// An action matches its label in EVERY language, not just the active one, so
+// "settings" and "налаштування" both find Go to Settings.
+function paletteMatches(key, q) {
+  if (!q) return true;
+  return Object.values(I18N).some(dict => (dict[key] || '').toLowerCase().includes(q));
+}
+
 function openPalette() {
   $('palette-overlay').classList.add('active');
   $('palette-input').value = '';
@@ -7294,7 +7411,8 @@ function renderPaletteResults(query) {
     t.artist.toLowerCase().includes(q) ||
     t.album.toLowerCase().includes(q)
   ).slice(0, 8) : library.slice(0, 5);
-  if (tracks.length > 0) {
+  const renderTracks = () => {
+    if (!tracks.length) return;
     const lbl = document.createElement('div');
     lbl.className = 'palette-section-label';
     lbl.textContent = tr('palette.tracks');
@@ -7317,26 +7435,81 @@ function renderPaletteResults(query) {
       el.addEventListener('click', () => runPaletteAction(paletteResults[+el.dataset.idx]));
       container.appendChild(el);
     });
-  }
+  };
 
-  // Actions
-  const actions = [
-    { label: tr('palette.action.openFiles'),       kind: 'open-files',      icon: '#i-folder' },
-    { label: tr('palette.action.gotoSettings'),    kind: 'goto-settings',   icon: '#i-settings' },
-    { label: tr('palette.action.gotoPlaylists'),   kind: 'goto-playlists',  icon: '#i-list' },
-    { label: tr('palette.action.gotoFavorites'),   kind: 'goto-favorites',  icon: '#i-heart' },
-    { label: tr('palette.action.clearLibrary'),    kind: 'clear-library',   icon: '#i-trash' },
-    { label: tr('palette.action.fixTagsLibrary'), kind: 'fix-tags-library', icon: '#i-search' },
-    { label: tr('palette.action.volumeUp'),   kind: 'volume-up',   icon: '#i-volume' },
-    { label: tr('palette.action.volumeDown'), kind: 'volume-down', icon: '#i-volume-low' },
-    { label: tr('palette.action.reloadApp'),  kind: 'reload-app',  icon: '#i-activity' },
-  ].filter(a => !q || a.label.toLowerCase().includes(q));
-  if (actions.length > 0) {
+  // Artists / albums. Only searched when something is typed — the palette's
+  // idle state stays a short "recent tracks" list, and this way the indexes
+  // aren't rebuilt on every open.
+  // ponytail: rebuilds both indexes per keystroke, same O(n) as the track
+  // filter above; memoise per library revision if it ever shows up in a profile.
+  const section = (labelKey, rows) => {
+    if (!rows.length) return;
     const lbl = document.createElement('div');
     lbl.className = 'palette-section-label';
-    lbl.textContent = tr('palette.actions');
+    lbl.textContent = tr(labelKey);
     container.appendChild(lbl);
-    actions.forEach(a => {
+    rows.forEach(r => {
+      paletteResults.push(r.result);
+      const el = document.createElement('div');
+      el.className = 'palette-item';
+      el.dataset.idx = paletteResults.length - 1;
+      el.innerHTML = `
+        <div class="palette-item-cover" style="${r.cover ? `background-image:url('${r.cover}')` : ''}"></div>
+        <div class="palette-item-body">
+          <div class="palette-item-title">${highlightMatch(r.name, q)}</div>
+          <div class="palette-item-sub">${escapeHtml(r.sub)}</div>
+        </div>
+      `;
+      el.addEventListener('click', () => runPaletteAction(paletteResults[+el.dataset.idx]));
+      container.appendChild(el);
+    });
+  };
+  const isExact = r => r.name.toLowerCase() === q;
+  const warmCover = a => { if (!a.cover) { const t = a.tracks.find(t => !t.cover); if (t) ensureCoverFor(t); } };
+  // Exact name first, then the biggest — typing an artist's full name should
+  // not bury them under a bigger act whose name merely contains it.
+  const byExactThenSize = (a, b) => (isExact(b) - isExact(a)) || (b.count - a.count);
+  const artistRows = !q ? [] : buildArtistsIndex()
+    .filter(a => a.name.toLowerCase().includes(q))
+    .map(a => ({
+      name: a.name, cover: a.cover, count: a.trackCount, warm: a,
+      sub: `${withCount('tracks', a.trackCount)} · ${withCount('albums', a.albumCount)}`,
+      result: { kind: 'open-artist', name: a.name },
+    }))
+    .sort(byExactThenSize).slice(0, 5);
+  const albumRows = !q ? [] : buildAlbumsIndex()
+    .filter(a => a.name.toLowerCase().includes(q) || a.artist.toLowerCase().includes(q))
+    .map(a => ({
+      name: a.name, cover: a.cover, count: a.trackCount, warm: a,
+      sub: [a.artist, a.year, withCount('tracks', a.trackCount)].filter(Boolean).join(' · '),
+      result: { kind: 'open-album', key: a.key },
+    }))
+    .sort(byExactThenSize).slice(0, 5);
+  [...artistRows, ...albumRows].forEach(r => warmCover(r.warm));
+
+  // A query that names an artist or album outright leads with that section —
+  // searching "radiohead" wants the artist, not the first track alphabetically.
+  // sort() is stable, so Artists stays ahead of Albums when both match exactly.
+  const entities = [['nav.artists', artistRows], ['nav.albums', albumRows]];
+  if (q && entities.some(([, rows]) => rows.some(isExact))) {
+    entities.sort((a, b) => b[1].some(isExact) - a[1].some(isExact));
+    entities.forEach(e => section(...e));
+    renderTracks();
+  } else {
+    renderTracks();
+    entities.forEach(e => section(...e));
+  }
+
+  // Actions, one section per group
+  const available = PALETTE_ACTIONS.filter(a => (!a.nav || !$(a.nav).hidden) && paletteMatches(a.key, q));
+  PALETTE_GROUPS.forEach(([group, labelKey]) => {
+    const items = available.filter(a => a.group === group);
+    if (!items.length) return;
+    const lbl = document.createElement('div');
+    lbl.className = 'palette-section-label';
+    lbl.textContent = tr(labelKey);
+    container.appendChild(lbl);
+    items.forEach(a => {
       paletteResults.push({ kind: a.kind });
       const el = document.createElement('div');
       el.className = 'palette-item';
@@ -7344,13 +7517,13 @@ function renderPaletteResults(query) {
       el.innerHTML = `
         <div class="palette-item-cover"><svg class="i" width="13" height="13"><use href="${a.icon}"/></svg></div>
         <div class="palette-item-body">
-          <div class="palette-item-title">${escapeHtml(a.label)}</div>
+          <div class="palette-item-title">${escapeHtml(tr(a.key))}</div>
         </div>
       `;
       el.addEventListener('click', () => runPaletteAction(paletteResults[+el.dataset.idx]));
       container.appendChild(el);
     });
-  }
+  });
 
   if (paletteResults.length === 0) {
     container.innerHTML = `<div class="palette-empty">${escapeHtml(tr('palette.empty'))}</div>`;
@@ -7377,8 +7550,12 @@ function runPaletteAction(action) {
   if (action.kind === 'play-track') playTrackByPath(action.path, library);
   else if (action.kind === 'open-files') $('btn-add-files').click();
   else if (action.kind === 'goto-settings') openSettings();
-  else if (action.kind === 'goto-playlists') setView('playlists');
-  else if (action.kind === 'goto-favorites') setView('favorites');
+  else if (action.kind === 'open-artist') { activeArtistName = action.name; setView('artist-detail'); }
+  else if (action.kind === 'open-album') { activeAlbumKey = action.key; setView('album-detail'); }
+  else if (action.kind === 'goto-ytmusic') ytmBrowser.open();
+  else if (action.kind === 'goto-library') { clearHealthFilter(); setView('library'); }
+  // Every remaining goto-* names its view directly.
+  else if (action.kind.startsWith('goto-')) setView(action.kind.slice(5));
   else if (action.kind === 'clear-library') {
     confirmDelete('modal.clearLibrary.title', tr('modal.clearLibrary.text'))
       .then(ok => { if (ok) clearLibrary(); });
@@ -7791,6 +7968,7 @@ const TOGGLE_KEY_MAP = {
   'crossfade': 'crossfade',
   'repeat-one-reset': 'repeatOneResetOnSkip',
   'downloads': 'downloads',
+  'yt-music': 'ytMusic',
   'lan-sharing': 'lanSharing',
   'show-parser-browser': 'showParserBrowser',
 };
@@ -8229,6 +8407,7 @@ document.querySelectorAll('.toggle').forEach(t => {
     saveSettings();
     t.classList.toggle('on', settings[key]);
     if (key === 'downloads') applyDownloadsVisibility();
+    if (key === 'ytMusic') applyYtMusicVisibility();
     if (key === 'healthCheck') applyHealthCheckVisibility();
     if (key === 'reports') applyReportsVisibility();
     if (key === 'editor') applyEditorVisibility();
@@ -8525,6 +8704,12 @@ function applyDownloadsVisibility() {
   if (!settings.downloads && currentView === 'downloads') setView('library');
 }
 applyDownloadsVisibility();
+
+function applyYtMusicVisibility() {
+  $('nav-ytmusic').hidden = !settings.ytMusic;
+  if (!settings.ytMusic && currentView === 'ytmusic') setView('library');
+}
+applyYtMusicVisibility();
 
 
 // Report, Health and Editor share a "Tools" sidebar group (index.html
@@ -9757,20 +9942,20 @@ const ytmBrowser = (function () {
 
   function goSearch() {
     state = 'search';
-    setHeader('YouTube Music', 'Search an artist, then add albums or singles to the queue', false);
+    setHeader('YouTube Music', tr('ytm.sub'), false);
   }
 
   async function runSearch(q, autoOpenTop) {
     q = (q || '').trim();
     if (!q) { body().innerHTML = ''; setStatus(''); return; }
     state = 'search';
-    setHeader('YouTube Music', `Results for "${q}"`, false);
-    setStatus('Searching…');
+    setHeader('YouTube Music', tr('ytm.results', { q }), false);
+    setStatus(tr('ytm.searching'));
     let res;
     try { res = await window.electronAPI.ytmSearchArtists(q); }
     catch (e) { setStatus(String(e), 'error'); return; }
-    if (!res || !res.success) { setStatus((res && res.error) || 'Search failed', 'error'); return; }
-    if (!res.artists.length) { body().innerHTML = ''; setStatus('No artists found'); return; }
+    if (!res || !res.success) { setStatus((res && res.error) || tr('ytm.searchFailed'), 'error'); return; }
+    if (!res.artists.length) { body().innerHTML = ''; setStatus(tr('ytm.noArtists')); return; }
     setStatus('');
     if (autoOpenTop) { openArtist(res.artists[0]); return; }
     body().innerHTML = res.artists.map((a, i) => `
@@ -9785,14 +9970,14 @@ const ytmBrowser = (function () {
   async function openArtist(artist) {
     curArtist = artist;
     state = 'releases';
-    setHeader(artist.name, 'Albums & singles', true);
-    setStatus('Loading releases…');
+    setHeader(artist.name, tr('ytm.releases'), true);
+    setStatus(tr('ytm.loadingReleases'));
     body().innerHTML = '';
     let res;
     try { res = await window.electronAPI.ytmArtistReleases(artist.browseId); }
     catch (e) { setStatus(String(e), 'error'); return; }
-    if (!res || !res.success) { setStatus((res && res.error) || 'Failed to load releases', 'error'); return; }
-    if (!res.releases.length) { setStatus('No releases found'); return; }
+    if (!res || !res.success) { setStatus((res && res.error) || tr('ytm.releasesFailed'), 'error'); return; }
+    if (!res.releases.length) { setStatus(tr('ytm.noReleases')); return; }
     setStatus('');
     const albums = res.releases.filter(r => releaseKind(r.kind) === 'album');
     const singles = res.releases.filter(r => releaseKind(r.kind) !== 'album');
@@ -9802,13 +9987,13 @@ const ytmBrowser = (function () {
         ${list.map(r => `
           <div class="ytm-release" data-i="${res.releases.indexOf(r)}">
             <div class="ytm-release-cover" style="${r.thumb ? `background-image:url('${r.thumb}')` : ''}">
-              <button class="btn-solid icon-only ytm-add-all" title="Add all to queue"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg></button>
+              <button class="btn-solid icon-only ytm-add-all" title="${escapeHtml(tr('ytm.addAll'))}"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg></button>
             </div>
             <div class="ytm-release-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</div>
             <div class="ytm-release-meta">${escapeHtml([r.kind, r.year].filter(Boolean).join(' · '))}</div>
           </div>`).join('')}
       </div>` : '';
-    body().innerHTML = section('Albums', albums) + section('Singles & EPs', singles);
+    body().innerHTML = section(tr('ytm.albums'), albums) + section(tr('ytm.singles'), singles);
     body().querySelectorAll('.ytm-release').forEach(card => {
       const r = res.releases[+card.dataset.i];
       card.querySelector('.ytm-add-all').addEventListener('click', e => { e.stopPropagation(); quickAdd(r); });
@@ -9863,21 +10048,22 @@ const ytmBrowser = (function () {
   }
 
   async function quickAdd(r) {
-    setStatus(`Loading ${r.title}…`);
+    setStatus(tr('ytm.loadingName', { name: r.title }));
     const al = await loadAlbum(r);
-    if (!al || !al.success) { setStatus((al && al.error) || 'Failed to load album', 'error'); return; }
-    setStatus(`Adding ${al.album || r.title}…`);
+    if (!al || !al.success) { setStatus((al && al.error) || tr('ytm.albumFailed'), 'error'); return; }
+    const name = al.album || r.title;
+    setStatus(tr('ytm.addingName', { name }));
     const n = await addWholeRelease(al);
-    setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''} from ${al.album || r.title}` : 'Already in queue');
+    setStatus(n ? tr('ytm.addedFrom', { count: withCount('tracks', n), name }) : tr('ytm.already'));
   }
 
   async function openAlbum(r) {
     state = 'album';
-    setHeader(r.title, 'Loading…', true);
-    setStatus('Loading tracks…');
+    setHeader(r.title, tr('ytm.loading'), true);
+    setStatus(tr('ytm.loadingTracks'));
     body().innerHTML = '';
     const al = await loadAlbum(r);
-    if (!al || !al.success) { setStatus((al && al.error) || 'Failed to load album', 'error'); return; }
+    if (!al || !al.success) { setStatus((al && al.error) || tr('ytm.albumFailed'), 'error'); return; }
     setStatus('');
     setHeader(al.album || r.title, [al.artist, al.year].filter(Boolean).join(' · '), true);
     renderAlbum(al);
@@ -9889,8 +10075,8 @@ const ytmBrowser = (function () {
         <div class="ytm-album-cover" style="${al.cover ? `background-image:url('${al.cover}')` : ''}"></div>
         <div class="ytm-album-info">
           <div class="ytm-album-name">${escapeHtml(al.album || '')}</div>
-          <div class="ytm-album-sub">${escapeHtml([al.artist, al.year, `${al.tracks.length} tracks`].filter(Boolean).join(' · '))}</div>
-          <div style="margin-top:10px"><button class="btn-solid" id="ytm-add-album"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg><span>Add all to queue</span></button></div>
+          <div class="ytm-album-sub">${escapeHtml([al.artist, al.year, withCount('tracks', al.tracks.length)].filter(Boolean).join(' · '))}</div>
+          <div style="margin-top:10px"><button class="btn-solid" id="ytm-add-album"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg><span>${escapeHtml(tr('ytm.addAll'))}</span></button></div>
         </div>
       </div>`;
     const rows = al.tracks.map((t, i) => `
@@ -9898,26 +10084,26 @@ const ytmBrowser = (function () {
         <div class="ytm-track-no">${i + 1}</div>
         <div class="ytm-track-title">${escapeHtml(t.title)}${t.explicit ? '<span class="ytm-e">E</span>' : ''}</div>
         <div class="ytm-track-dur">${escapeHtml(t.duration || '')}</div>
-        <button class="btn-ic ytm-add" title="Add to queue"><svg class="i" width="14" height="14"><use href="#i-plus"/></svg></button>
+        <button class="btn-ic ytm-add" title="${escapeHtml(tr('ytm.addOne'))}"><svg class="i" width="14" height="14"><use href="#i-plus"/></svg></button>
       </div>`).join('');
     body().innerHTML = head + rows;
     el('ytm-add-album').addEventListener('click', async () => {
-      setStatus('Adding…');
+      setStatus(tr('ytm.adding'));
       const n = await addWholeRelease(al);
-      setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''}` : 'Already in queue');
+      setStatus(n ? tr('ytm.added', { count: withCount('tracks', n) }) : tr('ytm.already'));
       renderAlbum(al);
     });
     body().querySelectorAll('.ytm-track').forEach(row => {
       row.querySelector('.ytm-add').addEventListener('click', async () => {
         const i = +row.dataset.i;
         const t = al.tracks[i];
-        setStatus('Adding…');
+        setStatus(tr('ytm.adding'));
         // Prefer the parse-tab track for this exact id so its download handling
         // is identical to the direct-link path; fall back to the id itself.
         const parsed = await parsedTracksFor(al);
         const track = (parsed && parsed.find(p => p.id === t.id)) || asParseTrack(t);
-        if (enqueueParsed([track], i + 1)) { row.classList.add('queued'); setStatus('Added to queue'); }
-        else setStatus('Already in queue');
+        if (enqueueParsed([track], i + 1)) { row.classList.add('queued'); setStatus(tr('ytm.addedOne')); }
+        else setStatus(tr('ytm.already'));
       });
     });
   }

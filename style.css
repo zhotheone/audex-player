@@ -841,7 +841,8 @@ input { font-family: inherit; color: inherit; }
 }
 /* Health-check feature disabled: drop the Quality column (5th cell) entirely and
    collapse the grid so the remaining columns reflow. Toggled from Settings via a
-   `quality-off` class on <html>. Also hides the quality note above the library. */
+   `quality-off` class on <html>. The quality note lives on the Health page,
+   which is itself hidden when the feature is off. */
 :root.quality-off .thead, :root.quality-off .trow {
   grid-template-columns: 28px 1fr 0.8fr 0.7fr 60px 28px;
 }
@@ -849,7 +850,6 @@ input { font-family: inherit; color: inherit; }
 :root.quality-off .trow-quality {
   display: none;
 }
-:root.quality-off .quality-note { display: none; }
 .thead {
   font-size: 10.5px;
   color: var(--text-dim);
@@ -955,7 +955,7 @@ input { font-family: inherit; color: inherit; }
    not a whole separate visual language. */
 .net-badge { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); flex-shrink: 0; }
 
-/* Note pill above the library table explaining the badges. */
+/* Note pill on the Library health page explaining the badges. */
 .quality-note {
   display: inline-flex;
   align-items: center;

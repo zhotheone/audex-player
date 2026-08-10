@@ -75,6 +75,7 @@
       <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></symbol>
       <symbol id="i-sparkle" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 L13.5 9.5 L21 11 L13.5 12.5 L12 20 L10.5 12.5 L3 11 L10.5 9.5 Z"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></symbol>
+      <symbol id="i-youtube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4.5"/><path d="M10.2 9.2 L15.4 12 L10.2 14.8 Z" fill="currentColor" stroke="none"/></symbol>
       <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
       <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6" rx="0.6"/><rect x="12.5" y="7" width="3" height="10" rx="0.6"/><rect x="18" y="13.5" width="3" height="3.5" rx="0.6"/></symbol>
       <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
@@ -151,6 +152,10 @@
           <a href="#" class="nav-item nav-downloads" data-view="downloads" id="nav-downloads" hidden>
             <svg class="i" width="14" height="14"><use href="#i-download"/></svg>
             <span data-i18n="nav.downloads">Downloads</span>
+          </a>
+          <a href="#" class="nav-item" data-view="ytmusic" id="nav-ytmusic" hidden>
+            <svg class="i" width="14" height="14"><use href="#i-youtube"/></svg>
+            <span data-i18n="nav.ytmusic">YouTube Music</span>
           </a>
         </div>
         <div class="nav-group">
@@ -266,11 +271,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="quality-note">
-          <svg class="i" width="11" height="11"><use href="#i-activity"/></svg>
-          <span data-i18n="quality.note">A quality badge on every track · </span><span class="quality-note-amber" data-i18n="quality.noteAmber">amber = suspicious transcode</span>
         </div>
 
         <div id="library-select-bar" class="select-bar" hidden>
@@ -535,7 +535,7 @@
                 <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
                 <span data-i18n="btn.shuffle">Shuffle</span>
               </button>
-              <button class="btn-ghost" id="btn-artist-ytm" title="Browse this artist on YouTube Music">
+              <button class="btn-ghost" id="btn-artist-ytm" data-i18n-title="ytm.browseArtist" title="Browse this artist on YouTube Music">
                 <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
                 <span>YouTube Music</span>
               </button>
@@ -564,17 +564,17 @@
           </div>
           <div class="searchbox">
             <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" id="ytm-search" placeholder="Search artists on YouTube Music…" autocomplete="off">
+            <input type="text" id="ytm-search" data-i18n-placeholder="ytm.searchPh" placeholder="Search artists on YouTube Music…" autocomplete="off">
           </div>
         </header>
 
         <div class="ytm-page-head">
-          <button class="btn-ghost icon-only ytm-back" id="ytm-back" title="Back" hidden>
+          <button class="btn-ghost icon-only ytm-back" id="ytm-back" data-i18n-title="ytm.back" title="Back" hidden>
             <svg class="i" width="14" height="14"><use href="#i-prev"/></svg>
           </button>
           <div class="ytm-titles">
             <div class="ytm-title" id="ytm-title">YouTube Music</div>
-            <div class="ytm-sub" id="ytm-sub">Search an artist, then add albums or singles to the queue</div>
+            <div class="ytm-sub" id="ytm-sub" data-i18n="ytm.sub">Search an artist, then add albums or singles to the queue</div>
           </div>
         </div>
         <div class="ytm-status" id="ytm-status"></div>
@@ -648,6 +648,12 @@
             </button>
           </div>
         </header>
+
+        <div class="quality-note">
+          <svg class="i" width="11" height="11"><use href="#i-activity"/></svg>
+          <span data-i18n="quality.note">A quality badge on every track · </span><span class="quality-note-amber" data-i18n="quality.noteAmber">amber = suspicious transcode</span>
+        </div>
+
         <div id="health-content"></div>
       </section>
 
@@ -1404,6 +1410,13 @@
               <div class="setting-desc" data-i18n="setting.editorDesc">The “Editor” section for trimming tracks: pick a fragment on the waveform and save it as a new file.</div>
             </div>
             <button class="toggle" data-setting="editor"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.ytMusic">YouTube Music</div>
+              <div class="setting-desc" data-i18n="setting.ytMusicDesc">The “YouTube Music” section for searching artists and adding their albums or singles to the download queue.</div>
+            </div>
+            <button class="toggle" data-setting="yt-music"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
