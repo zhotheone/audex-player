@@ -853,9 +853,9 @@ ipcMain.handle('music:parseMetadata', async (event, filePath) => {
   }
 });
 
-// Read raw audio bytes so the renderer can decode the track and extract real
-// amplitude peaks for the waveform progress bar (Web Audio decode runs in the
-// renderer). Returns a Buffer; IPC serializes it to a Uint8Array on the other side.
+// Read raw audio bytes so the renderer can decode the track with the Web Audio
+// API — the trim editor's waveform and the quality analyser's spectrum both need
+// the samples. Returns a Buffer; IPC serializes it to a Uint8Array on the other side.
 ipcMain.handle('audio:readFile', async (event, filePath) => {
   return await fs.promises.readFile(resolveRealPath(filePath));
 });

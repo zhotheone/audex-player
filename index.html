@@ -917,20 +917,18 @@
 
     <div class="playbar-center">
       <div class="ctrls">
-        <button class="btn-ic" id="btn-shuffle" title="Shuffle" data-i18n-title="tooltip.shuffle"><svg class="i" width="16" height="16"><use href="#i-shuffle"/></svg></button>
-        <button class="btn-ic" id="btn-prev" title="Previous" data-i18n-title="tooltip.prev"><svg class="i" width="17" height="17"><use href="#i-prev"/></svg></button>
-        <button class="btn-play" id="btn-play" title="Play / Pause" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="14" height="14"><use href="#i-play"/></svg></button>
-        <button class="btn-ic" id="btn-next" title="Next" data-i18n-title="tooltip.next"><svg class="i" width="17" height="17"><use href="#i-next"/></svg></button>
-        <button class="btn-ic" id="btn-repeat" title="Repeat" data-i18n-title="tooltip.repeat"><svg class="i" width="16" height="16"><use href="#i-repeat"/></svg></button>
-      </div>
-      <div class="progress-row">
-        <span class="time" id="time-current">0:00</span>
-        <div class="progress-track wave" id="progress-track"></div>
-        <span class="time" id="time-total">0:00</span>
+        <button class="btn-ic" id="btn-shuffle" title="Shuffle" data-i18n-title="tooltip.shuffle"><svg class="i" width="15" height="15"><use href="#i-shuffle"/></svg></button>
+        <button class="btn-ic" id="btn-prev" title="Previous" data-i18n-title="tooltip.prev"><svg class="i" width="16" height="16"><use href="#i-prev"/></svg></button>
+        <button class="btn-play" id="btn-play" title="Play / Pause" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="13" height="13"><use href="#i-play"/></svg></button>
+        <button class="btn-ic" id="btn-next" title="Next" data-i18n-title="tooltip.next"><svg class="i" width="16" height="16"><use href="#i-next"/></svg></button>
+        <button class="btn-ic" id="btn-repeat" title="Repeat" data-i18n-title="tooltip.repeat"><svg class="i" width="15" height="15"><use href="#i-repeat"/></svg></button>
       </div>
     </div>
 
     <div class="playbar-right">
+      <span class="time-pair">
+        <span id="time-current">0:00</span> / <span id="time-total">0:00</span>
+      </span>
       <button class="btn-ic" id="btn-connect" title="Connect to a device" data-i18n-title="lan.connect" hidden><svg class="i" width="15" height="15"><use href="#i-monitor"/></svg></button>
       <button class="btn-ic" id="btn-lyrics" title="Lyrics" data-i18n-title="fs.lyrics"><svg class="i" width="15" height="15"><use href="#i-mic"/></svg></button>
       <button class="btn-ic" id="btn-fullscreen" title="Fullscreen" data-i18n-title="tooltip.fullscreen"><svg class="i" width="13" height="13"><use href="#i-expand"/></svg></button>
@@ -938,6 +936,12 @@
       <div class="vol-track" id="vol-track">
         <div class="vol-fill" id="vol-fill"></div>
       </div>
+    </div>
+
+    <!-- Seek bar: welded to the island's bottom edge, full-bleed. The outer
+         element is a transparent grab strip — the visible rail is only 4px. -->
+    <div class="progress-track" id="progress-track">
+      <div class="progress-rail"><div class="progress-fill" id="progress-fill"></div></div>
     </div>
   </footer>
 
@@ -973,7 +977,9 @@
           <div class="fs-album" id="fs-album">Album</div>
 
           <div class="fs-progress">
-            <div class="fs-progress-track wave fs-wave" id="fs-progress-track"></div>
+            <div class="fs-progress-track" id="fs-progress-track">
+              <div class="fs-progress-fill" id="fs-progress-fill"></div>
+            </div>
             <div class="fs-time-row">
               <span id="fs-time-current">0:00</span>
               <span id="fs-time-total">0:00</span>

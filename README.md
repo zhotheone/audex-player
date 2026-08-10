@@ -77,7 +77,7 @@ Dark is Rosé Pine and Light is Rosé Pine Dawn, with Default following your OS 
 
 ### A player worth going fullscreen for
 
-Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" mode for when the window is narrow.
+A full-bleed seek bar, an upcoming-queue panel, and a portrait "mobile player" mode for when the window is narrow.
 
 <table>
   <tr>
@@ -102,7 +102,7 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 - **Playlists, Favorites, Recents**, and **Artists/Albums** views grouped automatically — including tracks streamed from other devices.
 - **Command palette** (<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>) — jump to any track or view instantly.
 - Shuffle, repeat, sorting, filtering, and **resume on launch**.
-- **Real-waveform seek bar**, **crossfade**, and a **track trimmer** *(all optional)*.
+- **Crossfade** and a **track trimmer** with a waveform fragment picker *(both optional)*.
 - **Library health-check** *(optional)* — finds suspected transcodes, low bitrates, missing covers, incomplete tags and duplicates.
 
 </details>
