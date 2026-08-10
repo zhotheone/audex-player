@@ -530,6 +530,10 @@
                 <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
                 <span data-i18n="btn.shuffle">Shuffle</span>
               </button>
+              <button class="btn-ghost" id="btn-artist-ytm" title="Browse this artist on YouTube Music">
+                <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+                <span>YouTube Music</span>
+              </button>
               <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-artist-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
                 <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
               </button>
@@ -1708,6 +1712,30 @@
       <div class="modal-actions">
         <button id="btn-cancel-add-pl" class="btn-ghost" data-i18n="btn.close">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- In-app YouTube Music browser: search artist -> releases -> tracks -> queue -->
+  <div id="ytm-modal" class="modal-overlay ytm-modal">
+    <div class="ytm-card">
+      <div class="ytm-head">
+        <button class="btn-ic ytm-back" id="ytm-back" title="Back" hidden>
+          <svg class="i" width="14" height="14"><use href="#i-prev"/></svg>
+        </button>
+        <div class="ytm-titles">
+          <div class="ytm-title" id="ytm-title">YouTube Music</div>
+          <div class="ytm-sub" id="ytm-sub">Search an artist, then add albums or singles to the queue</div>
+        </div>
+        <button class="btn-ic" id="ytm-close" title="Close">
+          <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
+        </button>
+      </div>
+      <div class="ytm-searchbar">
+        <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
+        <input type="text" id="ytm-search" placeholder="Search artists on YouTube Music…" autocomplete="off">
+      </div>
+      <div class="ytm-status" id="ytm-status"></div>
+      <div class="ytm-body" id="ytm-body"></div>
     </div>
   </div>
 

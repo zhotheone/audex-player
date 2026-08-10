@@ -1857,6 +1857,134 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
   return { success: true, tracks, title: playlistTitle };
 });
 
+// ── In-app YouTube Music browser (search artist → releases → tracks) ──────────
+// All three handlers below read the SAME unauthenticated innertube API as the
+// explicit-badge annotator above (ytmInnertube) — no browser, no login, no
+// yt-dlp. They walk the response tree by renderer type (like collectExplicit)
+// rather than fixed paths, so YouTube reshuffling a layout degrades gracefully
+// (fewer results) instead of throwing. Enqueuing a parsed track downloads it
+// through the existing videoId path, exactly like the URL-based parser.
+function ytmWalk(node, fn) {
+  if (Array.isArray(node)) { for (const v of node) ytmWalk(v, fn); return; }
+  if (node && typeof node === 'object') { fn(node); for (const k in node) ytmWalk(node[k], fn); }
+}
+function ytmRunsText(container) {
+  const runs = container && container.runs;
+  return Array.isArray(runs) ? runs.map(r => r.text || '').join('') : '';
+}
+function ytmFirstThumb(node) {
+  let url = '';
+  ytmWalk(node, n => {
+    if (url) return;
+    const t = n.thumbnail && n.thumbnail.thumbnails;
+    if (Array.isArray(t) && t.length) url = t[t.length - 1].url || '';
+  });
+  return url;
+}
+function ytmBrowsePageType(nav) {
+  return (((((nav || {}).browseEndpoint || {}).browseEndpointContextSupportedConfigs || {})
+    .browseEndpointContextMusicConfig) || {}).pageType || '';
+}
+function ytmFlexText(r, col) {
+  const c = (r.flexColumns || [])[col];
+  return ytmRunsText(((c || {}).musicResponsiveListItemFlexColumnRenderer || {}).text);
+}
+
+ipcMain.handle('ytm:searchArtists', async (event, query) => {
+  const q = String(query || '').trim();
+  if (!q) return { success: true, artists: [] };
+  try {
+    // params = YT Music's "Artists" search filter (stable in ytmusicapi for
+    // years). Without it the top result hides in a card renderer we don't walk,
+    // so a related artist ranks first (e.g. "Radiohead" → "Thom Yorke").
+    const data = await ytmInnertube('search', { query: q, params: 'EgWKAQIgAWoKEAkQBRAKEAMQBA==' });
+    const artists = [];
+    const seen = new Set();
+    ytmWalk(data, n => {
+      const r = n.musicResponsiveListItemRenderer;
+      if (!r) return;
+      const nav = r.navigationEndpoint;
+      if (ytmBrowsePageType(nav) !== 'MUSIC_PAGE_TYPE_ARTIST') return;
+      const browseId = nav.browseEndpoint.browseId;
+      if (!browseId || seen.has(browseId)) return;
+      seen.add(browseId);
+      artists.push({ browseId, name: ytmFlexText(r, 0), thumb: ytmFirstThumb(r) });
+    });
+    return { success: true, artists: artists.slice(0, 10) };
+  } catch (e) {
+    return { success: false, error: String(e.message || e) };
+  }
+});
+
+ipcMain.handle('ytm:artistReleases', async (event, browseId) => {
+  const id = String(browseId || '').trim();
+  if (!id) return { success: false, error: 'No artist id' };
+  try {
+    const data = await ytmInnertube('browse', { browseId: id });
+    const releases = [];
+    const seen = new Set();
+    ytmWalk(data, n => {
+      const r = n.musicTwoRowItemRenderer;
+      if (!r) return;
+      const nav = r.navigationEndpoint || (((r.title || {}).runs || [])[0] || {}).navigationEndpoint;
+      if (ytmBrowsePageType(nav) !== 'MUSIC_PAGE_TYPE_ALBUM') return;
+      const albumBrowseId = nav.browseEndpoint.browseId;
+      if (!albumBrowseId || seen.has(albumBrowseId)) return;
+      seen.add(albumBrowseId);
+      const subRuns = ((r.subtitle || {}).runs || []).map(x => x.text || '');
+      const subtitle = subRuns.join(' ');
+      // First subtitle run is the release kind ("Album" / "Single" / "EP"); a
+      // 4-digit run is the year. Kind is normalized on the renderer side.
+      const kind = (subRuns[0] || '').trim();
+      const year = (subtitle.match(/\b(19|20)\d{2}\b/) || [])[0] || '';
+      releases.push({ albumBrowseId, title: ytmRunsText(r.title), kind, year, thumb: ytmFirstThumb(r) });
+    });
+    return { success: true, releases };
+  } catch (e) {
+    return { success: false, error: String(e.message || e) };
+  }
+});
+
+ipcMain.handle('ytm:albumTracks', async (event, browseId) => {
+  const id = String(browseId || '').trim();
+  if (!id) return { success: false, error: 'No album id' };
+  try {
+    const data = await ytmInnertube('browse', { browseId: id });
+    let album = '', artist = '', year = '', cover = '';
+    ytmWalk(data, n => {
+      const h = n.musicResponsiveHeaderRenderer || n.musicDetailHeaderRenderer;
+      if (!h || album) return;
+      album = ytmRunsText(h.title);
+      cover = ytmFirstThumb(h);
+      artist = ytmRunsText(h.straplineTextOne);
+      const sub = ytmRunsText(h.subtitle);
+      const y = (sub.match(/\b(19|20)\d{2}\b/) || [])[0];
+      if (y) year = y;
+      if (!artist) {
+        // Detail-header subtitle reads like "Album • Artist • 2021".
+        const parts = sub.split('•').map(s => s.trim()).filter(Boolean);
+        if (parts.length >= 2) artist = parts[1];
+      }
+    });
+    const tracks = [];
+    ytmWalk(data, n => {
+      const r = n.musicResponsiveListItemRenderer;
+      const vid = r && r.playlistItemData && r.playlistItemData.videoId;
+      if (!vid) return;
+      let duration = '';
+      for (const c of (r.fixedColumns || [])) {
+        const t = ytmRunsText((c.musicResponsiveListItemFixedColumnRenderer || {}).text);
+        if (/^\d+:\d{2}$/.test(t)) duration = t;
+      }
+      const explicit = JSON.stringify(r.badges || []).includes('MUSIC_EXPLICIT_BADGE');
+      tracks.push({ id: vid, title: ytmFlexText(r, 0), duration, explicit, artist });
+    });
+    return { success: true, album, artist, year, cover, tracks };
+  } catch (e) {
+    return { success: false, error: String(e.message || e) };
+  }
+});
+
 function sanitizeFsName(name) {
   // Windows silently strips trailing dots and spaces when it actually creates
   // the file/folder, so a tag like "Vol. 1." would leave this app holding a

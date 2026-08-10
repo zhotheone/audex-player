@@ -11875,3 +11875,196 @@ function openDefaultView() {
   checkForUpdates();
   warmMissingCoversInBackground();
 })();
+
+// ── In-app YouTube Music browser: search artist → releases → tracks → queue ───
+// No browser/login/yt-dlp: reads the unauthenticated innertube API (main.js
+// ytm:* handlers). Adding tracks reuses the exact download-queue path as the
+// URL-based YT Music parser (buildQueueItemFromYtm → downloadQueue).
+const ytmBrowser = (function () {
+  let state = 'search';       // 'search' | 'releases' | 'album'
+  let curArtist = null;
+  let searchTimer = null;
+
+  const el = id => $(id);
+  const body = () => el('ytm-body');
+  const setStatus = (msg, cls) => { const s = el('ytm-status'); if (s) { s.textContent = msg || ''; s.className = 'ytm-status' + (cls ? ' ' + cls : ''); } };
+  const setHeader = (title, sub, showBack) => {
+    el('ytm-title').textContent = title;
+    el('ytm-sub').textContent = sub || '';
+    el('ytm-back').hidden = !showBack;
+  };
+  const releaseKind = k => {
+    const s = (k || '').toLowerCase();
+    if (s.includes('single')) return 'single';
+    if (s.includes('ep')) return 'ep';
+    return 'album';
+  };
+
+  function open(prefillArtist) {
+    el('ytm-modal').classList.add('active');
+    const input = el('ytm-search');
+    if (prefillArtist) {
+      input.value = prefillArtist;
+      goSearch();
+      runSearch(prefillArtist, true);
+    } else {
+      goSearch();
+      body().innerHTML = '';
+      setStatus('');
+      setTimeout(() => input.focus(), 50);
+    }
+  }
+  function close() { el('ytm-modal').classList.remove('active'); }
+
+  function goSearch() {
+    state = 'search';
+    setHeader('YouTube Music', 'Search an artist, then add albums or singles to the queue', false);
+  }
+
+  async function runSearch(q, autoOpenTop) {
+    q = (q || '').trim();
+    if (!q) { body().innerHTML = ''; setStatus(''); return; }
+    state = 'search';
+    setHeader('YouTube Music', `Results for "${q}"`, false);
+    setStatus('Searching…');
+    let res;
+    try { res = await window.electronAPI.ytmSearchArtists(q); }
+    catch (e) { setStatus(String(e), 'error'); return; }
+    if (!res || !res.success) { setStatus((res && res.error) || 'Search failed', 'error'); return; }
+    if (!res.artists.length) { body().innerHTML = ''; setStatus('No artists found'); return; }
+    setStatus('');
+    if (autoOpenTop) { openArtist(res.artists[0]); return; }
+    body().innerHTML = res.artists.map((a, i) => `
+      <div class="ytm-artist-row" data-i="${i}">
+        <div class="ytm-artist-av" style="${a.thumb ? `background-image:url('${a.thumb}')` : ''}"></div>
+        <div class="ytm-artist-name">${escapeHtml(a.name)}</div>
+      </div>`).join('');
+    body().querySelectorAll('.ytm-artist-row').forEach(row =>
+      row.addEventListener('click', () => openArtist(res.artists[+row.dataset.i])));
+  }
+
+  async function openArtist(artist) {
+    curArtist = artist;
+    state = 'releases';
+    setHeader(artist.name, 'Albums & singles', true);
+    setStatus('Loading releases…');
+    body().innerHTML = '';
+    let res;
+    try { res = await window.electronAPI.ytmArtistReleases(artist.browseId); }
+    catch (e) { setStatus(String(e), 'error'); return; }
+    if (!res || !res.success) { setStatus((res && res.error) || 'Failed to load releases', 'error'); return; }
+    if (!res.releases.length) { setStatus('No releases found'); return; }
+    setStatus('');
+    const albums = res.releases.filter(r => releaseKind(r.kind) === 'album');
+    const singles = res.releases.filter(r => releaseKind(r.kind) !== 'album');
+    const section = (title, list) => list.length ? `
+      <div class="ytm-group-title">${title}</div>
+      <div class="ytm-releases">
+        ${list.map(r => `
+          <div class="ytm-release" data-i="${res.releases.indexOf(r)}">
+            <div class="ytm-release-cover" style="${r.thumb ? `background-image:url('${r.thumb}')` : ''}">
+              <button class="btn-solid icon-only ytm-add-all" title="Add all to queue"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg></button>
+            </div>
+            <div class="ytm-release-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</div>
+            <div class="ytm-release-meta">${escapeHtml([r.kind, r.year].filter(Boolean).join(' · '))}</div>
+          </div>`).join('')}
+      </div>` : '';
+    body().innerHTML = section('Albums', albums) + section('Singles & EPs', singles);
+    body().querySelectorAll('.ytm-release').forEach(card => {
+      const r = res.releases[+card.dataset.i];
+      card.querySelector('.ytm-add-all').addEventListener('click', e => { e.stopPropagation(); quickAdd(r); });
+      card.addEventListener('click', () => openAlbum(r));
+    });
+  }
+
+  async function loadAlbum(r) {
+    try { return await window.electronAPI.ytmAlbumTracks(r.albumBrowseId); }
+    catch (e) { return { success: false, error: String(e) }; }
+  }
+
+  async function quickAdd(r) {
+    setStatus(`Loading ${r.title}…`);
+    const res = await loadAlbum(r);
+    if (!res || !res.success) { setStatus((res && res.error) || 'Failed to load album', 'error'); return; }
+    const n = enqueueTracks(res.tracks, res);
+    setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''} from ${res.album || r.title}` : 'Already in queue');
+  }
+
+  async function openAlbum(r) {
+    state = 'album';
+    setHeader(r.title, 'Loading…', true);
+    setStatus('Loading tracks…');
+    body().innerHTML = '';
+    const al = await loadAlbum(r);
+    if (!al || !al.success) { setStatus((al && al.error) || 'Failed to load album', 'error'); return; }
+    setStatus('');
+    setHeader(al.album || r.title, [al.artist, al.year].filter(Boolean).join(' · '), true);
+    renderAlbum(al);
+  }
+
+  function renderAlbum(al) {
+    const head = `
+      <div class="ytm-album-head">
+        <div class="ytm-album-cover" style="${al.cover ? `background-image:url('${al.cover}')` : ''}"></div>
+        <div class="ytm-album-info">
+          <div class="ytm-album-name">${escapeHtml(al.album || '')}</div>
+          <div class="ytm-album-sub">${escapeHtml([al.artist, al.year, `${al.tracks.length} tracks`].filter(Boolean).join(' · '))}</div>
+          <div style="margin-top:10px"><button class="btn-solid" id="ytm-add-album"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg><span>Add all to queue</span></button></div>
+        </div>
+      </div>`;
+    const rows = al.tracks.map((t, i) => `
+      <div class="ytm-track${isYtmTrackInQueue({ id: t.id }) ? ' queued' : ''}" data-i="${i}">
+        <div class="ytm-track-no">${i + 1}</div>
+        <div class="ytm-track-title">${escapeHtml(t.title)}${t.explicit ? '<span class="ytm-e">E</span>' : ''}</div>
+        <div class="ytm-track-dur">${escapeHtml(t.duration || '')}</div>
+        <button class="btn-ic ytm-add" title="Add to queue"><svg class="i" width="14" height="14"><use href="#i-plus"/></svg></button>
+      </div>`).join('');
+    body().innerHTML = head + rows;
+    el('ytm-add-album').addEventListener('click', () => {
+      const n = enqueueTracks(al.tracks, al);
+      setStatus(n ? `Added ${n} track${n > 1 ? 's' : ''}` : 'Already in queue');
+      renderAlbum(al);
+    });
+    body().querySelectorAll('.ytm-track').forEach(row => {
+      row.querySelector('.ytm-add').addEventListener('click', () => {
+        if (enqueueTracks([al.tracks[+row.dataset.i]], al)) { row.classList.add('queued'); setStatus('Added to queue'); }
+      });
+    });
+  }
+
+  function enqueueTracks(tracks, album) {
+    let added = 0;
+    tracks.forEach((t, i) => {
+      const item = {
+        id: t.id,
+        title: t.title,
+        artist: t.artist || (album && album.artist) || '',
+        duration: t.duration || '',
+        explicit: t.explicit,
+        url: `https://music.youtube.com/watch?v=${t.id}`,
+      };
+      if (isYtmTrackInQueue(item)) return;
+      downloadQueue.push(buildQueueItemFromYtm(item, i + 1));
+      added++;
+    });
+    if (added) { renderQueue(); updateQueueTabBadge(); startQueueWorker(); }
+    return added;
+  }
+
+  (function wire() {
+    el('ytm-close').addEventListener('click', close);
+    el('ytm-back').addEventListener('click', () => {
+      if (state === 'album' && curArtist) openArtist(curArtist);
+      else { goSearch(); runSearch(el('ytm-search').value); }
+    });
+    el('ytm-modal').addEventListener('mousedown', e => { if (e.target === el('ytm-modal')) close(); });
+    const input = el('ytm-search');
+    input.addEventListener('input', () => { clearTimeout(searchTimer); const v = input.value; searchTimer = setTimeout(() => runSearch(v), 350); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(input.value); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && el('ytm-modal').classList.contains('active')) close(); });
+    const btn = el('btn-artist-ytm');
+    if (btn) btn.addEventListener('click', () => open(activeArtistName || el('artist-detail-title').textContent || ''));
+  })();
+
+  return { open, close };
+})();
