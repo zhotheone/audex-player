@@ -656,7 +656,7 @@ input { font-family: inherit; color: inherit; }
 }
 .btn-primary:hover { opacity: 0.9; }
 
-.nav-settings { margin-top: 2px; }
+.nav-settings { margin-bottom: 2px; }
 
 /* ─── Main ─── */
 .main-content {

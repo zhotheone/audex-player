@@ -86,6 +86,7 @@ let settings = Object.assign({
   defaultPlaylistId: null,   // used when defaultView === 'playlist-detail'
   dlFormat: 'opus',       // yt-dlp --audio-format: opus | flac | m4a
   scanSubdirs: true,
+  albumsSort: 'alpha',    // Albums view filter chip: alpha | tracks | recent
   artistMinTracksEnabled: false,
   artistMinTracks: 2,     // artists with fewer tracks than this are hidden from the Artists view when the toggle above is on
   healthCheck: false,
@@ -222,7 +223,8 @@ let pendingAddPath = null;
 let activePlaylistId = null;
 let activeArtistName = null;
 let activeAlbumKey = null;
-let albumsSort = 'alpha';            // 'alpha' | 'tracks' | 'recent'
+// A hand-edited localStorage value would otherwise leave every chip inactive.
+let albumsSort = ['alpha', 'tracks', 'recent'].includes(settings.albumsSort) ? settings.albumsSort : 'alpha';
 let albumsViewMode = 'cards';        // 'cards' | 'list'
 let artistsSort = 'alpha';           // 'alpha' | 'tracks' | 'recent'
 let artistAlbumsSort = 'year-desc';  // 'year-desc' | 'year-asc' — album order within an artist
@@ -4891,6 +4893,11 @@ function sortAlbumTracks(tracks) {
 }
 
 function renderAlbums() {
+  // The active chip is markup-default in index.html, so restore the stored one
+  // here — this runs on every entry to the view, boot included.
+  document.querySelectorAll('#view-albums .chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.albumsSort === albumsSort);
+  });
   const all = buildAlbumsIndex();
   const q = ($('albums-search').value || '').trim().toLowerCase();
   const filtered = q
@@ -7464,35 +7471,45 @@ function renderPaletteResults(query) {
       container.appendChild(el);
     });
   };
-  const isExact = r => r.name.toLowerCase() === q;
   const warmCover = a => { if (!a.cover) { const t = a.tracks.find(t => !t.cover); if (t) ensureCoverFor(t); } };
-  // Exact name first, then the biggest — typing an artist's full name should
-  // not bury them under a bigger act whose name merely contains it.
-  const byExactThenSize = (a, b) => (isExact(b) - isExact(a)) || (b.count - a.count);
+  // How closely a name answers the query: exact > starts-with > starts a word >
+  // matches anywhere, plus a coverage fraction so the shorter of two names in
+  // the same tier wins. 0 means no match at all.
+  const matchScore = text => {
+    const t = (text || '').toLowerCase();
+    const i = q ? t.indexOf(q) : -1;
+    if (i < 0) return 0;
+    const tier = t === q ? 4 : i === 0 ? 3 : /\s/.test(t[i - 1]) ? 2 : 1;
+    return tier + q.length / t.length;
+  };
+  const byScore = (a, b) => (b.score - a.score) || (b.count - a.count);
   const artistRows = !q ? [] : buildArtistsIndex()
     .filter(a => a.name.toLowerCase().includes(q))
     .map(a => ({
-      name: a.name, cover: a.cover, count: a.trackCount, warm: a,
+      name: a.name, cover: a.cover, count: a.trackCount, warm: a, score: matchScore(a.name),
       sub: `${withCount('tracks', a.trackCount)} · ${withCount('albums', a.albumCount)}`,
       result: { kind: 'open-artist', name: a.name },
     }))
-    .sort(byExactThenSize).slice(0, 5);
+    .sort(byScore).slice(0, 5);
   const albumRows = !q ? [] : buildAlbumsIndex()
     .filter(a => a.name.toLowerCase().includes(q) || a.artist.toLowerCase().includes(q))
     .map(a => ({
-      name: a.name, cover: a.cover, count: a.trackCount, warm: a,
+      name: a.name, cover: a.cover, count: a.trackCount, warm: a, score: matchScore(a.name),
       sub: [a.artist, a.year, withCount('tracks', a.trackCount)].filter(Boolean).join(' · '),
       result: { kind: 'open-album', key: a.key },
     }))
-    .sort(byExactThenSize).slice(0, 5);
+    .sort(byScore).slice(0, 5);
   [...artistRows, ...albumRows].forEach(r => warmCover(r.warm));
 
-  // A query that names an artist or album outright leads with that section —
-  // searching "radiohead" wants the artist, not the first track alphabetically.
-  // sort() is stable, so Artists stays ahead of Albums when both match exactly.
+  // Whichever answers the query more closely leads. Tracks are scored on title
+  // alone: "radiohead" matches the artist field of every one of their songs, so
+  // scoring those fields too would let the tracks tie with the artist forever.
+  // sort() is stable, so Artists keeps its place ahead of Albums when tied.
+  const best = rows => rows.reduce((m, r) => Math.max(m, r.score), 0);
+  const bestTrack = tracks.reduce((m, t) => Math.max(m, matchScore(t.title)), 0);
   const entities = [['nav.artists', artistRows], ['nav.albums', albumRows]];
-  if (q && entities.some(([, rows]) => rows.some(isExact))) {
-    entities.sort((a, b) => b[1].some(isExact) - a[1].some(isExact));
+  if (q && Math.max(best(artistRows), best(albumRows)) > bestTrack) {
+    entities.sort((a, b) => best(b[1]) - best(a[1]));
     entities.forEach(e => section(...e));
     renderTracks();
   } else {
@@ -7943,7 +7960,8 @@ document.querySelectorAll('#view-albums .chip').forEach(chip => {
   chip.addEventListener('click', () => {
     document.querySelectorAll('#view-albums .chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
-    albumsSort = chip.dataset.albumsSort;
+    albumsSort = settings.albumsSort = chip.dataset.albumsSort;
+    saveSettings();
     renderAlbums();
   });
 });
