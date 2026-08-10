@@ -35,7 +35,7 @@ let libraryMeta = JSON.parse(localStorage.getItem(LS.libraryMeta) || '[]');
 let favorites = JSON.parse(localStorage.getItem(LS.favorites) || '[]');
 let playlists = JSON.parse(localStorage.getItem(LS.playlists) || '[]');
 let settings = Object.assign({
-  theme: 'dark',          // 'dark' | 'light' | 'system' | designer palette id (nocturne/terracotta/forest/vapor/noir/arctic)
+  theme: 'dark',          // 'dark' | 'light' | 'system' | 'rose-pine' | 'rose-pine-moon' | 'rose-pine-dawn'
   accent: '',             // '' = theme default; otherwise a hex like '#5b9eff'
   language: 'en',
   defaultFolder: '',
@@ -217,12 +217,28 @@ function focusModalInput(el, { select = false } = {}) {
 }
 
 // ── Theme ──
+// 'system' (= Default) follows the OS and resolves to dark/light, which are
+// Rosé Pine and Rosé Pine Dawn. `emoji` shows in the menu and the trigger.
+const THEME_OPTIONS = [
+  { id: 'system',          emoji: '🖥️', i18n: 'theme.system' },
+  { id: 'light',           emoji: '🌅', i18n: 'theme.light' },
+  { id: 'dark',            emoji: '🌹', i18n: 'theme.dark' },
+  { id: 'rose-pine-moon',  emoji: '🌒', name: 'Rosé Pine Moon' },
+];
+function themeLabel(id) {
+  const o = THEME_OPTIONS.find(t => t.id === id) || THEME_OPTIONS[0];
+  return `${o.emoji} ${o.i18n ? tr(o.i18n) : o.name}`;
+}
 function applyTheme(t) {
+  // A theme removed since the settings were written (or synced from another
+  // device) has no CSS block — fall back to dark instead of losing every var.
+  if (!THEME_OPTIONS.some(o => o.id === t)) t = 'dark';
   const resolved = t === 'system'
     ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
     : t;
   root.setAttribute('data-theme', resolved);
 }
+if (!THEME_OPTIONS.some(o => o.id === settings.theme)) settings.theme = 'dark';
 applyTheme(settings.theme);
 window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
   if (settings.theme === 'system') applyTheme('system');
@@ -291,25 +307,6 @@ function applyAppearance() {
   root.style.setProperty('--bg-scale', String(1 + blur / 100));
   root.style.setProperty('--bg-dim', String(Math.max(0, Math.min(100, Number(settings.bgDim) || 0)) / 100));
   root.style.setProperty('--surface-alpha', String(Math.max(20, Math.min(100, Number(settings.surfaceAlpha) || 100)) / 100));
-}
-
-// ── Theme combobox options ──
-// Built-in themes (dark/light/system) use i18n labels; designer palettes use
-// their proper names. `emoji` is shown both in the menu and the select trigger.
-const THEME_OPTIONS = [
-  { id: 'dark',       emoji: '🌙', i18n: 'theme.dark' },
-  { id: 'light',      emoji: '☀️', i18n: 'theme.light' },
-  { id: 'system',     emoji: '🖥️', i18n: 'theme.system' },
-  { id: 'nocturne',   emoji: '🌌', name: 'Nocturne' },
-  { id: 'terracotta', emoji: '🏺', name: 'Terracotta' },
-  { id: 'forest',     emoji: '🌲', name: 'Forest' },
-  { id: 'vapor',      emoji: '🌆', name: 'Vapor' },
-  { id: 'noir',       emoji: '🎬', name: 'Crimson Noir' },
-  { id: 'arctic',     emoji: '❄️', name: 'Arctic' },
-];
-function themeLabel(id) {
-  const o = THEME_OPTIONS.find(t => t.id === id) || THEME_OPTIONS[0];
-  return `${o.emoji} ${o.i18n ? tr(o.i18n) : o.name}`;
 }
 
 // ── UI scale ──
@@ -745,9 +742,9 @@ const I18N = {
     'setting.githubDesc': 'Project source code on GitHub.',
     'setting.telegram': 'Telegram',
     'setting.telegramDesc': 'Found a bug or have a suggestion — write on Telegram.',
-    'theme.dark': 'Dark',
-    'theme.light': 'Light',
-    'theme.system': 'System',
+    'theme.dark': 'Dark (Rosé Pine)',
+    'theme.light': 'Light (Rosé Pine Dawn)',
+    'theme.system': 'Default',
     'setting.theme': 'Theme',
     'setting.themeDesc': 'Application color scheme.',
     'setting.accent': 'Accent color',
@@ -1344,9 +1341,9 @@ const I18N = {
     'setting.githubDesc': 'Вихідний код проєкту на GitHub.',
     'setting.telegram': 'Telegram',
     'setting.telegramDesc': 'Знайшли баг або є пропозиція — пишіть у Telegram.',
-    'theme.dark': 'Темна',
-    'theme.light': 'Світла',
-    'theme.system': 'Системна',
+    'theme.dark': 'Темна (Rosé Pine)',
+    'theme.light': 'Світла (Rosé Pine Dawn)',
+    'theme.system': 'Типова',
     'setting.theme': 'Тема',
     'setting.themeDesc': 'Колірна схема застосунку.',
     'setting.accent': 'Колір акценту',

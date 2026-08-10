@@ -39,7 +39,7 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 
 - **It's yours.** Point it at a folder and it just works — offline, forever. Nothing is uploaded anywhere.
 - **It's quick.** Thousands of tracks scroll without a stutter — the list is virtualized and every cover is cached to disk after the first scan.
-- **It looks good.** Nine themes, any accent color you like, your own wallpaper behind the interface.
+- **It looks good.** Rosé Pine throughout, any accent color you like, your own wallpaper behind the interface.
 - **It fills the gaps.** Missing a track? Search YouTube, paste a Spotify playlist, or grab what's charting today — without leaving the app.
 - **It respects you.** Your listening stats are computed on your device and never leave it.
 
@@ -61,9 +61,9 @@ Listening time, top artists and tracks, a streak counter, and a clock showing wh
 
 ![Listening report](docs/screenshots/report.png)
 
-### Nine themes, one click
+### Rosé Pine, one click
 
-Dark, Light, System, plus six hand-tuned palettes: Nocturne, Terracotta, Forest, Vapor, Crimson Noir and Arctic. Pick any accent color to go with them.
+Dark is Rosé Pine, Light is Rosé Pine Dawn, Default follows your OS between the two — plus Rosé Pine Moon if you want the softer dark. Pick any accent color to go with them.
 
 <table>
   <tr>
@@ -71,7 +71,7 @@ Dark, Light, System, plus six hand-tuned palettes: Nocturne, Terracotta, Forest,
     <td width="50%"><img src="docs/screenshots/library-light.png" alt="Light theme" /></td>
   </tr>
   <tr>
-    <td colspan="2"><img src="docs/screenshots/artists-nocturne.png" alt="Artists view in the Nocturne theme" /></td>
+    <td colspan="2"><img src="docs/screenshots/artists-nocturne.png" alt="Artists view" /></td>
   </tr>
 </table>
 
@@ -123,7 +123,7 @@ Real waveform seeking, an upcoming-queue panel, and a portrait "mobile player" m
 <summary><b>🎨 Interface</b></summary>
 
 - **Two languages** — English, Ukrainian.
-- **Nine themes** and a **customizable accent color**.
+- **Rosé Pine themes** (Pine, Dawn, Moon) and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
 - **UI scale** and a **responsive layout**, with a **portrait "mobile player"** mode for the fullscreen view.
 
