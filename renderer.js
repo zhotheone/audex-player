@@ -9805,7 +9805,10 @@ if (settings.discord.enabled && DISCORD_CLIENT_ID) {
 let lfmQueue = readStore('lastfm-queue', 'audex-lastfm-queue') || [];
 function saveLfmQueue() { writeStore('lastfm-queue', lfmQueue, 'audex-lastfm-queue'); }
 
-function lfmConfigured() { const c = settings.lastfm; return !!(c && c.enabled && c.apiKey && c.secret); }
+// "Configured" = credentials present (enables the Connect button + read-only
+// lookups). "Authed" also needs a session key, which only a successful Connect
+// grants — that's what actually gates scrobbling/love.
+function lfmConfigured() { const c = settings.lastfm; return !!(c && c.apiKey && c.secret); }
 function lfmAuthed() { return lfmConfigured() && !!settings.lastfm.session; }
 
 // One generic caller. `sign` adds the md5 signature; `auth` also injects the
@@ -9997,16 +10000,19 @@ function renderLastfm() {
   `;
 
   const keyInput = $('lastfm-key'), secretInput = $('lastfm-secret');
+  const connBtn = $('lastfm-conn-btn');
+  // Persist + enable Connect live as they type — no re-render, or blurring a
+  // field to click Connect would rebuild the button and swallow the click.
   const persistKeys = () => {
     settings.lastfm.apiKey = keyInput.value.trim();
     settings.lastfm.secret = secretInput.value.trim();
     saveSettings();
+    if (connBtn && !authed) connBtn.disabled = !lfmConfigured();
   };
-  keyInput.addEventListener('change', () => { persistKeys(); renderLastfm(); });
-  secretInput.addEventListener('change', () => { persistKeys(); renderLastfm(); });
+  keyInput.addEventListener('input', persistKeys);
+  secretInput.addEventListener('input', persistKeys);
   $('lastfm-getkey').addEventListener('click', e => { e.preventDefault(); window.electronAPI.openExternal('https://www.last.fm/api/account/create'); });
 
-  const connBtn = $('lastfm-conn-btn');
   if (connBtn) connBtn.addEventListener('click', () => authed ? disconnectLastfm() : connectLastfm());
 
   host.querySelectorAll('.toggle[data-lfm]').forEach(t => t.addEventListener('click', () => {
