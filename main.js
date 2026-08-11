@@ -2743,6 +2743,42 @@ ipcMain.handle('discord:getStatus', () => ({ connected: discordReady, user: disc
 
 app.on('before-quit', () => discordTeardown());
 
+// ── Last.fm ───────────────────────────────────────────────────────────────────
+// Optional scrobbling + metadata lookups. The api key + shared secret are the
+// user's own (entered in Settings — the feature is off by default), so nothing
+// is baked in. One generic signed caller covers every method the renderer needs;
+// the renderer builds each method's params on top of it.
+const LASTFM_ROOT = 'https://ws.audioscrobbler.com/2.0/';
+
+// api_sig = md5 of every request param (except format/callback), sorted by key
+// as key+value pairs, concatenated, then the shared secret appended.
+function lastfmSign(params, secret) {
+  const str = Object.keys(params).sort().map(k => k + params[k]).join('') + secret;
+  return crypto.createHash('md5').update(str, 'utf8').digest('hex');
+}
+
+async function lastfmCall({ method, params = {}, secret = '', sign = false, post = false }) {
+  const p = { method, ...params };            // caller supplies api_key (+ sk/token as needed)
+  if (sign) p.api_sig = lastfmSign(p, secret); // signature covers everything but format
+  p.format = 'json';
+  const qs = new URLSearchParams(p).toString();
+  const res = await fetch(post ? LASTFM_ROOT : `${LASTFM_ROOT}?${qs}`, {
+    method: post ? 'POST' : 'GET',
+    headers: post ? { 'Content-Type': 'application/x-www-form-urlencoded' } : undefined,
+    body: post ? qs : undefined,
+    signal: AbortSignal.timeout(15000),
+  });
+  const json = await res.json().catch(() => null);
+  if (json && json.error) throw new Error(`${json.error}: ${json.message || 'Last.fm error'}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return json;
+}
+
+ipcMain.handle('lastfm:call', async (event, args) => {
+  try { return { ok: true, data: await lastfmCall(args || {}) }; }
+  catch (err) { return { ok: false, error: String(err && err.message || err) }; }
+});
+
 // ── Album-cover lookup (iTunes Search API) ───────────────────────────────────
 // Discord rich presence can show a large image only from an art-asset key or a
 // public https URL — not local/embedded artwork. We resolve a public cover URL

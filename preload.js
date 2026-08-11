@@ -69,6 +69,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   discordDisconnect: () => ipcRenderer.invoke('discord:disconnect'),
   discordSetActivity: (activity) => ipcRenderer.invoke('discord:setActivity', { activity }),
   discordGetStatus: () => ipcRenderer.invoke('discord:getStatus'),
+  lastfm: (args) => ipcRenderer.invoke('lastfm:call', args),
   lookupCover: (query) => ipcRenderer.invoke('music:lookupCover', query),
   lookupLyrics: (query) => ipcRenderer.invoke('music:lookupLyrics', query),
   identifyTrack: (filePath, apiKey) => ipcRenderer.invoke('acoustid:identify', { filePath, apiKey }),

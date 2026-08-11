@@ -210,6 +210,22 @@ if (!Array.isArray(settings.discord.buttons)) settings.discord.buttons = DISCORD
 let discordConnected = false;
 let discordUser = null;
 
+// ── Last.fm ──
+// BYO-key: the api key + shared secret are entered in Settings (feature is
+// optional and off by default). A session key, once obtained via the web auth
+// flow, is stored here and never expires.
+const LASTFM_DEFAULTS = {
+  enabled: false,
+  apiKey: '',
+  secret: '',
+  session: '',      // session key (sk) — grants scrobble/love on the user's behalf
+  user: '',         // last.fm username, for display
+  scrobble: true,
+  nowPlaying: true,
+  loveSync: true,   // mirror the in-app favourite toggle to Last.fm love/unlove
+};
+settings.lastfm = Object.assign({}, LASTFM_DEFAULTS, settings.lastfm || {});
+
 const coverCache = {};
 let library = libraryMeta.map(t => ({ ...t, cover: coverCache[t.path] || null }));
 
@@ -699,6 +715,28 @@ const I18N = {
     'discord.previewNote': 'The card updates live on track change, pause and seeking.',
     'discord.previewOnline': 'Online',
     'discord.previewEmptyTrack': 'Nothing playing',
+    'section.lastfm': 'Last.fm',
+    'lastfm.subtitle': 'Scrobble what you play, sync loved tracks, and pull genres, corrections and similar artists.',
+    'lastfm.apiKey': 'API key',
+    'lastfm.secret': 'Shared secret',
+    'lastfm.keyHint': 'Create an API account at last.fm/api — free, takes a minute. Paste the key and secret here.',
+    'lastfm.getKey': 'Get an API key',
+    'lastfm.connect': 'Connect',
+    'lastfm.disconnect': 'Disconnect',
+    'lastfm.connecting': 'Waiting for approval in your browser…',
+    'lastfm.connected': 'Connected',
+    'lastfm.notConnected': 'Not connected',
+    'lastfm.connectHint': 'Authorize Audex to scrobble to your account.',
+    'lastfm.needKey': 'Enter your API key and secret first.',
+    'lastfm.authFailed': 'Authorization timed out. Approve access in the browser, then Connect again.',
+    'lastfm.scrobble': 'Scrobble tracks',
+    'lastfm.scrobbleDesc': 'Send a play to Last.fm once you’ve heard past halfway or 4 minutes.',
+    'lastfm.nowPlaying': 'Update Now Playing',
+    'lastfm.nowPlayingDesc': 'Show the current track on your profile in real time.',
+    'lastfm.loveSync': 'Sync loved tracks',
+    'lastfm.loveSyncDesc': 'Favouriting a track in Audex loves it on Last.fm too.',
+    'lastfm.queued': '{n} scrobble(s) waiting to send',
+    'lastfm.notInLibrary': 'Not in your library',
     'crumb.collection': 'Collection',
     'search.placeholder': 'Search…',
     'search.artistPlaceholder': 'Search artist…',
@@ -774,6 +812,7 @@ const I18N = {
     'artist.popularYtm': 'Popular on YT Music',
     'artist.yourLibrary': 'Your library',
     'artist.fetched': 'Fetched',
+    'artist.similar': 'Similar artists',
     'artist.inLibrary': 'In library',
     'artist.queue': 'Queue',
     'artist.queued': 'Queued',
@@ -1046,6 +1085,13 @@ const I18N = {
     'editor.identifying': 'Fingerprinting and looking up…',
     'editor.idFilled': 'Match found — review and save',
     'editor.idNoMatch': 'No match on AcoustID',
+    'editor.lastfm': 'Last.fm',
+    'editor.lastfmHint': 'Fetch name corrections and genre tags from Last.fm',
+    'editor.lastfmNeedKey': 'Add a Last.fm API key in Settings first',
+    'editor.lastfmFetching': 'Asking Last.fm…',
+    'editor.lastfmCorrected': 'Applied Last.fm correction — review and save',
+    'editor.lastfmTags': 'Tap a genre to use it',
+    'editor.lastfmNothing': 'Last.fm had nothing to add',
     'cm.useAsAlbumCover': 'Use as album cover',
     'cm.setCoverFromFile': 'Set cover from file…',
     'cm.applyCoverToAlbum': 'Apply cover to album…',
@@ -1360,6 +1406,28 @@ const I18N = {
     'discord.previewNote': 'Картка оновлюється в реальному часі при зміні треку, паузі та перемотуванні.',
     'discord.previewOnline': 'У мережі',
     'discord.previewEmptyTrack': 'Нічого не грає',
+    'section.lastfm': 'Last.fm',
+    'lastfm.subtitle': 'Скроблінг прослуханого, синхронізація улюблених та жанри, виправлення й схожі виконавці.',
+    'lastfm.apiKey': 'API-ключ',
+    'lastfm.secret': 'Спільний секрет',
+    'lastfm.keyHint': 'Створіть API-акаунт на last.fm/api — безкоштовно, за хвилину. Вставте ключ і секрет сюди.',
+    'lastfm.getKey': 'Отримати API-ключ',
+    'lastfm.connect': 'Підключити',
+    'lastfm.disconnect': 'Відключити',
+    'lastfm.connecting': 'Очікування підтвердження у браузері…',
+    'lastfm.connected': 'Підключено',
+    'lastfm.notConnected': 'Не підключено',
+    'lastfm.connectHint': 'Дозвольте Audex скроблити у ваш акаунт.',
+    'lastfm.needKey': 'Спершу введіть API-ключ і секрет.',
+    'lastfm.authFailed': 'Час авторизації вичерпано. Підтвердьте доступ у браузері та натисніть «Підключити» ще раз.',
+    'lastfm.scrobble': 'Скроблити треки',
+    'lastfm.scrobbleDesc': 'Надсилати прослуховування на Last.fm після половини треку або 4 хвилин.',
+    'lastfm.nowPlaying': 'Оновлювати «Зараз грає»',
+    'lastfm.nowPlayingDesc': 'Показувати поточний трек у вашому профілі в реальному часі.',
+    'lastfm.loveSync': 'Синхронізувати улюблені',
+    'lastfm.loveSyncDesc': 'Додавання в улюблені в Audex додає трек до улюблених на Last.fm.',
+    'lastfm.queued': 'В черзі на надсилання: {n}',
+    'lastfm.notInLibrary': 'Немає у вашій бібліотеці',
     'crumb.collection': 'Колекція',
     'search.placeholder': 'Пошук…',
     'search.artistPlaceholder': 'Пошук виконавця…',
@@ -1435,6 +1503,7 @@ const I18N = {
     'artist.popularYtm': 'Популярне на YT Music',
     'artist.yourLibrary': 'Ваша бібліотека',
     'artist.fetched': 'Отримано',
+    'artist.similar': 'Схожі виконавці',
     'artist.inLibrary': 'У бібліотеці',
     'artist.queue': 'У чергу',
     'artist.queued': 'Додано',
@@ -1706,6 +1775,13 @@ const I18N = {
     'editor.identifyHint': 'Створити аудіовідбиток і знайти трек в AcoustID',
     'editor.identifying': 'Створюємо відбиток і шукаємо…',
     'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
+    'editor.lastfm': 'Last.fm',
+    'editor.lastfmHint': 'Отримати виправлення назв і жанри з Last.fm',
+    'editor.lastfmNeedKey': 'Спершу додайте API-ключ Last.fm у налаштуваннях',
+    'editor.lastfmFetching': 'Запит до Last.fm…',
+    'editor.lastfmCorrected': 'Застосовано виправлення Last.fm — перевірте та збережіть',
+    'editor.lastfmTags': 'Торкніться жанру, щоб додати',
+    'editor.lastfmNothing': 'Last.fm не має що додати',
     'editor.idNoMatch': 'В AcoustID збігів немає',
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
     'cm.setCoverFromFile': 'Вибрати обкладинку з файлу…',
@@ -4969,6 +5045,51 @@ function renderArtistDetail(name) {
     }
   };
   $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
+
+  renderArtistLastfm(artist.name);
+}
+
+// ── Artist tags + similar artists from Last.fm ──
+// Cached per artist so re-renders (search typing, sort) don't re-hit the API.
+const lfmArtistCache = {};
+async function renderArtistLastfm(name) {
+  const tagsBox = $('artist-lfm-tags'), simBox = $('artist-similar'), simList = $('artist-similar-list');
+  if (!tagsBox || !simBox) return;
+  tagsBox.hidden = true; tagsBox.innerHTML = '';
+  simBox.hidden = true; simList.innerHTML = '';
+  if (!lfmConfigured() || !name) return;
+
+  let data = lfmArtistCache[name];
+  if (!data) {
+    const [tags, similar] = await Promise.all([lfmTopTags('artist', name), lfmSimilarArtists(name)]);
+    data = lfmArtistCache[name] = { tags, similar };
+  }
+  if (activeArtistName !== name || currentView !== 'artist-detail') return;  // navigated away
+
+  if (data.tags.length) {
+    data.tags.forEach(t => {
+      const chip = document.createElement('span');
+      chip.className = 'lfm-tag-chip is-static';
+      chip.textContent = t;
+      tagsBox.appendChild(chip);
+    });
+    tagsBox.hidden = false;
+  }
+
+  if (data.similar.length) {
+    const known = new Set(buildArtistsIndex().map(a => a.name.toLowerCase()));
+    data.similar.forEach(n => {
+      const inLib = known.has(n.toLowerCase());
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'lfm-similar-chip' + (inLib ? '' : ' is-remote');
+      chip.textContent = n;
+      if (inLib) chip.addEventListener('click', () => { activeArtistName = n; setView('artist-detail'); });
+      else chip.title = tr('lastfm.notInLibrary');
+      simList.appendChild(chip);
+    });
+    simBox.hidden = false;
+  }
 }
 
 // ── Artist top-tracks columns (local plays | YouTube Music popularity) ──
@@ -6336,8 +6457,10 @@ $('track-artist').addEventListener('click', gotoCurrentTrackArtist);
 // ── Favorites ──
 function toggleFavorite(path) {
   if (isRemotePath(path)) return;   // a peer's track isn't ours to file away
+  const nowLoved = !favorites.includes(path);
   if (favorites.includes(path)) favorites = favorites.filter(p => p !== path);
   else favorites.push(path);
+  lfmLove(trackByPath(path), nowLoved);   // mirror to Last.fm (no-op unless connected)
   saveLibrary();
   updateFavoriteUI();
   // Row visuals don't show favorite state, so only the favorites view's list changes.
@@ -6418,16 +6541,19 @@ function plStartIfNeeded() {
   // Same track resuming after pause → keep the entry, just restart the tick clock.
   if (plEntry && plEntry.p === track.path) { plLastTick = Date.now(); return; }
   plTick(); // flush remaining seconds onto the previous entry before switching
-  plEntry = { t: Date.now(), p: track.path, n: track.title || '', a: track.artist || '', b: track.album || '', s: 0 };
+  lfmMaybeScrobble(plEntry); // the finished session may now qualify for a scrobble
+  plEntry = { t: Date.now(), p: track.path, n: track.title || '', a: track.artist || '', b: track.album || '', s: 0, d: Number(track.duration) || 0 };
   playLog.push(plEntry);
   plLastTick = plEntry.t;
   plSaveAccum = 0;
   savePlayLog();
+  lfmNowPlaying(track);
   refreshReportIfActive();
 }
 
 function plFinalize() {
   plTick();
+  lfmMaybeScrobble(plEntry); // stop/pause: scrobble if the rule's already met
   savePlayLog();
   refreshReportIfActive();
 }
@@ -7582,6 +7708,8 @@ async function openMetadataEditor(path) {
   $('editor-filename').textContent = path;
   $('editor-status').textContent = '';
   $('editor-status').className = 'editor-foot-status';
+  const tagBox = $('md-lfm-tags');
+  if (tagBox) { tagBox.innerHTML = ''; tagBox.hidden = true; }
   $('metadata-modal').classList.add('active');
 }
 $('btn-close-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
@@ -7631,6 +7759,52 @@ $('btn-identify-editor').addEventListener('click', async () => {
   status.textContent = tr('editor.idFilled');
   status.className = 'editor-foot-status ok';
 });
+
+// Last.fm: fill name corrections into the fields and offer genre top-tags as
+// one-tap chips. Never writes on its own — the user reviews and presses Save.
+$('btn-lastfm-editor').addEventListener('click', async () => {
+  if (!pendingMetadataPath) return;
+  const btn = $('btn-lastfm-editor'), status = $('editor-status'), tagBox = $('md-lfm-tags');
+  if (!lfmConfigured()) {
+    status.textContent = tr('editor.lastfmNeedKey');
+    status.className = 'editor-foot-status error';
+    return;
+  }
+  const artist = $('md-artist').value.trim(), title = $('md-title').value.trim();
+  if (!artist) return;
+  btn.disabled = true;
+  status.textContent = tr('editor.lastfmFetching');
+  status.className = 'editor-foot-status';
+  let corrected = false;
+  const corr = await lfmCorrection(title ? 'track' : 'artist', artist, title);
+  if (corr) {
+    if (corr.artist) { $('md-artist').value = corr.artist; corrected = true; }
+    if (corr.title) { $('md-title').value = corr.title; corrected = true; }
+  }
+  // Prefer track-level tags, fall back to the (corrected) artist's tags.
+  const a2 = $('md-artist').value.trim(), t2 = $('md-title').value.trim();
+  let tags = t2 ? await lfmTopTags('track', a2, t2) : [];
+  if (!tags.length) tags = await lfmTopTags('artist', a2);
+  tagBox.innerHTML = '';
+  if (tags.length) {
+    tags.forEach(name => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'lfm-tag-chip';
+      chip.textContent = name;
+      chip.addEventListener('click', () => { $('md-genre').value = name; });
+      tagBox.appendChild(chip);
+    });
+    tagBox.hidden = false;
+  } else {
+    tagBox.hidden = true;
+  }
+  btn.disabled = false;
+  status.textContent = corrected ? tr('editor.lastfmCorrected')
+    : tags.length ? tr('editor.lastfmTags') : tr('editor.lastfmNothing');
+  status.className = 'editor-foot-status' + (corrected || tags.length ? ' ok' : '');
+});
+
 $('btn-save-editor').addEventListener('click', async () => {
   if (!pendingMetadataPath) return;
   const status = $('editor-status');
@@ -8728,6 +8902,7 @@ function renderSettings() {
   renderBackgroundSettings();
   renderHotkeys();
   renderDiscord();
+  renderLastfm();
 }
 
 // ── Hotkeys settings UI ──
@@ -9623,6 +9798,253 @@ if (settings.discord.enabled && DISCORD_CLIENT_ID) {
     else scheduleDiscordReconnect();
   });
 }
+
+// ── Last.fm: scrobbling, offline queue, metadata lookups ──────────────────────
+// Scrobbles that can't be sent (offline / not authed / API down) sit in a
+// crash-safe store file and drain on the next successful flush.
+let lfmQueue = readStore('lastfm-queue', 'audex-lastfm-queue') || [];
+function saveLfmQueue() { writeStore('lastfm-queue', lfmQueue, 'audex-lastfm-queue'); }
+
+function lfmConfigured() { const c = settings.lastfm; return !!(c && c.enabled && c.apiKey && c.secret); }
+function lfmAuthed() { return lfmConfigured() && !!settings.lastfm.session; }
+
+// One generic caller. `sign` adds the md5 signature; `auth` also injects the
+// session key (sk); write methods (scrobble/love/nowplaying) are signed POSTs.
+async function lfmCall(method, params = {}, { sign = false, post = false, auth = false } = {}) {
+  const c = settings.lastfm;
+  const p = { api_key: c.apiKey, ...params };
+  if (auth) p.sk = c.session;
+  if (!window.electronAPI || !window.electronAPI.lastfm) throw new Error('Last.fm bridge unavailable');
+  const res = await window.electronAPI.lastfm({ method, params: p, secret: c.secret, sign: sign || auth || post, post });
+  if (!res || !res.ok) throw new Error((res && res.error) || 'Last.fm request failed');
+  return res.data;
+}
+
+// Auth: fetch a request token, open the browser for the user to approve, then
+// poll auth.getSession until they do. The session key never expires.
+async function lfmGetToken() {
+  const d = await lfmCall('auth.getToken', {}, { sign: true });
+  if (!d || !d.token) throw new Error('No token from Last.fm');
+  window.electronAPI.openExternal(`https://www.last.fm/api/auth/?api_key=${encodeURIComponent(settings.lastfm.apiKey)}&token=${encodeURIComponent(d.token)}`);
+  return d.token;
+}
+let lfmAuthPolling = false;
+async function lfmPollSession(token, tries = 40) {
+  if (lfmAuthPolling) return false;
+  lfmAuthPolling = true;
+  try {
+    for (let i = 0; i < tries; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const d = await lfmCall('auth.getSession', { token }, { sign: true });
+        if (d && d.session && d.session.key) {
+          settings.lastfm.session = d.session.key;
+          settings.lastfm.user = d.session.name || '';
+          saveSettings();
+          lfmFlush();
+          return true;
+        }
+      } catch (_) { /* not approved yet — keep waiting */ }
+    }
+    return false;
+  } finally { lfmAuthPolling = false; }
+}
+
+// Last.fm's own rule: track ≥30s long, listened past halfway OR for 4 min.
+// `entry` is a play-log entry (see plStartIfNeeded): { t, a, n, b, s, d }.
+function lfmMaybeScrobble(entry) {
+  if (!entry || entry.scrobbled || !lfmAuthed() || !settings.lastfm.scrobble) return;
+  if (!entry.a || !entry.n) return;
+  const dur = Number(entry.d) || 0, played = Number(entry.s) || 0;
+  if (dur && dur < 30) return;
+  if (played < (dur ? Math.min(240, dur / 2) : 240)) return;
+  entry.scrobbled = true;   // dedup across pause/resume/switch and restarts
+  savePlayLog();
+  lfmQueue.push({ artist: entry.a, track: entry.n, album: entry.b || '', duration: Math.round(dur) || undefined, timestamp: Math.floor(entry.t / 1000) });
+  saveLfmQueue();
+  lfmFlush();
+}
+
+let lfmFlushing = false;
+async function lfmFlush() {
+  if (lfmFlushing || !lfmAuthed() || lfmQueue.length === 0 || !navigator.onLine) return;
+  lfmFlushing = true;
+  try {
+    while (lfmQueue.length) {
+      const batch = lfmQueue.slice(0, 50);   // track.scrobble accepts up to 50 per call
+      const params = {};
+      batch.forEach((s, i) => {
+        params[`artist[${i}]`] = s.artist;
+        params[`track[${i}]`] = s.track;
+        params[`timestamp[${i}]`] = s.timestamp;
+        if (s.album) params[`album[${i}]`] = s.album;
+        if (s.duration) params[`duration[${i}]`] = s.duration;
+      });
+      await lfmCall('track.scrobble', params, { post: true, auth: true });
+      lfmQueue = lfmQueue.slice(batch.length);
+      saveLfmQueue();
+    }
+  } catch (_) {
+    // Network/API failure — leave the queue intact for the next flush.
+  } finally { lfmFlushing = false; }
+}
+
+async function lfmNowPlaying(track) {
+  if (!lfmAuthed() || !settings.lastfm.nowPlaying || !track || !track.artist || !track.title) return;
+  const params = { artist: track.artist, track: track.title };
+  if (track.album) params.album = track.album;
+  if (track.duration) params.duration = Math.round(track.duration);
+  try { await lfmCall('track.updateNowPlaying', params, { post: true, auth: true }); } catch (_) {}
+}
+
+async function lfmLove(track, loved) {
+  if (!lfmAuthed() || !settings.lastfm.loveSync || !track || !track.artist || !track.title) return;
+  try { await lfmCall(loved ? 'track.love' : 'track.unlove', { artist: track.artist, track: track.title }, { post: true, auth: true }); } catch (_) {}
+}
+
+// ── Metadata lookups (need only the api key, no session) ──
+async function lfmCorrection(kind, artist, title) {
+  if (!lfmConfigured()) return null;
+  try {
+    if (kind === 'artist') {
+      const d = await lfmCall('artist.getCorrection', { artist });
+      const c = d && d.corrections && d.corrections.correction;
+      const name = c && c.artist && c.artist.name;
+      return name && name !== artist ? { artist: name } : null;
+    }
+    const d = await lfmCall('track.getCorrection', { artist, track: title });
+    const c = d && d.corrections && d.corrections.correction;
+    if (!c || !c.track) return null;
+    const a = c.track.artist && c.track.artist.name, t = c.track.name;
+    return (a && a !== artist) || (t && t !== title) ? { artist: a || artist, title: t || title } : null;
+  } catch (_) { return null; }
+}
+
+async function lfmTopTags(kind, artist, name) {
+  if (!lfmConfigured()) return [];
+  try {
+    const d = kind === 'artist' ? await lfmCall('artist.getTopTags', { artist })
+      : kind === 'album' ? await lfmCall('album.getTopTags', { artist, album: name })
+      : await lfmCall('track.getTopTags', { artist, track: name });
+    const tags = (d && d.toptags && d.toptags.tag) || [];
+    return tags.map(t => t.name).filter(Boolean).slice(0, 6);
+  } catch (_) { return []; }
+}
+
+async function lfmSimilarArtists(artist, limit = 8) {
+  if (!lfmConfigured()) return [];
+  try {
+    const d = await lfmCall('artist.getSimilar', { artist, limit });
+    const arr = (d && d.similarartists && d.similarartists.artist) || [];
+    return arr.map(a => a.name).filter(Boolean);
+  } catch (_) { return []; }
+}
+
+// ── Last.fm settings card ──
+function renderLastfm() {
+  const host = $('lastfm-body');
+  if (!host) return;
+  const c = settings.lastfm;
+  const authed = lfmAuthed();
+  const statusText = authed ? tr('lastfm.connected') : tr('lastfm.notConnected');
+  const sub = authed
+    ? escapeHtml(c.user || tr('lastfm.connected'))
+    : (lfmAuthPolling ? escapeHtml(tr('lastfm.connecting')) : escapeHtml(tr('lastfm.connectHint')));
+  const connectLabel = authed ? tr('lastfm.disconnect') : tr('lastfm.connect');
+  const lfToggle = (key, label, desc) => `
+    <div class="setting-row">
+      <div class="setting-text">
+        <div class="setting-label">${escapeHtml(tr(label))}</div>
+        <div class="setting-desc">${escapeHtml(tr(desc))}</div>
+      </div>
+      <button class="toggle${c[key] ? ' on' : ''}" data-lfm="${key}"><div class="toggle-knob"></div></button>
+    </div>`;
+
+  host.innerHTML = `
+    <div class="setting-card setting-card-tight">
+      <div class="dc-conn${authed ? ' is-connected' : ''}">
+        <div class="dc-conn-main">
+          <div class="dc-conn-title">Last.fm <span class="dc-conn-status">${authed ? '●' : '○'} ${escapeHtml(statusText)}</span></div>
+          <div class="dc-conn-sub">${sub}</div>
+        </div>
+        <button class="btn-ghost dc-conn-btn${authed ? '' : ' dc-conn-btn-primary'}" id="lastfm-conn-btn"${(lfmConfigured() || authed) ? '' : ' disabled'}>${escapeHtml(connectLabel)}</button>
+      </div>
+    </div>
+
+    <div class="setting-card">
+      <div class="setting-desc" style="margin-bottom:10px">${escapeHtml(tr('lastfm.subtitle'))}</div>
+      <div class="setting-row dc-btn-row">
+        <div class="dc-btn-field dc-btn-field-wide">
+          <div class="dc-btn-cap">${escapeHtml(tr('lastfm.apiKey'))}</div>
+          <input class="dc-input dc-input-mono" type="text" spellcheck="false" id="lastfm-key" value="${escapeHtml(c.apiKey)}" placeholder="0123abcd…">
+        </div>
+        <div class="dc-btn-field dc-btn-field-wide">
+          <div class="dc-btn-cap">${escapeHtml(tr('lastfm.secret'))}</div>
+          <input class="dc-input dc-input-mono" type="password" spellcheck="false" id="lastfm-secret" value="${escapeHtml(c.secret)}" placeholder="••••••••">
+        </div>
+      </div>
+      <div class="dc-hint">${escapeHtml(tr('lastfm.keyHint'))} <a href="#" id="lastfm-getkey">${escapeHtml(tr('lastfm.getKey'))}</a></div>
+    </div>
+
+    <div class="setting-card">
+      ${lfToggle('scrobble', 'lastfm.scrobble', 'lastfm.scrobbleDesc')}
+      ${lfToggle('nowPlaying', 'lastfm.nowPlaying', 'lastfm.nowPlayingDesc')}
+      ${lfToggle('loveSync', 'lastfm.loveSync', 'lastfm.loveSyncDesc')}
+    </div>
+    ${lfmQueue.length ? `<div class="dc-hint">${escapeHtml(tr('lastfm.queued', { n: lfmQueue.length }))}</div>` : ''}
+  `;
+
+  const keyInput = $('lastfm-key'), secretInput = $('lastfm-secret');
+  const persistKeys = () => {
+    settings.lastfm.apiKey = keyInput.value.trim();
+    settings.lastfm.secret = secretInput.value.trim();
+    saveSettings();
+  };
+  keyInput.addEventListener('change', () => { persistKeys(); renderLastfm(); });
+  secretInput.addEventListener('change', () => { persistKeys(); renderLastfm(); });
+  $('lastfm-getkey').addEventListener('click', e => { e.preventDefault(); window.electronAPI.openExternal('https://www.last.fm/api/account/create'); });
+
+  const connBtn = $('lastfm-conn-btn');
+  if (connBtn) connBtn.addEventListener('click', () => authed ? disconnectLastfm() : connectLastfm());
+
+  host.querySelectorAll('.toggle[data-lfm]').forEach(t => t.addEventListener('click', () => {
+    const key = t.dataset.lfm;
+    settings.lastfm[key] = !settings.lastfm[key];
+    saveSettings();
+    renderLastfm();
+    if (key === 'scrobble' && settings.lastfm[key]) lfmFlush();
+  }));
+}
+
+async function connectLastfm() {
+  const c = settings.lastfm;
+  if (!c.apiKey || !c.secret) { toast(tr('lastfm.needKey')); return; }
+  c.enabled = true;
+  saveSettings();
+  const btn = $('lastfm-conn-btn');
+  if (btn) { btn.disabled = true; btn.textContent = tr('lastfm.connecting'); }
+  try {
+    const token = await lfmGetToken();
+    if (isSettingsOpen()) renderLastfm();      // shows the "waiting for approval" sub-state
+    const ok = await lfmPollSession(token);
+    if (!ok) toast(tr('lastfm.authFailed'));
+  } catch (err) {
+    toast(String(err && err.message || err));
+  }
+  if (isSettingsOpen()) renderLastfm();
+}
+
+function disconnectLastfm() {
+  settings.lastfm.session = '';
+  settings.lastfm.user = '';
+  settings.lastfm.enabled = false;
+  saveSettings();
+  renderLastfm();
+}
+
+// Drain the queue on boot and whenever the network returns.
+window.addEventListener('online', lfmFlush);
+if (lfmAuthed()) lfmFlush();
 
 // Covers for recents (sidebar) and the now-playing track are loaded eagerly,
 // since they're always visible. Library/favorites/playlist covers load lazily

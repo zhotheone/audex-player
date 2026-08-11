@@ -540,6 +540,7 @@
             <div class="pl-eyebrow" data-i18n="eyebrow.artist">Artist</div>
             <div class="pl-title" id="artist-detail-title"></div>
             <div class="pl-meta" id="artist-detail-meta"></div>
+            <div class="artist-lfm-tags" id="artist-lfm-tags" hidden></div>
             <div class="pl-actions">
               <button class="btn-solid" id="btn-artist-play">
                 <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
@@ -577,6 +578,11 @@
             <div id="artist-top-ytm" class="rankcol"></div>
           </section>
         </div>
+
+        <section class="artist-similar" id="artist-similar" hidden>
+          <div class="artist-col-head"><h3 data-i18n="artist.similar">Similar artists</h3></div>
+          <div class="artist-similar-list" id="artist-similar-list"></div>
+        </section>
 
         <div class="filters">
           <button class="chip active" data-artist-albums-sort="year-desc" data-i18n="sort.yearDesc">Newest first</button>
@@ -1607,6 +1613,13 @@
         </div>
         <div id="discord-body"></div>
       </section>
+      <section class="setting-section" id="lastfm-section">
+        <div class="section-label">
+          <svg class="i" width="11" height="11"><use href="#i-link"/></svg>
+          <span data-i18n="section.lastfm">Last.fm</span>
+        </div>
+        <div id="lastfm-body"></div>
+      </section>
       </div>
 
       <div class="settings-panel" data-panel="about" hidden>
@@ -1793,6 +1806,7 @@
             <div class="field">
               <div class="field-label" data-i18n="editor.field.genre">Genre</div>
               <input type="text" class="field-input" id="md-genre">
+              <div class="md-lfm-tags" id="md-lfm-tags" hidden></div>
             </div>
           </div>
           <div class="field-row">
@@ -1817,6 +1831,7 @@
         <div class="editor-foot-status" id="editor-status"></div>
         <div class="editor-foot-actions">
           <button class="btn-ghost" id="btn-identify-editor" data-i18n="editor.identify" title="Fingerprint the audio and look the track up on AcoustID" data-i18n-title="editor.identifyHint">Identify</button>
+          <button class="btn-ghost" id="btn-lastfm-editor" data-i18n="editor.lastfm" title="Fetch name corrections and genre tags from Last.fm" data-i18n-title="editor.lastfmHint">Last.fm</button>
           <button class="btn-ghost" id="btn-cancel-editor" data-i18n="btn.cancel">Cancel</button>
           <button class="btn-solid" id="btn-save-editor" data-i18n="btn.save">Save</button>
         </div>
