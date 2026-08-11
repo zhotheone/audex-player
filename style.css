@@ -5411,6 +5411,10 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 }
 
 /* ── Last.fm ── */
+/* Match the Discord connection card, just recoloured to the Last.fm red. */
+.dc-conn-lastfm .dc-conn-icon { background: #d51007; }
+.dc-conn-lastfm.is-connected .dc-conn-icon { box-shadow: 0 0 0 3px rgba(213, 16, 7, 0.18); }
+
 /* Genre suggestions in the metadata editor + artist tags on the detail page. */
 .md-lfm-tags, .artist-lfm-tags {
   display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;

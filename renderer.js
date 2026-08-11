@@ -9961,8 +9961,11 @@ function renderLastfm() {
     </div>`;
 
   host.innerHTML = `
+    <div class="dc-hint" style="margin-top:0">${escapeHtml(tr('lastfm.subtitle'))}</div>
+
     <div class="setting-card setting-card-tight">
-      <div class="dc-conn${authed ? ' is-connected' : ''}">
+      <div class="dc-conn dc-conn-lastfm${authed ? ' is-connected' : ''}">
+        <div class="dc-conn-icon"><svg class="i" width="22" height="22"><use href="#i-lastfm"/></svg></div>
         <div class="dc-conn-main">
           <div class="dc-conn-title">Last.fm <span class="dc-conn-status">${authed ? '●' : '○'} ${escapeHtml(statusText)}</span></div>
           <div class="dc-conn-sub">${sub}</div>
@@ -9971,8 +9974,7 @@ function renderLastfm() {
       </div>
     </div>
 
-    <div class="setting-card">
-      <div class="setting-desc" style="margin-bottom:10px">${escapeHtml(tr('lastfm.subtitle'))}</div>
+    <div class="setting-card setting-card-tight">
       <div class="setting-row dc-btn-row">
         <div class="dc-btn-field dc-btn-field-wide">
           <div class="dc-btn-cap">${escapeHtml(tr('lastfm.apiKey'))}</div>
@@ -9983,10 +9985,10 @@ function renderLastfm() {
           <input class="dc-input dc-input-mono" type="password" spellcheck="false" id="lastfm-secret" value="${escapeHtml(c.secret)}" placeholder="••••••••">
         </div>
       </div>
-      <div class="dc-hint">${escapeHtml(tr('lastfm.keyHint'))} <a href="#" id="lastfm-getkey">${escapeHtml(tr('lastfm.getKey'))}</a></div>
     </div>
+    <div class="dc-hint">${escapeHtml(tr('lastfm.keyHint'))} <a href="#" id="lastfm-getkey">${escapeHtml(tr('lastfm.getKey'))}</a></div>
 
-    <div class="setting-card">
+    <div class="setting-card setting-card-tight">
       ${lfToggle('scrobble', 'lastfm.scrobble', 'lastfm.scrobbleDesc')}
       ${lfToggle('nowPlaying', 'lastfm.nowPlaying', 'lastfm.nowPlayingDesc')}
       ${lfToggle('loveSync', 'lastfm.loveSync', 'lastfm.loveSyncDesc')}
