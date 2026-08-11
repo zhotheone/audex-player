@@ -1995,23 +1995,18 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   gap: 12px;
   padding: 8px 12px;
 }
-/* Album art is the focal point here, so the Albums grid runs far wider tiles
-   than the shared .playlists-grid default and scales its text to match — the
-   cover is width:100% of the card, so the column width IS the cover size.
-   Note auto-fill columns are `1fr`, i.e. they stretch to fill the row: raising
-   the min only helps once it drops a whole column, which is why a small bump
-   off 180px changed nothing on a wide window. */
+/* Compact album tiles — many per row. The cover is width:100% of the card, so
+   the column min IS the cover size; auto-fill 1fr columns stretch to fill. */
 #albums-grid:not(.list-mode) {
-  /* 280 not 300: the rounded shell (body padding + gap) trims ~40px off the
-     main column, which at 300px min dropped a whole grid track (3 cols → 2,
-     covers ballooned). 280 restores 3 across on a standard window. */
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 16px;
 }
-#albums-grid:not(.list-mode) .playlist-letter { font-size: 56px; }
-#albums-grid:not(.list-mode) .playlist-name { font-size: 16px; margin-bottom: 5px; }
-#albums-grid:not(.list-mode) .playlist-desc { font-size: 13px; min-height: 18px; }
-#albums-grid:not(.list-mode) .playlist-stats { font-size: 11.5px; }
+#albums-grid:not(.list-mode) .playlist-card { padding: 10px; }
+#albums-grid:not(.list-mode) .playlist-cover { margin-bottom: 10px; padding: 10px; }
+#albums-grid:not(.list-mode) .playlist-letter { font-size: 32px; }
+#albums-grid:not(.list-mode) .playlist-name { font-size: 12.5px; margin-bottom: 2px; }
+#albums-grid:not(.list-mode) .playlist-desc { font-size: 11px; min-height: 15px; margin-bottom: 6px; }
+#albums-grid:not(.list-mode) .playlist-stats { font-size: 10px; }
 
 #albums-grid.list-mode .playlist-cover {
   width: 40px;
@@ -4845,8 +4840,10 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: #0a0a0b;
-  color: #e7e7e8;
+  /* Derived from the chosen palette (set pre-paint by the head script); the
+     fallbacks are the default dark theme for a first-ever launch. */
+  background: var(--bg, #191724);
+  color: var(--text, #e7e7e8);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4861,7 +4858,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(0, 0, 0, 0.5));
+  background: radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(0, 0, 0, 0.3));
   pointer-events: none;
 }
 #boot-overlay.boot-hide {
@@ -4880,12 +4877,14 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   position: absolute;
   inset: 12%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(232, 145, 46, 0.2), transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 24%, transparent), transparent 68%);
   animation: bootMarkPulse 2.4s ease-in-out infinite;
 }
-.boot-mark svg { position: relative; display: block; }
+/* Logomark strokes follow the palette (override the inline SVG stroke attrs). */
+.boot-mark svg { position: relative; display: block; stroke: var(--text-strong, #f5f5f7); }
 .boot-eq {
   transform-origin: var(--ox) 74px;
+  stroke: var(--accent);
   animation: bootEqBar 1.05s ease-in-out var(--d) infinite;
 }
 .boot-wordmark {
@@ -4894,21 +4893,21 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1;
-  color: #f5f5f7;
+  color: var(--text-strong, #f5f5f7);
 }
 .boot-tagline {
   margin-top: 10px;
   font-size: 11px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(231, 231, 232, 0.4);
+  color: var(--text-dim, rgba(231, 231, 232, 0.4));
 }
 .boot-rail {
   margin-top: 40px;
   width: 240px;
   height: 3px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--border, rgba(255, 255, 255, 0.07));
   position: relative;
   overflow: hidden;
 }
@@ -4918,14 +4917,14 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   bottom: 0;
   width: 35%;
   border-radius: 3px;
-  background: linear-gradient(90deg, transparent, #e8912e, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent, #e8912e), transparent);
   animation: bootBarSweep 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 .boot-status {
   margin-top: 14px;
   min-height: 16px;
   font-size: 12.5px;
-  color: rgba(231, 231, 232, 0.55);
+  color: var(--text-muted, rgba(231, 231, 232, 0.55));
   display: flex;
   align-items: center;
   font-variant-numeric: tabular-nums;
@@ -4936,7 +4935,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: rgba(231, 231, 232, 0.55);
+  background: var(--text-muted, rgba(231, 231, 232, 0.55));
   animation: bootDotPulse 1.4s ease-in-out infinite;
 }
 .boot-dots span:nth-child(2) { animation-delay: 0.18s; }
@@ -4948,7 +4947,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   text-align: center;
   font-size: 10.5px;
   letter-spacing: 0.5px;
-  color: rgba(231, 231, 232, 0.3);
+  color: var(--text-faint, rgba(231, 231, 232, 0.3));
 }
 @keyframes bootEqBar {
   0%, 100% { transform: scaleY(0.32); }

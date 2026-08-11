@@ -7,6 +7,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script>
+    /* Apply the saved palette before the boot screen paints, so it derives its
+       colours from the chosen theme instead of flashing the default dark.
+       renderer.js re-applies this (and sets data-mode) a moment later. */
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('audex-settings') || '{}');
+        var t = s.theme || 'dark';
+        if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <!-- Boot overlay: full-window loader shown from first paint until the

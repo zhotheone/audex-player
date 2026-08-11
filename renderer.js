@@ -4924,7 +4924,7 @@ function renderArtistTopLocal(artist) {
   const paths = new Set(artist.tracks.map(t => t.path));
   const counts = new Map();
   for (const e of playLog) { if (paths.has(e.p)) counts.set(e.p, (counts.get(e.p) || 0) + 1); }
-  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   box.innerHTML = '';
   if (!top.length) { box.innerHTML = `<div class="rk-note">${escapeHtml(tr('artist.noPlays'))}</div>`; return; }
   const max = top[0][1];
@@ -4947,26 +4947,35 @@ function renderArtistTopLocal(artist) {
   });
 }
 
+// Session cache for the "Popular on YT Music" column: one fetch per artist per
+// run. Crucially the in-flight promise is cached too, so rapid re-renders (a
+// keystroke in the track search, a List/Cards toggle) reuse the pending request
+// instead of firing a duplicate. A resolved entry has `.state`; an entry with
+// only `.promise` is a fetch still in flight.
 async function renderArtistTopYtm(artist) {
   const box = $('artist-top-ytm');
   const name = artist.name;
-  const cached = artistYtmCache.get(name);
-  if (cached) { paintArtistYtm(box, cached, artist); return; }
+  const entry = artistYtmCache.get(name);
+  if (entry && entry.state) { paintArtistYtm(box, entry, artist); return; }   // resolved — no network
   box.innerHTML = '<div class="rk-skeleton"></div>'.repeat(4);
+  const pending = (entry && entry.promise) || fetchArtistTopYtm(name);
+  if (!entry) artistYtmCache.set(name, { promise: pending });
+  const r = await pending;
+  artistYtmCache.set(name, r);   // replace the in-flight marker with the result
+  if (activeArtistName === name) paintArtistYtm(box, r, artist);
+}
+
+// One round-trip: resolve the artist's YT Music browseId, then its top songs.
+// Returns a resolved cache entry ({ state, songs? }); never throws.
+async function fetchArtistTopYtm(name) {
   try {
     const s = await window.electronAPI.ytmSearchArtists(name);
-    if (activeArtistName !== name) return;   // navigated away mid-fetch
     const browseId = s && s.success && s.artists[0] && s.artists[0].browseId;
-    if (!browseId) { const r = { state: 'empty' }; artistYtmCache.set(name, r); paintArtistYtm(box, r, artist); return; }
+    if (!browseId) return { state: 'empty' };
     const res = await window.electronAPI.ytmArtistTopSongs(browseId);
-    if (activeArtistName !== name) return;
-    const r = (res && res.success && res.songs.length) ? { state: 'ok', songs: res.songs } : { state: 'empty' };
-    artistYtmCache.set(name, r);
-    paintArtistYtm(box, r, artist);
+    return (res && res.success && res.songs.length) ? { state: 'ok', songs: res.songs } : { state: 'empty' };
   } catch (_) {
-    const r = { state: 'error' };
-    artistYtmCache.set(name, r);
-    if (activeArtistName === name) paintArtistYtm(box, r, artist);
+    return { state: 'error' };
   }
 }
 
@@ -5105,11 +5114,9 @@ function renderAlbums() {
   empty.classList.remove('show');
   grid.style.display = albumsViewMode === 'list' ? 'flex' : 'grid';
 
-  sorted.forEach((a, i) => {
-    if (!a.cover) {
-      const t = a.tracks.find(t => !t.cover);
-      if (t) ensureCoverFor(t);
-    }
+  const listMode = albumsViewMode === 'list';
+
+  const makeCard = (a, i) => {
     const card = document.createElement('div');
     card.className = 'playlist-card';
     card.dataset.album = a.key;
@@ -5128,11 +5135,55 @@ function renderAlbums() {
         <span>${formatTotalDuration(a.tracks)}</span>
       </div>
     `;
-    card.addEventListener('click', () => {
-      activeAlbumKey = a.key;
-      setView('album-detail');
+    card.addEventListener('click', () => { activeAlbumKey = a.key; setView('album-detail'); });
+    return card;
+  };
+
+  // List mode reuses the artist page's expandable album block: header + the
+  // album's full track list, so tracks are browsable without opening the album.
+  const makeListBlock = a => {
+    const block = document.createElement('div');
+    block.className = 'artist-album';
+    block.dataset.album = a.key;
+    const tracks = sortAlbumTracks(a.tracks);
+    const head = document.createElement('div');
+    head.className = 'artist-album-head';
+    head.innerHTML = `
+      <div class="artist-album-cover pl-meta-link" style="${a.cover ? `background-image:url('${a.cover}')` : ''}" title="${escapeHtml(a.name)}"></div>
+      <div class="artist-album-info">
+        <div class="artist-album-name pl-meta-link" title="${escapeHtml(a.name)}">${escapeHtml(a.name)}</div>
+        <div class="artist-album-meta">
+          <span>${escapeHtml(a.artist)}</span><span>·</span>
+          ${a.year ? `<span>${escapeHtml(String(a.year))}</span><span>·</span>` : ''}
+          <span>${a.trackCount} ${pluralTracks(a.trackCount)}</span>
+        </div>
+      </div>
+      <button class="artist-album-play">
+        <svg class="i" width="10" height="10"><use href="#i-play"/></svg>
+        ${escapeHtml(tr('btn.album'))}
+      </button>
+    `;
+    const goto = e => { e.stopPropagation(); activeAlbumKey = a.key; setView('album-detail'); };
+    head.querySelector('.artist-album-cover').addEventListener('click', goto);
+    head.querySelector('.artist-album-name').addEventListener('click', goto);
+    head.querySelector('.artist-album-play').addEventListener('click', e => {
+      e.stopPropagation();
+      if (tracks.length) playTrackByPath(tracks[0].path, tracks);
     });
-    grid.appendChild(card);
+    block.appendChild(head);
+    const list = document.createElement('div');
+    list.className = 'artist-album-tracks';
+    tracks.forEach((t, j) => list.appendChild(renderTrackRow(t, j, tracks)));
+    block.appendChild(list);
+    return block;
+  };
+
+  sorted.forEach((a, i) => {
+    if (!a.cover) {
+      const t = a.tracks.find(t => !t.cover);
+      if (t) ensureCoverFor(t);
+    }
+    grid.appendChild(listMode ? makeListBlock(a) : makeCard(a, i));
   });
   renderCounts();
 }
@@ -5141,18 +5192,23 @@ function renderAlbums() {
 function refreshAlbumsCoversInPlace() {
   const grid = $('albums-grid');
   if (!grid) return;
-  const cards = grid.querySelectorAll('.playlist-card[data-album]');
+  const cards = grid.querySelectorAll('[data-album]');   // .playlist-card (cards) or .artist-album (list)
   if (cards.length === 0) return;
   const byKey = new Map();
   buildAlbumsIndex().forEach(a => { if (a.cover) byKey.set(a.key, a.cover); });
   cards.forEach(card => {
-    const cover = card.querySelector('.playlist-cover');
-    if (!cover || /url\(/.test(cover.style.background)) return;
     const url = byKey.get(card.dataset.album);
     if (!url) return;
-    cover.style.background = `url('${url}') center/cover`;
-    const letter = cover.querySelector('.playlist-letter');
-    if (letter) letter.remove();
+    const tile = card.querySelector('.playlist-cover');
+    if (tile) {
+      if (/url\(/.test(tile.style.background)) return;
+      tile.style.background = `url('${url}') center/cover`;
+      const letter = tile.querySelector('.playlist-letter');
+      if (letter) letter.remove();
+      return;
+    }
+    const aac = card.querySelector('.artist-album-cover');   // list-mode block
+    if (aac && !/url\(/.test(aac.style.backgroundImage)) aac.style.backgroundImage = `url('${url}')`;
   });
 }
 
