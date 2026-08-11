@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ytMusicParse: (payload) => ipcRenderer.invoke('downloads:ytMusicParse', payload),
   ytmSearchArtists: (query) => ipcRenderer.invoke('ytm:searchArtists', query),
   ytmArtistReleases: (browseId) => ipcRenderer.invoke('ytm:artistReleases', browseId),
+  ytmArtistTopSongs: (browseId) => ipcRenderer.invoke('ytm:artistTopSongs', browseId),
   ytmAlbumTracks: (browseId) => ipcRenderer.invoke('ytm:albumTracks', browseId),
   spotifyParse: (payload) => ipcRenderer.invoke('spotify:parsePlaylist', payload),
   youtubeLogin: () => ipcRenderer.invoke('youtube:login'),

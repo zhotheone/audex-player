@@ -289,6 +289,11 @@ input, textarea, [contenteditable="true"] {
 body {
   display: flex;
   flex-direction: column;
+  /* Shell padding + gap: sidebar, main and the player bar are three rounded
+     cards floating on --bg. The player bar is an in-flow row (see .playbar),
+     so nothing sits under it. */
+  padding: 14px;
+  gap: 12px;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -301,6 +306,7 @@ input { font-family: inherit; color: inherit; }
   display: flex;
   flex: 1;
   min-height: 0;
+  gap: 12px;
 }
 
 /* ─── Custom background ───
@@ -341,7 +347,8 @@ input { font-family: inherit; color: inherit; }
 
 /* Surfaces go translucent so the background actually reads through. The
    backdrop blur keeps text legible over busy images. */
-:root.has-custom-bg .sidebar {
+:root.has-custom-bg .sidebar,
+:root.has-custom-bg .main-content {
   background: color-mix(in srgb, var(--panel) calc(var(--surface-alpha, 1) * 100%), transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -362,11 +369,10 @@ input { font-family: inherit; color: inherit; }
 /* ─── Sidebar ─── */
 .sidebar {
   width: 248px;
-  /* Bottom padding clears the floating playbar island (66px + its 14px
-     margin) so Settings never ends up underneath it. */
-  padding: 20px 16px 96px;
+  padding: 20px 16px 16px;
   background: var(--panel);
-  border-right: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -662,12 +668,9 @@ input { font-family: inherit; color: inherit; }
 .main-content {
   flex: 1;
   padding: 20px 28px 16px;
-  /* Stop the scroll area above the island rather than letting rows slide
-     under it. The strip this leaves is --bg, same as the content's own
-     background, so the seam is invisible — unlike the sidebar, which is
-     --panel and therefore has to run the full height (it sits behind the
-     island instead). */
-  margin-bottom: 80px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   overflow-y: auto;
   min-width: 0;
 }
@@ -1999,7 +2002,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
    the min only helps once it drops a whole column, which is why a small bump
    off 180px changed nothing on a wide window. */
 #albums-grid:not(.list-mode) {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* 280 not 300: the rounded shell (body padding + gap) trims ~40px off the
+     main column, which at 300px min dropped a whole grid track (3 cols → 2,
+     covers ballooned). 280 restores 3 across on a standard window. */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 22px;
 }
 #albums-grid:not(.list-mode) .playlist-letter { font-size: 56px; }
@@ -2626,13 +2632,13 @@ html.is-playing .equalizer > span { animation-play-state: running; }
    band of --bg under the sidebar's panel. They reserve the island's height as
    bottom padding instead (see .sidebar / .main-content). */
 .playbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 20;
+  /* In-flow bottom row of the shell — no longer a floating fixed island.
+     body's gap separates it from the cards above; nothing sits under it.
+     position:relative anchors the absolute .progress-track to this row
+     (it used to anchor to the old position:fixed playbar). */
+  position: relative;
   height: 66px;
-  margin: 0 14px 14px;
+  margin: 0;
   border-radius: 16px;
   background: var(--panel-elev);
   border: 1px solid var(--border);
@@ -4006,21 +4012,32 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 
 /* Artist detail hero */
 .artist-hero {
+  position: relative;
   display: flex;
-  gap: 24px;
-  margin-bottom: 22px;
-  padding: 12px 4px 24px;
+  gap: 30px;
+  margin-bottom: 26px;
+  padding: 16px 4px 26px;
   border-bottom: 1px solid var(--border);
   align-items: flex-end;
 }
+/* Soft accent halo centered on the (now focal) avatar. */
+.artist-hero::before {
+  content: '';
+  position: absolute; z-index: 0; pointer-events: none;
+  left: 104px; top: 50%; transform: translate(-50%, -50%);
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%);
+  filter: blur(16px);
+}
+.artist-hero > * { position: relative; z-index: 1; }
 .artist-hero-avatar {
-  width: 168px;
-  height: 168px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   background: var(--panel-alt);
   background-size: cover;
   background-position: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 5px color-mix(in srgb, var(--accent) 15%, transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -4049,6 +4066,19 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 .artist-album {
   margin-bottom: 22px;
 }
+/* Heading that separates the Albums group from the Singles & EPs group. */
+.artist-section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin: 8px 6px 14px;
+}
+.artist-section-label + .artist-album { margin-top: 0; }
+.artist-album + .artist-section-label { margin-top: 14px; }
+/* In cards mode the container is a grid; labels must span all columns. */
+#artist-albums.cards-mode .artist-section-label { grid-column: 1 / -1; }
 .artist-album-head {
   display: flex;
   align-items: center;
@@ -4097,6 +4127,58 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 }
 .artist-album-play:hover { color: var(--text-strong); border-color: var(--border-strong); }
 .artist-album-tracks { position: relative; }
+
+/* ── Artist detail: top-tracks columns (local plays vs YT Music) ── */
+.artist-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 32px;
+  margin-bottom: 28px;
+}
+/* When YT Music is off the second column is [hidden]; don't leave a dead half. */
+.artist-cols:has(#artist-ytm-col[hidden]) { grid-template-columns: minmax(0, 620px); }
+.artist-col { min-width: 0; }
+.artist-col-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.artist-col-head h3 { font-size: 14px; font-weight: 600; color: var(--text-strong); }
+.tag-chip {
+  font-size: 9px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--text-dim);
+}
+.tag-chip.local { color: var(--accent); }
+.tag-chip.yt { color: var(--accent-fav); border-color: color-mix(in srgb, var(--accent-fav) 40%, transparent); }
+.rankcol { display: flex; flex-direction: column; }
+.rankrow {
+  display: grid; grid-template-columns: 20px 32px minmax(0, 1fr) auto;
+  align-items: center; gap: 11px; padding: 6px 8px; border-radius: 6px; cursor: pointer;
+}
+.rankrow:hover { background: var(--hover-bg); }
+.rankrow .rk { font-size: 12px; color: var(--text-faint); text-align: center; font-variant-numeric: tabular-nums; font-weight: 500; }
+.rankrow:first-child .rk { color: var(--accent); }
+.rankrow .rk-cover { width: 32px; height: 32px; border-radius: 4px; background: var(--panel-alt); background-size: cover; background-position: center; }
+.rankrow .rk-body { min-width: 0; }
+.rankrow .rk-title { font-size: 12.5px; font-weight: 500; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rankrow .rk-sub { font-size: 10.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rankrow .rk-stat { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-size: 10px; color: var(--text-dim); font-variant-numeric: tabular-nums; min-width: 58px; }
+.rankrow .rk-bar { width: 56px; height: 3px; border-radius: 2px; background: var(--panel-alt); overflow: hidden; }
+.rankrow .rk-bar > i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.rk-inlib { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--accent-ok); white-space: nowrap; }
+.rk-add { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-muted); background: transparent; border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-family: inherit; cursor: pointer; white-space: nowrap; }
+.rk-add:hover { color: var(--text-strong); border-color: var(--border-strong); }
+.rk-add.is-queued { color: var(--accent-ok); border-color: color-mix(in srgb, var(--accent-ok) 40%, transparent); cursor: default; }
+.rk-note { font-size: 11.5px; color: var(--text-faint); padding: 10px 8px; }
+.rk-skeleton { height: 44px; border-radius: 6px; margin: 3px 0; opacity: 0.4;
+  background: linear-gradient(90deg, var(--panel-alt), var(--panel) 50%, var(--panel-alt));
+  background-size: 200% 100%; animation: rk-shimmer 1.2s infinite; }
+@keyframes rk-shimmer { to { background-position: -200% 0; } }
+.artist-view-seg { margin-left: auto; }
+
+/* Album cards grid (artist detail, Cards mode) */
+#artist-albums.cards-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
+.aa-card { cursor: pointer; }
+.aa-card-cover { width: 100%; aspect-ratio: 1/1; border-radius: 8px; margin-bottom: 10px; background: var(--panel-alt); background-size: cover; background-position: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); transition: transform 0.15s; }
+.aa-card:hover .aa-card-cover { transform: translateY(-3px); }
+.aa-card-name { font-size: 12.5px; font-weight: 500; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aa-card-meta { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.6px; }
 
 /* Scrollbars (subtle, mono) */
 ::-webkit-scrollbar { width: 8px; height: 8px; }

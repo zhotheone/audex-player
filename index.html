@@ -546,9 +546,31 @@
           </div>
         </div>
 
+        <!-- Top tracks: local plays vs YouTube Music popularity, side by side. -->
+        <div class="artist-cols">
+          <section class="artist-col">
+            <div class="artist-col-head">
+              <h3 data-i18n="artist.mostPlayed">Most played</h3>
+              <span class="tag-chip local" data-i18n="artist.yourLibrary">Your library</span>
+            </div>
+            <div id="artist-top-local" class="rankcol"></div>
+          </section>
+          <section class="artist-col" id="artist-ytm-col" hidden>
+            <div class="artist-col-head">
+              <h3 data-i18n="artist.popularYtm">Popular on YT Music</h3>
+              <span class="tag-chip yt" data-i18n="artist.fetched">Fetched</span>
+            </div>
+            <div id="artist-top-ytm" class="rankcol"></div>
+          </section>
+        </div>
+
         <div class="filters">
           <button class="chip active" data-artist-albums-sort="year-desc" data-i18n="sort.yearDesc">Newest first</button>
           <button class="chip" data-artist-albums-sort="year-asc" data-i18n="sort.yearAsc">Oldest first</button>
+          <div class="seg artist-view-seg" id="artist-view-seg">
+            <button class="seg-btn active" data-artist-view="list" data-i18n="view.list">List</button>
+            <button class="seg-btn" data-artist-view="cards" data-i18n="view.cards">Cards</button>
+          </div>
         </div>
 
         <div id="artist-albums"></div>

@@ -613,7 +613,11 @@ function storePath(name) {
 }
 async function writeStoreFile(name, json) {
   const dest = storePath(name);
-  const tmp = dest + '.tmp';
+  // Unique tmp per write: play-log is written on every play event, so two
+  // writes can overlap. A shared "<name>.tmp" lets the first rename move the
+  // file out from under the second, which then fails ENOENT. Keeps the .tmp
+  // suffix so the leftover-tmp test still catches orphans.
+  const tmp = `${dest}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
   try {
     await fs.promises.mkdir(storeDir(), { recursive: true });
     await fs.promises.writeFile(tmp, json, 'utf8');
@@ -1804,6 +1808,32 @@ ipcMain.handle('ytm:artistReleases', async (event, browseId) => {
       releases.push({ albumBrowseId, title: ytmRunsText(r.title), kind, year, thumb: ytmFirstThumb(r) });
     });
     return { success: true, releases };
+  } catch (e) {
+    return { success: false, error: String(e.message || e) };
+  }
+});
+
+// Top songs off the artist browse page (the "Songs" shelf). Same browse call
+// as artistReleases but walks the song rows instead of the album cards. Rows
+// are collected in document order, so the top-songs shelf (first on the page)
+// comes first; slice keeps the headline tracks.
+ipcMain.handle('ytm:artistTopSongs', async (event, browseId) => {
+  const id = String(browseId || '').trim();
+  if (!id) return { success: false, error: 'No artist id' };
+  try {
+    const data = await ytmInnertube('browse', { browseId: id });
+    const songs = [];
+    const seen = new Set();
+    ytmWalk(data, n => {
+      const r = n.musicResponsiveListItemRenderer;
+      if (!r) return;
+      const vid = r.playlistItemData && r.playlistItemData.videoId;
+      const title = ytmFlexText(r, 0);
+      if (!vid || !title || seen.has(vid)) return;
+      seen.add(vid);
+      songs.push({ videoId: vid, title, sub: ytmFlexText(r, 1), thumb: ytmFirstThumb(r) });
+    });
+    return { success: true, songs: songs.slice(0, 6) };
   } catch (e) {
     return { success: false, error: String(e.message || e) };
   }

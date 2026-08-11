@@ -228,6 +228,8 @@ let albumsSort = ['alpha', 'tracks', 'recent'].includes(settings.albumsSort) ? s
 let albumsViewMode = 'cards';        // 'cards' | 'list'
 let artistsSort = 'alpha';           // 'alpha' | 'tracks' | 'recent'
 let artistAlbumsSort = 'year-desc';  // 'year-desc' | 'year-asc' — album order within an artist
+let artistView = 'list';             // 'list' | 'cards' — album layout on the artist page
+const artistYtmCache = new Map();    // artist name → { state, songs } for the "Popular on YT Music" column
 let artistsList = [];                // current filtered+sorted list of artist objects
 let artistsCursor = 0;               // how many of artistsList have been mounted in the grid
 let artistsObserver = null;          // IntersectionObserver on the sentinel
@@ -713,6 +715,19 @@ const I18N = {
     'btn.minimize': 'Minimize',
     'btn.portrait': 'Mobile mode',
     'btn.album': 'Album',
+    'btn.single': 'Single',
+    'artist.albums': 'Albums',
+    'artist.singles': 'Singles & EPs',
+    'artist.mostPlayed': 'Most played',
+    'artist.popularYtm': 'Popular on YT Music',
+    'artist.yourLibrary': 'Your library',
+    'artist.fetched': 'Fetched',
+    'artist.inLibrary': 'In library',
+    'artist.queue': 'Queue',
+    'artist.queued': 'Queued',
+    'artist.noPlays': 'No plays logged for this artist yet.',
+    'artist.ytmEmpty': 'No results from YouTube Music.',
+    'artist.ytmError': 'Couldn’t reach YouTube Music.',
     'btn.favorite': 'Favorite',
     'btn.unfavorite': 'Remove from favorites',
     'btn.favoriteOn': 'Favorited',
@@ -1354,6 +1369,19 @@ const I18N = {
     'btn.minimize': 'Згорнути',
     'btn.portrait': 'Мобільний режим',
     'btn.album': 'Альбом',
+    'btn.single': 'Сингл',
+    'artist.albums': 'Альбоми',
+    'artist.singles': 'Сингли та EP',
+    'artist.mostPlayed': 'Найпрослуханіші',
+    'artist.popularYtm': 'Популярне на YT Music',
+    'artist.yourLibrary': 'Ваша бібліотека',
+    'artist.fetched': 'Отримано',
+    'artist.inLibrary': 'У бібліотеці',
+    'artist.queue': 'У чергу',
+    'artist.queued': 'Додано',
+    'artist.noPlays': 'Ще немає прослуховувань цього виконавця.',
+    'artist.ytmEmpty': 'Немає результатів з YouTube Music.',
+    'artist.ytmError': 'Не вдалося зʼєднатися з YouTube Music.',
     'btn.favorite': 'До улюбленого',
     'btn.unfavorite': 'Прибрати з улюбленого',
     'btn.favoriteOn': 'В улюбленому',
@@ -4775,7 +4803,8 @@ function renderArtistDetail(name) {
 
   const container = $('artist-albums');
   container.innerHTML = '';
-  byAlbum.forEach((alb, gIdx) => {
+
+  const makeBlock = (alb, playLabel) => {
     const block = document.createElement('div');
     block.className = 'artist-album';
     const coverStyle = alb.cover ? `background-image:url('${alb.cover}')` : '';
@@ -4790,9 +4819,9 @@ function renderArtistDetail(name) {
           <span>${alb.tracks.length} ${pluralTracks(alb.tracks.length)}</span>
         </div>
       </div>
-      <button class="artist-album-play" data-album-idx="${gIdx}">
+      <button class="artist-album-play">
         <svg class="i" width="10" height="10"><use href="#i-play"/></svg>
-        ${escapeHtml(tr('btn.album'))}
+        ${escapeHtml(playLabel)}
       </button>
     `;
     const gotoAlbum = e => {
@@ -4815,8 +4844,52 @@ function renderArtistDetail(name) {
       list.appendChild(renderTrackRow(t, j, artist.tracks));
     });
     block.appendChild(list);
-    container.appendChild(block);
-  });
+    return block;
+  };
+
+  const sectionLabel = text => {
+    const el = document.createElement('div');
+    el.className = 'artist-section-label';
+    el.textContent = text;
+    return el;
+  };
+
+  // Cards mode: a compact cover grid instead of the expanded track lists.
+  const makeCard = alb => {
+    const card = document.createElement('div');
+    card.className = 'aa-card';
+    card.innerHTML = `
+      <div class="aa-card-cover" style="${alb.cover ? `background-image:url('${alb.cover}')` : ''}"></div>
+      <div class="aa-card-name" title="${escapeHtml(alb.album)}">${escapeHtml(alb.album)}</div>
+      <div class="aa-card-meta">${[alb.year ? String(alb.year) : '', `${alb.tracks.length} ${pluralTracks(alb.tracks.length)}`].filter(Boolean).map(escapeHtml).join(' · ')}</div>
+    `;
+    card.addEventListener('click', () => {
+      if (!alb.tracks.length) return;
+      activeAlbumKey = albumKeyFor(alb.tracks[0]);
+      setView('album-detail');
+    });
+    return card;
+  };
+  const cardsMode = artistView === 'cards';
+  container.classList.toggle('cards-mode', cardsMode);
+  const renderRelease = (alb, isSingle) =>
+    cardsMode ? makeCard(alb) : makeBlock(alb, isSingle ? tr('btn.single') : tr('btn.album'));
+
+  // A release with 1–2 tracks is a single/EP, not a full album — group them
+  // under their own heading so a one-song release stops masquerading as an
+  // album block. Both lists stay in the byAlbum year order.
+  const albums = byAlbum.filter(a => a.tracks.length >= 3);
+  const singles = byAlbum.filter(a => a.tracks.length <= 2);
+  // Heading over albums only earns its keep when there's a singles group to
+  // divide it from; a lone list needs no label.
+  if (albums.length && singles.length) container.appendChild(sectionLabel(tr('artist.albums')));
+  albums.forEach(alb => container.appendChild(renderRelease(alb, false)));
+  if (singles.length) {
+    container.appendChild(sectionLabel(tr('artist.singles')));
+    singles.forEach(alb => container.appendChild(renderRelease(alb, true)));
+  }
+
+  renderArtistTops(artist);
 
   $('btn-artist-play').onclick = () => {
     if (artist.tracks.length > 0) playTrackByPath(artist.tracks[0].path, artist.tracks);
@@ -4830,6 +4903,118 @@ function renderArtistDetail(name) {
     }
   };
   $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
+}
+
+// ── Artist top-tracks columns (local plays | YouTube Music popularity) ──
+const mmss = sec => { sec = Math.round(sec || 0); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
+// Loose title match for library ↔ YT Music: drop bracketed "(feat…)" / "[…]"
+// noise and collapse whitespace so "Song (feat. X)" ≈ "Song".
+const normTitle = s => (s || '').toLowerCase().replace(/[\(\[].*?[\)\]]/g, '').replace(/\s+/g, ' ').trim();
+
+function renderArtistTops(artist) {
+  renderArtistTopLocal(artist);
+  const col = $('artist-ytm-col');
+  if (!settings.ytMusic) { col.hidden = true; return; }
+  col.hidden = false;
+  renderArtistTopYtm(artist);
+}
+
+function renderArtistTopLocal(artist) {
+  const box = $('artist-top-local');
+  const paths = new Set(artist.tracks.map(t => t.path));
+  const counts = new Map();
+  for (const e of playLog) { if (paths.has(e.p)) counts.set(e.p, (counts.get(e.p) || 0) + 1); }
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  box.innerHTML = '';
+  if (!top.length) { box.innerHTML = `<div class="rk-note">${escapeHtml(tr('artist.noPlays'))}</div>`; return; }
+  const max = top[0][1];
+  top.forEach(([p, c], i) => {
+    const t = artist.tracks.find(x => x.path === p);
+    if (!t) return;
+    const row = document.createElement('div');
+    row.className = 'rankrow';
+    row.innerHTML = `
+      <span class="rk">${i + 1}</span>
+      <span class="rk-cover" style="${t.cover ? `background-image:url('${t.cover}')` : ''}"></span>
+      <span class="rk-body">
+        <div class="rk-title">${escapeHtml(t.title)}</div>
+        <div class="rk-sub">${escapeHtml([t.album, mmss(t.duration)].filter(Boolean).join(' · '))}</div>
+      </span>
+      <span class="rk-stat">${c} ${escapeHtml(tr('report.plays'))}<span class="rk-bar"><i style="width:${Math.round(c / max * 100)}%"></i></span></span>
+    `;
+    row.addEventListener('click', () => playTrackByPath(t.path, artist.tracks));
+    box.appendChild(row);
+  });
+}
+
+async function renderArtistTopYtm(artist) {
+  const box = $('artist-top-ytm');
+  const name = artist.name;
+  const cached = artistYtmCache.get(name);
+  if (cached) { paintArtistYtm(box, cached, artist); return; }
+  box.innerHTML = '<div class="rk-skeleton"></div>'.repeat(4);
+  try {
+    const s = await window.electronAPI.ytmSearchArtists(name);
+    if (activeArtistName !== name) return;   // navigated away mid-fetch
+    const browseId = s && s.success && s.artists[0] && s.artists[0].browseId;
+    if (!browseId) { const r = { state: 'empty' }; artistYtmCache.set(name, r); paintArtistYtm(box, r, artist); return; }
+    const res = await window.electronAPI.ytmArtistTopSongs(browseId);
+    if (activeArtistName !== name) return;
+    const r = (res && res.success && res.songs.length) ? { state: 'ok', songs: res.songs } : { state: 'empty' };
+    artistYtmCache.set(name, r);
+    paintArtistYtm(box, r, artist);
+  } catch (_) {
+    const r = { state: 'error' };
+    artistYtmCache.set(name, r);
+    if (activeArtistName === name) paintArtistYtm(box, r, artist);
+  }
+}
+
+function paintArtistYtm(box, result, artist) {
+  box.innerHTML = '';
+  if (result.state !== 'ok') {
+    box.innerHTML = `<div class="rk-note">${escapeHtml(tr(result.state === 'error' ? 'artist.ytmError' : 'artist.ytmEmpty'))}</div>`;
+    return;
+  }
+  const libTitles = new Set(artist.tracks.map(t => normTitle(t.title)));
+  result.songs.forEach((song, i) => {
+    const inLib = libTitles.has(normTitle(song.title));
+    const row = document.createElement('div');
+    row.className = 'rankrow';
+    row.innerHTML = `
+      <span class="rk">${i + 1}</span>
+      <span class="rk-cover" style="${song.thumb ? `background-image:url('${song.thumb}')` : ''}"></span>
+      <span class="rk-body">
+        <div class="rk-title">${escapeHtml(song.title)}</div>
+        <div class="rk-sub">${escapeHtml(song.sub || 'YouTube Music')}</div>
+      </span>
+      ${inLib
+        ? `<span class="rk-inlib"><svg class="i" width="12" height="12"><use href="#i-check"/></svg>${escapeHtml(tr('artist.inLibrary'))}</span>`
+        : `<button class="rk-add"><svg class="i" width="11" height="11"><use href="#i-plus"/></svg>${escapeHtml(tr('artist.queue'))}</button>`}
+    `;
+    if (!inLib) {
+      const btn = row.querySelector('.rk-add');
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (queueArtistYtmSong(song, artist.name) !== false) {
+          btn.classList.add('is-queued');
+          btn.innerHTML = `<svg class="i" width="11" height="11"><use href="#i-check"/></svg>${escapeHtml(tr('artist.queued'))}`;
+        }
+      });
+    }
+    box.appendChild(row);
+  });
+}
+
+// Enqueue one YT Music song through the same download path the Parsing tab uses.
+function queueArtistYtmSong(song, artistName) {
+  const t = { id: song.videoId, title: song.title, artist: artistName, url: `https://music.youtube.com/watch?v=${song.videoId}` };
+  if (isYtmTrackInQueue(t)) return false;
+  downloadQueue.push(buildQueueItemFromYtm(t, 1));
+  renderQueue();
+  updateQueueTabBadge();
+  startQueueWorker();
+  return true;
 }
 
 // ── Albums ──
@@ -7955,6 +8140,14 @@ document.querySelectorAll('#view-artist-detail .chip').forEach(chip => {
     document.querySelectorAll('#view-artist-detail .chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     artistAlbumsSort = chip.dataset.artistAlbumsSort;
+    if (activeArtistName) renderArtistDetail(activeArtistName);
+  });
+});
+document.querySelectorAll('#artist-view-seg .seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#artist-view-seg .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    artistView = btn.dataset.artistView;
     if (activeArtistName) renderArtistDetail(activeArtistName);
   });
 });

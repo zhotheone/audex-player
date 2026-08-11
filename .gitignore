@@ -7,3 +7,8 @@ yt-dlp-bundle/
 build-info.json
 fpcalc-bundle/
 pixelplayer-bundle/
+
+# Local artist-page prototype built from real personal listening data — never publish to the fork
+docs/artist-assets/
+docs/artist-data.js
+docs/artist-page-real.html
