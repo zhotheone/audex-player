@@ -72,6 +72,46 @@ function warnSaveFailed(what, err) {
   toast(tr('toast.saveFailed'), { type: 'error' });
 }
 
+// Equalizer band frequencies (Hz), matching Spotify's 6-band graphic EQ. The
+// first band is a low shelf, the last a high shelf, the rest peaking bells.
+const EQ_BANDS = [60, 150, 400, 1000, 2400, 15000];
+const EQ_GAIN_MAX = 12;   // dB, slider range is ±this
+// Preset name → per-band gain (dB), ordered to EQ_BANDS. 'custom' is implicit:
+// dragging any slider stops matching a named preset.
+const EQ_PRESETS = {
+  flat:            [0, 0, 0, 0, 0, 0],
+  'bass-booster':  [6, 5, 3, 1, 0, 0],
+  'bass-reducer':  [-6, -5, -3, -1, 0, 0],
+  'treble-booster':[0, 0, 0, 2, 4, 6],
+  'treble-reducer':[0, 0, 0, -2, -4, -6],
+  'vocal-booster': [-2, -3, 3, 4, 3, -1],
+  acoustic:        [4, 3, 1, 0, 2, 3],
+  classical:       [5, 4, 3, -1, -1, 4],
+  dance:           [4, 6, 2, 0, 3, 4],
+  deep:            [5, 3, 1, 2, -2, -4],
+  electronic:      [4, 3, 0, -2, 2, 5],
+  'hip-hop':       [5, 4, 1, 2, -1, 3],
+  jazz:            [4, 2, -1, 1, 3, 4],
+  latin:           [4, 0, -2, -2, 0, 5],
+  loudness:        [6, 4, 0, 0, 2, 5],
+  lounge:          [-3, -1, 1, 3, 0, -2],
+  piano:           [3, 1, 2, 3, 4, 3],
+  pop:             [-1, 2, 4, 3, 0, -1],
+  rnb:             [5, 6, 2, -2, 2, 4],
+  rock:            [5, 3, -1, -1, 2, 4],
+  'small-speakers':[5, 4, 2, 0, -2, -3],
+  'spoken-word':   [-3, -1, 2, 4, 2, -2],
+};
+const EQ_PRESET_LABELS = {
+  flat: 'Flat', 'bass-booster': 'Bass booster', 'bass-reducer': 'Bass reducer',
+  'treble-booster': 'Treble booster', 'treble-reducer': 'Treble reducer',
+  'vocal-booster': 'Vocal booster', acoustic: 'Acoustic', classical: 'Classical',
+  dance: 'Dance', deep: 'Deep', electronic: 'Electronic', 'hip-hop': 'Hip-Hop',
+  jazz: 'Jazz', latin: 'Latin', loudness: 'Loudness', lounge: 'Lounge',
+  piano: 'Piano', pop: 'Pop', rnb: 'R&B', rock: 'Rock',
+  'small-speakers': 'Small speakers', 'spoken-word': 'Spoken word', custom: 'Custom',
+};
+
 // State
 let libraryMeta = readStore('library-meta', LS.libraryMeta) || [];
 let favorites = JSON.parse(localStorage.getItem(LS.favorites) || '[]');
@@ -96,6 +136,7 @@ let settings = Object.assign({
   crossfadeSec: 3,        // 0–10, length of the blend; 0 = instant switch
   repeatOneResetOnSkip: true, // manually skipping while "repeat one" is on drops it to "repeat"
   volumeWheelStep: 0.05,  // 0.01–0.2, volume change per mouse-wheel notch on the slider
+  eq: { enabled: false, preset: 'flat', gains: [0, 0, 0, 0, 0, 0] },  // graphic equalizer
   acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
   ytMusic: false,        // "YouTube Music" sidebar tab (the in-app browser)
@@ -113,6 +154,12 @@ let settings = Object.assign({
   bgFit: 'cover',            // cover | contain | center | tile
   surfaceAlpha: 100,         // % opacity of sidebar/playbar/cards over the image
 }, JSON.parse(localStorage.getItem(LS.settings) || '{}'));
+// Shallow-merge above replaces `eq` wholesale — normalize so an old/partial
+// saved object still has a valid gains array of the right length.
+settings.eq = Object.assign({ enabled: false, preset: 'flat', gains: [] }, settings.eq || {});
+if (!Array.isArray(settings.eq.gains) || settings.eq.gains.length !== EQ_BANDS.length) {
+  settings.eq.gains = new Array(EQ_BANDS.length).fill(0);
+}
 let recents = JSON.parse(localStorage.getItem(LS.recents) || '[]');
 // Format names are the same in every language, so they stay out of the i18n tables.
 const DL_FORMAT_LABELS = { opus: 'Opus', flac: 'FLAC', m4a: 'M4A' };
@@ -237,6 +284,11 @@ let artistsObserver = null;          // IntersectionObserver on the sentinel
 // ── DOM ──
 const $ = id => document.getElementById(id);
 const audio = $('audio-player');
+// Needed so the equalizer's Web Audio graph doesn't mute cross-origin sources.
+// LAN peer streams send Access-Control-Allow-Origin:*, and file:/blob: are
+// same-origin, so this is safe for every source we play and must be set before
+// any src is assigned (changing it later forces a reload).
+audio.crossOrigin = 'anonymous';
 const root = document.documentElement;
 
 // A modal opened from a click-driven action (closing a popover first, etc.)
@@ -811,6 +863,13 @@ const I18N = {
     'setting.surfaceAlpha': 'Panel opacity',
     'setting.surfaceAlphaDesc': 'How much of the background shows through the sidebar and player bar.',
     'section.music': 'Music',
+    'section.library': 'Library',
+    'section.playback': 'Playback',
+    'section.equalizer': 'Equalizer',
+    'section.integrations': 'Integrations',
+    'setting.eqEnable': 'Equalizer',
+    'setting.eqEnableDesc': 'Shape the sound with a graphic equalizer. Pick a preset or drag the bands. Applies to everything you play.',
+    'setting.eqPreset': 'Preset',
     'section.downloads': 'Download from the internet',
     'section.sidebar': 'Sidebar',
     'section.language': 'Language',
@@ -1465,6 +1524,13 @@ const I18N = {
     'setting.surfaceAlpha': 'Непрозорість панелей',
     'setting.surfaceAlphaDesc': 'Наскільки крізь бічне меню та панель плеєра видно тло.',
     'section.music': 'Музика',
+    'section.library': 'Бібліотека',
+    'section.playback': 'Відтворення',
+    'section.equalizer': 'Еквалайзер',
+    'section.integrations': 'Інтеграції',
+    'setting.eqEnable': 'Еквалайзер',
+    'setting.eqEnableDesc': 'Налаштуйте звучання графічним еквалайзером. Оберіть пресет або перетягніть смуги. Діє на все, що ви відтворюєте.',
+    'setting.eqPreset': 'Пресет',
     'section.downloads': 'Завантаження з інтернету',
     'section.sidebar': 'Бічна панель',
     'section.language': 'Мова',
@@ -5290,12 +5356,19 @@ let targetVolume = 1;
 
 function rampVolume(el, to, ms, onDone) {
   const from = el.volume;
+  const rising = to >= from;
   const start = performance.now();
   let id = 0;
   const step = (now) => {
     // ms === 0 (crossfade length 0) would make this NaN — jump straight to the end.
     const k = ms > 0 ? Math.min(1, (now - start) / ms) : 1;
-    try { el.volume = Math.max(0, Math.min(1, from + (to - from) * k)); } catch (_) {}
+    // Equal-power (sin/cos) curve, not linear: an outgoing cos and incoming sin
+    // ramp keep a²+b² constant, so perceived loudness holds steady through the
+    // crossover. A linear amplitude ramp instead dips to ~71% at the midpoint —
+    // that mid-fade dip is the audible "switch".
+    const g = rising ? Math.sin(k * Math.PI / 2) : Math.cos(k * Math.PI / 2);
+    const v = rising ? from + (to - from) * g : to + (from - to) * g;
+    try { el.volume = Math.max(0, Math.min(1, v)); } catch (_) {}
     if (k < 1) id = requestAnimationFrame(step);
     else if (onDone) onDone();
   };
@@ -6663,6 +6736,12 @@ audio.addEventListener('timeupdate', () => {
     const sec = Math.floor(cur);
     if (sec !== discordPreviewSec) { discordPreviewSec = sec; renderDiscordPreviewOnly(); }
   }
+});
+// The EQ's AudioContext starts (and can later go) suspended under the autoplay
+// policy; a suspended context silences the whole graph. Resume on every play so
+// no playback path — button, keyboard, crossfade swap — comes out muted.
+audio.addEventListener('play', () => {
+  if (eqCtx && eqCtx.state === 'suspended') eqCtx.resume().catch(() => {});
 });
 audio.addEventListener('ended', () => {
   plFinalize();
@@ -8435,6 +8514,163 @@ function renderVolWheelStep() {
   if (out) out.textContent = `${Math.round(step * 100)}%`;
 }
 
+// ── Equalizer ──
+// A Web Audio biquad chain spliced onto the main <audio>. Built lazily the first
+// time the EQ is switched on: createMediaElementSource is one-shot per element
+// and permanently routes playback through Web Audio, so we defer it until the
+// user opts in. When off, an existing graph is flattened to 0 dB (transparent),
+// not torn down.
+let eqCtx = null, eqSource = null, eqFilters = [];
+
+function clampEqGain(v) { return Math.max(-EQ_GAIN_MAX, Math.min(EQ_GAIN_MAX, Number(v) || 0)); }
+function eqPresetLabel(id) { return EQ_PRESET_LABELS[id] || id; }
+function eqFreqLabel(f) { return f >= 1000 ? (f / 1000) + 'k' : String(f); }
+
+function ensureEqGraph() {
+  if (eqCtx) return true;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return false;
+  try {
+    eqCtx = new Ctx();
+    eqSource = eqCtx.createMediaElementSource(audio);
+    let node = eqSource;
+    eqFilters = EQ_BANDS.map((freq, i) => {
+      const f = eqCtx.createBiquadFilter();
+      f.type = i === 0 ? 'lowshelf' : i === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
+      f.frequency.value = freq;
+      f.Q.value = 1;
+      f.gain.value = 0;
+      node.connect(f);
+      node = f;
+      return f;
+    });
+    node.connect(eqCtx.destination);
+    return true;
+  } catch (e) {
+    console.warn('EQ init failed:', e);
+    eqCtx = null; eqSource = null; eqFilters = [];
+    return false;
+  }
+}
+
+// Push settings.eq onto the graph. Ramps gains to avoid zipper clicks on drag.
+function applyEq() {
+  const on = !!settings.eq.enabled;
+  if (on && !ensureEqGraph()) return;   // no Web Audio support
+  if (!eqCtx) return;                    // never enabled, no graph — leave audio untouched
+  if (eqCtx.state === 'suspended') eqCtx.resume().catch(() => {});
+  eqFilters.forEach((f, i) => {
+    const g = on ? clampEqGain(settings.eq.gains[i]) : 0;
+    try { f.gain.setTargetAtTime(g, eqCtx.currentTime, 0.02); } catch (_) { f.gain.value = g; }
+  });
+}
+
+function matchEqPreset(gains) {
+  for (const [id, g] of Object.entries(EQ_PRESETS)) {
+    if (g.every((v, i) => v === gains[i])) return id;
+  }
+  return 'custom';
+}
+
+function setEqPreset(id) {
+  const g = EQ_PRESETS[id];
+  if (!g) return;
+  settings.eq.gains = g.slice();
+  settings.eq.preset = id;
+  if (!settings.eq.enabled) settings.eq.enabled = true;   // picking a preset turns EQ on
+  saveSettings();
+  applyEq();
+  renderEqualizer();
+}
+
+// Catmull-Rom spline → cubic bezier, for a smooth EQ response curve.
+function eqCurvePath(pts) {
+  if (pts.length < 2) return '';
+  let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || pts[i + 1];
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+  }
+  return d;
+}
+function drawEqCurve() {
+  const path = $('eq-curve-path');
+  if (!path) return;
+  const n = EQ_BANDS.length;
+  const pts = EQ_BANDS.map((f, i) => [
+    (i / (n - 1)) * 100,
+    50 - (clampEqGain(settings.eq.gains[i]) / EQ_GAIN_MAX) * 44,
+  ]);
+  path.setAttribute('d', eqCurvePath(pts));
+}
+
+let eqUiBuilt = false;
+function buildEqUi() {
+  if (eqUiBuilt) return;
+  const bands = $('eq-bands'), menu = $('eq-preset-menu');
+  if (!bands || !menu) return;
+  menu.innerHTML = Object.keys(EQ_PRESETS).map(id =>
+    `<div class="select-opt" data-eq-preset="${id}">${escapeHtml(eqPresetLabel(id))}</div>`).join('');
+  menu.querySelectorAll('.select-opt').forEach(o => o.addEventListener('click', () => {
+    setEqPreset(o.dataset.eqPreset);
+    $('eq-preset-select').classList.remove('open');
+  }));
+  bands.innerHTML = EQ_BANDS.map((f, i) => `
+    <div class="eq-band">
+      <output class="eq-band-db" id="eq-db-${i}">0</output>
+      <input type="range" class="eq-slider" id="eq-slider-${i}" data-band="${i}"
+             min="${-EQ_GAIN_MAX}" max="${EQ_GAIN_MAX}" step="1" value="0" orient="vertical">
+      <span class="eq-band-hz">${eqFreqLabel(f)}</span>
+    </div>`).join('');
+  bands.querySelectorAll('.eq-slider').forEach(el => {
+    el.addEventListener('input', () => {
+      const i = Number(el.dataset.band);
+      settings.eq.gains[i] = clampEqGain(Number(el.value));
+      settings.eq.preset = matchEqPreset(settings.eq.gains);
+      applyEq();
+      renderEqualizer();
+    });
+    el.addEventListener('change', () => saveSettings());
+  });
+  const tg = $('eq-toggle');
+  if (tg) tg.addEventListener('click', () => {
+    settings.eq.enabled = !settings.eq.enabled;
+    saveSettings();
+    applyEq();
+    renderEqualizer();
+  });
+  const sel = $('eq-preset-select');
+  if (sel) sel.querySelector('.select-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    sel.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#eq-preset-select')) { const s = $('eq-preset-select'); if (s) s.classList.remove('open'); }
+  });
+  eqUiBuilt = true;
+}
+
+function renderEqualizer() {
+  buildEqUi();
+  const tg = $('eq-toggle');
+  if (tg) tg.classList.toggle('on', !!settings.eq.enabled);
+  const panel = $('eq-panel');
+  if (panel) panel.classList.toggle('eq-disabled', !settings.eq.enabled);
+  const cur = $('eq-preset-current');
+  if (cur) cur.textContent = eqPresetLabel(settings.eq.preset);
+  document.querySelectorAll('#eq-preset-menu .select-opt').forEach(o =>
+    o.classList.toggle('active', o.dataset.eqPreset === settings.eq.preset));
+  EQ_BANDS.forEach((f, i) => {
+    const el = $('eq-slider-' + i), db = $('eq-db-' + i);
+    const g = clampEqGain(settings.eq.gains[i]);
+    if (el && el !== document.activeElement) el.value = String(g);
+    if (db) db.textContent = (g > 0 ? '+' : '') + g;
+  });
+  drawEqCurve();
+}
+
 function renderSettings() {
   // Theme combobox
   const themeCurrent = $('theme-current');
@@ -8452,6 +8688,7 @@ function renderSettings() {
   refreshHwAccelToggle();
   renderArtistMinTracks();
   renderCrossfadeLen();
+  renderEqualizer();
   const acoustKey = $('acoustid-key');
   if (acoustKey && acoustKey !== document.activeElement) acoustKey.value = settings.acoustidKey || '';
   // Folder
@@ -10139,6 +10376,7 @@ applyLanSharingVisibility();
 applyLanguage(settings.language);
 splashStatus('splash.loading');
 renderSettings();
+applyEq();   // build + activate the EQ graph if it was left enabled last session
 syncGlobalHotkeys();
 updateShuffleUI();
 updateRepeatUI();

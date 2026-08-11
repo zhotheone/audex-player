@@ -2373,7 +2373,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .settings-panel[hidden] { display: none; }
 .settings-panel > .setting-section:first-child { margin-top: 0; }
-.settings-panel > .setting-section:last-child { margin-bottom: 0; }
+/* No :last-child { margin-bottom: 0 } here: several tabs now stack more than one
+   .settings-panel (Appearance+Hotkeys, Integrations, About), and trimming each
+   panel's last section collapsed the gap between the stacked panels. The 32px
+   section gap is kept throughout; .settings-content's padding handles the edge. */
 
 .scale-stepper {
   display: inline-flex;
@@ -5321,4 +5324,87 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   font-size: 12px;
   color: var(--text-faint);
   padding: 8px 10px;
+}
+
+/* ── Equalizer ──────────────────────────────────────────────────────────── */
+.eq-preset-row { align-items: center; }
+/* Disabled EQ: dim and lock the controls, but leave the on/off toggle live. */
+#eq-panel.eq-disabled .eq-preset-row,
+#eq-panel.eq-disabled .eq-graph { opacity: 0.4; pointer-events: none; }
+
+/* Not a .setting-row, so it needs the row's own padding + separator line. */
+.eq-graph { position: relative; padding: 18px 16px 14px; border-top: 1px solid var(--border); }
+.eq-curve {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%;
+  height: 110px;   /* overlays the slider tracks, not the dB/Hz labels */
+  margin-top: 17px;
+  pointer-events: none;
+  z-index: 0;
+}
+.eq-curve .eq-zero {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  vector-effect: non-scaling-stroke;
+}
+#eq-curve-path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.eq-bands {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 4px;
+}
+.eq-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.eq-band-db {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  min-height: 13px;
+}
+/* Native vertical range. writing-mode:vertical-lr + direction:rtl puts the
+   minimum at the bottom and the maximum at the top in Chromium (Electron).
+   ponytail: relies on Chromium 121+ vertical-range support — fine here, would
+   need a rotate() fallback on an ancient engine. */
+.eq-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 4px;
+  height: 110px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  outline: none;
+  cursor: pointer;
+}
+.eq-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+}
+.eq-band-hz {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }

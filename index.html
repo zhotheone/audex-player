@@ -1103,29 +1103,21 @@
           <svg class="i" width="13" height="13"><use href="#i-sun"/></svg>
           <span data-i18n="section.appearance">Appearance</span>
         </button>
-        <button class="settings-tab" data-tab="music" role="tab">
+        <button class="settings-tab" data-tab="playback" role="tab">
+          <svg class="i" width="13" height="13"><use href="#i-volume"/></svg>
+          <span data-i18n="section.playback">Playback</span>
+        </button>
+        <button class="settings-tab" data-tab="library" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-library"/></svg>
-          <span data-i18n="section.music">Music</span>
+          <span data-i18n="section.library">Library</span>
         </button>
         <button class="settings-tab" data-tab="downloads" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-download"/></svg>
           <span data-i18n="section.downloads">Download from the internet</span>
         </button>
-        <button class="settings-tab" data-tab="sidebar" role="tab">
-          <svg class="i" width="13" height="13"><use href="#i-list"/></svg>
-          <span data-i18n="section.sidebar">Sidebar</span>
-        </button>
-        <button class="settings-tab" data-tab="discord" role="tab">
+        <button class="settings-tab" data-tab="integrations" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-discord"/></svg>
-          <span data-i18n="section.discord">Discord Rich Presence</span>
-        </button>
-        <button class="settings-tab" data-tab="hotkeys" role="tab">
-          <svg class="i" width="13" height="13"><use href="#i-keyboard"/></svg>
-          <span data-i18n="section.hotkeys">Hotkeys</span>
-        </button>
-        <button class="settings-tab" data-tab="system" role="tab">
-          <svg class="i" width="13" height="13"><use href="#i-monitor"/></svg>
-          <span data-i18n="section.system">System</span>
+          <span data-i18n="section.integrations">Integrations</span>
         </button>
         <button class="settings-tab" data-tab="about" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-link"/></svg>
@@ -1306,11 +1298,90 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="music" hidden>
+      <div class="settings-panel" data-panel="playback" hidden>
+      <section class="setting-section">
+        <div class="section-label">
+          <svg class="i" width="11" height="11"><use href="#i-volume"/></svg>
+          <span data-i18n="section.equalizer">Equalizer</span>
+        </div>
+        <div class="setting-card eq-disabled" id="eq-panel">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.eqEnable">Equalizer</div>
+              <div class="setting-desc" data-i18n="setting.eqEnableDesc">Shape the sound with a graphic equalizer. Pick a preset or drag the bands. Applies to everything you play.</div>
+            </div>
+            <button class="toggle" id="eq-toggle"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row eq-preset-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.eqPreset">Preset</div>
+            </div>
+            <div class="select" id="eq-preset-select">
+              <button class="select-btn">
+                <span id="eq-preset-current">Flat</span>
+                <svg class="i" width="13" height="13"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="select-menu" id="eq-preset-menu"></div>
+            </div>
+          </div>
+          <div class="eq-graph">
+            <svg class="eq-curve" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <line class="eq-zero" x1="0" y1="50" x2="100" y2="50"/>
+              <path id="eq-curve-path" d=""/>
+            </svg>
+            <div class="eq-bands" id="eq-bands"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="setting-section">
+        <div class="section-label">
+          <svg class="i" width="11" height="11"><use href="#i-volume"/></svg>
+          <span data-i18n="section.playback">Playback</span>
+        </div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.crossfade">Crossfade between tracks</div>
+              <div class="setting-desc" data-i18n="setting.crossfadeDesc">Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.</div>
+            </div>
+            <button class="toggle" data-setting="crossfade"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row" id="crossfade-len-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.crossfadeLen">Crossfade length</div>
+            </div>
+            <div class="range-ctl">
+              <input type="range" id="crossfade-len" class="ui-range" min="0" max="10" step="0.5" value="3">
+              <output class="range-val" id="crossfade-len-val">3 s</output>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.repeatOneReset">Reset "repeat one" on skip</div>
+              <div class="setting-desc" data-i18n="setting.repeatOneResetDesc">Manually skipping to the next or previous track while "repeat one" is on switches it to "repeat" instead of looping the new track too.</div>
+            </div>
+            <button class="toggle" data-setting="repeat-one-reset"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.volWheelStep">Volume scroll step</div>
+              <div class="setting-desc" data-i18n="setting.volWheelStepDesc">How much each mouse-wheel notch changes the volume while hovering the slider.</div>
+            </div>
+            <div class="range-ctl">
+              <input type="range" id="vol-wheel-step" class="ui-range" min="0.01" max="0.2" step="0.01" value="0.05">
+              <output class="range-val" id="vol-wheel-step-val">5%</output>
+            </div>
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <div class="settings-panel" data-panel="library" hidden>
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-library"/></svg>
-          <span data-i18n="section.music">Music</span>
+          <span data-i18n="section.library">Library</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
@@ -1377,39 +1448,6 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.crossfade">Crossfade between tracks</div>
-              <div class="setting-desc" data-i18n="setting.crossfadeDesc">Tracks blend into each other: the current one fades out while the next fades in. Applies both at the end of a track and when switching manually.</div>
-            </div>
-            <button class="toggle" data-setting="crossfade"><div class="toggle-knob"></div></button>
-          </div>
-          <div class="setting-row" id="crossfade-len-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.crossfadeLen">Crossfade length</div>
-            </div>
-            <div class="range-ctl">
-              <input type="range" id="crossfade-len" class="ui-range" min="0" max="10" step="0.5" value="3">
-              <output class="range-val" id="crossfade-len-val">3 s</output>
-            </div>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.repeatOneReset">Reset "repeat one" on skip</div>
-              <div class="setting-desc" data-i18n="setting.repeatOneResetDesc">Manually skipping to the next or previous track while "repeat one" is on switches it to "repeat" instead of looping the new track too.</div>
-            </div>
-            <button class="toggle" data-setting="repeat-one-reset"><div class="toggle-knob"></div></button>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.volWheelStep">Volume scroll step</div>
-              <div class="setting-desc" data-i18n="setting.volWheelStepDesc">How much each mouse-wheel notch changes the volume while hovering the slider.</div>
-            </div>
-            <div class="range-ctl">
-              <input type="range" id="vol-wheel-step" class="ui-range" min="0.01" max="0.2" step="0.01" value="0.05">
-              <output class="range-val" id="vol-wheel-step-val">5%</output>
-            </div>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
               <div class="setting-label" data-i18n="setting.acoustidKey">AcoustID API key</div>
               <div class="setting-desc" data-i18n="setting.acoustidKeyDesc">Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.</div>
             </div>
@@ -1419,7 +1457,7 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="sidebar" hidden>
+      <div class="settings-panel" data-panel="integrations" hidden>
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-list"/></svg>
@@ -1526,7 +1564,7 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="hotkeys" hidden>
+      <div class="settings-panel" data-panel="appearance" hidden>
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-keyboard"/></svg>
@@ -1543,7 +1581,7 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="system" hidden>
+      <div class="settings-panel" data-panel="about" hidden>
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-monitor"/></svg>
@@ -1561,7 +1599,7 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="discord" hidden>
+      <div class="settings-panel" data-panel="integrations" hidden>
       <section class="setting-section" id="discord-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-discord"/></svg>
