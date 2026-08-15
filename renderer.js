@@ -1059,6 +1059,8 @@ const I18N = {
     'editor.field.comment': 'Comment',
     'editor.commentPh': 'Note about the track…',
     'editor.coverEmbed': 'Embedded cover',
+    'editor.coverNew': 'New cover',
+    'editor.setCover': 'Set from file…',
     'editor.noCover': 'No cover',
     'editor.saving': 'Saving…',
     'cm.applySelectedCover': 'Apply selected cover',
@@ -1737,6 +1739,8 @@ const I18N = {
     'editor.field.comment': 'Коментар',
     'editor.commentPh': 'Нотатка про трек…',
     'editor.coverEmbed': 'Вбудована обкладинка',
+    'editor.coverNew': 'Нова обкладинка',
+    'editor.setCover': 'Вибрати файл…',
     'editor.noCover': 'Немає обкладинки',
     'editor.saving': 'Збереження…',
     'cm.applySelectedCover': 'Застосувати вибрану обкладинку',
@@ -5042,7 +5046,7 @@ async function renderArtistLastfm(name) {
   if (data.tags.length) {
     data.tags.forEach(t => {
       const chip = document.createElement('span');
-      chip.className = 'lfm-tag-chip is-static';
+      chip.className = 'tag-pill';
       chip.textContent = t;
       tagsBox.appendChild(chip);
     });
@@ -5055,7 +5059,7 @@ async function renderArtistLastfm(name) {
       const inLib = known.has(n.toLowerCase());
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'lfm-similar-chip' + (inLib ? '' : ' is-remote');
+      chip.className = 'tag-pill' + (inLib ? '' : ' is-remote');
       chip.textContent = n;
       if (inLib) chip.addEventListener('click', () => { activeArtistName = n; setView('artist-detail'); });
       else chip.title = tr('lastfm.notInLibrary');
@@ -7528,7 +7532,7 @@ function openContextMenu(e, path) {
   $('cm-use-cover').hidden = remote || currentView !== 'album-detail' || !(track && track.cover);
   // Everything below is a local-file operation — a peer's track only has a
   // stream URL, nothing on disk here to tag, reveal, or delete.
-  ['reveal', 'edit-tags', 'fix-tags', 'set-cover-file', 'delete'].forEach(a => {
+  ['reveal', 'edit-tags', 'fix-tags', 'delete'].forEach(a => {
     const el = menu.querySelector(`[data-action="${a}"]`);
     if (el) el.hidden = remote;
   });
@@ -7572,7 +7576,6 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
       if (!track || !track.cover) { toast(tr('albumCover.badSource')); return; }
       pendingAlbumCoverSource = path;
     }
-    else if (action === 'set-cover-file') { if (track) setCoverFromFile([track]); }
     else if (action === 'trim') { if (track) openEditorFor(track); }
     else if (action === 'add-to-playlist') openAddToPlaylistModal(path);
     else if (action === 'remove-from-playlist') {
@@ -7592,9 +7595,12 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
 });
 
 // ── Metadata editor ──
+let pendingEditorCoverUrl = null;
+
 async function openMetadataEditor(path) {
   if (isRemotePath(path)) return;   // tags live on the owning device's disk
   pendingMetadataPath = path;
+  pendingEditorCoverUrl = null;
   let meta = trackByPath(path);
   // Refresh from disk for full tag set
   const fresh = await window.electronAPI.parseMetadata(path);
@@ -7602,12 +7608,10 @@ async function openMetadataEditor(path) {
   $('md-title').value = meta.title || '';
   $('md-artist').value = meta.artist || '';
   $('md-album').value = meta.album || '';
-  $('md-album-artist').value = meta.albumArtist || '';
   $('md-year').value = meta.year || '';
   $('md-genre').value = meta.genre || '';
   $('md-track-no').value = meta.trackNo || '';
   $('md-disc-no').value = meta.discNo || '';
-  $('md-comment').value = meta.comment || '';
   const cover = $('editor-cover');
   if (meta.cover) {
     cover.style.backgroundImage = `url('${meta.cover}')`;
@@ -7629,6 +7633,17 @@ async function openMetadataEditor(path) {
 }
 $('btn-close-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
 $('btn-cancel-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
+
+$('btn-set-cover-file').addEventListener('click', async () => {
+  if (!window.electronAPI.chooseImage) return;
+  const res = await window.electronAPI.chooseImage();
+  if (!res || res.canceled || !res.dataUrl) return;
+  pendingEditorCoverUrl = res.dataUrl;
+  const cover = $('editor-cover');
+  cover.style.backgroundImage = `url('${res.dataUrl}')`;
+  $('editor-cover-letter').textContent = '';
+  $('editor-cover-tag').textContent = tr('editor.coverNew');
+});
 
 // MusicBrainz: search recordings and prompt user with top 5 results to apply.
 $('btn-mb-editor').addEventListener('click', async () => {
@@ -7718,7 +7733,7 @@ $('btn-lastfm-editor').addEventListener('click', async () => {
     tags.forEach(name => {
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'lfm-tag-chip';
+      chip.className = 'tag-pill';
       chip.textContent = name;
       chip.addEventListener('click', () => { $('md-genre').value = name; });
       tagBox.appendChild(chip);
@@ -7742,15 +7757,16 @@ $('btn-save-editor').addEventListener('click', async () => {
     title: $('md-title').value,
     artist: $('md-artist').value,
     album: $('md-album').value,
-    albumArtist: $('md-album-artist').value,
     year: $('md-year').value,
     genre: $('md-genre').value,
     trackNo: $('md-track-no').value,
     discNo: $('md-disc-no').value,
-    comment: $('md-comment').value,
   };
   const res = await window.electronAPI.writeMetadata(pendingMetadataPath, tags);
   if (res.success) {
+    if (pendingEditorCoverUrl) {
+      await window.electronAPI.writeCover(pendingMetadataPath, pendingEditorCoverUrl);
+    }
     status.textContent = tr('editor.saved');
     status.className = 'editor-foot-status ok';
     // update in-memory library
@@ -7760,13 +7776,16 @@ $('btn-save-editor').addEventListener('click', async () => {
         title: tags.title || t.title,
         artist: tags.artist || t.artist,
         album: tags.album || t.album,
-        albumArtist: tags.albumArtist,
         year: tags.year,
         genre: tags.genre,
         trackNo: tags.trackNo,
         discNo: tags.discNo,
-        comment: tags.comment,
       });
+      if (pendingEditorCoverUrl) {
+        t.cover = pendingEditorCoverUrl;
+        t.hasCover = true;
+        coverCache[pendingMetadataPath] = pendingEditorCoverUrl;
+      }
       saveLibrary();
       refreshCurrentViewRows();
       if (currentTrack && currentTrack.path === pendingMetadataPath) updateNowPlayingUI(t);

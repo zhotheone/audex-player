@@ -1764,11 +1764,11 @@
     <div class="editor-card">
       <div class="editor-head">
         <div class="editor-title">
-          <svg class="i" width="14" height="14"><use href="#i-edit"/></svg>
+          <div class="editor-icon-badge"><svg class="i" width="18" height="18"><use href="#i-edit"/></svg></div>
           <span data-i18n="editor.title">Edit tags</span>
-          <span class="editor-tag">ID3v2.4</span>
+          <span class="editor-tag tag-pill">ID3v2.4</span>
         </div>
-        <button class="btn-ic" id="btn-close-editor"><svg class="i" width="14" height="14"><use href="#i-close"/></svg></button>
+        <button class="btn-ic" id="btn-close-editor" title="Close"><svg class="i" width="16" height="16"><use href="#i-close"/></svg></button>
       </div>
 
       <div class="editor-body">
@@ -1778,6 +1778,7 @@
             <span class="editor-cover-letter" id="editor-cover-letter"></span>
             <div class="editor-cover-tag" id="editor-cover-tag">—</div>
           </div>
+          <button class="btn-ghost editor-cover-btn" id="btn-set-cover-file" type="button"><svg class="i" width="14" height="14"><use href="#i-image"/></svg><span data-i18n="editor.setCover">Set from file…</span></button>
         </div>
 
         <div class="editor-fields">
@@ -1789,15 +1790,9 @@
             <div class="field-label" data-i18n="editor.field.artist">Artist</div>
             <input type="text" class="field-input" id="md-artist">
           </div>
-          <div class="field-row">
-            <div class="field">
-              <div class="field-label" data-i18n="editor.field.album">Album</div>
-              <input type="text" class="field-input" id="md-album">
-            </div>
-            <div class="field">
-              <div class="field-label" data-i18n="editor.field.albumArtist">Album artist</div>
-              <input type="text" class="field-input" id="md-album-artist">
-            </div>
+          <div class="field">
+            <div class="field-label" data-i18n="editor.field.album">Album</div>
+            <input type="text" class="field-input" id="md-album">
           </div>
           <div class="field-row">
             <div class="field">
@@ -1820,10 +1815,6 @@
               <input type="text" class="field-input" id="md-disc-no">
             </div>
           </div>
-          <div class="field">
-            <div class="field-label" data-i18n="editor.field.comment">Comment</div>
-            <textarea class="field-input field-textarea" id="md-comment" placeholder="Note about the track…" data-i18n-placeholder="editor.commentPh"></textarea>
-          </div>
           <div class="mb-results" id="md-mb-results" hidden>
             <div class="mb-results-head" data-i18n="editor.mbChoose">MusicBrainz matches:</div>
             <div class="mb-results-list" id="md-mb-list"></div>
@@ -1835,8 +1826,8 @@
       <div class="editor-foot">
         <div class="editor-foot-status" id="editor-status"></div>
         <div class="editor-foot-actions">
-          <button class="btn-ghost" id="btn-mb-editor" data-i18n="editor.musicbrainz" title="Look up track metadata on MusicBrainz" data-i18n-title="editor.musicbrainzHint">MusicBrainz</button>
-          <button class="btn-ghost" id="btn-lastfm-editor" data-i18n="editor.lastfm" title="Fetch name corrections and genre tags from Last.fm" data-i18n-title="editor.lastfmHint">Last.fm</button>
+          <button class="btn-ghost" id="btn-mb-editor" data-i18n="editor.musicbrainz" title="Look up track metadata on MusicBrainz" data-i18n-title="editor.musicbrainzHint"><svg class="i" width="14" height="14"><use href="#i-search"/></svg> <span>MusicBrainz</span></button>
+          <button class="btn-ghost" id="btn-lastfm-editor" data-i18n="editor.lastfm" title="Fetch name corrections and genre tags from Last.fm" data-i18n-title="editor.lastfmHint"><svg class="i" width="14" height="14"><use href="#i-sparkle"/></svg> <span>Last.fm</span></button>
           <button class="btn-ghost" id="btn-cancel-editor" data-i18n="btn.cancel">Cancel</button>
           <button class="btn-solid" id="btn-save-editor" data-i18n="btn.save">Save</button>
         </div>
@@ -1856,7 +1847,6 @@
     <div class="cm-divider" id="cm-div-2"></div>
     <button class="cm-item cm-highlight" data-action="edit-tags"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.editTags">Edit tags…</span><span class="cm-sh">⌘E</span></button>
     <button class="cm-item" data-action="use-cover" id="cm-use-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.useAsAlbumCover">Use as album cover</span></button>
-    <button class="cm-item" data-action="set-cover-file"><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.setCoverFromFile">Set cover from file…</span></button>
     <button class="cm-item" data-action="trim" id="cm-trim" hidden><svg class="i" width="11" height="11"><use href="#i-scissors"/></svg><span data-i18n="cm.trim">Trim track…</span></button>
     <div class="cm-divider" id="cm-div-3"></div>
     <button class="cm-item cm-danger" data-action="delete"><svg class="i" width="11" height="11"><use href="#i-trash"/></svg><span data-i18n="cm.delete">Remove from library</span><span class="cm-sh">⌫</span></button>
