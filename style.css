@@ -5558,13 +5558,24 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   display: flex;
   flex-wrap: nowrap;
   gap: 6px;
-  margin-top: 8px;
+  margin: 6px 0 14px;
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-dim) 35%, transparent) transparent;
+  padding-bottom: 4px;
 }
-.artist-similar-list::-webkit-scrollbar { display: none; }
+.artist-similar-list::-webkit-scrollbar {
+  height: 4px;
+}
+.artist-similar-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-dim) 35%, transparent);
+  border-radius: 4px;
+}
+.artist-similar-list::-webkit-scrollbar-track {
+  background: transparent;
+}
 .artist-similar-list .tag-pill {
   flex-shrink: 0;
   border-color: var(--svc-lfm-border);

@@ -5057,6 +5057,12 @@ function renderArtistDetail(name) {
 // ── Similar artists from Last.fm ──
 // Cached per artist so re-renders (search typing, sort) don't re-hit the API.
 const lfmArtistCache = readStore('lastfm-similar', 'audex-lfm-similar') || {};
+$('artist-similar-list')?.addEventListener('wheel', e => {
+  if (e.deltaY) {
+    e.preventDefault();
+    $('artist-similar-list').scrollLeft += e.deltaY;
+  }
+}, { passive: false });
 async function renderArtistLastfm(name) {
   const simList = $('artist-similar-list');
   if (!simList) return;
