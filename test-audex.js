@@ -370,5 +370,33 @@ const tags = {
   const tagsIssue = issues.find(i => i.id === 'tags');
   assert.deepStrictEqual(tagsIssue.paths, ['/b.mp3', '/c.mp3'], 'tracks with empty or generic Music genre must be flagged');
 
+  // Active downloads count logic
+  const mockQueue = [
+    { status: 'done' },
+    { status: 'queued' },
+    { status: 'downloading' },
+    { status: 'error' },
+    { status: 'queued' },
+  ];
+  const activeCount = mockQueue.filter(it => it.status === 'queued' || it.status === 'downloading').length;
+  assert.strictEqual(activeCount, 3, 'only queued and downloading tracks count as active');
+
+  // Lyrics query parsing logic
+  function parseLyricsQuery(q) {
+    let artist = String(q.artist || '').trim();
+    let title = String(q.title || '').trim();
+    const qStr = String(q.query || '').trim();
+    if (!title && qStr) {
+      if (qStr.includes(' - ')) {
+        const parts = qStr.split(' - ');
+        artist = parts[0].trim();
+        title = parts.slice(1).join(' - ').trim();
+      } else title = qStr;
+    }
+    return { artist, title };
+  }
+  assert.deepStrictEqual(parseLyricsQuery({ query: 'Queen - Bohemian Rhapsody' }), { artist: 'Queen', title: 'Bohemian Rhapsody' });
+  assert.deepStrictEqual(parseLyricsQuery({ query: 'Yesterday' }), { artist: '', title: 'Yesterday' });
+
   console.log('ok');
 })();

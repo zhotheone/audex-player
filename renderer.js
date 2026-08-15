@@ -274,7 +274,6 @@ let currentTrack = null;
 let currentQueue = library;          // the list we're playing through
 let shuffledQueue = [];
 let currentView = 'library';
-let activeFilter = 'all';
 let activeSort = 'date-desc';
 let isPlaying = false;
 let isShuffle = false;
@@ -1099,6 +1098,9 @@ const I18N = {
     'mbRelease.title': 'MusicBrainz Release Matches',
     'mbRelease.progress': 'Applying MusicBrainz metadata…',
     'mbRelease.applied': 'Updated {count} tracks from MusicBrainz',
+    'editor.mbManualPrompt': 'Search MusicBrainz (title, artist, etc.):',
+    'mbRelease.manualPrompt': 'Search MusicBrainz Release (album, artist, etc.):',
+    'fs.lyricsSearchManual': 'Search lyrics manually…',
     'cm.fixYear': 'Set release year',
     'cm.fixTrackNumbers': 'Fix track numbers',
     'cm.deleteAlbum': 'Delete album…',
@@ -1801,6 +1803,9 @@ const I18N = {
     'mbRelease.title': 'Релізи MusicBrainz',
     'mbRelease.progress': 'Застосування метаданих MusicBrainz…',
     'mbRelease.applied': 'Оновлено {count} треків з MusicBrainz',
+    'editor.mbManualPrompt': 'Пошук у MusicBrainz (назва, виконавець тощо):',
+    'mbRelease.manualPrompt': 'Пошук релізу MusicBrainz (альбом, виконавець тощо):',
+    'fs.lyricsSearchManual': 'Знайти текст вручну…',
     'coverFile.progress': 'Встановлення обкладинки…',
     'coverFile.confirm': 'Встановити це зображення як обкладинку для всіх {count} треків?',
     'coverFile.error': 'Не вдалося прочитати зображення: {e}',
@@ -2157,16 +2162,8 @@ function scheduleLibrarySave() {
 function trackByPath(path) { return library.find(t => t.path === path); }
 function trackIndexByPath(path) { return library.findIndex(t => t.path === path); }
 
-// activeSort values: date-desc | date-asc | title-asc | title-desc |
-//                    artist-asc | artist-desc | duration-asc | duration-desc
-// "date" uses library insertion order as a proxy for "added on".
 function sortedFilteredLibrary() {
   let arr = library.slice();
-  if (activeFilter === 'recent') {
-    arr = arr.slice(-50).reverse();
-  } else if (activeFilter === 'favorites') {
-    arr = arr.filter(t => favorites.includes(t.path));
-  }
   const byTitle = (a, b) => (a.title || '').localeCompare(b.title || '');
   // Same artist -> group by album -> track order within it, so an artist's
   // albums stay intact instead of interleaving alphabetically by title.
@@ -2180,14 +2177,10 @@ function sortedFilteredLibrary() {
     case 'artist-desc': arr.sort((a, b) => -byArtist(a, b)); break;
     case 'duration-asc': arr.sort(byDuration); break;
     case 'duration-desc': arr.sort((a, b) => -byDuration(a, b)); break;
-    case 'date-asc':
-      // 'recent' is already date-desc from the slice; reverse it for ascending.
-      if (activeFilter === 'recent') arr = arr.slice().reverse();
-      // For 'all' and 'favorites' the underlying order is already insertion-asc.
-      break;
+    case 'date-asc': break;
     case 'date-desc':
     default:
-      if (activeFilter !== 'recent') arr = arr.slice().reverse();
+      arr.reverse();
       break;
   }
   return arr;
@@ -3679,14 +3672,16 @@ function patchQueueRowProgress(item) {
 }
 
 function updateQueueTabBadge() {
-  const badge = $('dl-queue-tab-count');
-  if (!badge) return;
   const active = downloadQueue.filter(it => it.status === 'queued' || it.status === 'downloading').length;
-  if (active > 0) {
-    badge.hidden = false;
+  const badge = $('dl-queue-tab-count');
+  if (badge) {
+    badge.hidden = active === 0;
     badge.textContent = String(active);
-  } else {
-    badge.hidden = true;
+  }
+  const sideBadge = $('count-downloads');
+  if (sideBadge) {
+    sideBadge.hidden = active === 0;
+    sideBadge.textContent = String(active);
   }
 }
 
@@ -3810,6 +3805,7 @@ function renderCounts() {
   if (artistsCountEl) artistsCountEl.textContent = visibleArtists().length;
   const albumsCountEl = $('count-albums');
   if (albumsCountEl) albumsCountEl.textContent = buildAlbumsIndex().length;
+  updateQueueTabBadge();
 }
 function renderRecents() {
   const list = $('recents-list');
@@ -4462,9 +4458,7 @@ function currentLibraryTracks() {
     : sortedFilteredLibrary();
   // Peers' libraries sync automatically and show up right in this list — tagged
   // with a badge rather than tucked away behind a separate "Browse" screen.
-  // Only for the plain "all" view: favorites/recent/health-check are all keyed
-  // off local state a remote track doesn't have.
-  const remote = (!healthFilterPaths && activeFilter === 'all') ? lanAllRemoteTracks() : [];
+  const remote = !healthFilterPaths ? lanAllRemoteTracks() : [];
   const all = remote.length ? base.concat(remote) : base;
   if (q) {
     return all.filter(t =>
@@ -4480,7 +4474,7 @@ function renderLibrary() {
   const empty = $('library-empty');
   updateHealthFilterBar();
   const tracks = currentLibraryTracks();
-  const networkCount = (!healthFilterPaths && activeFilter === 'all') ? lanAllRemoteTracks().length : 0;
+  const networkCount = !healthFilterPaths ? lanAllRemoteTracks().length : 0;
   $('library-count-label').textContent = networkCount
     ? tr('library.count.split', { local: library.length, network: networkCount, tracks: pluralTracks(library.length + networkCount) })
     : `${library.length} ${pluralTracks(library.length)}`;
@@ -6437,8 +6431,17 @@ async function runMatchReleaseMusicBrainz(tracks, scopeName) {
     matches = await window.electronAPI.searchMusicBrainzReleases({ artist, album, query: `${artist} ${album}`.trim() });
   } catch (_) {}
   if (!matches || !matches.length) {
-    toast(tr('editor.mbNoMatch'));
-    return;
+    const manual = await promptModal(tr('mbRelease.manualPrompt'), `${artist} ${album}`.trim());
+    if (manual && manual.trim()) {
+      toast(tr('editor.mbSearching'));
+      try {
+        matches = await window.electronAPI.searchMusicBrainzReleases({ query: manual.trim() });
+      } catch (_) { matches = []; }
+    }
+    if (!matches || !matches.length) {
+      toast(tr('editor.mbNoMatch'));
+      return;
+    }
   }
   const list = $('mb-release-list');
   list.innerHTML = '';
@@ -7222,7 +7225,25 @@ function renderFsLyrics() {
     return;
   }
   if (!fsLyrics || !fsLyrics.lines.length) {
-    list.innerHTML = `<div class="fs-lyrics-empty">${tr('fs.lyricsNone')}</div>`;
+    list.innerHTML = `<div class="fs-lyrics-empty">${escapeHtml(tr('fs.lyricsNone'))} · <button class="btn-ghost btn-sm" id="btn-manual-lyrics">${escapeHtml(tr('fs.lyricsSearchManual'))}</button></div>`;
+    $('btn-manual-lyrics')?.addEventListener('click', async () => {
+      const track = currentTrack;
+      if (!track) return;
+      const defVal = [track.artist, track.title].filter(Boolean).join(' - ');
+      const manual = await promptModal(tr('fs.lyricsSearchManual'), defVal);
+      if (manual && manual.trim()) {
+        fsLyrics = 'loading';
+        renderFsLyrics();
+        let res = null;
+        try {
+          res = await window.electronAPI.lookupLyrics({ query: manual.trim() });
+        } catch (_) {}
+        const parsed = { lines: res && res.synced ? parseLRC(res.synced) : [] };
+        fsLyricsCache.set(track.path, parsed);
+        fsLyrics = parsed;
+        renderFsLyrics();
+      }
+    });
     return;
   }
   fsLyrics.lines.forEach((ln) => {
@@ -7819,12 +7840,23 @@ $('btn-mb-editor').addEventListener('click', async () => {
   } catch (_) {
     results = [];
   }
-  btn.disabled = false;
   if (!results || !results.length) {
     status.textContent = tr('editor.mbNoMatch');
-    status.className = 'editor-foot-status';
-    return;
+    const manual = await promptModal(tr('editor.mbManualPrompt'), `${$('md-artist').value} ${$('md-title').value}`.trim());
+    if (manual && manual.trim()) {
+      status.textContent = tr('editor.mbSearching');
+      try {
+        results = await window.electronAPI.searchMusicBrainz({ query: manual.trim() });
+      } catch (_) { results = []; }
+    }
+    if (!results || !results.length) {
+      status.textContent = tr('editor.mbNoMatch');
+      status.className = 'editor-foot-status';
+      btn.disabled = false;
+      return;
+    }
   }
+  btn.disabled = false;
   status.textContent = '';
   results.forEach(rec => {
     const item = document.createElement('div');
@@ -8498,16 +8530,7 @@ document.addEventListener('auxclick', e => {
   }
 }, true);
 
-// ── Filters / sort ──
-document.querySelectorAll('#view-library .chip[data-filter]').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#view-library .chip[data-filter]').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    activeFilter = chip.dataset.filter;
-    renderLibrary();
-  });
-});
-
+// ── Sort ──
 const SORT_I18N = {
   'date-desc': 'sort.dateDesc',
   'date-asc': 'sort.dateAsc',
@@ -10952,6 +10975,30 @@ function openDefaultView() {
   warmMissingCoversInBackground();
 })();
 
+function spawnDownloadParticles(btn) {
+  if (!btn) return;
+  btn.classList.remove('btn-dl-anim');
+  void btn.offsetWidth;
+  btn.classList.add('btn-dl-anim');
+  setTimeout(() => btn.classList.remove('btn-dl-anim'), 800);
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  const colors = ['var(--accent)', 'var(--svc-ytm)', '#34d399', '#60a5fa', '#f59e0b'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'dl-particle';
+    const angle = (i / 8) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+    const dist = 22 + Math.random() * 18;
+    p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+    p.style.left = `${cx}px`;
+    p.style.top = `${cy}px`;
+    p.style.backgroundColor = colors[i % colors.length];
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 600);
+  }
+}
+
 // ── In-app YouTube Music browser: search artist → releases → tracks → queue ───
 // No browser/login/yt-dlp: reads the unauthenticated innertube API (main.js
 // ytm:* handlers). Adding tracks reuses the exact download-queue path as the
@@ -10960,6 +11007,9 @@ const ytmBrowser = (function () {
   let state = 'search';       // 'search' | 'releases' | 'album'
   let curArtist = null;
   let searchTimer = null;
+  let artistAlbums = [], artistSingles = [];
+  let albumPage = 1, singlesPage = 1;
+  const PAGE_SIZE = 10;
 
   const el = id => $(id);
   const body = () => el('ytm-body');
@@ -11018,6 +11068,68 @@ const ytmBrowser = (function () {
       row.addEventListener('click', () => openArtist(res.artists[+row.dataset.i])));
   }
 
+  function renderReleases() {
+    const totalAlbumPages = Math.max(1, Math.ceil(artistAlbums.length / PAGE_SIZE));
+    const totalSinglePages = Math.max(1, Math.ceil(artistSingles.length / PAGE_SIZE));
+
+    const pagedAlbums = artistAlbums.slice((albumPage - 1) * PAGE_SIZE, albumPage * PAGE_SIZE);
+    const pagedSingles = artistSingles.slice((singlesPage - 1) * PAGE_SIZE, singlesPage * PAGE_SIZE);
+
+    const section = (title, list, fullList, page, totalPages, kind) => {
+      if (!fullList.length) return '';
+      const pager = totalPages > 1 ? `
+        <div class="ytm-pagination">
+          <button class="btn-ghost btn-sm ytm-prev" data-kind="${kind}" ${page <= 1 ? 'disabled' : ''}>‹</button>
+          <span class="ytm-page-info">${page} / ${totalPages}</span>
+          <button class="btn-ghost btn-sm ytm-next" data-kind="${kind}" ${page >= totalPages ? 'disabled' : ''}>›</button>
+        </div>` : '';
+      return `
+        <div class="ytm-group-head">
+          <div class="ytm-group-title">${title} <span class="ytm-group-count">(${fullList.length})</span></div>
+          ${pager}
+        </div>
+        <div class="ytm-releases">
+          ${list.map(r => `
+            <div class="ytm-release" data-id="${escapeHtml(r.albumBrowseId)}">
+              <div class="ytm-release-cover" style="${r.thumb ? `background-image:url('${r.thumb}')` : ''}">
+                <button class="btn-solid icon-only ytm-add-all" title="${escapeHtml(tr('ytm.addAll'))}"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg></button>
+              </div>
+              <div class="ytm-release-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</div>
+              <div class="ytm-release-meta">${escapeHtml([r.kind, r.year].filter(Boolean).join(' · '))}</div>
+            </div>`).join('')}
+        </div>`;
+    };
+
+    body().innerHTML = section(tr('ytm.albums'), pagedAlbums, artistAlbums, albumPage, totalAlbumPages, 'album') +
+      section(tr('ytm.singles'), pagedSingles, artistSingles, singlesPage, totalSinglePages, 'single');
+
+    body().querySelectorAll('.ytm-prev').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.kind === 'album' && albumPage > 1) { albumPage--; renderReleases(); }
+        else if (btn.dataset.kind === 'single' && singlesPage > 1) { singlesPage--; renderReleases(); }
+      });
+    });
+    body().querySelectorAll('.ytm-next').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.kind === 'album' && albumPage < totalAlbumPages) { albumPage++; renderReleases(); }
+        else if (btn.dataset.kind === 'single' && singlesPage < totalSinglePages) { singlesPage++; renderReleases(); }
+      });
+    });
+
+    body().querySelectorAll('.ytm-release').forEach(card => {
+      const id = card.dataset.id;
+      const r = (artistAlbums.concat(artistSingles)).find(x => x.albumBrowseId === id);
+      if (!r) return;
+      const addBtn = card.querySelector('.ytm-add-all');
+      addBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        spawnDownloadParticles(addBtn);
+        quickAdd(r);
+      });
+      card.addEventListener('click', () => openAlbum(r));
+    });
+  }
+
   async function openArtist(artist) {
     curArtist = artist;
     state = 'releases';
@@ -11030,26 +11142,10 @@ const ytmBrowser = (function () {
     if (!res || !res.success) { setStatus((res && res.error) || tr('ytm.releasesFailed'), 'error'); return; }
     if (!res.releases.length) { setStatus(tr('ytm.noReleases')); return; }
     setStatus('');
-    const albums = res.releases.filter(r => releaseKind(r.kind) === 'album');
-    const singles = res.releases.filter(r => releaseKind(r.kind) !== 'album');
-    const section = (title, list) => list.length ? `
-      <div class="ytm-group-title">${title}</div>
-      <div class="ytm-releases">
-        ${list.map(r => `
-          <div class="ytm-release" data-i="${res.releases.indexOf(r)}">
-            <div class="ytm-release-cover" style="${r.thumb ? `background-image:url('${r.thumb}')` : ''}">
-              <button class="btn-solid icon-only ytm-add-all" title="${escapeHtml(tr('ytm.addAll'))}"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg></button>
-            </div>
-            <div class="ytm-release-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</div>
-            <div class="ytm-release-meta">${escapeHtml([r.kind, r.year].filter(Boolean).join(' · '))}</div>
-          </div>`).join('')}
-      </div>` : '';
-    body().innerHTML = section(tr('ytm.albums'), albums) + section(tr('ytm.singles'), singles);
-    body().querySelectorAll('.ytm-release').forEach(card => {
-      const r = res.releases[+card.dataset.i];
-      card.querySelector('.ytm-add-all').addEventListener('click', e => { e.stopPropagation(); quickAdd(r); });
-      card.addEventListener('click', () => openAlbum(r));
-    });
+    artistAlbums = res.releases.filter(r => releaseKind(r.kind) === 'album');
+    artistSingles = res.releases.filter(r => releaseKind(r.kind) !== 'album');
+    albumPage = 1; singlesPage = 1;
+    renderReleases();
   }
 
   // Album metadata (cover/artist/year) + the canonical share URL, from the fast
@@ -11139,6 +11235,8 @@ const ytmBrowser = (function () {
       </div>`).join('');
     body().innerHTML = head + rows;
     el('ytm-add-album').addEventListener('click', async () => {
+      const btn = el('ytm-add-album');
+      spawnDownloadParticles(btn);
       setStatus(tr('ytm.adding'));
       const n = await addWholeRelease(al);
       setStatus(n ? tr('ytm.added', { count: withCount('tracks', n) }) : tr('ytm.already'));
@@ -11146,6 +11244,8 @@ const ytmBrowser = (function () {
     });
     body().querySelectorAll('.ytm-track').forEach(row => {
       row.querySelector('.ytm-add').addEventListener('click', async () => {
+        const btn = row.querySelector('.ytm-add');
+        spawnDownloadParticles(btn);
         const i = +row.dataset.i;
         const t = al.tracks[i];
         setStatus(tr('ytm.adding'));

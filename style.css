@@ -2106,10 +2106,12 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   font-family: 'Roboto Serif', serif;
   font-size: 42px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.1;
   letter-spacing: -0.5px;
   margin-bottom: 10px;
   color: var(--text-strong);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .pl-meta {
   font-size: 11.5px;
@@ -2131,7 +2133,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 18px;
 }
 #view-album-detail .pl-hero-cover span { font-family: 'Roboto Serif', serif; font-weight: 700; font-size: 120px; }
-#view-album-detail .pl-title { font-size: clamp(56px, 5.2vw, 80px); margin-bottom: 16px; }
+#view-album-detail .pl-title { font-size: clamp(36px, 4vw, 56px); margin-bottom: 16px; line-height: 1.1; word-break: break-word; overflow-wrap: anywhere; }
 #view-album-detail .pl-meta { font-size: 15px; gap: 14px; margin-bottom: 24px; }
 #view-album-detail .pl-eyebrow { font-size: 12.5px; margin-bottom: 12px; }
 
@@ -2789,9 +2791,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .progress-rail {
   width: 100%;
-  height: 4px;
+  height: 6px;
   background: var(--active-bg);
-  /* The rail is 4px tall, and a border-radius is clamped to half the box it
+  /* The rail is 6px tall, and a border-radius is clamped to half the box it
      sits in — a 15px one would collapse to ~2px and cut straight across the
      island's corner. Clipping to a box that extends well above the rail keeps
      the arc at its full radius, so the fill follows the island's curve. The
@@ -2799,11 +2801,28 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   clip-path: inset(-20px 0 0 0 round 0 0 15px 15px);
   transition: height 0.12s;
 }
-.playbar:hover .progress-rail { height: 7px; }
+.playbar:hover .progress-rail { height: 8px; }
 .progress-fill {
   height: 100%;
   width: 0;
   background: var(--accent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 10' width='24' height='10'%3E%3Cpath d='M 0 5 Q 6 1 12 5 T 24 5' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 10' width='24' height='10'%3E%3Cpath d='M 0 5 Q 6 1 12 5 T 24 5' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+  -webkit-mask-size: 20px 100%;
+  mask-size: 20px 100%;
+  -webkit-mask-position: 0 center;
+  mask-position: 0 center;
+}
+
+@keyframes m3-wave-flow {
+  from { -webkit-mask-position: 0 center; mask-position: 0 center; }
+  to { -webkit-mask-position: 20px center; mask-position: 20px center; }
+}
+
+html.is-playing .progress-fill {
+  animation: m3-wave-flow 1.2s linear infinite;
 }
 
 .playbar-right {
@@ -3504,9 +3523,39 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .ytm-track:hover { background: var(--panel-alt); }
 .ytm-track-no { width: 20px; text-align: right; font-size: 12px; color: var(--text-dim); flex: 0 0 auto; }
 .ytm-track-title { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ytm-track-title .ytm-e { font-size: 9px; font-weight: 700; color: var(--text-dim); border: 1px solid var(--text-dim); border-radius: 3px; padding: 0 3px; margin-left: 6px; vertical-align: middle; }
-.ytm-track-dur { font-size: 12px; color: var(--text-dim); flex: 0 0 auto; }
 .ytm-track.queued .ytm-add { color: var(--text-dim); pointer-events: none; }
+
+.ytm-group-head { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 10px; }
+.ytm-group-head .ytm-group-title { margin: 0; }
+.ytm-group-count { font-size: 12px; color: var(--text-dim); font-weight: normal; }
+.ytm-pagination { display: inline-flex; align-items: center; gap: 4px; }
+.ytm-page-info { font-size: 11px; color: var(--text-dim); min-width: 36px; text-align: center; }
+.ytm-pagination button { width: 24px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 13px; line-height: 1; }
+
+@keyframes btn-dl-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+@keyframes dl-particle-fade {
+  0% { transform: translate(0, 0) scale(1.2); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+.btn-dl-anim {
+  animation: btn-dl-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+}
+.dl-particle {
+  position: fixed;
+  pointer-events: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  z-index: 9999;
+  animation: dl-particle-fade 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
 
 /* Perf: a blurred full-screen overlay (tag editor, palette, etc.) re-runs its
    backdrop-filter over the whole viewport every frame the content behind it

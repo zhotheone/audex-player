@@ -2856,16 +2856,26 @@ const lrclibCache = new Map(); // "artist|title|album|duration" -> result
 
 ipcMain.handle('music:lookupLyrics', async (event, query) => {
   try {
-    const artist = String(query && query.artist || '').trim();
-    const title = String(query && query.title || '').trim();
-    const album = String(query && query.album || '').trim();
+    let artist = String(query && query.artist || '').trim();
+    let title = String(query && query.title || '').trim();
+    let album = String(query && query.album || '').trim();
     const duration = Math.round(Number(query && query.duration) || 0);
+    const qStr = String(query && query.query || '').trim();
+    if (!title && qStr) {
+      if (qStr.includes(' - ')) {
+        const parts = qStr.split(' - ');
+        artist = parts[0].trim();
+        title = parts.slice(1).join(' - ').trim();
+      } else {
+        title = qStr;
+      }
+    }
     if (!title) return { success: false, synced: null, plain: null };
     const cacheKey = [artist, title, album, duration].join('|').toLowerCase();
     if (lrclibCache.has(cacheKey)) return lrclibCache.get(cacheKey);
 
     let result = null;
-    const getParams = new URLSearchParams({ track_name: title, artist_name: artist });
+    const getParams = new URLSearchParams(artist ? { track_name: title, artist_name: artist } : { track_name: title });
     if (album) getParams.set('album_name', album);
     if (duration > 0) getParams.set('duration', String(duration));
     try {
@@ -2876,7 +2886,7 @@ ipcMain.handle('music:lookupLyrics', async (event, query) => {
     } catch (_) { /* no exact match — fall through to search */ }
 
     if (!result) {
-      const searchParams = new URLSearchParams({ track_name: title, artist_name: artist });
+      const searchParams = new URLSearchParams(artist ? { track_name: title, artist_name: artist } : { q: title });
       try {
         const json = await httpsGetJson(`https://lrclib.net/api/search?${searchParams}`);
         const hit = Array.isArray(json) ? (json.find(r => r.syncedLyrics) || json.find(r => r.plainLyrics)) : null;
