@@ -5525,7 +5525,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   transition: all 120ms ease;
   user-select: none;
 }
-.artist-lfm-tags .tag-pill, .md-lfm-tags .tag-pill, .lfm-tag-chip {
+.md-lfm-tags .tag-pill, .lfm-tag-chip {
   color: var(--svc-lfm);
   border-color: var(--svc-lfm-border);
   background: var(--svc-lfm-dim);
@@ -5538,26 +5538,25 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   background: var(--active-bg);
   border-color: var(--accent);
 }
-.artist-lfm-tags button.tag-pill:hover, .md-lfm-tags button.tag-pill:hover, button.lfm-tag-chip:hover {
+.md-lfm-tags button.tag-pill:hover, button.lfm-tag-chip:hover {
   color: var(--text-strong);
   background: var(--svc-lfm-border);
   border-color: var(--svc-lfm);
 }
-.tag-pill.is-remote, .lfm-similar-chip.is-remote {
-  color: var(--text-dim);
-  cursor: default;
-  opacity: 0.7;
+.tag-pill.yt-remote {
+  color: var(--svc-ytm);
+  border-color: var(--svc-ytm-border);
+  background: var(--svc-ytm-dim);
 }
-.tag-pill.is-remote:hover, .lfm-similar-chip.is-remote:hover {
-  border-color: var(--border-strong);
+.tag-pill.yt-remote:hover {
+  border-color: var(--svc-ytm);
+  color: var(--text-strong);
   background: var(--hover-bg);
-  color: var(--text-dim);
 }
 
-.artist-similar { margin: 12px 0 8px; }
 .artist-similar-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.artist-similar .tag-pill:not(.is-remote) { border-color: var(--svc-lfm-border); }
-.artist-similar .tag-pill:not(.is-remote):hover { border-color: var(--svc-lfm); color: var(--svc-lfm); background: var(--svc-lfm-dim); }
+.artist-similar-list .tag-pill:not(.yt-remote) { border-color: var(--svc-lfm-border); }
+.artist-similar-list .tag-pill:not(.yt-remote):hover { border-color: var(--svc-lfm); color: var(--svc-lfm); background: var(--svc-lfm-dim); }
 
 /* MusicBrainz matches in Metadata Editor */
 .mb-results {

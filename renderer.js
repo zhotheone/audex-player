@@ -5043,46 +5043,43 @@ function renderArtistDetail(name) {
   renderArtistLastfm(artist.name);
 }
 
-// ── Artist tags + similar artists from Last.fm ──
+// ── Similar artists from Last.fm ──
 // Cached per artist so re-renders (search typing, sort) don't re-hit the API.
 const lfmArtistCache = {};
 async function renderArtistLastfm(name) {
-  const tagsBox = $('artist-lfm-tags'), simBox = $('artist-similar'), simList = $('artist-similar-list');
-  if (!tagsBox || !simBox) return;
-  tagsBox.hidden = true; tagsBox.innerHTML = '';
-  simBox.hidden = true; simList.innerHTML = '';
+  const simList = $('artist-similar-list');
+  if (!simList) return;
+  simList.hidden = true; simList.innerHTML = '';
   if (!lfmConfigured() || !name) return;
 
-  let data = lfmArtistCache[name];
-  if (!data) {
-    const [tags, similar] = await Promise.all([lfmTopTags('artist', name), lfmSimilarArtists(name)]);
-    data = lfmArtistCache[name] = { tags, similar };
+  let similar = lfmArtistCache[name];
+  if (!similar) {
+    similar = lfmArtistCache[name] = await lfmSimilarArtists(name);
   }
   if (activeArtistName !== name || currentView !== 'artist-detail') return;  // navigated away
 
-  if (data.tags.length) {
-    data.tags.forEach(t => {
-      const chip = document.createElement('span');
-      chip.className = 'tag-pill';
-      chip.textContent = t;
-      tagsBox.appendChild(chip);
-    });
-    tagsBox.hidden = false;
-  }
-
-  if (data.similar.length) {
+  if (similar && similar.length) {
     const known = new Set(buildArtistsIndex().map(a => a.name.toLowerCase()));
-    data.similar.forEach(n => {
+    similar.forEach(n => {
       const inLib = known.has(n.toLowerCase());
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'tag-pill' + (inLib ? '' : ' is-remote');
-      chip.textContent = n;
-      if (inLib) chip.addEventListener('click', () => { activeArtistName = n; setView('artist-detail'); });
-      else chip.title = tr('lastfm.notInLibrary');
+      chip.className = 'tag-pill' + (inLib ? '' : ' yt-remote');
+      chip.innerHTML = inLib
+        ? escapeHtml(n)
+        : `<svg class="i" width="11" height="11"><use href="#i-youtube"/></svg><span>${escapeHtml(n)}</span>`;
+      chip.title = inLib ? n : tr('ytm.browseArtist');
+      chip.addEventListener('click', () => {
+        if (inLib) {
+          activeArtistName = n;
+          setView('artist-detail');
+        } else {
+          ytmBrowser.open(n);
+        }
+      });
       simList.appendChild(chip);
     });
-    simBox.hidden = false;
+    simList.hidden = false;
   }
 }
 
