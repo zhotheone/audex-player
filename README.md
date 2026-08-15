@@ -72,15 +72,9 @@ Dark is Rosé Pine and Light is Rosé Pine Dawn, with Default following your OS 
 ### A player worth going fullscreen for
 
 A floating playbar island at the bottom, and a fullscreen view with the queue
-alongside, karaoke-style synced lyrics that keep the transport in reach, and a
-portrait "mobile player" mode for when the window is narrow.
+alongside, karaoke-style synced lyrics that keep the transport in reach.
 
-<table>
-  <tr>
-    <td width="68%"><img src="docs/screenshots/now-playing.png" alt="Fullscreen now playing" /></td>
-    <td width="32%"><img src="docs/screenshots/mobile.png" alt="Portrait mobile player" /></td>
-  </tr>
-</table>
+<img src="docs/screenshots/now-playing.png" alt="Fullscreen now playing" />
 
 ### Search it, queue it, done
 
@@ -120,7 +114,7 @@ portrait "mobile player" mode for when the window is narrow.
 - **Two languages** — English, Ukrainian.
 - **Eleven palettes** — Rosé Pine, Catppuccin, Gruvbox, Dracula, Tokyo Night, each with a light and dark variant, optionally randomized per launch — and a **customizable accent color**.
 - **Custom background** — your own image or the current album art, with blur and dim controls.
-- **UI scale** and a **responsive layout**, with a **portrait "mobile player"** mode for the fullscreen view.
+- **UI scale** and a **responsive layout**.
 - **A sidebar you choose** — Downloads, YouTube Music, Devices, Report, Health-check and the Editor are each a switch in **Settings → Sidebar**, so the nav only shows what you use.
 
 </details>

@@ -7,7 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getZoomFactor: () => {
     try { return webFrame.getZoomFactor(); } catch (_) { return 1; }
   },
-  setPortrait: (on) => ipcRenderer.invoke('window:setPortrait', { on: !!on }),
   openFiles: () => ipcRenderer.invoke('dialog:openFiles'),
   chooseFolder: () => ipcRenderer.invoke('dialog:chooseFolder'),
   chooseImage: () => ipcRenderer.invoke('dialog:chooseImage'),

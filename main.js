@@ -445,55 +445,6 @@ ipcMain.handle('lan:removePeer', (event, id) => lan.removePeer(id));
 // window-all-closed (mac already kept the app alive; we now do the same
 // on Linux/Windows so the tray icon persists).
 
-// Portrait ("mobile player") mode: shrinks the window to a tall narrow size and
-// remembers the previous bounds + minimum size so we can restore them on exit.
-// We resize synchronously here rather than interpolating frame-by-frame because
-// the renderer drives a FLIP-based cover animation that needs the *final*
-// layout to be in effect at measurement time. A staggered window resize would
-// give the renderer a moving target and the cover would snap at the end.
-let portraitSavedBounds = null;
-let portraitSavedMinSize = null;
-ipcMain.handle('window:setPortrait', async (event, payload) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win) return { success: false };
-  const on = !!(payload && payload.on);
-  const portraitW = 420;
-  const portraitH = 780;
-
-  // If the OS window is in fullscreen, don't resize — that would forcibly exit
-  // fullscreen. The CSS in `.is-portrait` already adapts the layout to any width,
-  // so a centered mobile column will render inside the fullscreen viewport.
-  if (win.isFullScreen()) {
-    return { success: true, fullscreen: true };
-  }
-
-  if (on) {
-    if (!portraitSavedBounds) {
-      portraitSavedBounds = win.getBounds();
-      portraitSavedMinSize = win.getMinimumSize();
-    }
-    win.setMinimumSize(320, 560);
-    const display = screen.getDisplayMatching(win.getBounds());
-    win.setBounds({
-      width: portraitW,
-      height: portraitH,
-      x: Math.round(display.workArea.x + (display.workArea.width - portraitW) / 2),
-      y: Math.round(display.workArea.y + (display.workArea.height - portraitH) / 2),
-    }, false);
-  } else {
-    if (portraitSavedMinSize) win.setMinimumSize(portraitSavedMinSize[0], portraitSavedMinSize[1]);
-    if (portraitSavedBounds) win.setBounds(portraitSavedBounds, false);
-    portraitSavedBounds = null;
-    portraitSavedMinSize = null;
-  }
-  // An un-animated setBounds growing the window can leave the compositor
-  // showing a stale frame in the newly-exposed area until something forces a
-  // repaint — visible as a sliver of the old (pre-fullscreen) layout at the
-  // window edge after toggling portrait mode back off. Force one explicitly.
-  win.webContents.invalidate();
-  return { success: true };
-});
-
 // ── Custom background image ──
 // The picked file is *copied* into <userData>/backgrounds/ rather than
 // referenced in place: the setting only stores a path, so a wallpaper the user

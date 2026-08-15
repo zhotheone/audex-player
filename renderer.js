@@ -801,7 +801,6 @@ const I18N = {
     'btn.close': 'Close',
     'btn.save': 'Save',
     'btn.minimize': 'Minimize',
-    'btn.portrait': 'Mobile mode',
     'btn.album': 'Album',
     'btn.single': 'Single',
     'artist.albums': 'Albums',
@@ -1497,7 +1496,6 @@ const I18N = {
     'btn.close': 'Закрити',
     'btn.save': 'Зберегти',
     'btn.minimize': 'Згорнути',
-    'btn.portrait': 'Мобільний режим',
     'btn.album': 'Альбом',
     'btn.single': 'Сингл',
     'artist.albums': 'Альбоми',
@@ -7052,7 +7050,7 @@ function cancelCoverAnim() {
 }
 
 function openFullscreen() {
-  if (!currentTrack || fsAnimating || portraitAnimating) return;
+  if (!currentTrack || fsAnimating) return;
   const overlay = $('fullscreen-overlay');
   if (overlay.classList.contains('active')) return;
   fsAnimating = true;
@@ -7075,13 +7073,7 @@ function openFullscreen() {
 
 async function closeFullscreen() {
   const overlay = $('fullscreen-overlay');
-  if (!overlay.classList.contains('active') || fsAnimating || portraitAnimating) return;
-  // Exiting fullscreen also exits portrait — the rest of the UI has min-width
-  // constraints (sidebar etc.) and looks broken in a phone-sized window. Await
-  // it fully (window resize + cover FLIP) before the overlay itself starts
-  // hiding, or the overlay can go display:none mid-resize and flash the
-  // library underneath.
-  if (portraitMode) await setPortraitMode(false);
+  if (!overlay.classList.contains('active') || fsAnimating) return;
   if (fsLyricsOpen) closeFsLyricsPanel();
   fsAnimating = true;
   cancelCoverAnim();
@@ -7098,98 +7090,14 @@ async function closeFullscreen() {
   else setTimeout(done, 320);
 }
 
-let portraitMode = false;
-let portraitAnimating = false;
-
-// FLIP morph between desktop and portrait layouts.
-//   1. Capture cover rect (FIRST). Hide cover so the user never sees it snap.
-//   2. Swap .is-portrait + ask main to resize the window. Wait for the IPC and
-//      one frame so the new layout is settled.
-//   3. Measure cover rect (LAST), compute the inverse translate+scale, apply
-//      it as a transform, reveal the cover — it's now visually back where it
-//      started but ready to glide to its new spot.
-//   4. Animate the transform to identity. The surrounding content fades out
-//      via .is-morphing and back in 140ms later, hiding the layout shift.
-async function setPortraitMode(on) {
-  on = !!on;
-  if (portraitAnimating || on === portraitMode) return;
-  portraitAnimating = true;
-  portraitMode = on;
-
-  const overlay = $('fullscreen-overlay');
-  const cover = $('fs-cover');
-  const btn = $('btn-fs-portrait');
-
-  const first = cover.getBoundingClientRect();
-
-  // Hide the cover before any layout change so the user doesn't see it snap
-  // to its new position while we wait for the window to resize. We'll re-show
-  // it once the FLIP transform has been applied.
-  cover.style.visibility = 'hidden';
-
-  overlay.classList.add('is-morphing');
-  overlay.classList.toggle('is-portrait', on);
-  if (btn) btn.classList.toggle('is-active', on);
-
-  try {
-    if (window.electronAPI && window.electronAPI.setPortrait) {
-      await window.electronAPI.setPortrait(on);
-    }
-  } catch (_) { /* ignore */ }
-  // One frame so Chromium picks up the new window size and reflows.
-  await new Promise(r => requestAnimationFrame(r));
-
-  // Force a layout pass so the new rect is measurable on this frame.
-  void overlay.offsetHeight;
-  const last = cover.getBoundingClientRect();
-
-  const sx = first.width / Math.max(1, last.width);
-  const sy = first.height / Math.max(1, last.height);
-  const dx = first.left - last.left;
-  const dy = first.top - last.top;
-
-  const startTransform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
-
-  // Pre-apply the FLIP transform via inline style BEFORE revealing the cover —
-  // it's visually back at its starting position when the user sees it again.
-  cover.style.transformOrigin = 'top left';
-  cover.style.transform = startTransform;
-  cover.style.visibility = '';
-  void cover.offsetHeight;
-
-  const dur = 420;
-  const ease = 'cubic-bezier(0.32, 0.72, 0.18, 1)';
-  const coverAnim = cover.animate([
-    { transform: startTransform, transformOrigin: 'top left' },
-    { transform: 'none', transformOrigin: 'top left' },
-  ], { duration: dur, easing: ease, fill: 'both' });
-
-  // Fade the surrounding content back in slightly after the cover starts
-  // moving so the new layout reveals smoothly rather than all at once.
-  setTimeout(() => overlay.classList.remove('is-morphing'), 140);
-
-  try { await coverAnim.finished; } catch (_) { /* ignore cancellations */ }
-  try { coverAnim.cancel(); } catch (_) {}
-  cover.style.transform = '';
-  cover.style.transformOrigin = '';
-  overlay.classList.remove('is-morphing');
-  portraitAnimating = false;
-}
-function togglePortraitMode() { setPortraitMode(!portraitMode); }
-
 $('mini-cover-wrapper').addEventListener('click', openFullscreen);
 $('btn-fullscreen').addEventListener('click', openFullscreen);
 $('btn-close-fullscreen').addEventListener('click', closeFullscreen);
 $('btn-close-fullscreen-x').addEventListener('click', closeFullscreen);
-const fsPortraitBtn = $('btn-fs-portrait');
-if (fsPortraitBtn) fsPortraitBtn.addEventListener('click', togglePortraitMode);
 
 // ── Lyrics (LRCLIB) ──
 // A dedicated overlay panel (toggled by #btn-fs-lyrics) rather than a queue
-// tab — the queue column is hidden entirely in portrait/mobile fullscreen
-// (.fs-overlay.is-portrait .fs-queue), so a tab living inside it would be
-// unreachable there. The panel is an absolutely-positioned child of .fs-body,
-// which is unaffected by the portrait/desktop layout switch.
+// tab. The panel is an absolutely-positioned child of .fs-body.
 // Synced lyrics are cached per track path for the session — LRCLIB has no
 // rate limit worth worrying about here, but there's no reason to re-fetch a
 // track we already have. `fsLyrics` is 'loading', null (no lyrics), or
