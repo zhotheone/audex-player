@@ -7715,6 +7715,7 @@ $('btn-mb-editor').addEventListener('click', async () => {
   let results = [];
   try {
     results = await window.electronAPI.searchMusicBrainz({ title, artist, query });
+    console.log('[MusicBrainz:results]', results);
   } catch (_) {
     results = [];
   }
@@ -7798,7 +7799,13 @@ $('btn-lastfm-editor').addEventListener('click', async () => {
       chip.type = 'button';
       chip.className = 'tag-pill';
       chip.textContent = name;
-      chip.addEventListener('click', () => { $('md-genre').value = name; });
+      chip.addEventListener('click', () => {
+        const cur = $('md-genre').value.trim();
+        const existing = cur ? cur.split(/[,;\/]+/).map(s => s.trim().toLowerCase()) : [];
+        if (!existing.includes(name.toLowerCase())) {
+          $('md-genre').value = cur ? `${cur}, ${name}` : name;
+        }
+      });
       tagBox.appendChild(chip);
     });
     tagBox.hidden = false;

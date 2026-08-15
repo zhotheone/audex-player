@@ -2893,5 +2893,7 @@ ipcMain.handle('music:lookupLyrics', async (event, query) => {
 });
 
 ipcMain.handle('musicbrainz:search', async (event, query) => {
-  return await searchRecordings(query);
+  const res = await searchRecordings(query);
+  console.log('[MusicBrainz:search]', query, res);
+  return res;
 });

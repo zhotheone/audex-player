@@ -19,7 +19,9 @@ function mbFetch(url) {
     const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15000) });
     await new Promise(r => setTimeout(r, 1100));
     if (!res.ok) throw new Error(`MusicBrainz ${res.status}`);
-    return res.json();
+    const data = await res.json();
+    console.log('[MusicBrainz]', url, data);
+    return data;
   };
   const p = mbChain.then(run, run); // run regardless of a prior lookup's outcome
   mbChain = p.catch(() => {});
