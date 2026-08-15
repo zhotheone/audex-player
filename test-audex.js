@@ -196,6 +196,7 @@ const tags = {
   // MusicBrainz recording match formatting: extracts title, artist credit, first release, year, trackNo
   const { formatRecordingMatch } = require('./musicbrainz');
   const recMatch = formatRecordingMatch({
+    id: 'mb-rec-123',
     title: 'Test Song',
     score: 95,
     'artist-credit': [{ name: 'Artist A', joinphrase: ' feat. ' }, { name: 'Artist B' }],
@@ -206,6 +207,8 @@ const tags = {
     }],
     tags: [{ name: 'indie', count: 5 }]
   });
+  assert.strictEqual(recMatch.id, 'mb-rec-123');
+  assert.strictEqual(recMatch.url, 'https://musicbrainz.org/recording/mb-rec-123');
   assert.strictEqual(recMatch.title, 'Test Song');
   assert.strictEqual(recMatch.artist, 'Artist A feat. Artist B');
   assert.strictEqual(recMatch.album, 'Test Album');
@@ -231,6 +234,15 @@ const tags = {
   assert.deepStrictEqual(split('Artist A; Artist B'), ['Artist A', 'Artist B'], '";" did not split');
   assert.deepStrictEqual(split('Featherweight'), ['Featherweight'], '"feat" inside a word wrongly split');
   assert.deepStrictEqual(split('Deftones'), ['Deftones'], '"ft" inside a word wrongly split');
+
+  // Fullscreen upcoming queue wrapping with repeat-all
+  const qList = [{ path: '1' }, { path: '2' }, { path: '3' }];
+  const qUpcoming = [];
+  const curIdx = 2; // last track
+  for (let i = 1; i < qList.length && qUpcoming.length < 8; i++) {
+    qUpcoming.push(qList[(curIdx + i) % qList.length]);
+  }
+  assert.deepStrictEqual(qUpcoming.map(t => t.path), ['1', '2'], 'repeat-all wraps queue ahead');
 
   // The store that replaced localStorage for the library index: a truncated or
   // escaped write here loses someone's whole library, so lock the two rules —

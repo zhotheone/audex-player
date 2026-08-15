@@ -272,6 +272,7 @@ let playLog = (() => {
 // local one (see lanPlayTrack).
 let currentTrack = null;
 let currentQueue = library;          // the list we're playing through
+let shuffledQueue = [];
 let currentView = 'library';
 let activeFilter = 'all';
 let activeSort = 'date-desc';
@@ -928,6 +929,14 @@ const I18N = {
     'setting.accentDesc': 'Highlights active items and the currently playing track.',
     'setting.accentDefault': 'Default',
     'setting.accentCustom': 'Custom color',
+    'setting.serviceColors': 'Network services',
+    'setting.serviceColorsDesc': 'Predefined accent colors identify data sources across the app.',
+    'service.ytm': 'YouTube Music',
+    'service.ytmDesc': 'Browse, popularity charts, parsing & downloads (Red)',
+    'service.lastfm': 'Last.fm',
+    'service.lastfmDesc': 'Scrobbling, genre tags, corrections & similar artists (Purple)',
+    'service.musicbrainz': 'MusicBrainz',
+    'service.musicbrainzDesc': 'Track metadata lookup & release matches (Blue)',
     'setting.defaultFolder': 'Default folder',
     'setting.defaultFolderDesc': 'Where to load tracks from on startup.',
     'setting.defaultView': 'Default page',
@@ -1608,6 +1617,14 @@ const I18N = {
     'setting.accentDesc': 'Підсвічування активних елементів і поточного треку.',
     'setting.accentDefault': 'За замовчуванням',
     'setting.accentCustom': 'Власний колір',
+    'setting.serviceColors': 'Мережеві сервіси',
+    'setting.serviceColorsDesc': 'Фіксовані кольори акцентів для розрізнення джерел даних.',
+    'service.ytm': 'YouTube Music',
+    'service.ytmDesc': 'Перегляд, рейтинг популярності, парсинг і завантаження (Червоний)',
+    'service.lastfm': 'Last.fm',
+    'service.lastfmDesc': 'Скробблінг, жанрові теги, виправлення та схожі виконавці (Фіолетовий)',
+    'service.musicbrainz': 'MusicBrainz',
+    'service.musicbrainzDesc': 'Пошук метаданих треку та зіставлення релізів (Синій)',
     'setting.defaultFolder': 'Тека за замовчуванням',
     'setting.defaultFolderDesc': 'Звідки завантажувати треки під час запуску.',
     'setting.defaultView': 'Початкова сторінка',
@@ -5943,6 +5960,42 @@ function togglePlay() {
   updatePlayButtonUI();
 }
 
+function rebuildShuffleQueue() {
+  if (!currentQueue || currentQueue.length <= 1) {
+    shuffledQueue = currentQueue ? [...currentQueue] : [];
+    return;
+  }
+  const curPath = currentTrack ? currentTrack.path : null;
+  const others = currentQueue.filter(t => t.path !== curPath);
+  for (let i = others.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  shuffledQueue = currentTrack ? [currentTrack, ...others] : others;
+}
+
+function getUpcomingQueue(limit = 8) {
+  if (!currentTrack || !currentQueue.length) return [];
+  if (repeatMode === 2) return [currentTrack];
+  const activeQ = (isShuffle && shuffledQueue.length === currentQueue.length) ? shuffledQueue : currentQueue;
+  const curPath = currentTrack.path;
+  const idx = activeQ.findIndex(t => t.path === curPath);
+  if (idx < 0) return [];
+  const list = [];
+  const total = activeQ.length;
+  for (let i = 1; i < total && list.length < limit; i++) {
+    const nextIdx = idx + i;
+    if (nextIdx < total) {
+      list.push(activeQ[nextIdx]);
+    } else if (repeatMode === 1) {
+      list.push(activeQ[nextIdx % total]);
+    } else {
+      break;
+    }
+  }
+  return list;
+}
+
 // `manual` is true for every real skip (playbar/hotkey/media-key/remote) and
 // false for the two internal auto-advances (crossfade pre-empt, 'ended').
 // Repeat-one only makes sense while a track is left to loop on its own —
@@ -5954,20 +6007,16 @@ function nextTrack({ manual = true } = {}) {
   if (manual && repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = 1;
   const curPath = currentTrack ? currentTrack.path : null;
-  const inQueueIdx = currentQueue.findIndex(t => t.path === curPath);
-  if (isShuffle && currentQueue.length > 1) {
-    let next;
-    do { next = currentQueue[Math.floor(Math.random() * currentQueue.length)]; }
-    while (next.path === curPath);
-    playTrackByPath(next.path, currentQueue);
-    return;
-  }
+  const activeQ = (isShuffle && shuffledQueue.length === currentQueue.length) ? shuffledQueue : currentQueue;
+  const inQueueIdx = activeQ.findIndex(t => t.path === curPath);
   let nextIdx = inQueueIdx + 1;
-  if (nextIdx >= currentQueue.length) {
+  if (nextIdx >= activeQ.length) {
     if (repeatMode === 0) return;
+    if (isShuffle) rebuildShuffleQueue();
     nextIdx = 0;
   }
-  playTrackByPath(currentQueue[nextIdx].path, currentQueue);
+  const next = (isShuffle && shuffledQueue.length === currentQueue.length ? shuffledQueue : currentQueue)[nextIdx];
+  if (next) playTrackByPath(next.path, currentQueue);
 }
 
 function prevTrack() {
@@ -5975,15 +6024,18 @@ function prevTrack() {
   if (repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = -1;
   const curPath = currentTrack ? currentTrack.path : null;
-  const inQueueIdx = currentQueue.findIndex(t => t.path === curPath);
+  const activeQ = (isShuffle && shuffledQueue.length === currentQueue.length) ? shuffledQueue : currentQueue;
+  const inQueueIdx = activeQ.findIndex(t => t.path === curPath);
   let prevIdx = inQueueIdx - 1;
-  if (prevIdx < 0) prevIdx = currentQueue.length - 1;
-  if (currentQueue[prevIdx]) playTrackByPath(currentQueue[prevIdx].path, currentQueue);
+  if (prevIdx < 0) prevIdx = activeQ.length - 1;
+  if (activeQ[prevIdx]) playTrackByPath(activeQ[prevIdx].path, currentQueue);
 }
 
 function updateShuffleUI() {
+  if (isShuffle) rebuildShuffleQueue();
   $('btn-shuffle').classList.toggle('active', isShuffle);
   $('fs-btn-shuffle').classList.toggle('active', isShuffle);
+  if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
 }
 
 function updateRepeatUI() {
@@ -5994,6 +6046,7 @@ function updateRepeatUI() {
   const icon = repeatMode === 2 ? '#i-repeat-one' : '#i-repeat';
   btn.querySelector('use').setAttribute('href', icon);
   fsBtn.querySelector('use').setAttribute('href', icon);
+  if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
 }
 
 // ── Open files ──
@@ -7169,9 +7222,7 @@ $('btn-lyrics').addEventListener('click', () => {
 function updateFullscreenQueue() {
   const list = $('fs-queue-list');
   list.innerHTML = '';
-  const curPath = currentTrack ? currentTrack.path : null;
-  const idx = currentQueue.findIndex(t => t.path === curPath);
-  const upcoming = currentQueue.slice(idx + 1, idx + 1 + 8);
+  const upcoming = getUpcomingQueue(8);
   $('fs-queue-count').textContent = tr('fs.queueAhead', { n: upcoming.length });
   upcoming.forEach(t => {
     if (!t.cover) ensureCoverFor(t);
@@ -7678,13 +7729,25 @@ $('btn-mb-editor').addEventListener('click', async () => {
     const item = document.createElement('div');
     item.className = 'mb-result-item';
     const subParts = [rec.album, rec.year, rec.trackNo ? `Track ${rec.trackNo}` : '', rec.genre].filter(Boolean);
+    const mbUrl = rec.url || (rec.id ? `https://musicbrainz.org/recording/${rec.id}` : '');
     item.innerHTML = `
       <div class="mb-result-title">
         <span>${escapeHtml(rec.title || 'Untitled')}</span>
-        ${rec.artist ? `<span class="mb-result-artist">${escapeHtml(rec.artist)}</span>` : ''}
+        <div class="mb-result-meta">
+          ${rec.artist ? `<span class="mb-result-artist">${escapeHtml(rec.artist)}</span>` : ''}
+          ${mbUrl ? `<a class="mb-link" href="${escapeHtml(mbUrl)}" title="Open on MusicBrainz" aria-label="Open on MusicBrainz"><svg class="i" width="12" height="12"><use href="#i-link"/></svg></a>` : ''}
+        </div>
       </div>
       ${subParts.length ? `<div class="mb-result-sub">${escapeHtml(subParts.join(' · '))}</div>` : ''}
     `;
+    const link = item.querySelector('.mb-link');
+    if (link && mbUrl) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.electronAPI.openExternal(mbUrl);
+      });
+    }
     item.addEventListener('click', () => {
       if (rec.title) $('md-title').value = rec.title;
       if (rec.artist) $('md-artist').value = rec.artist;

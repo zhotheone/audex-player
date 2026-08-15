@@ -195,7 +195,17 @@ function createWindow() {
   // a generated LAN sharing key to paste on another device). Re-wire just the
   // commands via webContents, not a visible menu, so Alt still reveals nothing.
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.type !== 'keyDown' || input.alt) return;
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F12') {
+      event.preventDefault();
+      if (mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools();
+      } else {
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+      }
+      return;
+    }
+    if (input.alt) return;
     if (!(process.platform === 'darwin' ? input.meta : input.control)) return;
     const wc = mainWindow.webContents;
     // A focused <input>/<textarea> already handles these natively - without

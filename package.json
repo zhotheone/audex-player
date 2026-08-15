@@ -1,20 +1,21 @@
 {
   "name": "audex-player",
   "productName": "Audex",
-  "version": "1.3.0",
-  "description": "Audex \u2014 minimal desktop music player",
+  "version": "0.0.195",
+  "description": "Audex — minimal desktop music player",
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
     "dist": "node scripts/build-info.js && electron-builder",
     "build": "node scripts/check-bundles.js win32 && node scripts/build-info.js && electron-builder --win --publish never",
+    "build:win": "bash scripts/build-win.sh",
     "postinstall": "node scripts/fetch-ytdlp.js",
     "test": "node test-audex.js && node test-lan.js"
   },
   "build": {
     "appId": "com.audex.player",
     "productName": "Audex",
-    "copyright": "Copyright \u00a9 2026 Heorhii Litovskyi",
+    "copyright": "Copyright © 2026 Heorhii Litovskyi",
     "directories": {
       "output": "release"
     },
@@ -86,13 +87,14 @@
           ]
         }
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-897f736-${os}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "${productName}-Setup-897f736.${ext}"
     }
   },
   "keywords": [],

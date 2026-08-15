@@ -159,7 +159,8 @@ function formatRecordingMatch(rec) {
     .slice().sort((a, b) => (b.count || 0) - (a.count || 0))
     .map(t => t.name).filter(Boolean);
   const genre = tags.slice(0, 3).join(', ');
-  return { title: rec.title, artist: artistCredit, album, year, trackNo, discNo, genre, score: rec.score || 0 };
+  const url = rec.id ? `https://musicbrainz.org/recording/${rec.id}` : '';
+  return { id: rec.id, url, title: rec.title, artist: artistCredit, album, year, trackNo, discNo, genre, score: rec.score || 0 };
 }
 
 async function searchRecordings({ artist = '', title = '', query = '' } = {}) {
