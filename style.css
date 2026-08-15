@@ -1338,11 +1338,12 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   display: inline-flex;
   gap: 4px;
   padding: 4px;
-  margin: 8px 0 18px;
+  margin: 0 0 16px;
   background: var(--active-bg);
   border: 1px solid var(--border);
   border-radius: 10px;
 }
+.ytm-search-wrap { margin-bottom: 14px; }
 .dl-tab {
   appearance: none;
   background: transparent;
@@ -1493,7 +1494,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 
 .dl-status {
-  margin: 8px 0 16px;
+  margin: 0 0 14px;
   padding: 10px 14px;
   border-radius: 8px;
   background: var(--active-bg);
@@ -1501,6 +1502,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   font-size: 12px;
   color: var(--text-muted);
 }
+.dl-status:empty { display: none; margin: 0; }
 .dl-status.is-error { color: #ef6c6c; border-color: #ef6c6c44; }
 .dl-status.is-ok { color: #6cd58a; border-color: #6cd58a44; }
 .dl-status.is-warn {
@@ -1698,10 +1700,11 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 4px 0 14px;
+  margin: 0 0 14px;
   min-height: 38px;
   flex-wrap: wrap;
 }
+.dl-pane[data-dl-pane="queue"]:has(#dl-queue-empty.show) .dl-queue-head { display: none; }
 .dl-queue-stats {
   font-size: 12px;
   color: var(--text-muted);
@@ -1753,7 +1756,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 8px;
@@ -3320,11 +3323,12 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .modal-overlay.active .editor-card { animation: modalCardIn 280ms cubic-bezier(0.22, 1, 0.36, 1); }
 
 /* ── In-app YouTube Music browser (full-page view) ── */
-.ytm-page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.ytm-page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .ytm-titles { min-width: 0; }
 .ytm-title { font-size: 22px; font-weight: 700; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ytm-sub { font-size: 13px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ytm-status { font-size: 12px; color: var(--text-dim); min-height: 14px; margin: 8px 0 4px; }
+.ytm-status:empty { display: none; margin: 0; min-height: 0; }
 .ytm-status.error { color: var(--danger); }
 .ytm-body { padding-bottom: 24px; }
 
@@ -5381,7 +5385,9 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 #btn-mb-editor .i { color: var(--svc-mb); }
 #btn-mb-editor:hover { border-color: var(--svc-mb); color: var(--text-strong); background: var(--svc-mb-dim); }
 .nav-item[data-view="ytmusic"] .i { color: var(--svc-ytm); }
+.settings-tab[data-tab="ytmusic"] .i { color: var(--svc-ytm); }
 .settings-tab[data-tab="lastfm"] .i { color: var(--svc-lfm); }
+.settings-tab[data-tab="discord"] .i { color: #5865F2; }
 #lastfm-section .section-label .i { color: var(--svc-lfm); }
 
 /* Unified tag-pill / genre chips in Metadata Editor, Artist Details, etc. */

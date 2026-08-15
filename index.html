@@ -169,10 +169,6 @@
             <span data-i18n="nav.downloads">Downloads</span>
             <span class="nav-meta" id="count-downloads" hidden>0</span>
           </a>
-          <a href="#" class="nav-item" data-view="ytmusic" id="nav-ytmusic" hidden>
-            <svg class="i" width="14" height="14"><use href="#i-youtube"/></svg>
-            <span data-i18n="nav.ytmusic">YouTube Music</span>
-          </a>
         </div>
         <div class="nav-group">
           <a href="#" class="nav-item" data-view="artists">
@@ -590,33 +586,6 @@
         <div id="artist-albums"></div>
       </section>
 
-      <!-- In-app YouTube Music browser: search artist -> releases -> tracks -> queue -->
-      <section id="view-ytmusic" class="view-section">
-        <header class="topbar">
-          <div class="crumb">
-            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
-            <span class="crumb-sep">/</span>
-            <span class="crumb-item active">YouTube Music</span>
-          </div>
-          <div class="searchbox">
-            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" id="ytm-search" data-i18n-placeholder="ytm.searchPh" placeholder="Search artists on YouTube Music…" autocomplete="off">
-          </div>
-        </header>
-
-        <div class="ytm-page-head">
-          <button class="btn-ghost icon-only ytm-back" id="ytm-back" data-i18n-title="ytm.back" title="Back" hidden>
-            <svg class="i" width="14" height="14"><use href="#i-prev"/></svg>
-          </button>
-          <div class="ytm-titles">
-            <div class="ytm-title" id="ytm-title">YouTube Music</div>
-            <div class="ytm-sub" id="ytm-sub" data-i18n="ytm.sub">Search an artist, then add albums or singles to the queue</div>
-          </div>
-        </div>
-        <div class="ytm-status" id="ytm-status"></div>
-        <div class="ytm-body" id="ytm-body"></div>
-      </section>
-
       <!-- Favorites -->
       <section id="view-favorites" class="view-section">
         <header class="topbar">
@@ -818,14 +787,35 @@
         </header>
 
         <div class="dl-tabs" role="tablist">
-          <button type="button" class="dl-tab is-active" data-dl-tab="parsing" role="tab" aria-selected="true" data-i18n="downloads.tab.parsing">Parsing</button>
+          <button type="button" class="dl-tab is-active" data-dl-tab="ytmusic" role="tab" aria-selected="true" data-i18n="nav.ytmusic">YouTube Music</button>
+          <button type="button" class="dl-tab" data-dl-tab="parsing" role="tab" aria-selected="false" data-i18n="downloads.tab.parsing">Parsing</button>
           <button type="button" class="dl-tab" data-dl-tab="queue" role="tab" aria-selected="false">
             <span data-i18n="downloads.tab.queue">Queue</span>
             <span class="dl-tab-count" id="dl-queue-tab-count" hidden>0</span>
           </button>
         </div>
 
-        <div class="dl-pane" data-dl-pane="parsing">
+        <div class="dl-pane" data-dl-pane="ytmusic">
+          <div class="ytm-search-wrap">
+            <div class="searchbox">
+              <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+              <input type="text" id="ytm-search" data-i18n-placeholder="ytm.searchPh" placeholder="Search artists on YouTube Music…" autocomplete="off">
+            </div>
+          </div>
+          <div class="ytm-page-head">
+            <button class="btn-ghost icon-only ytm-back" id="ytm-back" data-i18n-title="ytm.back" title="Back" hidden>
+              <svg class="i" width="14" height="14"><use href="#i-prev"/></svg>
+            </button>
+            <div class="ytm-titles">
+              <div class="ytm-title" id="ytm-title">YouTube Music</div>
+              <div class="ytm-sub" id="ytm-sub" data-i18n="ytm.sub">Search an artist, then add albums or singles to the queue</div>
+            </div>
+          </div>
+          <div class="ytm-status" id="ytm-status"></div>
+          <div class="ytm-body" id="ytm-body"></div>
+        </div>
+
+        <div class="dl-pane" data-dl-pane="parsing" hidden>
           <div class="dl-subtabs" role="tablist">
             <button type="button" class="dl-subtab is-active" data-dl-subtab="ytmusic" role="tab" aria-selected="true" data-i18n="downloads.parsing.subtab.ytmusic">YouTube Music</button>
             <button type="button" class="dl-subtab" data-dl-subtab="spotify" role="tab" aria-selected="false" data-i18n="downloads.parsing.subtab.spotify">Spotify</button>
@@ -1108,13 +1098,21 @@
           <svg class="i" width="13" height="13"><use href="#i-library"/></svg>
           <span data-i18n="section.library">Library</span>
         </button>
-        <button class="settings-tab" data-tab="downloads" role="tab">
-          <svg class="i" width="13" height="13"><use href="#i-download"/></svg>
-          <span data-i18n="section.downloads">Download from the internet</span>
+        <button class="settings-tab" data-tab="sidebar" role="tab">
+          <svg class="i" width="13" height="13"><use href="#i-list"/></svg>
+          <span data-i18n="section.sidebar">Sidebar</span>
         </button>
-        <button class="settings-tab" data-tab="integrations" role="tab">
+        <button class="settings-tab" data-tab="hotkeys" role="tab">
+          <svg class="i" width="13" height="13"><use href="#i-keyboard"/></svg>
+          <span data-i18n="section.hotkeys">Hotkeys</span>
+        </button>
+        <button class="settings-tab" data-tab="ytmusic" role="tab">
+          <svg class="i" width="13" height="13"><use href="#i-download"/></svg>
+          <span data-i18n="setting.ytMusic">YouTube Music</span>
+        </button>
+        <button class="settings-tab" data-tab="discord" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-discord"/></svg>
-          <span data-i18n="section.integrations">Integrations</span>
+          <span data-i18n="section.discord">Discord</span>
         </button>
         <button class="settings-tab" data-tab="lastfm" role="tab">
           <svg class="i" width="13" height="13"><use href="#i-lastfm"/></svg>
@@ -1474,7 +1472,7 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="integrations" hidden>
+      <div class="settings-panel" data-panel="sidebar" hidden>
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-list"/></svg>
@@ -1504,10 +1502,13 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.ytMusic">YouTube Music</div>
-              <div class="setting-desc" data-i18n="setting.ytMusicDesc">The “YouTube Music” section for searching artists and adding their albums or singles to the download queue.</div>
+              <div class="setting-label">
+                <span data-i18n="setting.showDownloads">Show the “Downloads” tab</span>
+                <span class="setting-badge" data-i18n="badge.wip">in development</span>
+              </div>
+              <div class="setting-desc" data-i18n="setting.showDownloadsDesc">Adds a section to the sidebar for downloading tracks by URL.</div>
             </div>
-            <button class="toggle" data-setting="yt-music"><div class="toggle-knob"></div></button>
+            <button class="toggle" data-setting="downloads"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
@@ -1520,11 +1521,28 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="downloads" hidden>
+      <div class="settings-panel" data-panel="hotkeys" hidden>
+      <section class="setting-section">
+        <div class="section-label">
+          <svg class="i" width="11" height="11"><use href="#i-keyboard"/></svg>
+          <span data-i18n="section.hotkeys">Hotkeys</span>
+        </div>
+        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.intro">Click a shortcut, then press a key or a mouse button. Esc cancels, Backspace clears it.</div>
+        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.globalNote">The monitor icon makes a shortcut work while the window is minimised. It needs a modifier (Ctrl, Alt or Shift); mouse buttons cannot do this.</div>
+        <!-- Rows are rendered by renderHotkeys() in renderer.js. -->
+        <div class="setting-card" id="hotkeys-list"></div>
+        <div class="hotkeys-foot">
+          <div class="setting-desc" data-i18n="hotkeys.escNote">Esc always closes the topmost window and cannot be rebound.</div>
+          <button class="btn-ghost" id="hotkeys-reset" data-i18n="hotkeys.resetAll">Reset all</button>
+        </div>
+      </section>
+      </div>
+
+      <div class="settings-panel" data-panel="ytmusic" hidden>
       <section class="setting-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-download"/></svg>
-          <span data-i18n="section.downloads">Download from the internet</span>
+          <span data-i18n="setting.ytMusic">YouTube Music</span>
         </div>
         <div class="setting-card">
           <div class="setting-row">
@@ -1543,16 +1561,6 @@
                 <div class="select-opt" data-dlfmt="m4a">M4A</div>
               </div>
             </div>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label">
-                <span data-i18n="setting.showDownloads">Show the “Downloads” tab</span>
-                <span class="setting-badge" data-i18n="badge.wip">in development</span>
-              </div>
-              <div class="setting-desc" data-i18n="setting.showDownloadsDesc">Adds a section to the sidebar for downloading tracks by URL.</div>
-            </div>
-            <button class="toggle" data-setting="downloads"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">
@@ -1581,42 +1589,7 @@
       </section>
       </div>
 
-      <div class="settings-panel" data-panel="appearance" hidden>
-      <section class="setting-section">
-        <div class="section-label">
-          <svg class="i" width="11" height="11"><use href="#i-keyboard"/></svg>
-          <span data-i18n="section.hotkeys">Hotkeys</span>
-        </div>
-        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.intro">Click a shortcut, then press a key or a mouse button. Esc cancels, Backspace clears it.</div>
-        <div class="setting-desc hotkeys-intro" data-i18n="hotkeys.globalNote">The monitor icon makes a shortcut work while the window is minimised. It needs a modifier (Ctrl, Alt or Shift); mouse buttons cannot do this.</div>
-        <!-- Rows are rendered by renderHotkeys() in renderer.js. -->
-        <div class="setting-card" id="hotkeys-list"></div>
-        <div class="hotkeys-foot">
-          <div class="setting-desc" data-i18n="hotkeys.escNote">Esc always closes the topmost window and cannot be rebound.</div>
-          <button class="btn-ghost" id="hotkeys-reset" data-i18n="hotkeys.resetAll">Reset all</button>
-        </div>
-      </section>
-      </div>
-
-      <div class="settings-panel" data-panel="about" hidden>
-      <section class="setting-section">
-        <div class="section-label">
-          <svg class="i" width="11" height="11"><use href="#i-monitor"/></svg>
-          <span data-i18n="section.system">System</span>
-        </div>
-        <div class="setting-card">
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.hardwareAcceleration">Hardware acceleration</div>
-              <div class="setting-desc" data-i18n="setting.hardwareAccelerationDesc">Uses the GPU to render the interface. If the app hangs on launch or shows graphical glitches, turn this off. Takes effect after a restart.</div>
-            </div>
-            <button class="toggle" id="toggle-hwaccel"><div class="toggle-knob"></div></button>
-          </div>
-        </div>
-      </section>
-      </div>
-
-      <div class="settings-panel" data-panel="integrations" hidden>
+      <div class="settings-panel" data-panel="discord" hidden>
       <section class="setting-section" id="discord-section">
         <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-discord"/></svg>
@@ -1639,6 +1612,22 @@
       <div class="settings-panel" data-panel="about" hidden>
       <section class="setting-section">
         <div class="section-label">
+          <svg class="i" width="11" height="11"><use href="#i-monitor"/></svg>
+          <span data-i18n="section.system">System</span>
+        </div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.hardwareAcceleration">Hardware acceleration</div>
+              <div class="setting-desc" data-i18n="setting.hardwareAccelerationDesc">Uses the GPU to render the interface. If the app hangs on launch or shows graphical glitches, turn this off. Takes effect after a restart.</div>
+            </div>
+            <button class="toggle" id="toggle-hwaccel"><div class="toggle-knob"></div></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="setting-section">
+        <div class="section-label">
           <svg class="i" width="11" height="11"><use href="#i-link"/></svg>
           <span data-i18n="section.contacts">Contacts</span>
         </div>
@@ -1658,7 +1647,7 @@
               <div class="setting-label" data-i18n="setting.telegram">Telegram</div>
               <div class="setting-desc" data-i18n="setting.telegramDesc">Found a bug or have a suggestion — write on Telegram.</div>
             </div>
-            <button class="btn-ghost" data-open-url="https://t.me/https://t.me/litovskas_og">
+            <button class="btn-ghost" data-open-url="https://t.me/litovskas_og">
               <svg class="i" width="13" height="13"><use href="#i-telegram"/></svg>
               <span>@litovskas_og</span>
             </button>

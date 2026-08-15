@@ -9432,12 +9432,6 @@ function applyDownloadsVisibility() {
 }
 applyDownloadsVisibility();
 
-function applyYtMusicVisibility() {
-  $('nav-ytmusic').hidden = !settings.ytMusic;
-  if (!settings.ytMusic && currentView === 'ytmusic') setView('library');
-}
-applyYtMusicVisibility();
-
 
 // Report, Health and Editor share a "Tools" sidebar group (index.html
 // #nav-tools-group) that's hidden whenever none of them is on, so an empty
@@ -10936,7 +10930,8 @@ const ytmBrowser = (function () {
   };
 
   function open(prefillArtist) {
-    setView('ytmusic');
+    setView('downloads');
+    activateDlTab('ytmusic');
     const input = el('ytm-search');
     if (prefillArtist) {
       input.value = prefillArtist;
