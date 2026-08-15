@@ -4372,6 +4372,7 @@ async function runHealthScan() {
 
 // ── Render: track row ──
 function renderTrackRow(track, displayIndex, queue) {
+  if (!track) return document.createElement('div');
   // Backfill covers and (for libraries saved before this feature) Tier-1 quality
   // lazily as rows scroll into view. A peer's track already carries what it has —
   // there's no local file here to read tags from.

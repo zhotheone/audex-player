@@ -25,7 +25,7 @@ const grabConst = (name) => {
   return src.slice(start, src.indexOf(';\n', start) + 2); // literals here have no inner semicolons
 };
 const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS } = new Function('fs', 'path',
-  grab('sanitizeFsName') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('isOggContainer') +
+  grab('sanitizeFsName') + grab('safeRenameSync') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('isOggContainer') +
   grab('oggCoverMetaFile') + grab('toFfmpegPath') + grab('ffmpegTagArgs') +
   grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') +
   'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS };')(fs, path);
@@ -253,7 +253,7 @@ const tags = {
   const { storePath, writeStoreFile } = new Function('fs', 'path', 'ROOT',
     'function storeDir() { return ROOT; }' +
     'function logAppError() {}' +
-    grab('storePath') + grab('writeStoreFile') +
+    grab('safeRename') + grab('storePath') + grab('writeStoreFile') +
     'return { storePath, writeStoreFile };')(fs, path, storeRoot);
 
   assert.deepStrictEqual(await writeStoreFile('library-meta', '[{"path":"/a.mp3"}]'), { success: true });
@@ -397,6 +397,13 @@ const tags = {
   }
   assert.deepStrictEqual(parseLyricsQuery({ query: 'Queen - Bohemian Rhapsody' }), { artist: 'Queen', title: 'Bohemian Rhapsody' });
   assert.deepStrictEqual(parseLyricsQuery({ query: 'Yesterday' }), { artist: '', title: 'Yesterday' });
+
+  // renderTrackRow null check
+  function mockRenderTrackRow(track) {
+    if (!track) return { isStub: true };
+    return { path: track.path };
+  }
+  assert.strictEqual(mockRenderTrackRow(undefined).isStub, true);
 
   console.log('ok');
 })();

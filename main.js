@@ -568,10 +568,43 @@ ipcMain.handle('music:scanFolder', async (event, folderPath) => {
 function storeDir() {
   return path.join(app.getPath('userData'), 'store');
 }
-// basename() so a store name can only ever name a file inside the store dir.
 function storePath(name) {
   return path.join(storeDir(), path.basename(String(name)) + '.json');
 }
+
+async function safeRename(src, dest, retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await fs.promises.rename(src, dest);
+      return;
+    } catch (err) {
+      if ((err.code === 'EPERM' || err.code === 'EBUSY' || err.code === 'EACCES') && i < retries - 1) {
+        await new Promise(r => setTimeout(r, (i + 1) * 35));
+        continue;
+      }
+      if (err.code === 'EPERM' || err.code === 'EBUSY' || err.code === 'EACCES') {
+        await fs.promises.copyFile(src, dest);
+        try { await fs.promises.unlink(src); } catch (_) {}
+        return;
+      }
+      throw err;
+    }
+  }
+}
+
+function safeRenameSync(src, dest) {
+  try {
+    fs.renameSync(src, dest);
+  } catch (err) {
+    if (err.code === 'EPERM' || err.code === 'EBUSY' || err.code === 'EACCES') {
+      fs.copyFileSync(src, dest);
+      try { fs.unlinkSync(src); } catch (_) {}
+    } else {
+      throw err;
+    }
+  }
+}
+
 async function writeStoreFile(name, json) {
   const dest = storePath(name);
   // Unique tmp per write: play-log is written on every play event, so two
@@ -582,7 +615,7 @@ async function writeStoreFile(name, json) {
   try {
     await fs.promises.mkdir(storeDir(), { recursive: true });
     await fs.promises.writeFile(tmp, json, 'utf8');
-    await fs.promises.rename(tmp, dest);
+    await safeRename(tmp, dest);
     return { success: true };
   } catch (e) {
     try { await fs.promises.unlink(tmp); } catch (_) {}
@@ -940,7 +973,7 @@ async function writeMetadataToFile(filePath, tags, { dropCover = false } = {}) {
 
   try {
     await runFfmpeg(ffmpeg, args);
-    await fs.promises.rename(tmpPath, filePath);
+    await safeRename(tmpPath, filePath);
     return { success: true };
   } catch (err) {
     try { fs.unlinkSync(tmpPath); } catch (_) {}
@@ -1020,7 +1053,7 @@ async function embedPicture(origPath, picture) {
 
   try {
     await runFfmpeg(ffmpeg, args);
-    await fs.promises.rename(tmpPath, filePath);
+    await safeRename(tmpPath, filePath);
     // Disk cover cache is keyed by a hash of the path and never overwrites an
     // existing entry (it assumes a track's art is immutable) — drop the stale
     // one first so the new cover actually lands on next boot. Keyed by the
@@ -1319,7 +1352,7 @@ ipcMain.handle('audio:trim', async (event, payload) => {
 
   try {
     await runFfmpeg(ffmpeg, args);
-    await fs.promises.rename(tmpPath, outPath);
+    await safeRename(tmpPath, outPath);
     return { success: true, filePath: outPath, overwritten: overwrite };
   } catch (err) {
     try { if (fs.existsSync(tmpPath)) await fs.promises.unlink(tmpPath); } catch (_) {}
@@ -1752,22 +1785,47 @@ ipcMain.handle('ytm:artistReleases', async (event, browseId) => {
     const data = await ytmInnertube('browse', { browseId: id });
     const releases = [];
     const seen = new Set();
+    const parseReleases = (root, defaultKind = '') => {
+      ytmWalk(root, n => {
+        const r = n.musicTwoRowItemRenderer;
+        if (!r) return;
+        const nav = r.navigationEndpoint || (((r.title || {}).runs || [])[0] || {}).navigationEndpoint;
+        if (ytmBrowsePageType(nav) !== 'MUSIC_PAGE_TYPE_ALBUM') return;
+        const albumBrowseId = nav.browseEndpoint.browseId;
+        if (!albumBrowseId || seen.has(albumBrowseId)) return;
+        seen.add(albumBrowseId);
+        const subRuns = ((r.subtitle || {}).runs || []).map(x => x.text || '');
+        const subtitle = subRuns.join(' ');
+        const kind = (subRuns[0] || defaultKind || '').trim();
+        const year = (subtitle.match(/\b(19|20)\d{2}\b/) || [])[0] || '';
+        releases.push({ albumBrowseId, title: ytmRunsText(r.title), kind, year, thumb: ytmFirstThumb(r) });
+      });
+    };
+
+    const discogEndpoints = [];
     ytmWalk(data, n => {
-      const r = n.musicTwoRowItemRenderer;
-      if (!r) return;
-      const nav = r.navigationEndpoint || (((r.title || {}).runs || [])[0] || {}).navigationEndpoint;
-      if (ytmBrowsePageType(nav) !== 'MUSIC_PAGE_TYPE_ALBUM') return;
-      const albumBrowseId = nav.browseEndpoint.browseId;
-      if (!albumBrowseId || seen.has(albumBrowseId)) return;
-      seen.add(albumBrowseId);
-      const subRuns = ((r.subtitle || {}).runs || []).map(x => x.text || '');
-      const subtitle = subRuns.join(' ');
-      // First subtitle run is the release kind ("Album" / "Single" / "EP"); a
-      // 4-digit run is the year. Kind is normalized on the renderer side.
-      const kind = (subRuns[0] || '').trim();
-      const year = (subtitle.match(/\b(19|20)\d{2}\b/) || [])[0] || '';
-      releases.push({ albumBrowseId, title: ytmRunsText(r.title), kind, year, thumb: ytmFirstThumb(r) });
+      const shelf = n.musicCarouselShelfRenderer;
+      if (!shelf) return;
+      const header = shelf.header && (shelf.header.musicCarouselShelfBasicHeaderRenderer || shelf.header.musicHeaderRenderer);
+      const titleRuns = header && header.title && header.title.runs;
+      const title = titleRuns ? titleRuns.map(r => r.text).join('') : '';
+      const moreBtn = header && header.moreContentButton && header.moreContentButton.buttonRenderer;
+      const nav = (titleRuns && titleRuns[0] && titleRuns[0].navigationEndpoint) || (moreBtn && moreBtn.navigationEndpoint);
+      if (nav && nav.browseEndpoint && ytmBrowsePageType(nav) === 'MUSIC_PAGE_TYPE_ARTIST_DISCOGRAPHY') {
+        discogEndpoints.push({ title, browseEndpoint: nav.browseEndpoint });
+      }
     });
+
+    if (discogEndpoints.length) {
+      await Promise.all(discogEndpoints.map(async ep => {
+        try {
+          const discog = await ytmInnertube('browse', { browseId: ep.browseEndpoint.browseId, params: ep.browseEndpoint.params });
+          parseReleases(discog, /single/i.test(ep.title) ? 'Single' : 'Album');
+        } catch (_) {}
+      }));
+    } else {
+      parseReleases(data);
+    }
     return { success: true, releases };
   } catch (e) {
     return { success: false, error: String(e.message || e) };
@@ -1995,7 +2053,7 @@ function placeDownload(filePath, downloadsDir, { artist, album, suggestedName, f
     try { fs.unlinkSync(filePath); } catch (_) {}
     return targetPath;
   }
-  fs.renameSync(filePath, targetPath);
+  safeRenameSync(filePath, targetPath);
   return targetPath;
 }
 
