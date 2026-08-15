@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { pathToFileURL, fileURLToPath } = require('url');
 const musicMetadata = require('music-metadata');
 const lan = require('./lan');
-const { lookupAlbumInfo, searchRecordings } = require('./musicbrainz');
+const { lookupAlbumInfo, searchRecordings, searchReleases, lookupRelease } = require('./musicbrainz');
 
 app.setName('Audex');
 
@@ -2896,4 +2896,12 @@ ipcMain.handle('musicbrainz:search', async (event, query) => {
   const res = await searchRecordings(query);
   console.log('[MusicBrainz:search]', query, res);
   return res;
+});
+
+ipcMain.handle('musicbrainz:searchReleases', async (event, query) => {
+  return await searchReleases(query);
+});
+
+ipcMain.handle('musicbrainz:lookupRelease', async (event, id) => {
+  return await lookupRelease(id);
 });

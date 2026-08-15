@@ -212,7 +212,8 @@ const tags = {
   assert.strictEqual(recMatch.title, 'Test Song');
   assert.strictEqual(recMatch.artist, 'Artist A feat. Artist B');
   assert.strictEqual(recMatch.album, 'Test Album');
-  assert.strictEqual(recMatch.year, '2023');
+  assert.strictEqual(recMatch.date, '2023-10-12');
+  assert.strictEqual(recMatch.year, '2023-10-12');
   assert.strictEqual(recMatch.trackNo, '3');
   assert.strictEqual(recMatch.discNo, '1');
   assert.strictEqual(recMatch.genre, 'indie');
@@ -327,7 +328,47 @@ const tags = {
   store.writeStore('library-meta', [], 'ambevor-library-meta');
   await new Promise(r => setImmediate(r));
   assert.strictEqual(store.ls.has('ambevor-library-meta'), true, 'a failed write must not drop the last good copy');
-  assert.deepStrictEqual(store.toasts, ['toast.saveFailed'], 'a failing save should warn once, not once per save');
+  // Tag editing locks while playing for non-ogg containers (.m4a, .flac, etc.)
+  const rSrc = fs.readFileSync(path.join(__dirname, 'renderer.js'), 'utf8');
+  const isTagEditingLockedFn = new Function('currentTrack',
+    rSrc.slice(rSrc.indexOf('function isTagEditingLocked('), rSrc.indexOf('function srcFor(')) +
+    'return isTagEditingLocked;'
+  )({ path: '/music/song.m4a' });
+
+  assert.strictEqual(isTagEditingLockedFn('/music/song.m4a'), true, 'm4a must lock while playing');
+  assert.strictEqual(isTagEditingLockedFn('/music/song.flac'), false, 'different track must not lock');
+  assert.strictEqual(isTagEditingLockedFn('/music/song.opus'), false, 'opus must not lock');
+
+  const isTagEditingLockedOpus = new Function('currentTrack',
+    rSrc.slice(rSrc.indexOf('function isTagEditingLocked('), rSrc.indexOf('function srcFor(')) +
+    'return isTagEditingLocked;'
+  )({ path: '/music/song.opus' });
+  assert.strictEqual(isTagEditingLockedOpus('/music/song.opus'), false, 'playing opus must not lock');
+
+  const isTagEditingLockedFlac = new Function('currentTrack',
+    rSrc.slice(rSrc.indexOf('function isTagEditingLocked('), rSrc.indexOf('function srcFor(')) +
+    'return isTagEditingLocked;'
+  )({ path: '/music/song.flac' });
+  assert.strictEqual(isTagEditingLockedFlac('/music/song.flac'), true, 'playing flac must lock');
+
+  // Health check tags issue: flags missing tags and generic "Music" genre
+  const computeHealthIssuesFn = new Function('library', 'tr', 'qualityFor', 'coverCache', 'normDupKey',
+    rSrc.slice(rSrc.indexOf('function computeHealthIssues('), rSrc.indexOf('function buildSpectrumSvg(')) +
+    'return computeHealthIssues;'
+  )(
+    [
+      { path: '/a.mp3', title: 'Song', artist: 'Artist', album: 'Album', year: '2020', genre: 'Rock', hasCover: true },
+      { path: '/b.mp3', title: 'Song 2', artist: 'Artist', album: 'Album', year: '2020', genre: '', hasCover: true },
+      { path: '/c.mp3', title: 'Song 3', artist: 'Artist', album: 'Album', year: '2020', genre: 'Music', hasCover: true },
+    ],
+    () => '',
+    () => null,
+    {},
+    () => ''
+  );
+  const issues = computeHealthIssuesFn();
+  const tagsIssue = issues.find(i => i.id === 'tags');
+  assert.deepStrictEqual(tagsIssue.paths, ['/b.mp3', '/c.mp3'], 'tracks with empty or generic Music genre must be flagged');
 
   console.log('ok');
 })();

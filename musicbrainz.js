@@ -142,27 +142,29 @@ function formatRecordingMatch(rec) {
   const artistCredit = (rec['artist-credit'] || [])
     .map(c => (c.name || (c.artist && c.artist.name) || '') + (c.joinphrase || ''))
     .join('').trim();
-  let album = '', year = '', trackNo = '', discNo = '';
+  let album = '', year = '', date = '', country = '', trackNo = '', discNo = '';
   const rel = (rec.releases || [])[0];
   if (rel) {
     album = rel.title || (rel['release-group'] && rel['release-group'].title) || '';
-    if (rel.date) {
-      const ym = String(rel.date).match(/^\d{4}/);
-      if (ym) year = ym[0];
-    }
+    date = rel.date || rec['first-release-date'] || '';
+    country = rel.country || '';
+    year = date;
     const medium = (rel.media || [])[0];
     if (medium) {
       if (medium.position) discNo = String(medium.position);
       const trk = (medium.track || [])[0];
       if (trk && (trk.position || trk.number)) trackNo = String(trk.position || trk.number);
     }
+  } else {
+    date = rec['first-release-date'] || '';
+    year = date;
   }
   const tags = (rec.tags || []).concat(rec.genres || [])
     .slice().sort((a, b) => (b.count || 0) - (a.count || 0))
     .map(t => t.name).filter(Boolean);
   const genre = tags.slice(0, 3).join(', ');
   const url = rec.id ? `https://musicbrainz.org/recording/${rec.id}` : '';
-  return { id: rec.id, url, title: rec.title, artist: artistCredit, album, year, trackNo, discNo, genre, score: rec.score || 0 };
+  return { id: rec.id, url, title: rec.title, artist: artistCredit, album, year, date, country, trackNo, discNo, genre, score: rec.score || 0 };
 }
 
 async function searchRecordings({ artist = '', title = '', query = '' } = {}) {
@@ -182,4 +184,64 @@ async function searchRecordings({ artist = '', title = '', query = '' } = {}) {
   }
 }
 
-module.exports = { lookupAlbumInfo, searchRecordings, formatRecordingMatch };
+async function searchReleases({ artist = '', album = '', query = '' } = {}) {
+  const A = esc(artist), AL = esc(album), Q = esc(query);
+  let q = '';
+  if (A && AL) q = `artist:"${A}" AND release:"${AL}"`;
+  else if (AL) q = `release:"${AL}"`;
+  else if (Q) q = Q;
+  else if (A) q = `artist:"${A}"`;
+  if (!q) return [];
+  try {
+    const d = await mbFetch(`${MB}/release/?query=${encodeURIComponent(q)}&fmt=json&limit=6`);
+    const releases = (d && Array.isArray(d.releases)) ? d.releases : [];
+    return releases.map(r => ({
+      id: r.id,
+      title: r.title || '',
+      artist: (r['artist-credit'] || []).map(c => (c.name || (c.artist && c.artist.name) || '') + (c.joinphrase || '')).join('').trim(),
+      date: r.date || '',
+      country: r.country || '',
+      trackCount: r['track-count'] || (r.media || []).reduce((n, m) => n + (m['track-count'] || (m.tracks && m.tracks.length) || 0), 0),
+      score: r.score || 0,
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+async function lookupRelease(releaseId) {
+  if (!releaseId) return null;
+  try {
+    const r = await mbFetch(`${MB}/release/${releaseId}?inc=recordings+media+artist-credits+genres&fmt=json`);
+    if (!r) return null;
+    const tracks = [];
+    (r.media || []).forEach(m => {
+      const discNo = m.position || 1;
+      (m.tracks || []).forEach(t => {
+        const credit = (t['artist-credit'] || []).map(c => (c.name || (c.artist && c.artist.name) || '') + (c.joinphrase || '')).join('').trim();
+        tracks.push({
+          discNo,
+          position: t.position,
+          number: t.number || String(t.position),
+          title: (t.recording && t.recording.title) || t.title || '',
+          artist: credit || '',
+          length: t.length || (t.recording && t.recording.length) || 0,
+        });
+      });
+    });
+    const g = topGenres(r);
+    return {
+      id: r.id,
+      title: r.title || '',
+      artist: (r['artist-credit'] || []).map(c => (c.name || (c.artist && c.artist.name) || '') + (c.joinphrase || '')).join('').trim(),
+      date: r.date || '',
+      country: r.country || '',
+      genre: g.join(', '),
+      tracks,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+module.exports = { lookupAlbumInfo, searchRecordings, formatRecordingMatch, searchReleases, lookupRelease };

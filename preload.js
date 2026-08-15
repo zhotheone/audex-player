@@ -73,6 +73,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lookupCover: (query) => ipcRenderer.invoke('music:lookupCover', query),
   lookupLyrics: (query) => ipcRenderer.invoke('music:lookupLyrics', query),
   searchMusicBrainz: (query) => ipcRenderer.invoke('musicbrainz:search', query),
+  searchMusicBrainzReleases: (query) => ipcRenderer.invoke('musicbrainz:searchReleases', query),
+  lookupMusicBrainzRelease: (id) => ipcRenderer.invoke('musicbrainz:lookupRelease', id),
   onDiscordStatus: (cb) => {
     const listener = (_e, data) => cb(data);
     ipcRenderer.on('discord:status', listener);

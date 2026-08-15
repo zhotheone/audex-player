@@ -669,7 +669,7 @@ const I18N = {
     'issue.nocover.title': 'No cover art',
     'issue.nocover.desc': 'Tracks with no embedded album image.',
     'issue.tags.title': 'Incomplete tags',
-    'issue.tags.desc': 'Empty artist, album or year fields.',
+    'issue.tags.desc': 'Empty artist, album, year, or generic "Music" genre.',
     'issue.notrackno.title': 'Missing track number',
     'issue.notrackno.desc': 'Tracks with no track-number tag, which throws off album order.',
     'issue.dupes.title': 'Possible duplicates',
@@ -1095,6 +1095,10 @@ const I18N = {
     'cm.useAsAlbumCover': 'Use as album cover',
     'cm.setCoverFromFile': 'Set cover from file…',
     'cm.applyCoverToAlbum': 'Apply cover to album…',
+    'cm.mbRelease': 'Match release on MusicBrainz…',
+    'mbRelease.title': 'MusicBrainz Release Matches',
+    'mbRelease.progress': 'Applying MusicBrainz metadata…',
+    'mbRelease.applied': 'Updated {count} tracks from MusicBrainz',
     'cm.fixYear': 'Set release year',
     'cm.fixTrackNumbers': 'Fix track numbers',
     'cm.deleteAlbum': 'Delete album…',
@@ -1113,6 +1117,7 @@ const I18N = {
     'albumYear.summary': '{updated} updated · {failed} failed ({total} total)',
     'albumTrackNo.pickTitle': 'Click tracks in listening order — first click is track 1',
     'albumTrackNo.writeFailed': 'Could not update the track number.',
+    'editor.lockedWhilePlaying': 'Cannot edit tags while this track is playing',
     'editor.saved': 'Saved ✓',
     'editor.errorSave': 'Save error',
     'cm.play': 'Play',
@@ -1357,7 +1362,7 @@ const I18N = {
     'issue.nocover.title': 'Без обкладинки',
     'issue.nocover.desc': 'Треки без вбудованого зображення альбому.',
     'issue.tags.title': 'Неповні теги',
-    'issue.tags.desc': 'Порожні поля виконавця, альбому або року.',
+    'issue.tags.desc': 'Порожні поля виконавця, альбому, року або загальний жанр "Music".',
     'issue.notrackno.title': 'Немає номера треку',
     'issue.notrackno.desc': 'Треки без тегу номера треку — через це порядок в альбомі збивається.',
     'issue.dupes.title': 'Можливі дублікати',
@@ -1792,6 +1797,10 @@ const I18N = {
     'albumCover.badSource': 'Для цього треку ще не завантажено обкладинку — прогорніть до нього список (або відкрийте трек), щоб вона завантажилась, і спробуйте ще раз.',
     'albumCover.confirm': 'Застосувати обкладинку з «{track}» до решти {count} трек(ів) цього альбому?',
     'albumCover.progress': 'Оновлюємо обкладинки альбому…',
+    'cm.mbRelease': 'Зіставити реліз у MusicBrainz…',
+    'mbRelease.title': 'Релізи MusicBrainz',
+    'mbRelease.progress': 'Застосування метаданих MusicBrainz…',
+    'mbRelease.applied': 'Оновлено {count} треків з MusicBrainz',
     'coverFile.progress': 'Встановлення обкладинки…',
     'coverFile.confirm': 'Встановити це зображення як обкладинку для всіх {count} треків?',
     'coverFile.error': 'Не вдалося прочитати зображення: {e}',
@@ -1801,6 +1810,7 @@ const I18N = {
     'albumYear.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
     'albumTrackNo.pickTitle': 'Клацайте треки у порядку прослуховування — перший клік стане треком 1',
     'albumTrackNo.writeFailed': 'Не вдалося оновити номер треку.',
+    'editor.lockedWhilePlaying': 'Неможливо редагувати теги під час відтворення цього треку',
     'editor.saved': 'Збережено ✓',
     'editor.errorSave': 'Помилка збереження',
     'cm.play': 'Грати',
@@ -4059,7 +4069,8 @@ function computeHealthIssues() {
     if (typeof t.hasCover === 'boolean' && !t.hasCover && !coverCache[t.path]) nocover.push(t.path);
     const artistBad = !t.artist || t.artist === 'Unknown Artist' || t.artist === unknownArtist;
     const albumBad = !t.album || t.album === 'Unknown Album';
-    if (artistBad || albumBad || !t.year) tags.push(t.path);
+    const genreBad = !t.genre || !t.genre.trim() || t.genre.trim().toLowerCase() === 'music';
+    if (artistBad || albumBad || !t.year || genreBad) tags.push(t.path);
     // A track number only means something in the context of an album — a
     // single with no album tag has nothing to be out of order relative to.
     if (!t.trackNo && t.album) {
@@ -5045,16 +5056,21 @@ function renderArtistDetail(name) {
 
 // ── Similar artists from Last.fm ──
 // Cached per artist so re-renders (search typing, sort) don't re-hit the API.
-const lfmArtistCache = {};
+const lfmArtistCache = readStore('lastfm-similar', 'audex-lfm-similar') || {};
 async function renderArtistLastfm(name) {
   const simList = $('artist-similar-list');
   if (!simList) return;
   simList.hidden = true; simList.innerHTML = '';
   if (!lfmConfigured() || !name) return;
 
-  let similar = lfmArtistCache[name];
+  const key = name.toLowerCase();
+  let similar = lfmArtistCache[key];
   if (!similar) {
-    similar = lfmArtistCache[name] = await lfmSimilarArtists(name);
+    similar = await lfmSimilarArtists(name);
+    if (similar) {
+      lfmArtistCache[key] = similar;
+      writeStore('lastfm-similar', lfmArtistCache, 'audex-lfm-similar');
+    }
   }
   if (activeArtistName !== name || currentView !== 'artist-detail') return;  // navigated away
 
@@ -5064,7 +5080,7 @@ async function renderArtistLastfm(name) {
       const inLib = known.has(n.toLowerCase());
       const chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'tag-pill' + (inLib ? '' : ' yt-remote');
+      chip.className = 'tag-pill';
       chip.innerHTML = inLib
         ? escapeHtml(n)
         : `<svg class="i" width="11" height="11"><use href="#i-youtube"/></svg><span>${escapeHtml(n)}</span>`;
@@ -5533,6 +5549,11 @@ function startCrossfadeTail(onReady) {
 // path behind it) — it behaves exactly like a remote track everywhere here:
 // playable as-is, but no tag edits/cover lookups/reveal-in-folder.
 function isRemotePath(p) { return /^(https?|blob):/.test(String(p || '')); }
+function isTagEditingLocked(p) {
+  if (!p || !currentTrack || currentTrack.path !== p) return false;
+  const ext = (String(p).split('.').pop() || '').toLowerCase();
+  return ext !== 'opus' && ext !== 'ogg';
+}
 function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
 
 // Resolve against the queue before the library: a queue of peer tracks has no
@@ -6200,6 +6221,7 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
     const localTracks = scope.tracks.filter(t => !isRemotePath(t.path));
     if (action === 'apply-cover') runRegenerateAlbumCovers(scope.tracks);
     else if (action === 'set-cover-file') setCoverFromFile(scope.tracks);
+    else if (action === 'mb-release') runMatchReleaseMusicBrainz(scope.tracks, scope.name);
     else if (action === 'fix-year') runFixAlbumYear(scope.tracks);
     else if (action === 'set-genre') runSetGenre(scope.tracks);
     else if (action === 'fix-tracknos') runFixAlbumTrackNumbers(scope.tracks);
@@ -6234,6 +6256,7 @@ async function applyCoverToTargets(targets, coverUrl, progressKey) {
   for (let i = 0; i < targets.length; i++) {
     setProgressBanner(i, targets.length, progressKey);
     const t = targets[i];
+    if (isTagEditingLocked(t.path)) { failed++; continue; }
     const wr = await window.electronAPI.writeCover(t.path, coverUrl);
     if (wr && wr.success) {
       t.cover = coverUrl;
@@ -6292,6 +6315,7 @@ async function runFixAlbumYear(tracks) {
   for (let i = 0; i < targets.length; i++) {
     setProgressBanner(i, targets.length, 'albumYear.progress');
     const t = targets[i];
+    if (isTagEditingLocked(t.path)) { failed++; continue; }
     const wr = await window.electronAPI.writeMetadata(t.path, { year: trimmed });
     if (wr && wr.success) {
       t.year = trimmed;
@@ -6324,6 +6348,7 @@ async function runSetGenre(tracks) {
   for (let i = 0; i < targets.length; i++) {
     setProgressBanner(i, targets.length, 'genre.progress');
     const t = targets[i];
+    if (isTagEditingLocked(t.path)) { failed++; continue; }
     const wr = await window.electronAPI.writeMetadata(t.path, { genre: trimmed });
     if (wr && wr.success) {
       t.genre = trimmed;
@@ -6363,6 +6388,7 @@ function renderTrackNumberList(tracks) {
     el.appendChild(document.createTextNode(t.title || '—'));
     el.addEventListener('click', async () => {
       if (el.classList.contains('tn-done')) return;
+      if (isTagEditingLocked(t.path)) { toast(tr('editor.lockedWhilePlaying')); return; }
       const no = trackNumberNext;
       el.classList.add('tn-done'); // guards against a double-click burning two numbers
       const wr = await window.electronAPI.writeMetadata(t.path, { trackNo: String(no) });
@@ -6393,6 +6419,76 @@ function runFixAlbumTrackNumbers(tracks) {
   $('track-number-modal').classList.add('active');
 }
 $('btn-close-track-number').addEventListener('click', () => $('track-number-modal').classList.remove('active'));
+
+async function runMatchReleaseMusicBrainz(tracks, scopeName) {
+  const targets = sortAlbumTracks(tracks.filter(t => !isRemotePath(t.path)));
+  if (!targets.length) return;
+  const artist = (targets.find(t => t.artist) || {}).artist || '';
+  const album = scopeName || (targets.find(t => t.album) || {}).album || '';
+  toast(tr('editor.mbSearching'));
+  let matches = [];
+  try {
+    matches = await window.electronAPI.searchMusicBrainzReleases({ artist, album, query: `${artist} ${album}`.trim() });
+  } catch (_) {}
+  if (!matches || !matches.length) {
+    toast(tr('editor.mbNoMatch'));
+    return;
+  }
+  const list = $('mb-release-list');
+  list.innerHTML = '';
+  matches.forEach(rel => {
+    const el = document.createElement('div');
+    el.className = 'sl-item';
+    const subParts = [rel.date, rel.country, rel.trackCount ? `${rel.trackCount} tracks` : ''].filter(Boolean);
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-weight:500">${escapeHtml(rel.title || 'Untitled')} <span style="font-size:11px;color:var(--text-dim)">— ${escapeHtml(rel.artist || '')}</span></div>
+        ${subParts.length ? `<div style="font-size:11px;color:var(--text-dim)">${escapeHtml(subParts.join(' · '))}</div>` : ''}
+      </div>
+    `;
+    el.addEventListener('click', async () => {
+      $('mb-release-modal').classList.remove('active');
+      setProgressBanner(0, targets.length, 'mbRelease.progress');
+      const details = await window.electronAPI.lookupMusicBrainzRelease(rel.id);
+      if (!details || !details.tracks || !details.tracks.length) {
+        setProgressBanner(null);
+        toast(tr('editor.mbNoMatch'));
+        return;
+      }
+      let updated = 0, failed = 0;
+      for (let i = 0; i < targets.length; i++) {
+        setProgressBanner(i, targets.length, 'mbRelease.progress');
+        const t = targets[i];
+        if (isTagEditingLocked(t.path)) { failed++; continue; }
+        const mbTrack = details.tracks[i] || details.tracks.find(mt => mt.title.toLowerCase() === (t.title || '').toLowerCase());
+        if (!mbTrack) { failed++; continue; }
+        const tags = {
+          title: mbTrack.title || t.title,
+          artist: mbTrack.artist || details.artist || t.artist,
+          album: details.title || t.album,
+          year: details.date || t.year,
+          trackNo: String(mbTrack.position || i + 1),
+          discNo: String(mbTrack.discNo || 1),
+          genre: details.genre || t.genre,
+        };
+        const wr = await window.electronAPI.writeMetadata(t.path, tags);
+        if (wr && wr.success) {
+          Object.assign(t, tags);
+          updated++;
+        } else {
+          failed++;
+        }
+      }
+      setProgressBanner(null);
+      saveLibrary();
+      refreshCurrentViewRows();
+      toast(tr('mbRelease.applied', { count: updated }) + (failed ? ` (${failed} failed)` : ''));
+    });
+    list.appendChild(el);
+  });
+  $('mb-release-modal').classList.add('active');
+}
+$('btn-close-mb-release').addEventListener('click', () => $('mb-release-modal').classList.remove('active'));
 
 // ── Mini-player navigation ──
 function gotoCurrentTrackInAlbum() {
@@ -7357,7 +7453,7 @@ async function revalidateLibrary() {
 // the track was purged.
 async function purgeOnWriteFailure(path, opLabel, errMsg) {
   window.electronAPI.logError?.(opLabel, `${path}: ${errMsg || 'unknown error'}`);
-  if (isRemotePath(path)) return false;
+  if (isRemotePath(path) || isTagEditingLocked(path) || /EBUSY|busy|locked|resource busy/i.test(errMsg || '')) return false;
   removeTracksFromState(new Set([path]));
   return true;
 }
@@ -7647,6 +7743,7 @@ let pendingEditorCoverUrl = null;
 
 async function openMetadataEditor(path) {
   if (isRemotePath(path)) return;   // tags live on the owning device's disk
+  if (isTagEditingLocked(path)) { toast(tr('editor.lockedWhilePlaying')); return; }
   pendingMetadataPath = path;
   pendingEditorCoverUrl = null;
   let meta = trackByPath(path);
@@ -7726,7 +7823,8 @@ $('btn-mb-editor').addEventListener('click', async () => {
   results.forEach(rec => {
     const item = document.createElement('div');
     item.className = 'mb-result-item';
-    const subParts = [rec.album, rec.year, rec.trackNo ? `Track ${rec.trackNo}` : '', rec.genre].filter(Boolean);
+    const countryDate = [rec.country, rec.date || rec.year].filter(Boolean).join(' / ');
+    const subParts = [rec.album, countryDate, rec.trackNo ? `Track ${rec.trackNo}` : '', rec.genre].filter(Boolean);
     const mbUrl = rec.url || (rec.id ? `https://musicbrainz.org/recording/${rec.id}` : '');
     item.innerHTML = `
       <div class="mb-result-title">
@@ -7750,7 +7848,7 @@ $('btn-mb-editor').addEventListener('click', async () => {
       if (rec.title) $('md-title').value = rec.title;
       if (rec.artist) $('md-artist').value = rec.artist;
       if (rec.album) $('md-album').value = rec.album;
-      if (rec.year) $('md-year').value = rec.year;
+      if (rec.date || rec.year) $('md-year').value = rec.date || rec.year;
       if (rec.trackNo) $('md-track-no').value = rec.trackNo;
       if (rec.discNo) $('md-disc-no').value = rec.discNo;
       if (rec.genre) $('md-genre').value = rec.genre;
@@ -7817,6 +7915,13 @@ $('btn-lastfm-editor').addEventListener('click', async () => {
 
 $('btn-save-editor').addEventListener('click', async () => {
   if (!pendingMetadataPath) return;
+  if (isTagEditingLocked(pendingMetadataPath)) {
+    const status = $('editor-status');
+    status.textContent = tr('editor.lockedWhilePlaying');
+    status.className = 'editor-foot-status error';
+    toast(tr('editor.lockedWhilePlaying'));
+    return;
+  }
   const status = $('editor-status');
   status.textContent = tr('editor.saving');
   status.className = 'editor-foot-status';

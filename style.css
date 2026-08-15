@@ -5554,9 +5554,28 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   background: var(--hover-bg);
 }
 
-.artist-similar-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.artist-similar-list .tag-pill:not(.yt-remote) { border-color: var(--svc-lfm-border); }
-.artist-similar-list .tag-pill:not(.yt-remote):hover { border-color: var(--svc-lfm); color: var(--svc-lfm); background: var(--svc-lfm-dim); }
+.artist-similar-list {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+.artist-similar-list::-webkit-scrollbar { display: none; }
+.artist-similar-list .tag-pill {
+  flex-shrink: 0;
+  border-color: var(--svc-lfm-border);
+  color: var(--svc-lfm);
+  background: var(--svc-lfm-dim);
+}
+.artist-similar-list button.tag-pill:hover {
+  border-color: var(--svc-lfm);
+  color: var(--text-strong);
+  background: var(--svc-lfm-border);
+}
 
 /* MusicBrainz matches in Metadata Editor */
 .mb-results {
