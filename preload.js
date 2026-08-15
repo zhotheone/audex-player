@@ -72,7 +72,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lastfm: (args) => ipcRenderer.invoke('lastfm:call', args),
   lookupCover: (query) => ipcRenderer.invoke('music:lookupCover', query),
   lookupLyrics: (query) => ipcRenderer.invoke('music:lookupLyrics', query),
-  identifyTrack: (filePath, apiKey) => ipcRenderer.invoke('acoustid:identify', { filePath, apiKey }),
   onDiscordStatus: (cb) => {
     const listener = (_e, data) => cb(data);
     ipcRenderer.on('discord:status', listener);

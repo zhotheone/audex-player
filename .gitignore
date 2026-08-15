@@ -5,7 +5,6 @@ release/
 CLAUDE.md
 yt-dlp-bundle/
 build-info.json
-fpcalc-bundle/
 pixelplayer-bundle/
 
 # Local artist-page prototype built from real personal listening data — never publish to the fork

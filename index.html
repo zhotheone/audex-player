@@ -1457,13 +1457,6 @@
             </div>
             <input type="number" class="field-input setting-input setting-input-narrow" id="artist-min-tracks-n" min="1" max="99" step="1" value="2">
           </div>
-          <div class="setting-row">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.acoustidKey">AcoustID API key</div>
-              <div class="setting-desc" data-i18n="setting.acoustidKeyDesc">Used by “Identify” to look tracks up by their audio fingerprint. Leave empty to use the built-in key; get your own for free at acoustid.org/api-key.</div>
-            </div>
-            <input type="text" class="field-input setting-input" id="acoustid-key" spellcheck="false" autocomplete="off" data-i18n-placeholder="setting.acoustidKeyPh" placeholder="Your API key">
-          </div>
         </div>
       </section>
       </div>
@@ -1838,7 +1831,6 @@
       <div class="editor-foot">
         <div class="editor-foot-status" id="editor-status"></div>
         <div class="editor-foot-actions">
-          <button class="btn-ghost" id="btn-identify-editor" data-i18n="editor.identify" title="Fingerprint the audio and look the track up on AcoustID" data-i18n-title="editor.identifyHint">Identify</button>
           <button class="btn-ghost" id="btn-lastfm-editor" data-i18n="editor.lastfm" title="Fetch name corrections and genre tags from Last.fm" data-i18n-title="editor.lastfmHint">Last.fm</button>
           <button class="btn-ghost" id="btn-cancel-editor" data-i18n="btn.cancel">Cancel</button>
           <button class="btn-solid" id="btn-save-editor" data-i18n="btn.save">Save</button>
@@ -1858,7 +1850,6 @@
     <button class="cm-item" data-action="reveal"><svg class="i" width="11" height="11"><use href="#i-folder"/></svg><span data-i18n="cm.reveal">Show in folder</span></button>
     <div class="cm-divider" id="cm-div-2"></div>
     <button class="cm-item cm-highlight" data-action="edit-tags"><svg class="i" width="11" height="11"><use href="#i-edit"/></svg><span data-i18n="cm.editTags">Edit tags…</span><span class="cm-sh">⌘E</span></button>
-    <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTagsAcoustid">Fix tags with AcoustID</span></button>
     <button class="cm-item" data-action="use-cover" id="cm-use-cover" hidden><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.useAsAlbumCover">Use as album cover</span></button>
     <button class="cm-item" data-action="set-cover-file"><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.setCoverFromFile">Set cover from file…</span></button>
     <button class="cm-item" data-action="trim" id="cm-trim" hidden><svg class="i" width="11" height="11"><use href="#i-scissors"/></svg><span data-i18n="cm.trim">Trim track…</span></button>
@@ -1875,8 +1866,6 @@
 
   <!-- Fix Tags Menu — triggered from the Artist/Album hero "fix tags" button -->
   <div id="fix-tags-menu" class="context-menu">
-    <div class="cm-section" data-i18n="fixMenu.acoustid">AcoustID</div>
-    <button class="cm-item" data-action="fix-tags"><svg class="i" width="11" height="11"><use href="#i-search"/></svg><span data-i18n="cm.fixTags">Fix tags</span></button>
     <div class="cm-section" data-i18n="fixMenu.cover">Cover Image</div>
     <button class="cm-item" data-action="apply-cover"><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applySelectedCover">Apply selected cover</span></button>
     <button class="cm-item" data-action="set-cover-file"><svg class="i" width="11" height="11"><use href="#i-image"/></svg><span data-i18n="cm.applyCoverFromFile">Apply cover from local file</span></button>

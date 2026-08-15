@@ -23,7 +23,6 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 ## This fork vs. [upstream](https://github.com/MishaSok/audex-player)
 
 - **Devices (LAN & Tailscale)** — see every device's library live, stream from it, and one-click **take over** its playback session. Libraries and settings sync across your devices automatically.
-- **AcoustID track ID** — auto-fill missing tags and track/disc numbers; bulk "fix the tags" for a song, artist, album, or the whole library.
 - **More download formats** — Opus, FLAC and M4A, not just MP3.
 - **In-app YouTube Music browser** — search an artist, walk their albums and singles, and queue a whole release without touching a link.
 - **YouTube sign-in** — pass yt-dlp your cookies for age-restricted or private videos.
@@ -44,7 +43,7 @@ A fast, beautiful desktop player for the music you actually own — and a one-cl
 - **It fills the gaps.** Missing a track? Search YouTube Music by artist or paste a Spotify link, and it lands in your library tagged, covered and ready — without leaving the app.
 - **It respects you.** Your listening stats are computed on your device and never leave it.
 
-*Not fully offline: identifying a track queries [AcoustID](https://acoustid.org/), lyrics come from [LRCLIB](https://lrclib.net/), and search/parsing/downloads talk to YouTube — only when you use those features. The LAN/Tailscale device server (below) is optional and off by default.*
+*Not fully offline: lyrics come from [LRCLIB](https://lrclib.net/), and search/parsing/downloads talk to YouTube — only when you use those features. The LAN/Tailscale device server (below) is optional and off by default.*
 
 ---
 
@@ -95,7 +94,7 @@ portrait "mobile player" mode for when the window is narrow.
 <summary><b>🎵 Library &amp; playback</b></summary>
 
 - Recursive import of `.mp3`, `.wav`, `.ogg`, `.opus`, `.flac`, `.m4a`, `.aac`.
-- Tags and cover art read with `music-metadata`; **AcoustID** fills in what's missing. **Tag editing** is written back through ffmpeg, so it isn't MP3-only.
+- Tags and cover art read with `music-metadata`. **Tag editing** is written back through ffmpeg, so it isn't MP3-only.
 - **Playlists, Favorites, Recents**, and **Artists/Albums** views grouped automatically — including tracks streamed from other devices.
 - **Command palette** (<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>) — tracks, artists, albums and every action in one box, ranked so an exact artist or album name comes out on top. Actions match in both interface languages.
 - Shuffle, repeat, sorting, filtering, and **resume on launch**.
@@ -259,7 +258,7 @@ macOS and Windows builds are produced by GitHub Actions on tag push.
 
 ## 🧰 Built with
 
-**[Electron 42](https://www.electronjs.org/)** · vanilla HTML/CSS/JS — no framework, no bundler · **[music-metadata](https://github.com/borewit/music-metadata)** · **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** · **[ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)** · **[fpcalc/Chromaprint](https://acoustid.org/chromaprint)** · **[electron-updater](https://www.electron.build/auto-update)**
+**[Electron 42](https://www.electronjs.org/)** · vanilla HTML/CSS/JS — no framework, no bundler · **[music-metadata](https://github.com/borewit/music-metadata)** · **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** · **[ffmpeg-static](https://github.com/eugeneware/ffmpeg-static)** · **[electron-updater](https://www.electron.build/auto-update)**
 
 ---
 

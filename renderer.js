@@ -137,7 +137,6 @@ let settings = Object.assign({
   repeatOneResetOnSkip: true, // manually skipping while "repeat one" is on drops it to "repeat"
   volumeWheelStep: 0.05,  // 0.01–0.2, volume change per mouse-wheel notch on the slider
   eq: { enabled: false, preset: 'flat', gains: [0, 0, 0, 0, 0, 0] },  // graphic equalizer
-  acoustidKey: '',        // '' = use the key built into main.js
   downloads: true,
   ytMusic: false,        // "YouTube Music" sidebar tab (the in-app browser)
   lanSharing: false,     // master switch for Devices/LAN sharing — off by default, opens a network port
@@ -786,7 +785,6 @@ const I18N = {
     'btn.checkUpdate': 'Check now',
     'btn.checking': 'Checking…',
     'btn.openLogs': 'Open folder',
-    'btn.fixTagsTooltip': 'Fix the tags via AcoustID…',
     'btn.cancel': 'Cancel',
     'btn.confirm': 'Confirm',
     'btn.delete': 'Delete',
@@ -1063,28 +1061,13 @@ const I18N = {
     'editor.coverEmbed': 'Embedded cover',
     'editor.noCover': 'No cover',
     'editor.saving': 'Saving…',
-    'editor.idBadKey': 'AcoustID rejected the API key',
-    'editor.idNoKey': 'Add your AcoustID API key in Settings to use Identify',
-    'cm.fixTags': 'Fix tags',
     'cm.applySelectedCover': 'Apply selected cover',
     'cm.applyCoverFromFile': 'Apply cover from local file',
     'cm.setGenre': 'Set genre tags',
-    'fixMenu.acoustid': 'AcoustID',
     'fixMenu.cover': 'Cover Image',
     'fixMenu.metadata': 'Bulk metadata',
     'genre.prompt': 'Set the genre for every selected track:',
     'genre.progress': 'Updating genres…',
-    'cm.fixTagsAcoustid': 'Fix tags with AcoustID',
-    'fixTags.progress': 'Fixing tags…',
-    'fixTags.summary': '{fixed} updated · {unchanged} already correct · {noMatch} no match · {failed} failed ({total} total)',
-    'setting.acoustidKey': 'AcoustID API key',
-    'setting.acoustidKeyDesc': 'Used by “Identify” to look tracks up by their audio fingerprint. Required — get your own for free at acoustid.org/api-key.',
-    'setting.acoustidKeyPh': 'Your API key',
-    'editor.identify': 'Identify',
-    'editor.identifyHint': 'Fingerprint the audio and look the track up on AcoustID',
-    'editor.identifying': 'Fingerprinting and looking up…',
-    'editor.idFilled': 'Match found — review and save',
-    'editor.idNoMatch': 'No match on AcoustID',
     'editor.lastfm': 'Last.fm',
     'editor.lastfmHint': 'Fetch name corrections and genre tags from Last.fm',
     'editor.lastfmNeedKey': 'Add a Last.fm API key in Settings first',
@@ -1113,8 +1096,6 @@ const I18N = {
     'albumYear.summary': '{updated} updated · {failed} failed ({total} total)',
     'albumTrackNo.pickTitle': 'Click tracks in listening order — first click is track 1',
     'albumTrackNo.writeFailed': 'Could not update the track number.',
-    'editor.idNoFpcalc': 'fpcalc not found — install libchromaprint-tools',
-    'editor.idFailed': 'Lookup failed',
     'editor.saved': 'Saved ✓',
     'editor.errorSave': 'Save error',
     'cm.play': 'Play',
@@ -1146,7 +1127,6 @@ const I18N = {
     'palette.action.gotoPlaylists': 'Go to Playlists',
     'palette.action.gotoFavorites': 'Go to Favorites',
     'palette.action.clearLibrary': 'Clear library…',
-    'palette.action.fixTagsLibrary': 'Fix the tags (Library)…',
     'palette.action.volumeUp': 'Volume up',
     'palette.action.volumeDown': 'Volume down',
     'palette.action.reloadApp': 'Refresh the app',
@@ -1477,7 +1457,6 @@ const I18N = {
     'btn.checkUpdate': 'Перевірити зараз',
     'btn.checking': 'Перевірка…',
     'btn.openLogs': 'Відкрити папку',
-    'btn.fixTagsTooltip': 'Виправити теги через AcoustID…',
     'btn.cancel': 'Скасувати',
     'btn.confirm': 'Підтвердити',
     'btn.delete': 'Видалити',
@@ -1754,27 +1733,13 @@ const I18N = {
     'editor.coverEmbed': 'Вбудована обкладинка',
     'editor.noCover': 'Немає обкладинки',
     'editor.saving': 'Збереження…',
-    'editor.idBadKey': 'AcoustID відхилив ключ API',
-    'editor.idNoKey': 'Додайте свій ключ API AcoustID у Налаштуваннях, щоб користуватися Розпізнаванням',
-    'cm.fixTags': 'Виправити теги',
     'cm.applySelectedCover': 'Застосувати вибрану обкладинку',
     'cm.applyCoverFromFile': 'Обкладинка з локального файлу',
     'cm.setGenre': 'Встановити жанр',
-    'fixMenu.acoustid': 'AcoustID',
     'fixMenu.cover': 'Обкладинка',
     'fixMenu.metadata': 'Масові теги',
     'genre.prompt': 'Встановити жанр для всіх вибраних треків:',
     'genre.progress': 'Оновлюємо жанри…',
-    'cm.fixTagsAcoustid': 'Виправити теги через AcoustID',
-    'fixTags.progress': 'Виправляємо теги…',
-    'fixTags.summary': '{fixed} оновлено · {unchanged} вже правильні · {noMatch} без збігів · {failed} невдало ({total} усього)',
-    'setting.acoustidKey': 'Ключ API AcoustID',
-    'setting.acoustidKeyDesc': 'Використовується кнопкою «Розпізнати» для пошуку треків за аудіовідбитком. Обов’язковий — власний можна отримати безкоштовно на acoustid.org/api-key.',
-    'setting.acoustidKeyPh': 'Твій ключ API',
-    'editor.identify': 'Розпізнати',
-    'editor.identifyHint': 'Створити аудіовідбиток і знайти трек в AcoustID',
-    'editor.identifying': 'Створюємо відбиток і шукаємо…',
-    'editor.idFilled': 'Знайдено збіг — перевірте та збережіть',
     'editor.lastfm': 'Last.fm',
     'editor.lastfmHint': 'Отримати виправлення назв і жанри з Last.fm',
     'editor.lastfmNeedKey': 'Спершу додайте API-ключ Last.fm у налаштуваннях',
@@ -1782,7 +1747,6 @@ const I18N = {
     'editor.lastfmCorrected': 'Застосовано виправлення Last.fm — перевірте та збережіть',
     'editor.lastfmTags': 'Торкніться жанру, щоб додати',
     'editor.lastfmNothing': 'Last.fm не має що додати',
-    'editor.idNoMatch': 'В AcoustID збігів немає',
     'cm.useAsAlbumCover': 'Використати як обкладинку альбому',
     'cm.setCoverFromFile': 'Вибрати обкладинку з файлу…',
     'cm.applyCoverToAlbum': 'Застосувати обкладинку до альбому…',
@@ -1804,8 +1768,6 @@ const I18N = {
     'albumYear.summary': '{updated} оновлено · {failed} невдало ({total} усього)',
     'albumTrackNo.pickTitle': 'Клацайте треки у порядку прослуховування — перший клік стане треком 1',
     'albumTrackNo.writeFailed': 'Не вдалося оновити номер треку.',
-    'editor.idNoFpcalc': 'fpcalc не знайдено — встановіть libchromaprint-tools',
-    'editor.idFailed': 'Пошук не вдався',
     'editor.saved': 'Збережено ✓',
     'editor.errorSave': 'Помилка збереження',
     'cm.play': 'Грати',
@@ -1837,7 +1799,6 @@ const I18N = {
     'palette.action.gotoPlaylists': 'Перейти в Плейлисти',
     'palette.action.gotoFavorites': 'Перейти в Улюблене',
     'palette.action.clearLibrary': 'Очистити бібліотеку…',
-    'palette.action.fixTagsLibrary': 'Виправити теги (Бібліотека)…',
     'palette.action.volumeUp': 'Гучніше',
     'palette.action.volumeDown': 'Тихіше',
     'palette.action.reloadApp': 'Оновити застосунок',
@@ -6135,64 +6096,6 @@ async function importPaths(paths) {
   }
 }
 
-// Bulk "Fix the tags": AcoustID-fingerprints every track in scope and treats
-// the MusicBrainz recording it maps to as the source of truth for
-// title/artist/album/trackNo/discNo/year — no per-track editor confirmation,
-// unlike the single-track "Identify" flow which only fills the editor for
-// review. `compare` skips a track whose current tags already match (fewer
-// needless writes). Never writes an empty field — AcoustID sometimes has no
-// album, and that shouldn't blank out one the file already has. The album
-// page's separate "Fix release year…"/"Correct track numbers…" actions are
-// for typing a value in by hand when AcoustID has no match or gets it
-// wrong — they don't replace this automatic fill, just cover what it misses.
-async function runFixTags(tracks, { compare = true, labelKey = 'fixTags.progress' } = {}) {
-  if (!tracks || !tracks.length) return;
-  if (!settings.acoustidKey) { toast(tr('editor.idNoKey')); return; }
-  let fixed = 0, unchanged = 0, noMatch = 0, failed = 0, ghosts = 0;
-  for (let i = 0; i < tracks.length; i++) {
-    setProgressBanner(i, tracks.length, labelKey);
-    const t = tracks[i];
-    let res;
-    try { res = await window.electronAPI.identifyTrack(t.path, settings.acoustidKey); }
-    catch (_) { res = null; }
-    if (!res || !res.success) {
-      // A bad key or a missing fpcalc binary won't fix itself on the next
-      // track either — stop instead of burning through the whole scope.
-      if (res && (res.error === 'apiKey' || res.error === 'noFpcalc')) {
-        setProgressBanner(null);
-        toast(tr(IDENTIFY_ERR_KEY[res.error] || 'editor.idFailed'));
-        return;
-      }
-      if (await purgeOnWriteFailure(t.path, 'fixTagsIdentify', res && res.error)) { ghosts++; continue; }
-      failed++;
-      continue;
-    }
-    const m = res.match;
-    if (!m) { noMatch++; continue; }
-    const newTags = {};
-    for (const field of ['title', 'artist', 'album', 'trackNo', 'discNo', 'year']) {
-      if (!m[field]) continue;
-      if (compare && m[field] === t[field]) continue;
-      newTags[field] = m[field];
-    }
-    if (!Object.keys(newTags).length) { unchanged++; continue; }
-    const wr = await window.electronAPI.writeMetadata(t.path, newTags);
-    if (!wr || !wr.success) {
-      if (await purgeOnWriteFailure(t.path, 'fixTagsWrite', wr && wr.error)) { ghosts++; continue; }
-      failed++;
-      continue;
-    }
-    Object.assign(t, newTags);
-    fixed++;
-  }
-  setProgressBanner(null);
-  saveLibrary();
-  refreshCurrentViewRows();
-  renderCounts();
-  toast(tr('fixTags.summary', { fixed, unchanged, noMatch, failed, total: tracks.length })
-    + (ghosts ? ' · ' + tr('library.purgedOnError', { count: ghosts }) : ''));
-}
-
 // ── Fix Tags menu (Artist/Album scopes) ──
 let pendingFixTagsScope = null;
 // Album scope also gets the cover/year bulk actions grouped into the same
@@ -6245,7 +6148,6 @@ document.querySelectorAll('#fix-tags-menu .cm-item').forEach(btn => {
         tr('modal.deleteArtist.text', { name: scope.name, count: withCount('tracks', localTracks.length) })))
         deleteTracks(localTracks.map(t => t.path));
     }
-    else runFixTags(scope.tracks, { compare: true, labelKey: scope.labelKey });
   });
 });
 
@@ -7654,7 +7556,6 @@ document.querySelectorAll('#track-context-menu .cm-item').forEach(btn => {
     else if (action === 'favorite') toggleFavorite(path);
     else if (action === 'reveal') window.electronAPI.revealInFolder(path);
     else if (action === 'edit-tags') openMetadataEditor(path);
-    else if (action === 'fix-tags') { if (track) runFixTags([track], { compare: true }); }
     else if (action === 'use-cover') {
       if (!track || !track.cover) { toast(tr('albumCover.badSource')); return; }
       pendingAlbumCoverSource = path;
@@ -7714,51 +7615,6 @@ async function openMetadataEditor(path) {
 }
 $('btn-close-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
 $('btn-cancel-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
-
-const IDENTIFY_ERR_KEY = {
-  noFpcalc: 'editor.idNoFpcalc',
-  apiKey: 'editor.idBadKey',
-  noKey: 'editor.idNoKey',
-};
-
-// Identify via AcoustID: fills the fields with what the fingerprint matched but
-// never writes to disk on its own — the user reviews and presses Save, so a bad
-// match costs nothing.
-$('btn-identify-editor').addEventListener('click', async () => {
-  if (!pendingMetadataPath) return;
-  const btn = $('btn-identify-editor');
-  const status = $('editor-status');
-  if (btn.disabled) return;
-  btn.disabled = true;
-  status.textContent = tr('editor.identifying');
-  status.className = 'editor-foot-status';
-  let res;
-  try {
-    res = await window.electronAPI.identifyTrack(pendingMetadataPath, settings.acoustidKey);
-  } catch (err) {
-    res = { success: false, error: 'lookup' };
-  }
-  btn.disabled = false;
-  if (!res || !res.success) {
-    status.textContent = tr(IDENTIFY_ERR_KEY[res && res.error] || 'editor.idFailed');
-    status.className = 'editor-foot-status error';
-    return;
-  }
-  if (!res.match) {
-    status.textContent = tr('editor.idNoMatch');
-    status.className = 'editor-foot-status';
-    return;
-  }
-  const m = res.match;
-  if (m.title) $('md-title').value = m.title;
-  if (m.artist) $('md-artist').value = m.artist;
-  if (m.album) $('md-album').value = m.album;
-  if (m.trackNo) $('md-track-no').value = m.trackNo;
-  if (m.discNo) $('md-disc-no').value = m.discNo;
-  if (m.year) $('md-year').value = m.year;
-  status.textContent = tr('editor.idFilled');
-  status.className = 'editor-foot-status ok';
-});
 
 // Last.fm: fill name corrections into the fields and offer genre top-tags as
 // one-tap chips. Never writes on its own — the user reviews and presses Save.
@@ -7877,7 +7733,6 @@ const PALETTE_ACTIONS = [
   { group: 'nav', key: 'palette.action.gotoDevices',   kind: 'goto-devices',   icon: '#i-monitor', nav: 'nav-devices' },
   { group: 'nav', key: 'palette.action.gotoReport',    kind: 'goto-report',    icon: '#i-report',  nav: 'nav-report' },
   { group: 'nav', key: 'palette.action.gotoHealth',    kind: 'goto-health',    icon: '#i-shield',  nav: 'nav-health' },
-  { group: 'music', key: 'palette.action.fixTagsLibrary', kind: 'fix-tags-library', icon: '#i-search' },
   { group: 'music', key: 'palette.action.volumeUp',       kind: 'volume-up',        icon: '#i-volume' },
   { group: 'music', key: 'palette.action.volumeDown',     kind: 'volume-down',      icon: '#i-volume-low' },
 ];
@@ -8075,7 +7930,6 @@ function runPaletteAction(action) {
     confirmDelete('modal.clearLibrary.title', tr('modal.clearLibrary.text'))
       .then(ok => { if (ok) clearLibrary(); });
   }
-  else if (action.kind === 'fix-tags-library') runFixTags(library, { compare: true });
   else if (action.kind === 'volume-up') setVolume(targetVolume + 0.05);
   else if (action.kind === 'volume-down') setVolume(targetVolume - 0.05);
   else if (action.kind === 'reload-app') location.reload();
@@ -8863,8 +8717,6 @@ function renderSettings() {
   renderArtistMinTracks();
   renderCrossfadeLen();
   renderEqualizer();
-  const acoustKey = $('acoustid-key');
-  if (acoustKey && acoustKey !== document.activeElement) acoustKey.value = settings.acoustidKey || '';
   // Folder
   $('default-folder-path').textContent = settings.defaultFolder || tr('placeholder.noFolder');
   // Default startup page
@@ -9136,15 +8988,6 @@ document.querySelectorAll('.toggle').forEach(t => {
     renderVolWheelStep();
   });
   el.addEventListener('change', () => saveSettings());
-})();
-
-(() => {
-  const el = $('acoustid-key');
-  if (!el) return;
-  el.addEventListener('input', () => {
-    settings.acoustidKey = el.value.trim();
-    saveSettings();
-  });
 })();
 
 // ── Hardware acceleration toggle ──

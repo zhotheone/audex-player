@@ -1,10 +1,10 @@
 // Refuses to package for a platform whose bundled binaries are not present.
 //
-// yt-dlp and fpcalc are fetched by `postinstall` for whatever machine
+// yt-dlp is fetched by `postinstall` for whatever machine
 // runs npm — so cross-building (say, --win from Linux) happily produces an
 // installer carrying Linux binaries. Nothing downstream complains: the app
-// installs, launches, and only fails once the user tries to download or
-// identify a track. This turns that into a build-time error.
+// installs, launches, and only fails once the user tries to download.
+// This turns that into a build-time error.
 //
 // Usage: node scripts/check-bundles.js <win32|darwin|linux>
 
@@ -15,10 +15,9 @@ const target = process.argv[2] || process.platform;
 const root = path.join(__dirname, '..');
 
 const YTDLP = { win32: 'yt-dlp.exe', darwin: 'yt-dlp_macos', linux: 'yt-dlp_linux' }[target];
-const FPCALC = target === 'win32' ? 'fpcalc.exe' : 'fpcalc';
 
 const missing = [];
-for (const [dir, name] of [['yt-dlp-bundle', YTDLP], ['fpcalc-bundle', FPCALC]]) {
+for (const [dir, name] of [['yt-dlp-bundle', YTDLP]]) {
   if (!name || !fs.existsSync(path.join(root, dir, name))) missing.push(`${dir}/${name}`);
 }
 
