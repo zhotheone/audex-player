@@ -193,6 +193,28 @@ const tags = {
 
   fs.rmSync(dir, { recursive: true, force: true });
 
+  // MusicBrainz recording match formatting: extracts title, artist credit, first release, year, trackNo
+  const { formatRecordingMatch } = require('./musicbrainz');
+  const recMatch = formatRecordingMatch({
+    title: 'Test Song',
+    score: 95,
+    'artist-credit': [{ name: 'Artist A', joinphrase: ' feat. ' }, { name: 'Artist B' }],
+    releases: [{
+      title: 'Test Album',
+      date: '2023-10-12',
+      media: [{ position: 1, track: [{ number: '3', position: 3 }] }]
+    }],
+    tags: [{ name: 'indie', count: 5 }]
+  });
+  assert.strictEqual(recMatch.title, 'Test Song');
+  assert.strictEqual(recMatch.artist, 'Artist A feat. Artist B');
+  assert.strictEqual(recMatch.album, 'Test Album');
+  assert.strictEqual(recMatch.year, '2023');
+  assert.strictEqual(recMatch.trackNo, '3');
+  assert.strictEqual(recMatch.discNo, '1');
+  assert.strictEqual(recMatch.genre, 'indie');
+  assert.strictEqual(formatRecordingMatch({}), null);
+
   // Multi-artist splitting (renderer.js): "FACE" and "FACE, Ivan Dremin, ..." used to land
   // as two unrelated artists because only " & " was a separator — comma-joined credits, the
   // most common tagging convention, never split at all.

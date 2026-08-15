@@ -271,7 +271,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Roboto Flex', 'Roboto', sans-serif;
   font-feature-settings: "cv01", "ss01";
   overflow: hidden;
   user-select: none;
@@ -429,7 +429,7 @@ input { font-family: inherit; color: inherit; }
 }
 .brand-version {
   font-size: 10.5px;
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   letter-spacing: 0.2px;
   color: var(--text-dim);
 }
@@ -479,7 +479,7 @@ input { font-family: inherit; color: inherit; }
   margin-left: auto;
   font-size: 10.5px;
   color: var(--text-faint);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 
 /* ── Search nav button animations ──
@@ -729,7 +729,7 @@ input { font-family: inherit; color: inherit; }
 .version-tag {
   font-size: 11.5px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 
 .searchbox {
@@ -755,7 +755,7 @@ input { font-family: inherit; color: inherit; }
 .kbd {
   font-size: 10px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   padding: 2px 5px;
   border-radius: 3px;
   background: var(--hover-bg);
@@ -935,7 +935,7 @@ input { font-family: inherit; color: inherit; }
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.2px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
   white-space: nowrap;
@@ -1147,7 +1147,7 @@ input { font-family: inherit; color: inherit; }
 .health-inspector-nums {
   font-size: 11px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   margin-bottom: 12px;
 }
 .health-inspector-caption {
@@ -1287,7 +1287,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   color: var(--text-muted);
 }
 .empty-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 20px;
   color: var(--text-strong);
 }
@@ -1834,7 +1834,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   color: var(--text-muted);
 }
 .empty-title-lg {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 24px;
   color: var(--text-strong);
   margin-top: 4px;
@@ -1923,7 +1923,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: var(--panel-alt);
 }
 .playlist-letter {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
   font-size: 36px;
   color: rgba(255, 255, 255, 0.25);
@@ -1947,7 +1947,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 .pl-avatar-preview span {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
   font-size: 22px;
   color: rgba(255, 255, 255, 0.25);
@@ -2056,8 +2056,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: var(--panel-alt);
 }
 .pl-hero-cover span {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
+  font-weight: 700;
   font-size: 64px;
   color: rgba(255, 255, 255, 0.22);
   line-height: 0.9;
@@ -2077,9 +2078,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   margin-bottom: 8px;
 }
 .pl-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 42px;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.5px;
   margin-bottom: 10px;
@@ -2104,7 +2105,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-radius: 10px;
   padding: 18px;
 }
-#view-album-detail .pl-hero-cover span { font-size: 120px; }
+#view-album-detail .pl-hero-cover span { font-family: 'Roboto Serif', serif; font-weight: 700; font-size: 120px; }
 #view-album-detail .pl-title { font-size: clamp(56px, 5.2vw, 80px); margin-bottom: 16px; }
 #view-album-detail .pl-meta { font-size: 15px; gap: 14px; margin-bottom: 24px; }
 #view-album-detail .pl-eyebrow { font-size: 12.5px; margin-bottom: 12px; }
@@ -2147,9 +2148,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   flex-shrink: 0;
 }
 .settings-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 28px;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.5px;
   margin-bottom: 7px;
@@ -2262,7 +2263,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-radius: 6px;
   background: var(--panel-alt);
   color: var(--text-strong);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 12px;
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease;
@@ -2450,7 +2451,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   margin-bottom: 3px;
 }
 .setting-path {
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 11.5px;
   color: var(--text);
   margin-top: 4px;
@@ -2668,8 +2669,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   flex-shrink: 0;
 }
 .mini-cover-letter {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
+  font-weight: 700;
   font-size: 16px;
   color: rgba(255, 255, 255, 0.4);
   line-height: 0.9;
@@ -2938,8 +2940,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   flex-shrink: 0;
 }
 .fs-cover-letter {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
+  font-weight: 700;
   font-size: 96px;
   color: rgba(255, 255, 255, 0.22);
   line-height: 0.9;
@@ -2958,9 +2961,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   margin-bottom: 12px;
 }
 .fs-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 56px;
-  font-weight: 400;
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -1px;
   margin-bottom: 12px;
@@ -3584,7 +3587,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 14px;
   color: var(--text-dim);
 }
@@ -3646,7 +3649,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 .editor-tag {
   font-size: 10.5px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   padding: 2px 6px;
   border-radius: 3px;
   background: var(--hover-bg);
@@ -3676,8 +3679,9 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 .editor-cover-letter {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
+  font-weight: 700;
   font-size: 56px;
   color: rgba(255, 255, 255, 0.25);
   line-height: 0.9;
@@ -3691,7 +3695,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.7);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 .field-label {
   font-size: 10.5px;
@@ -3727,7 +3731,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 .editor-filename {
   font-size: 11px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3786,7 +3790,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   margin-left: auto;
   font-size: 10.5px;
   color: var(--text-faint);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 .cm-divider {
   height: 1px;
@@ -3898,7 +3902,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 .palette-item-hint {
   font-size: 10px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 .palette-match {
   background: rgba(255, 255, 255, 0.15);
@@ -3920,7 +3924,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   gap: 16px;
   font-size: 10.5px;
   color: var(--text-dim);
-  font-family: ui-monospace, monospace;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
 }
 
 /* ─── Artists ─── */
@@ -3978,9 +3982,9 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   justify-content: center;
 }
 .artist-avatar-letter {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
-  font-weight: 500;
+  font-weight: 700;
   font-size: 44px;
   color: rgba(255, 255, 255, 0.22);
   letter-spacing: -1px;
@@ -4043,10 +4047,10 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   overflow: hidden;
 }
 .artist-hero-avatar span {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
   font-size: 64px;
-  font-weight: 500;
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.22);
   letter-spacing: -1px;
   line-height: 1;
@@ -4330,9 +4334,9 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   margin-bottom: 6px;
 }
 .rep-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-size: 34px;
-  font-weight: 400;
+  font-weight: 700;
   letter-spacing: -0.5px;
   line-height: 1;
   color: var(--text-strong);
@@ -4519,8 +4523,9 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 }
 .rep-cover-round { border-radius: 50%; }
 .rep-cover-empty {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
   font-style: italic;
+  font-weight: 700;
   font-size: 15px;
   color: var(--text-faint);
 }
@@ -4650,7 +4655,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   outline: none;
 }
 .dc-input:focus { border-color: var(--accent); }
-.dc-input-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; color: var(--text-muted); }
+.dc-input-mono { font-family: 'Roboto Mono', ui-monospace, monospace; color: var(--text-muted); }
 .dc-input:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* Live preview card — mimics the Discord activity panel */
@@ -4994,7 +4999,8 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 /* Shown only when the track carries no artwork — matches the letter fallback
    used by the mini-player, the fullscreen cover and the tag editor. */
 .ed-cover-letter {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 700;
   font-size: 26px;
   line-height: 1;
   color: var(--text-dim);
@@ -5439,3 +5445,64 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 .lfm-similar-chip:hover { color: var(--text-strong); border-color: var(--accent); }
 .lfm-similar-chip.is-remote { color: var(--text-dim); cursor: default; opacity: 0.7; }
 .lfm-similar-chip.is-remote:hover { border-color: var(--border-strong); }
+
+/* MusicBrainz matches in Metadata Editor */
+.mb-results {
+  margin-top: 12px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.mb-results-head {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+.mb-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mb-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.mb-result-item:hover {
+  border-color: var(--accent);
+}
+.mb-result-item.selected {
+  border-color: var(--accent);
+  background: var(--bg-active);
+}
+.mb-result-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-strong);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.mb-result-artist {
+  font-size: 12px;
+  color: var(--accent);
+}
+.mb-result-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}

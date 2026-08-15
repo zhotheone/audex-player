@@ -1068,6 +1068,12 @@ const I18N = {
     'fixMenu.metadata': 'Bulk metadata',
     'genre.prompt': 'Set the genre for every selected track:',
     'genre.progress': 'Updating genres…',
+    'editor.musicbrainz': 'MusicBrainz',
+    'editor.musicbrainzHint': 'Look up track metadata on MusicBrainz',
+    'editor.mbSearching': 'Searching MusicBrainz…',
+    'editor.mbNoMatch': 'No matches found on MusicBrainz',
+    'editor.mbChoose': 'MusicBrainz matches (click to apply):',
+    'editor.mbApplied': 'Applied MusicBrainz metadata — review and save',
     'editor.lastfm': 'Last.fm',
     'editor.lastfmHint': 'Fetch name corrections and genre tags from Last.fm',
     'editor.lastfmNeedKey': 'Add a Last.fm API key in Settings first',
@@ -1740,6 +1746,12 @@ const I18N = {
     'fixMenu.metadata': 'Масові теги',
     'genre.prompt': 'Встановити жанр для всіх вибраних треків:',
     'genre.progress': 'Оновлюємо жанри…',
+    'editor.musicbrainz': 'MusicBrainz',
+    'editor.musicbrainzHint': 'Знайти метадані треку в MusicBrainz',
+    'editor.mbSearching': 'Пошук у MusicBrainz…',
+    'editor.mbNoMatch': 'У MusicBrainz збігів не знайдено',
+    'editor.mbChoose': 'Збіги MusicBrainz (натисніть для застосування):',
+    'editor.mbApplied': 'Застосовано дані з MusicBrainz — перевірте та збережіть',
     'editor.lastfm': 'Last.fm',
     'editor.lastfmHint': 'Отримати виправлення назв і жанри з Last.fm',
     'editor.lastfmNeedKey': 'Спершу додайте API-ключ Last.fm у налаштуваннях',
@@ -4094,13 +4106,13 @@ function buildSpectrumSvg({ spectrum, cutoffKHz = 20, suspicious = false, width 
   }).join('');
   const axis = ticks.map(k => {
     const x = pad.l + (k / nyq) * w;
-    return `<text x="${x.toFixed(1)}" y="${height - 6}" fill="var(--text-faint)" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">${k}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${height - 6}" fill="var(--text-faint)" font-size="9.5" font-family="'Roboto Mono', ui-monospace, monospace" text-anchor="middle">${k}</text>`;
   }).join('');
   const unit = tr('health.khz');
   const marker = suspicious ? `
     <line x1="${cutX.toFixed(1)}" y1="${pad.t}" x2="${cutX.toFixed(1)}" y2="${pad.t + h}" stroke="#e8a045" stroke-width="1.5" stroke-dasharray="4 3"/>
     <rect x="${(cutX + 4).toFixed(1)}" y="${pad.t + 2}" width="88" height="18" rx="4" fill="rgba(232,160,69,0.15)"/>
-    <text x="${(cutX + 10).toFixed(1)}" y="${pad.t + 14.5}" fill="#e8a045" font-size="10.5" font-family="ui-monospace, monospace" font-weight="600">${escapeHtml(tr('quality.cutoffMarker'))} ${cutoffKHz} ${escapeHtml(unit)}</text>` : '';
+    <text x="${(cutX + 10).toFixed(1)}" y="${pad.t + 14.5}" fill="#e8a045" font-size="10.5" font-family="'Roboto Mono', ui-monospace, monospace" font-weight="600">${escapeHtml(tr('quality.cutoffMarker'))} ${cutoffKHz} ${escapeHtml(unit)}</text>` : '';
 
   return `<svg class="spectrum" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
     <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
@@ -4111,7 +4123,7 @@ function buildSpectrumSvg({ spectrum, cutoffKHz = 20, suspicious = false, width 
     <path d="${area}" fill="url(#${gid})"/>
     <path d="${line}" fill="none" stroke="${accent}" stroke-width="1.5" stroke-linejoin="round"/>
     ${marker}
-    <text x="${(pad.l + w).toFixed(1)}" y="${height - 6}" fill="var(--text-faint)" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="end">${escapeHtml(unit)}</text>
+    <text x="${(pad.l + w).toFixed(1)}" y="${height - 6}" fill="var(--text-faint)" font-size="9.5" font-family="'Roboto Mono', ui-monospace, monospace" text-anchor="end">${escapeHtml(unit)}</text>
     ${axis}
   </svg>`;
 }
@@ -7611,10 +7623,70 @@ async function openMetadataEditor(path) {
   $('editor-status').className = 'editor-foot-status';
   const tagBox = $('md-lfm-tags');
   if (tagBox) { tagBox.innerHTML = ''; tagBox.hidden = true; }
+  const mbBox = $('md-mb-results');
+  if (mbBox) { mbBox.hidden = true; $('md-mb-list').innerHTML = ''; }
   $('metadata-modal').classList.add('active');
 }
 $('btn-close-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
 $('btn-cancel-editor').addEventListener('click', () => $('metadata-modal').classList.remove('active'));
+
+// MusicBrainz: search recordings and prompt user with top 5 results to apply.
+$('btn-mb-editor').addEventListener('click', async () => {
+  if (!pendingMetadataPath) return;
+  const btn = $('btn-mb-editor'), status = $('editor-status'), resultsBox = $('md-mb-results'), list = $('md-mb-list');
+  const title = $('md-title').value.trim();
+  const artist = $('md-artist').value.trim();
+  let query = '';
+  if (!title && !artist) {
+    const base = pendingMetadataPath.split(/[/\\]/).pop() || '';
+    query = base.replace(/\.[a-z0-9]+$/i, '').replace(/[-_]/g, ' ');
+  }
+  btn.disabled = true;
+  status.textContent = tr('editor.mbSearching');
+  status.className = 'editor-foot-status';
+  resultsBox.hidden = true;
+  list.innerHTML = '';
+  let results = [];
+  try {
+    results = await window.electronAPI.searchMusicBrainz({ title, artist, query });
+  } catch (_) {
+    results = [];
+  }
+  btn.disabled = false;
+  if (!results || !results.length) {
+    status.textContent = tr('editor.mbNoMatch');
+    status.className = 'editor-foot-status';
+    return;
+  }
+  status.textContent = '';
+  results.forEach(rec => {
+    const item = document.createElement('div');
+    item.className = 'mb-result-item';
+    const subParts = [rec.album, rec.year, rec.trackNo ? `Track ${rec.trackNo}` : '', rec.genre].filter(Boolean);
+    item.innerHTML = `
+      <div class="mb-result-title">
+        <span>${escapeHtml(rec.title || 'Untitled')}</span>
+        ${rec.artist ? `<span class="mb-result-artist">${escapeHtml(rec.artist)}</span>` : ''}
+      </div>
+      ${subParts.length ? `<div class="mb-result-sub">${escapeHtml(subParts.join(' · '))}</div>` : ''}
+    `;
+    item.addEventListener('click', () => {
+      if (rec.title) $('md-title').value = rec.title;
+      if (rec.artist) $('md-artist').value = rec.artist;
+      if (rec.album) $('md-album').value = rec.album;
+      if (rec.year) $('md-year').value = rec.year;
+      if (rec.trackNo) $('md-track-no').value = rec.trackNo;
+      if (rec.discNo) $('md-disc-no').value = rec.discNo;
+      if (rec.genre) $('md-genre').value = rec.genre;
+      status.textContent = tr('editor.mbApplied');
+      status.className = 'editor-foot-status ok';
+      resultsBox.querySelectorAll('.mb-result-item').forEach(el => el.classList.remove('selected'));
+      item.classList.add('selected');
+    });
+    list.appendChild(item);
+  });
+  resultsBox.hidden = false;
+});
 
 // Last.fm: fill name corrections into the fields and offer genre top-tags as
 // one-tap chips. Never writes on its own — the user reviews and presses Save.

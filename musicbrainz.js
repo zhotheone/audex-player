@@ -135,4 +135,48 @@ async function resolveAlbumInfo(A, AL, T) {
   return out;
 }
 
-module.exports = { lookupAlbumInfo };
+function formatRecordingMatch(rec) {
+  if (!rec || !rec.title) return null;
+  const artistCredit = (rec['artist-credit'] || [])
+    .map(c => (c.name || (c.artist && c.artist.name) || '') + (c.joinphrase || ''))
+    .join('').trim();
+  let album = '', year = '', trackNo = '', discNo = '';
+  const rel = (rec.releases || [])[0];
+  if (rel) {
+    album = rel.title || (rel['release-group'] && rel['release-group'].title) || '';
+    if (rel.date) {
+      const ym = String(rel.date).match(/^\d{4}/);
+      if (ym) year = ym[0];
+    }
+    const medium = (rel.media || [])[0];
+    if (medium) {
+      if (medium.position) discNo = String(medium.position);
+      const trk = (medium.track || [])[0];
+      if (trk && (trk.position || trk.number)) trackNo = String(trk.position || trk.number);
+    }
+  }
+  const tags = (rec.tags || []).concat(rec.genres || [])
+    .slice().sort((a, b) => (b.count || 0) - (a.count || 0))
+    .map(t => t.name).filter(Boolean);
+  const genre = tags.slice(0, 3).join(', ');
+  return { title: rec.title, artist: artistCredit, album, year, trackNo, discNo, genre, score: rec.score || 0 };
+}
+
+async function searchRecordings({ artist = '', title = '', query = '' } = {}) {
+  const A = esc(artist), T = esc(title), Q = esc(query);
+  let q = '';
+  if (A && T) q = `artist:"${A}" AND recording:"${T}"`;
+  else if (T) q = `recording:"${T}"`;
+  else if (Q) q = Q;
+  else if (A) q = `artist:"${A}"`;
+  if (!q) return [];
+  try {
+    const d = await mbFetch(`${MB}/recording/?query=${encodeURIComponent(q)}&fmt=json&limit=5`);
+    const recs = (d && Array.isArray(d.recordings)) ? d.recordings : [];
+    return recs.map(formatRecordingMatch).filter(Boolean);
+  } catch (_) {
+    return [];
+  }
+}
+
+module.exports = { lookupAlbumInfo, searchRecordings, formatRecordingMatch };

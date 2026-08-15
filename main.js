@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { pathToFileURL, fileURLToPath } = require('url');
 const musicMetadata = require('music-metadata');
 const lan = require('./lan');
-const { lookupAlbumInfo } = require('./musicbrainz');
+const { lookupAlbumInfo, searchRecordings } = require('./musicbrainz');
 
 app.setName('Audex');
 
@@ -2880,4 +2880,8 @@ ipcMain.handle('music:lookupLyrics', async (event, query) => {
   } catch (err) {
     return { success: false, error: String(err && err.message || err), synced: null, plain: null };
   }
+});
+
+ipcMain.handle('musicbrainz:search', async (event, query) => {
+  return await searchRecordings(query);
 });
