@@ -4399,8 +4399,7 @@ function renderTrackRow(track, displayIndex, queue) {
       ${networkBadgeHtml(track)}
     </div>
     <div class="trow-muted" data-link="artist">${artistLinksHtml(track.artist)}</div>
-    <div class="trow-muted trow-link" data-link="album">${escapeHtml(track.album)}</div>
-    <div class="trow-quality">${qualityBadgeHtml(qualityFor(track))}</div>
+    <div class="trow-muted trow-link" data-link="album">${escapeHtml(track.album || '—')}</div>
     <div class="trow-dur">${formatTime(track.duration)}</div>
     <div class="trow-more"><svg class="i" width="13" height="13"><use href="#i-more"/></svg></div>
   `;
@@ -5821,11 +5820,9 @@ function updateNowPlayingUI(track) {
     $('mini-cover-letter').textContent = (track.title || '?')[0];
   }
   $('track-title').textContent = track.title;
-  if (track.album) {
-    $('track-artist').innerHTML = `<span class="artist-link">${escapeHtml(track.artist || '')}</span> - <span class="album-link">${escapeHtml(track.album)}</span>`;
-  } else {
-    $('track-artist').textContent = track.artist || '—';
-  }
+  $('track-artist').innerHTML = `<span class="artist-link">${escapeHtml(track.artist || '—')}</span>`;
+  const qBadge = $('track-quality');
+  if (qBadge) qBadge.innerHTML = qualityBadgeHtml(qualityFor(track));
 
   // Fullscreen
   const fsCover = $('fs-cover');
@@ -7180,9 +7177,41 @@ if (volSlider) {
     setVolume(Number(volSlider.value) / 100);
   });
 }
+function wireVolumeTrack(trackEl) {
+  if (!trackEl) return;
+  const seek = e => {
+    const r = trackEl.getBoundingClientRect();
+    if (r.width) setVolume(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+  };
+  let dragging = false;
+  trackEl.addEventListener('pointerdown', e => {
+    dragging = true;
+    try { trackEl.setPointerCapture(e.pointerId); } catch {}
+    seek(e);
+  });
+  trackEl.addEventListener('pointermove', e => { if (dragging) seek(e); });
+  const stop = e => {
+    if (dragging) {
+      dragging = false;
+      try { trackEl.releasePointerCapture(e.pointerId); } catch {}
+    }
+  };
+  trackEl.addEventListener('pointerup', stop);
+  trackEl.addEventListener('pointercancel', stop);
+}
+wireVolumeTrack($('fs-vol-track'));
+
 const volBlock = document.querySelector('.volume-block');
 if (volBlock) {
   volBlock.addEventListener('wheel', e => {
+    e.preventDefault();
+    const step = Number(settings.volumeWheelStep) || 0.05;
+    setVolume(targetVolume + (e.deltaY < 0 ? step : -step));
+  }, { passive: false });
+}
+const fsVolBlock = document.querySelector('.fs-volume');
+if (fsVolBlock) {
+  fsVolBlock.addEventListener('wheel', e => {
     e.preventDefault();
     const step = Number(settings.volumeWheelStep) || 0.05;
     setVolume(targetVolume + (e.deltaY < 0 ? step : -step));
@@ -10668,7 +10697,7 @@ if (openLogsBtn && window.electronAPI && typeof window.electronAPI.openLogsFolde
 // paint; the phases below update its status line, and hideBootOverlay() fades
 // it out once the async boot work finishes.
 const bootStartedAt = Date.now();
-const BOOT_OVERLAY_MIN_MS = 800; // don't blink on instant warm boots
+const BOOT_OVERLAY_MIN_MS = 150; // brief non-blocking display
 function splashStatus(key, params) {
   const el = document.getElementById('boot-status-text');
   if (!el) return;
@@ -10686,9 +10715,6 @@ function hideBootOverlay() {
     setTimeout(() => overlay.remove(), 600);
   }, Math.max(0, left));
 }
-// Builds are identified by git short hash, not by a release number — the hash
-// comes from main (live git in a dev checkout, build-info.json when packaged).
-// Every spot that shows a build label is filled from that single answer.
 (async () => {
   let commit = '';
   try {
@@ -10705,37 +10731,10 @@ function hideBootOverlay() {
   if (about) {
     const plat = String(navigator.platform || '');
     const osLabel = plat.startsWith('Win') ? 'Windows' : plat.startsWith('Mac') ? 'macOS' : plat.startsWith('Linux') ? 'Linux' : (plat || 'Desktop');
-    // The platform label doesn't depend on the commit hash being available —
-    // a build with no git history (or a build machine missing `git` on PATH)
-    // still shouldn't be stuck showing index.html's static "Linux" placeholder.
     about.textContent = commit ? `${commit} · Electron · ${osLabel}` : `Electron · ${osLabel}`;
   }
 })();
-// Hard fallback: never leave the overlay up if something in the boot chain throws.
 setTimeout(hideBootOverlay, 30000);
-
-// While the splash is still up, fully cache the first `count` tracks of the
-// default library view (covers + quality), so the screen the user lands on is
-// completely drawn and the disk cache covers it on the next boot. On warm
-// boots everything is already cached and this is a no-op.
-async function warmFirstCoversDuringSplash(count) {
-  const first = sortedFilteredLibrary().slice(0, count).filter(t =>
-    (!t.cover && t.hasCover !== false) || t.quality === undefined || t.hasCover === undefined);
-  const total = first.length;
-  if (total === 0) return;
-  let idx = 0;
-  let done = 0;
-  const worker = async () => {
-    while (idx < first.length) {
-      const t = first[idx++];
-      try { await ensureCoverFor(t, true); } catch (_) { /* ignore */ }
-      done++;
-      if (done % 5 === 0 || done === total) splashStatus('splash.caching', { n: done, total });
-    }
-  };
-  await Promise.all(Array.from({ length: 6 }, worker));
-  scheduleCoverRefresh();
-}
 
 // Bulk-load the persistent disk cover cache (one IPC round-trip) before the
 // first row render, so covers appear instantly without per-track metadata
@@ -11277,12 +11276,10 @@ function openDefaultView() {
   openDefaultView();
   renderRecents();
   loadLastTrack();
-  try { await warmFirstCoversDuringSplash(200); } catch (_) { /* ignore */ }
-  splashStatus('splash.scanning');
-  try { await restoreCovers(); } catch (_) { /* ignore */ }
   restoreDownloadsState();
-  try { await rescanFolders(); } catch (_) { /* ignore */ }
   hideBootOverlay();
+  try { await restoreCovers(); } catch (_) { /* ignore */ }
+  try { await rescanFolders(); } catch (_) { /* ignore */ }
   checkForUpdates();
   warmMissingCoversInBackground();
 })();
