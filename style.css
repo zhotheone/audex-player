@@ -15,6 +15,39 @@
   --svc-mb: #38bdf8;
   --svc-mb-dim: rgba(56, 189, 248, 0.12);
   --svc-mb-border: rgba(56, 189, 248, 0.32);
+
+  /* Material 3 Expressive tokens */
+  --md-sys-color-primary: var(--accent, #006a6a);
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: color-mix(in srgb, var(--accent) 35%, var(--panel-elev));
+  --md-sys-color-on-primary-container: var(--text-strong);
+  --md-sys-color-secondary: var(--text-muted);
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: var(--active-bg);
+  --md-sys-color-on-secondary-container: var(--text-strong);
+  --md-sys-color-surface: var(--bg);
+  --md-sys-color-on-surface: var(--text);
+  --md-sys-color-surface-container: var(--panel-elev);
+  --md-sys-color-surface-container-high: var(--panel-alt);
+  --md-sys-color-surface-container-highest: var(--active-bg);
+  --md-sys-color-on-surface-variant: var(--text-muted);
+  --md-sys-color-outline: var(--border-strong);
+  --md-sys-color-outline-variant: var(--border);
+
+  /* Shape */
+  --shape-full: 9999px;
+  --shape-lg: 28px;
+  --shape-md: 16px;
+  --shape-sm: 12px;
+  --shape-xs: 8px;
+
+  /* Motion */
+  --motion-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Wavy progress tokens */
+  --wave-stroke: 4px;
+  --progress-height: 14px;
 }
 
 :root[data-mode="light"] {
@@ -2649,192 +2682,511 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .select-opt:hover { background: var(--hover-bg); color: var(--text-strong); }
 .select-opt.active { background: var(--active-bg); color: var(--text-strong); }
 
-/* ─── Playbar ───
-   A detached "island": a rounded card floating over the content with the seek
-   bar welded to its bottom edge, so the controls read as one object instead of
-   a full-width strip. Corners are rounded with border-radius alone (no
-   overflow:hidden) — the track-change animation slides the cover and title a
-   couple of dozen pixels and clipping would cut them off.
-
-   Taken out of flow so the sidebar and the content run all the way down to the
-   window's bottom edge; in flow it cut both of them 80px short and left a
-   band of --bg under the sidebar's panel. They reserve the island's height as
-   bottom padding instead (see .sidebar / .main-content). */
+/* ─── Playbar (M3 Expressive) ─── */
 .playbar {
-  /* In-flow bottom row of the shell — no longer a floating fixed island.
-     body's gap separates it from the cards above; nothing sits under it.
-     position:relative anchors the absolute .progress-track to this row
-     (it used to anchor to the old position:fixed playbar). */
   position: relative;
-  height: 66px;
-  margin: 0;
-  border-radius: 16px;
+  width: 100%;
   background: var(--panel-elev);
   border: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  border-radius: var(--shape-md);
+  padding: 6px 14px;
+  display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 16px;
+  gap: 6px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.08),
+    0 4px 16px rgba(0,0,0,0.12);
   flex-shrink: 0;
   transition: background-color 0.5s ease, border-color 0.5s ease;
 }
-.playbar-left {
+
+/* ===== STANDARD BUTTON GROUP (M3 Expressive) ===== */
+.button-group {
   display: flex;
   align-items: center;
-  gap: 11px;
-  min-width: 0;
+  gap: 3px;
+  flex-shrink: 0;
 }
-.mini-cover {
+
+.button-group .icon-btn {
+  --base-w: 34px;
+  --size: 34px;
+  --radius: var(--shape-full);
+  --radius-pressed: 8px;
+  --radius-selected: 10px;
+
+  width: var(--base-w);
+  height: var(--size);
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition:
+    width 0.32s var(--motion-spring),
+    border-radius 0.32s var(--motion-spring),
+    background 0.22s var(--motion-emphasized),
+    color 0.22s var(--motion-emphasized);
+}
+
+.button-group .icon-btn .material-symbols-rounded {
+  font-size: 20px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  transition: font-variation-settings 0.2s;
+  pointer-events: none;
+}
+
+.button-group .icon-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-strong);
+}
+
+/* Pressed button expands + shape morph */
+.button-group .icon-btn.is-expanded {
+  width: calc(var(--base-w) * 1.22);
+  border-radius: var(--radius-pressed);
+}
+
+.button-group .icon-btn.grow-right.is-expanded {
+  margin-left: 0;
+  margin-right: calc(var(--base-w) * -0.08);
+}
+
+.button-group .icon-btn.grow-left.is-expanded {
+  margin-right: 0;
+  margin-left: calc(var(--base-w) * -0.08);
+}
+
+/* Adjacent buttons compress */
+.button-group .icon-btn.is-compressed {
+  width: calc(var(--base-w) * 0.80);
+}
+
+.button-group .icon-btn.is-compressed-left {
+  width: calc(var(--base-w) * 0.74);
+}
+
+.button-group .icon-btn.is-compressed-right {
+  width: calc(var(--base-w) * 0.74);
+}
+
+/* Toggle selected (shuffle / repeat) */
+.button-group .icon-btn.selected,
+.button-group .icon-btn.active {
+  background: var(--active-bg);
+  color: var(--text-strong);
+  border-radius: var(--radius-selected);
+}
+
+.button-group .icon-btn.selected .material-symbols-rounded,
+.button-group .icon-btn.active .material-symbols-rounded {
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+/* Play / Pause – higher emphasis hero inside the group */
+.button-group .icon-btn.play-pause {
+  --base-w: 42px;
+  --size: 42px;
+  --radius: var(--shape-full);
+  --radius-pressed: 12px;
+  background: var(--text-strong);
+  color: var(--bg);
+  margin: 0 2px;
+}
+
+.button-group .icon-btn.play-pause:hover {
+  background: var(--text);
+}
+
+.button-group .icon-btn.play-pause.is-expanded {
+  width: calc(var(--base-w) * 1.14);
+  border-radius: var(--radius-pressed);
+}
+
+.button-group .icon-btn.play-pause.is-compressed {
+  width: calc(var(--base-w) * 0.88);
+}
+
+.button-group .icon-btn.play-pause.is-compressed-right {
+  width: calc(var(--base-w) * 0.84);
+}
+
+.button-group .icon-btn.play-pause .material-symbols-rounded {
+  font-size: 24px;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+/* Volume icon button */
+.volume-block .icon-btn {
+  --size: 34px;
+  width: var(--size);
+  height: var(--size);
+  border: none;
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.22s var(--motion-emphasized),
+    color 0.22s var(--motion-emphasized),
+    border-radius 0.32s var(--motion-spring),
+    transform 0.18s var(--motion-spring);
+}
+
+.volume-block .icon-btn .material-symbols-rounded {
+  font-size: 20px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.volume-block .icon-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-strong);
+}
+
+.volume-block .icon-btn:active {
+  transform: scale(0.9);
+  border-radius: 8px;
+}
+
+/* ===== SONG IDENTITY + PROGRESS ===== */
+.song-block {
+  flex: 1;
+  min-width: 200px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto auto;
+  column-gap: 10px;
+  row-gap: 1px;
+  padding: 0 8px;
+  align-items: center;
+  position: relative;
+}
+
+.song-actions {
+  grid-row: 1 / 3;
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  align-self: center;
+}
+
+.song-actions .icon-btn {
+  --size: 30px;
+  width: var(--size);
+  height: var(--size);
+  border: none;
+  border-radius: var(--shape-full);
+  background: transparent;
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.22s var(--motion-emphasized),
+    color 0.22s var(--motion-emphasized),
+    border-radius 0.32s var(--motion-spring),
+    transform 0.18s var(--motion-spring);
+}
+
+.song-actions .icon-btn .material-symbols-rounded {
+  font-size: 18px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  transition: font-variation-settings 0.2s;
+}
+
+.song-actions .icon-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-strong);
+}
+
+.song-actions .icon-btn:active {
+  transform: scale(0.9);
+  border-radius: 8px;
+}
+
+.song-actions .icon-btn.liked,
+.song-actions .icon-btn.active {
+  color: var(--accent-fav, #eb6f92);
+}
+
+.song-actions .icon-btn.liked .material-symbols-rounded,
+.song-actions .icon-btn.active .material-symbols-rounded {
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+@keyframes fav-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.38); }
+  70% { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+.song-actions .icon-btn.is-animating .material-symbols-rounded {
+  animation: fav-pop 0.35s var(--motion-spring);
+}
+
+/* Thumbnail */
+.artwork {
+  grid-row: 1 / 3;
+  grid-column: 1;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--shape-xs);
   background: var(--panel-alt);
   background-size: cover;
   background-position: center;
-  display: flex;
-  align-items: flex-end;
-  padding: 6px;
+  position: relative;
+  overflow: hidden;
   cursor: pointer;
+  border: none;
+  padding: 0;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-radius 0.35s var(--motion-spring),
+    transform 0.28s var(--motion-spring),
+    box-shadow 0.28s var(--motion-emphasized);
 }
-.mini-cover-letter {
+
+.artwork::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.artwork .mini-cover-letter {
   font-family: 'Roboto Serif', serif;
   font-style: italic;
   font-weight: 700;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.4);
-  line-height: 0.9;
-}
-.mini-info { min-width: 0; flex: 0 1 auto; }
-.mini-title {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-.mini-title:hover { text-decoration: underline; }
-.mini-artist {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-.mini-artist:hover { color: var(--text); text-decoration: underline; }
-
-.btn-ic {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: color 0.12s, background 0.12s;
-}
-.btn-ic:hover { color: var(--text-strong); background: var(--hover-bg); }
-.btn-ic.active { color: var(--text-strong); }
-.btn-ic.active.heart { color: var(--accent-fav); }
-
-.heart { margin-left: 2px; margin-right: auto; }
-
-.playbar-center {
-  display: flex;
-  justify-content: center;
-}
-.ctrls {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.btn-play {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: var(--text-strong);
-  color: var(--bg);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.1s;
-}
-.btn-play:hover { transform: scale(1.06); }
-/* The glyph only fills ~half its 24px viewBox, so the svg has to be oversized
-   relative to the button for the triangle to read at normal weight. */
-.play-i { width: 22px; height: 22px; }
-
-.time-pair {
-  font-size: 10.5px;
   color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  margin-right: 2px;
+  line-height: 1;
+  pointer-events: none;
 }
 
-/* Seek bar along the island's bottom edge. The track is a transparent grab
-   strip — a 4px line is far too small to hit — and the rail inside it owns the
-   rounded bottom corners (and the overflow that clips the fill to them). */
-.progress-track {
+/* Fullscreen icon overlay */
+.artwork .fs-icon {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 12px;
-  display: flex;
-  align-items: flex-end;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.7);
+  transition:
+    opacity 0.22s var(--motion-emphasized),
+    transform 0.28s var(--motion-spring);
+  pointer-events: none;
+}
+
+.artwork .fs-icon .material-symbols-rounded {
+  font-size: 20px;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+.artwork:hover .fs-icon,
+.artwork.is-fullscreen .fs-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.artwork:hover {
+  border-radius: var(--shape-sm);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.artwork:active {
+  transform: scale(0.96);
+  border-radius: 6px;
+}
+
+.artwork.is-fullscreen {
+  border-radius: var(--shape-sm);
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.song-block .title {
+  grid-row: 1;
+  grid-column: 2;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: opacity 0.18s var(--motion-emphasized);
+}
+
+.song-block .title:hover {
+  text-decoration: underline;
+}
+
+.song-block .subtitle {
+  grid-row: 2;
+  grid-column: 2;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.18s var(--motion-emphasized);
+}
+
+.song-block .subtitle .artist-link,
+.song-block .subtitle .album-link {
   cursor: pointer;
 }
-.progress-rail {
-  width: 100%;
-  height: 4px;
-  background: var(--active-bg);
-  /* The rail is 4px tall, and a border-radius is clamped to half the box it
-     sits in — a 15px one would collapse to ~2px and cut straight across the
-     island's corner. Clipping to a box that extends well above the rail keeps
-     the arc at its full radius, so the fill follows the island's curve. The
-     clip applies to the fill inside it too. */
-  clip-path: inset(-20px 0 0 0 round 0 0 15px 15px);
-  transition: height 0.12s;
-}
-.playbar:hover .progress-rail { height: 7px; }
-.progress-fill {
-  height: 100%;
-  width: 0;
-  background: var(--accent);
+
+.song-block .subtitle .artist-link:hover,
+.song-block .subtitle .album-link:hover {
+  text-decoration: underline;
+  color: var(--text-strong);
 }
 
-.playbar-right {
+/* Progress row – starts under the thumbnail */
+.progress-row {
+  grid-row: 3;
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 9px;
+  gap: 8px;
+  margin-top: 2px;
+  height: var(--progress-height);
+  position: relative;
 }
-.vol-track {
-  width: 80px;
-  height: 4px;
-  /* A token, not a hardcoded white: on the light themes a white track was
-     invisible against the island. */
-  background: var(--active-bg);
-  border-radius: 2px;
+
+/* ===== WAVY PROGRESS (M3 Expressive) ===== */
+.wavy-progress {
+  flex: 1;
+  height: var(--progress-height);
   position: relative;
   cursor: pointer;
+  overflow: visible;
 }
-.vol-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+
+.wavy-progress svg {
   width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.wavy-track {
+  fill: none;
+  stroke: var(--active-bg);
+  stroke-width: var(--wave-stroke);
+  stroke-linecap: round;
+}
+
+.wavy-active {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: var(--wave-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+}
+
+.wavy-stop {
+  fill: var(--accent);
+  opacity: 0.9;
+}
+
+.time-label {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  min-width: 34px;
+  opacity: 0;
+  transform: translateY(3px);
+  pointer-events: none;
+  transition:
+    opacity 0.18s var(--motion-emphasized),
+    transform 0.18s var(--motion-emphasized);
+}
+
+.time-label.current { text-align: right; }
+.time-label.remaining { text-align: left; }
+
+.song-block:has(.progress-row:hover) .title,
+.song-block:has(.progress-row:hover) .subtitle {
+  opacity: 0;
+}
+
+.progress-row:hover .time-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.progress-row:not(:hover) .time-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* Volume */
+.volume-block {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 72px;
+  height: 5px;
+  background: var(--active-bg);
+  border-radius: var(--shape-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
   background: var(--accent);
-  border-radius: 2px;
+  border: 2px solid var(--panel-elev);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.18s var(--motion-spring);
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel-elev);
 }
 
 /* ─── Fullscreen overlay ─── */
@@ -4762,17 +5114,20 @@ html:has(.palette-overlay.active) .dl-progress-fill {
     grid-template-columns: 28px 1fr 0.9fr 60px 28px;
   }
 
-  /* Playbar — keep the volume slider (just narrower) so volume stays
-     adjustable; hiding it left only the mute toggle, which isn't discoverable.
-     Tighten the right column and gaps so it still fits the cramped range. */
+  /* Playbar responsive */
   .playbar {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    padding: 0 12px;
-    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
   }
-  .playbar-right { gap: 7px; }
-  .vol-track { width: 56px; }
-  .ctrls { gap: 11px; }
+  .song-block {
+    order: -1;
+    width: 100%;
+    min-width: 100%;
+    padding: 0 4px 4px;
+  }
+  .volume-block { min-width: auto; }
 
   /* Fullscreen overlay — slimmer queue column and a smaller cover so the
      2-column layout fits within ~820px of content room. */

@@ -5,7 +5,7 @@
   <title>Audex</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400..700&family=Roboto+Mono:wght@400..700&family=Roboto+Serif:ital,opsz,wght@0,8..144,400..900;1,8..144,400..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400..700&family=Roboto+Mono:wght@400..700&family=Roboto+Serif:ital,opsz,wght@0,8..144,400..900;1,8..144,400..900&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script>
     /* Apply the saved palette before the boot screen paints, so it derives its
@@ -941,48 +941,86 @@
     </main>
   </div>
 
-  <!-- Playback Bar -->
-  <footer class="playbar">
-    <div class="playbar-left">
-      <div class="mini-cover" id="mini-cover-wrapper">
-        <span class="mini-cover-letter" id="mini-cover-letter"></span>
-      </div>
-      <div class="mini-info">
-        <div class="mini-title" id="track-title" data-i18n="np.empty.title">Nothing selected</div>
-        <div class="mini-artist" id="track-artist">—</div>
-      </div>
-      <button class="btn-ic heart" id="btn-favorite" title="Favorite" data-i18n-title="tooltip.favorite">
-        <svg class="i" width="15" height="15"><use href="#i-heart"/></svg>
+  <!-- Playback Bar (M3 Expressive) -->
+  <footer class="playbar" role="region" aria-label="Now playing">
+    <!-- Standard Button Group (M3 Expressive) – transport controls -->
+    <div class="button-group" role="group" aria-label="Playback controls">
+      <button class="icon-btn" id="btn-shuffle" aria-label="Shuffle" aria-pressed="false" title="Shuffle" data-i18n-title="tooltip.shuffle">
+        <span class="material-symbols-rounded">shuffle</span>
+      </button>
+
+      <button class="icon-btn" id="btn-prev" aria-label="Previous" title="Previous" data-i18n-title="tooltip.prev">
+        <span class="material-symbols-rounded">skip_previous</span>
+      </button>
+
+      <button class="icon-btn play-pause" id="btn-play" aria-label="Play" title="Play" data-i18n-title="tooltip.playPause">
+        <span class="material-symbols-rounded" id="playIcon">play_arrow</span>
+      </button>
+
+      <button class="icon-btn" id="btn-next" aria-label="Next" title="Next" data-i18n-title="tooltip.next">
+        <span class="material-symbols-rounded">skip_next</span>
+      </button>
+
+      <button class="icon-btn" id="btn-repeat" aria-label="Repeat" aria-pressed="false" title="Repeat" data-i18n-title="tooltip.repeat">
+        <span class="material-symbols-rounded" id="repeatIcon">repeat</span>
       </button>
     </div>
 
-    <div class="playbar-center">
-      <div class="ctrls">
-        <button class="btn-ic" id="btn-shuffle" title="Shuffle" data-i18n-title="tooltip.shuffle"><svg class="i" width="15" height="15"><use href="#i-shuffle"/></svg></button>
-        <button class="btn-ic" id="btn-prev" title="Previous" data-i18n-title="tooltip.prev"><svg class="i" width="16" height="16"><use href="#i-prev"/></svg></button>
-        <button class="btn-play" id="btn-play" title="Play / Pause" data-i18n-title="tooltip.playPause"><svg class="i play-i" width="13" height="13"><use href="#i-play"/></svg></button>
-        <button class="btn-ic" id="btn-next" title="Next" data-i18n-title="tooltip.next"><svg class="i" width="16" height="16"><use href="#i-next"/></svg></button>
-        <button class="btn-ic" id="btn-repeat" title="Repeat" data-i18n-title="tooltip.repeat"><svg class="i" width="15" height="15"><use href="#i-repeat"/></svg></button>
+    <!-- Song identity + progress -->
+    <div class="song-block" id="songBlock">
+      <button class="artwork" id="mini-cover-wrapper" type="button"
+              aria-label="Open full player" title="Full player"
+              aria-pressed="false">
+        <span class="mini-cover-letter" id="mini-cover-letter"></span>
+        <span class="fs-icon" aria-hidden="true">
+          <span class="material-symbols-rounded" id="fsIcon">fullscreen</span>
+        </span>
+      </button>
+
+      <div class="title" id="track-title" data-i18n="np.empty.title">Nothing selected</div>
+      <div class="subtitle" id="track-artist">—</div>
+
+      <div class="song-actions">
+        <button class="icon-btn" id="btn-favorite" aria-label="Favorite" aria-pressed="false" title="Favorite" data-i18n-title="tooltip.favorite">
+          <span class="material-symbols-rounded">favorite</span>
+        </button>
+        <button class="icon-btn" id="btn-more" aria-label="More options" title="More">
+          <span class="material-symbols-rounded">more_vert</span>
+        </button>
+        <button class="icon-btn" id="btn-connect" title="Connect to a device" data-i18n-title="lan.connect" hidden>
+          <span class="material-symbols-rounded">devices</span>
+        </button>
+      </div>
+
+      <div class="progress-row">
+        <span class="time-label current" id="time-current">0:00</span>
+
+        <div class="wavy-progress" id="progress-track" role="slider"
+             aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+          <svg viewBox="0 0 400 14" preserveAspectRatio="none" aria-hidden="true"
+               style="overflow: visible;">
+            <!-- Inactive track (flat) -->
+            <path class="wavy-track" id="trackPath"
+                  d="M 3 7 L 397 7" />
+
+            <!-- Active wavy path – rebuilt in JS (smooth cubics) -->
+            <path class="wavy-active" id="activePath"
+                  d="M 3 7" />
+
+            <!-- Stop indicator (M3 accessibility circle at end of track) -->
+            <circle class="wavy-stop" id="stopIndicator" cx="397" cy="7" r="2.2" />
+          </svg>
+        </div>
+
+        <span class="time-label remaining" id="time-remaining">-0:00</span>
       </div>
     </div>
 
-    <div class="playbar-right">
-      <span class="time-pair">
-        <span id="time-current">0:00</span> / <span id="time-total">0:00</span>
-      </span>
-      <button class="btn-ic" id="btn-connect" title="Connect to a device" data-i18n-title="lan.connect" hidden><svg class="i" width="15" height="15"><use href="#i-monitor"/></svg></button>
-      <button class="btn-ic" id="btn-lyrics" title="Lyrics" data-i18n-title="fs.lyrics"><svg class="i" width="15" height="15"><use href="#i-mic"/></svg></button>
-      <button class="btn-ic" id="btn-fullscreen" title="Fullscreen" data-i18n-title="tooltip.fullscreen"><svg class="i" width="13" height="13"><use href="#i-expand"/></svg></button>
-      <button class="btn-ic" id="btn-mute" title="Volume" data-i18n-title="tooltip.volume"><svg class="i" width="15" height="15"><use href="#i-volume"/></svg></button>
-      <div class="vol-track" id="vol-track">
-        <div class="vol-fill" id="vol-fill"></div>
-      </div>
-    </div>
-
-    <!-- Seek bar: welded to the island's bottom edge, full-bleed. The outer
-         element is a transparent grab strip — the visible rail is only 4px. -->
-    <div class="progress-track" id="progress-track">
-      <div class="progress-rail"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="volume-block">
+      <button class="icon-btn" id="btn-mute" aria-label="Volume" title="Volume" data-i18n-title="tooltip.volume">
+        <span class="material-symbols-rounded" id="volIcon">volume_up</span>
+      </button>
+      <input type="range" class="volume-slider" id="vol-slider" min="0" max="100" value="100" aria-label="Volume">
     </div>
   </footer>
 

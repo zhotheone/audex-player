@@ -5821,7 +5821,11 @@ function updateNowPlayingUI(track) {
     $('mini-cover-letter').textContent = (track.title || '?')[0];
   }
   $('track-title').textContent = track.title;
-  $('track-artist').textContent = track.artist;
+  if (track.album) {
+    $('track-artist').innerHTML = `<span class="artist-link">${escapeHtml(track.artist || '')}</span> - <span class="album-link">${escapeHtml(track.album)}</span>`;
+  } else {
+    $('track-artist').textContent = track.artist || '—';
+  }
 
   // Fullscreen
   const fsCover = $('fs-cover');
@@ -5866,18 +5870,18 @@ function updateNowPlayingUI(track) {
 }
 
 function updatePlayButtonUI() {
-  const playBtn = $('btn-play').querySelector('use');
-  const fsPlayBtn = $('fs-btn-play').querySelector('use');
-  playBtn.setAttribute('href', isPlaying ? '#i-pause' : '#i-play');
-  fsPlayBtn.setAttribute('href', isPlaying ? '#i-pause' : '#i-play');
-  // Gate the equalizer animation on actual playback (see CSS). Without this the
-  // now-playing row's bars keep animating while paused, holding the compositor
-  // awake indefinitely (Chromium's "CompositorAnimationObserver active too long").
+  const playIcon = $('playIcon');
+  if (playIcon) playIcon.textContent = isPlaying ? 'pause' : 'play_arrow';
+  const playBtn = $('btn-play');
+  if (playBtn) playBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+  const fsPlayBtn = $('fs-btn-play')?.querySelector('use');
+  if (fsPlayBtn) fsPlayBtn.setAttribute('href', isPlaying ? '#i-pause' : '#i-play');
   document.documentElement.classList.toggle('is-playing', isPlaying);
   if ('mediaSession' in navigator) {
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }
   syncTray();
+  syncWaveAnim();
 }
 
 // MediaSession (maps to MPRIS on Linux, SMTC on Windows — OS-level "now playing"
@@ -5929,13 +5933,28 @@ function updateFavoriteUI() {
   const t = currentTrack;
   const fav = favorites.includes(t.path);
   const heart = $('btn-favorite');
-  heart.classList.toggle('active', fav);
-  heart.querySelector('use').setAttribute('href', fav ? '#i-heart-filled' : '#i-heart');
+  if (heart) {
+    const wasLiked = heart.classList.contains('liked');
+    heart.classList.toggle('liked', fav);
+    heart.classList.toggle('active', fav);
+    heart.setAttribute('aria-pressed', fav);
+    heart.setAttribute('aria-label', fav ? 'Unlike' : 'Like');
+    heart.title = fav ? 'Unlike' : 'Like';
+    const ic = heart.querySelector('.material-symbols-rounded');
+    if (ic) ic.style.fontVariationSettings = fav ? "'FILL' 1, 'wght' 500" : "'FILL' 0, 'wght' 400";
+    if (fav && !wasLiked) {
+      heart.classList.remove('is-animating');
+      void heart.offsetWidth;
+      heart.classList.add('is-animating');
+    }
+  }
 
   const fsFav = $('fs-btn-favorite');
-  fsFav.classList.toggle('active', fav);
-  fsFav.querySelector('use').setAttribute('href', fav ? '#i-heart-filled' : '#i-heart');
-  $('fs-fav-label').textContent = fav ? tr('btn.favoriteOn') : tr('btn.favorite');
+  if (fsFav) {
+    fsFav.classList.toggle('active', fav);
+    fsFav.querySelector('use')?.setAttribute('href', fav ? '#i-heart-filled' : '#i-heart');
+    $('fs-fav-label').textContent = fav ? tr('btn.favoriteOn') : tr('btn.favorite');
+  }
   syncTray();
 }
 
@@ -5968,6 +5987,7 @@ if (window.electronAPI && window.electronAPI.onTrayCommand) {
 }
 
 function togglePlay() {
+  if (typeof triggerButtonSquish === 'function') triggerButtonSquish($('btn-play'));
   if (!currentTrack && library.length > 0) {
     playTrackByPath(library[0].path, library);
     return;
@@ -6020,6 +6040,7 @@ function getUpcomingQueue(limit = 8) {
 // Settings) it drops back to "repeat all" instead of trapping the next track
 // in the same loop.
 function nextTrack({ manual = true } = {}) {
+  if (manual && typeof triggerButtonSquish === 'function') triggerButtonSquish($('btn-next'));
   if (currentQueue.length === 0) return;
   if (manual && repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = 1;
@@ -6037,6 +6058,7 @@ function nextTrack({ manual = true } = {}) {
 }
 
 function prevTrack() {
+  if (typeof triggerButtonSquish === 'function') triggerButtonSquish($('btn-prev'));
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = -1;
@@ -6050,19 +6072,33 @@ function prevTrack() {
 
 function updateShuffleUI() {
   if (isShuffle) rebuildShuffleQueue();
-  $('btn-shuffle').classList.toggle('active', isShuffle);
-  $('fs-btn-shuffle').classList.toggle('active', isShuffle);
+  const shuffleBtn = $('btn-shuffle');
+  if (shuffleBtn) {
+    if (typeof triggerButtonSquish === 'function') triggerButtonSquish(shuffleBtn);
+    shuffleBtn.classList.toggle('selected', isShuffle);
+    shuffleBtn.classList.toggle('active', isShuffle);
+    shuffleBtn.setAttribute('aria-pressed', isShuffle);
+  }
+  $('fs-btn-shuffle')?.classList.toggle('active', isShuffle);
   if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
 }
 
 function updateRepeatUI() {
   const btn = $('btn-repeat');
+  if (btn) {
+    if (typeof triggerButtonSquish === 'function') triggerButtonSquish(btn);
+    btn.classList.toggle('selected', repeatMode > 0);
+    btn.classList.toggle('active', repeatMode > 0);
+    btn.setAttribute('aria-pressed', repeatMode > 0);
+    const repIcon = $('repeatIcon') || btn.querySelector('.material-symbols-rounded');
+    if (repIcon) repIcon.textContent = repeatMode === 2 ? 'repeat_one' : 'repeat';
+  }
   const fsBtn = $('fs-btn-repeat');
-  btn.classList.toggle('active', repeatMode > 0);
-  fsBtn.classList.toggle('active', repeatMode > 0);
-  const icon = repeatMode === 2 ? '#i-repeat-one' : '#i-repeat';
-  btn.querySelector('use').setAttribute('href', icon);
-  fsBtn.querySelector('use').setAttribute('href', icon);
+  if (fsBtn) {
+    fsBtn.classList.toggle('active', repeatMode > 0);
+    const icon = repeatMode === 2 ? '#i-repeat-one' : '#i-repeat';
+    fsBtn.querySelector('use')?.setAttribute('href', icon);
+  }
   if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
 }
 
@@ -6524,7 +6560,10 @@ function gotoCurrentTrackArtist() {
 }
 
 $('track-title').addEventListener('click', gotoCurrentTrackInAlbum);
-$('track-artist').addEventListener('click', gotoCurrentTrackArtist);
+$('track-artist').addEventListener('click', (e) => {
+  if (e.target.closest('.album-link')) gotoCurrentTrackInAlbum();
+  else gotoCurrentTrackArtist();
+});
 
 // ── Favorites ──
 function toggleFavorite(path) {
@@ -6574,20 +6613,98 @@ $('fs-btn-repeat').addEventListener('click', () => {
   updateRepeatUI();
 });
 
-// ── Progress bar ──
-// A plain fill on the playbar island's bottom edge and on the fullscreen bar.
-// (This used to be a real waveform decoded from the audio; it cost a full file
-// read plus a Web Audio decode per track and a peaks cache on disk, for a
-// decoration — the line reads the same at 4px tall.)
-// Read straight off the audio element rather than taking a percentage: several
-// things repaint the now-playing UI at arbitrary times (late cover art, a
-// metadata refresh, a language switch), and a fill they set from a stale
-// argument would snap the bar back to zero mid-track.
+// ── Wavy Progress (M3 Expressive) ──
+let wavePhase = 0;
+let waveAnimId = null;
+const AMPLITUDE = 3.0;
+const WAVELENGTH = 24;
+const VIEW_W = 400;
+const VIEW_H = 14;
+const PAD = 4;
+
+function buildWavyPath(progressRatio, phase) {
+  const midY = VIEW_H / 2;
+  const progressX = PAD + progressRatio * (VIEW_W - PAD * 2);
+
+  if (progressX <= PAD + 0.8) {
+    return `M ${PAD} ${midY}`;
+  }
+
+  const ampScale = Math.min(1, progressRatio * 10);
+  const amp = AMPLITUDE * ampScale;
+  const steps = Math.max(24, Math.ceil((progressX - PAD) / 1.5));
+  const pts = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = PAD + t * (progressX - PAD);
+    const y = midY + Math.sin((x / WAVELENGTH) * Math.PI * 2 + phase) * amp;
+    pts.push({ x, y });
+  }
+
+  let d = `M ${pts[0].x.toFixed(3)} ${pts[0].y.toFixed(3)}`;
+  if (pts.length === 2) {
+    d += ` L ${pts[1].x.toFixed(3)} ${pts[1].y.toFixed(3)}`;
+    return d;
+  }
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    d += ` C ${cp1x.toFixed(3)} ${cp1y.toFixed(3)} ${cp2x.toFixed(3)} ${cp2y.toFixed(3)} ${p2.x.toFixed(3)} ${p2.y.toFixed(3)}`;
+  }
+  return d;
+}
+
 function setProgressUI() {
-  const dur = audio.duration;
-  const w = dur > 0 ? `${Math.min(100, (audio.currentTime / dur) * 100)}%` : '0%';
-  $('progress-fill').style.width = w;
-  $('fs-progress-fill').style.width = w;
+  const dur = audio.duration || 0;
+  const cur = audio.currentTime || 0;
+  const ratio = dur > 0 ? Math.min(1, cur / dur) : 0;
+  const progressX = PAD + ratio * (VIEW_W - PAD * 2);
+  const activePath = $('activePath');
+  if (activePath) activePath.setAttribute('d', buildWavyPath(ratio, wavePhase));
+  const trackPath = $('trackPath');
+  if (trackPath) {
+    const endX = VIEW_W - PAD;
+    trackPath.setAttribute('d', `M ${Math.min(endX, progressX).toFixed(3)} 7 L ${endX} 7`);
+  }
+  const progressTrack = $('progress-track');
+  if (progressTrack) {
+    progressTrack.setAttribute('aria-valuenow', Math.round(cur));
+    progressTrack.setAttribute('aria-valuemax', Math.round(dur));
+  }
+  const fsProgress = $('fs-progress-fill');
+  if (fsProgress) fsProgress.style.width = dur > 0 ? `${ratio * 100}%` : '0%';
+}
+
+function waveTick() {
+  if (!isPlaying) {
+    waveAnimId = null;
+    return;
+  }
+  wavePhase += 0.12;
+  setProgressUI();
+  waveAnimId = requestAnimationFrame(waveTick);
+}
+
+function syncWaveAnim() {
+  if (isPlaying) {
+    if (!waveAnimId) waveAnimId = requestAnimationFrame(waveTick);
+  } else {
+    if (waveAnimId) {
+      cancelAnimationFrame(waveAnimId);
+      waveAnimId = null;
+    }
+    setProgressUI();
+  }
 }
 
 // ── Play history logging (feeds the Listening Report) ──
@@ -6905,22 +7022,29 @@ audio.addEventListener('error', async () => {
 });
 audio.addEventListener('timeupdate', () => {
   const cur = audio.currentTime, dur = audio.duration;
-  saveSession(); // throttled internally — this fires ~4x a second
-  $('time-current').textContent = formatTime(cur);
-  $('fs-time-current').textContent = formatTime(cur);
+  saveSession();
+  const curEl = $('time-current');
+  if (curEl) curEl.textContent = formatTime(cur);
+  const remEl = $('time-remaining');
+  if (remEl) {
+    const left = !isNaN(dur) && dur >= cur ? dur - cur : 0;
+    remEl.textContent = '-' + formatTime(left);
+  }
+  const totEl = $('time-total');
+  if (totEl && !isNaN(dur)) totEl.textContent = formatTime(dur);
+  const fsCur = $('fs-time-current');
+  if (fsCur) fsCur.textContent = formatTime(cur);
   if (!isNaN(dur)) {
-    $('time-total').textContent = formatTime(dur);
-    $('fs-time-total').textContent = formatTime(dur);
+    const fsTot = $('fs-time-total');
+    if (fsTot) fsTot.textContent = formatTime(dur);
     setProgressUI();
   }
-  if ($('fullscreen-overlay').classList.contains('active')) updateFsLyricsActive(cur);
-  // Crossfade into the next track *before* this one ends. Repeat-one is left to
-  // the 'ended' handler — fading a track into itself makes no sense.
+  if ($('fullscreen-overlay')?.classList.contains('active')) updateFsLyricsActive(cur);
   if (settings.crossfade && !isNaN(dur) && dur > 0) {
     const left = dur - cur;
     const fadeSec = crossfadeMs() / 1000;
     if (left > fadeSec + 0.5) {
-      crossfadeArmed = false; // seeked back out of the fade window — re-arm
+      crossfadeArmed = false;
     } else if (!crossfadeArmed && repeatMode !== 2 && fadeSec > 0 && left <= fadeSec) {
       crossfadeArmed = true;
       nextTrack({ manual: false });
@@ -6928,8 +7052,7 @@ audio.addEventListener('timeupdate', () => {
     }
   }
   plTick();
-  if (plSaveAccum >= 15) { plSaveAccum = 0; savePlayLog(); }   // persist periodically, not every tick
-  // Keep the Discord preview timer ticking (once per second, settings view only).
+  if (plSaveAccum >= 15) { plSaveAccum = 0; savePlayLog(); }
   if (isSettingsOpen() && settings.discord.showTimer) {
     const sec = Math.floor(cur);
     if (sec !== discordPreviewSec) { discordPreviewSec = sec; renderDiscordPreviewOnly(); }
@@ -6947,13 +7070,55 @@ audio.addEventListener('ended', () => {
   else nextTrack({ manual: false });
 });
 
-// Progress track click/drag (both bars)
+// Progress track click/drag (wavy M3 progress & fullscreen bar)
+function wireWavySeek(trackEl) {
+  if (!trackEl) return;
+  function seekFromEvent(e) {
+    const rect = trackEl.getBoundingClientRect();
+    if (!audio.duration || !rect.width) return;
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+    setProgressUI();
+  }
+
+  let isDragging = false;
+  trackEl.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    try { trackEl.setPointerCapture(e.pointerId); } catch {}
+    seekFromEvent(e);
+  });
+  trackEl.addEventListener('pointermove', (e) => {
+    if (isDragging) seekFromEvent(e);
+  });
+  const stopDrag = (e) => {
+    if (isDragging) {
+      isDragging = false;
+      try { trackEl.releasePointerCapture(e.pointerId); } catch {}
+    }
+  };
+  trackEl.addEventListener('pointerup', stopDrag);
+  trackEl.addEventListener('pointercancel', stopDrag);
+
+  trackEl.addEventListener('keydown', (e) => {
+    if (!audio.duration) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+      setProgressUI();
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      audio.currentTime = Math.max(0, audio.currentTime - 5);
+      setProgressUI();
+      e.preventDefault();
+    }
+  });
+}
+wireWavySeek($('progress-track'));
+
 function wireSeek(trackEl) {
+  if (!trackEl) return;
   let dragging = false;
   function seekTo(clientX) {
     const rect = trackEl.getBoundingClientRect();
-    // A hidden bar (the fullscreen one while the overlay is closed) measures 0
-    // wide, and dividing by that hands currentTime a NaN, which throws.
     if (!audio.duration || !rect.width) return;
     const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     audio.currentTime = pct * audio.duration;
@@ -6965,60 +7130,162 @@ function wireSeek(trackEl) {
   window.addEventListener('mousemove', e => { if (dragging) seekTo(e.clientX); });
   window.addEventListener('mouseup', () => { dragging = false; });
 }
-wireSeek($('progress-track'));
 wireSeek($('fs-progress-track'));
 
 // Volume
 function setVolume(v) {
   audio.muted = false;
   targetVolume = Math.max(0, Math.min(1, v));
-  // A running fade-in owns audio.volume until it reaches the (new) ceiling.
   if (!crossfadeRampId) audio.volume = targetVolume;
   updateVolumeUI();
 }
-function wireVolume(trackEl) {
-  let dragging = false;
-  function setFromX(clientX) {
-    const rect = trackEl.getBoundingClientRect();
-    setVolume((clientX - rect.left) / rect.width);
+
+function updateVolumeUI() {
+  const v = audio.muted ? 0 : targetVolume;
+  const pct = `${v * 100}%`;
+  const volSlider = $('vol-slider');
+  if (volSlider) volSlider.value = Math.round(v * 100);
+  const volFill = $('vol-fill');
+  if (volFill) volFill.style.width = pct;
+  const fsFill = $('fs-vol-fill');
+  if (fsFill) fsFill.style.width = pct;
+
+  const volIcon = $('volIcon');
+  if (volIcon) {
+    if (audio.muted || v === 0) volIcon.textContent = 'volume_off';
+    else if (v < 0.35) volIcon.textContent = 'volume_down';
+    else volIcon.textContent = 'volume_up';
   }
-  trackEl.addEventListener('mousedown', e => { dragging = true; setFromX(e.clientX); });
-  window.addEventListener('mousemove', e => { if (dragging) setFromX(e.clientX); });
-  window.addEventListener('mouseup', () => { dragging = false; });
-  // Wheel-to-adjust while hovered — prevent default so it doesn't also
-  // scroll/zoom whatever scrollable ancestor sits behind the slider.
-  trackEl.addEventListener('wheel', e => {
+  const btnMute = $('btn-mute');
+  if (btnMute && btnMute.querySelector('use')) {
+    const icon = audio.muted || v === 0 ? '#i-volume-mute'
+      : v < 0.5 ? '#i-volume-low'
+      : '#i-volume';
+    btnMute.querySelector('use').setAttribute('href', icon);
+  }
+  const fsMute = $('fs-btn-mute');
+  if (fsMute && fsMute.querySelector('use')) {
+    const icon = audio.muted || v === 0 ? '#i-volume-mute'
+      : v < 0.5 ? '#i-volume-low'
+      : '#i-volume';
+    fsMute.querySelector('use').setAttribute('href', icon);
+  }
+}
+
+function toggleMute() {
+  audio.muted = !audio.muted;
+  updateVolumeUI();
+}
+$('btn-mute')?.addEventListener('click', toggleMute);
+$('fs-btn-mute')?.addEventListener('click', toggleMute);
+
+const volSlider = $('vol-slider');
+if (volSlider) {
+  volSlider.addEventListener('input', () => {
+    setVolume(Number(volSlider.value) / 100);
+  });
+}
+const volBlock = document.querySelector('.volume-block');
+if (volBlock) {
+  volBlock.addEventListener('wheel', e => {
     e.preventDefault();
     const step = Number(settings.volumeWheelStep) || 0.05;
     setVolume(targetVolume + (e.deltaY < 0 ? step : -step));
   }, { passive: false });
 }
-wireVolume($('vol-track'));
-wireVolume($('fs-vol-track'));
 
-function updateVolumeUI() {
-  const v = audio.muted ? 0 : targetVolume;
-  const pct = `${v * 100}%`;
-  $('vol-fill').style.width = pct;
-  const fsFill = $('fs-vol-fill');
-  if (fsFill) fsFill.style.width = pct;
-  const icon = audio.muted || v === 0 ? '#i-volume-mute'
-    : v < 0.5 ? '#i-volume-low'
-    : '#i-volume';
-  $('btn-mute').querySelector('use').setAttribute('href', icon);
-  const fsMute = $('fs-btn-mute');
-  if (fsMute) fsMute.querySelector('use').setAttribute('href', icon);
-}
-function toggleMute() {
-  audio.muted = !audio.muted;
-  updateVolumeUI();
-}
-$('btn-mute').addEventListener('click', toggleMute);
-const fsMuteBtn = $('fs-btn-mute');
-if (fsMuteBtn) fsMuteBtn.addEventListener('click', toggleMute);
 targetVolume = 1;
 audio.volume = 1;
 updateVolumeUI();
+
+// ===== Standard Button Group: neighbor squish + shape morph =====
+let clearSquishTimer = null;
+function triggerButtonSquish(btn) {
+  if (!btn) return;
+  const groupBtns = Array.from(document.querySelectorAll('.button-group .icon-btn'));
+  const index = groupBtns.indexOf(btn);
+  if (index < 0) return;
+  const growDirection = { 0: 'balanced', 1: 'right', 2: 'balanced', 3: 'left', 4: 'balanced' };
+  groupBtns.forEach(b => b.classList.remove('is-expanded', 'is-compressed', 'is-compressed-left', 'is-compressed-right', 'grow-left', 'grow-right'));
+  const dir = growDirection[index] || 'balanced';
+  btn.classList.add('is-expanded');
+  if (dir === 'right') {
+    btn.classList.add('grow-right');
+    if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
+    if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed', 'is-compressed-right');
+  } else if (dir === 'left') {
+    btn.classList.add('grow-left');
+    if (index > 0) groupBtns[index - 1].classList.add('is-compressed', 'is-compressed-left');
+    if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed');
+  } else {
+    if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
+    if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed');
+  }
+  clearTimeout(clearSquishTimer);
+  clearSquishTimer = setTimeout(() => {
+    groupBtns.forEach(b => b.classList.remove('is-expanded', 'is-compressed', 'is-compressed-left', 'is-compressed-right', 'grow-left', 'grow-right'));
+  }, 220);
+}
+
+function initButtonGroupSquish() {
+  const groupBtns = Array.from(document.querySelectorAll('.button-group .icon-btn'));
+  function clearSquish() {
+    clearTimeout(clearSquishTimer);
+    groupBtns.forEach(b => {
+      b.classList.remove(
+        'is-expanded',
+        'is-compressed',
+        'is-compressed-left',
+        'is-compressed-right',
+        'grow-left',
+        'grow-right'
+      );
+    });
+  }
+
+  const growDirection = {
+    0: 'balanced', // Shuffle
+    1: 'right',    // Prev
+    2: 'balanced', // Play
+    3: 'left',     // Next
+    4: 'balanced'  // Repeat
+  };
+
+  groupBtns.forEach((btn, index) => {
+    btn.addEventListener('pointerdown', () => {
+      clearSquish();
+      const dir = growDirection[index] || 'balanced';
+      btn.classList.add('is-expanded');
+      if (dir === 'right') btn.classList.add('grow-right');
+      if (dir === 'left')  btn.classList.add('grow-left');
+
+      if (dir === 'right') {
+        if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
+        if (index < groupBtns.length - 1) {
+          groupBtns[index + 1].classList.add('is-compressed', 'is-compressed-right');
+        }
+      } else if (dir === 'left') {
+        if (index > 0) groupBtns[index - 1].classList.add('is-compressed', 'is-compressed-left');
+        if (index < groupBtns.length - 1) {
+          groupBtns[index + 1].classList.add('is-compressed');
+        }
+      } else {
+        if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
+        if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed');
+      }
+    });
+
+    const release = () => clearSquish();
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', (e) => {
+      if (e.buttons === 0) clearSquish();
+    });
+  });
+
+  document.addEventListener('pointerup', clearSquish);
+}
+initButtonGroupSquish();
 
 // ── Fullscreen ──
 let fsAnimating = false;
@@ -7058,15 +7325,17 @@ function openFullscreen() {
   cancelCoverAnim();
   overlay.classList.add('active');
   updateFullscreenQueue();
-  // Force layout so getBoundingClientRect returns measurable values for FLIP.
   void overlay.offsetHeight;
-  $('mini-cover-wrapper').classList.add('is-morphing');
+  $('mini-cover-wrapper')?.classList.add('is-morphing', 'is-fullscreen');
+  $('mini-cover-wrapper')?.setAttribute('aria-pressed', 'true');
+  const fsIcon = $('fsIcon');
+  if (fsIcon) fsIcon.textContent = 'fullscreen_exit';
   fsCoverAnim = flipCover('in');
   requestAnimationFrame(() => overlay.classList.add('is-in'));
   const done = () => {
     cancelCoverAnim();
     fsAnimating = false;
-    $('mini-cover-wrapper').classList.remove('is-morphing');
+    $('mini-cover-wrapper')?.classList.remove('is-morphing');
   };
   if (fsCoverAnim) fsCoverAnim.finished.then(done).catch(done);
   else done();
@@ -7079,22 +7348,31 @@ async function closeFullscreen() {
   fsAnimating = true;
   cancelCoverAnim();
   overlay.classList.remove('is-in');
-  $('mini-cover-wrapper').classList.add('is-morphing');
+  $('mini-cover-wrapper')?.classList.add('is-morphing');
+  $('mini-cover-wrapper')?.classList.remove('is-fullscreen');
+  $('mini-cover-wrapper')?.setAttribute('aria-pressed', 'false');
+  const fsIcon = $('fsIcon');
+  if (fsIcon) fsIcon.textContent = 'fullscreen';
   fsCoverAnim = flipCover('out');
   const done = () => {
     cancelCoverAnim();
     overlay.classList.remove('active');
     fsAnimating = false;
-    $('mini-cover-wrapper').classList.remove('is-morphing');
+    $('mini-cover-wrapper')?.classList.remove('is-morphing');
   };
   if (fsCoverAnim) fsCoverAnim.finished.then(done).catch(done);
   else setTimeout(done, 320);
 }
 
-$('mini-cover-wrapper').addEventListener('click', openFullscreen);
-$('btn-fullscreen').addEventListener('click', openFullscreen);
-$('btn-close-fullscreen').addEventListener('click', closeFullscreen);
-$('btn-close-fullscreen-x').addEventListener('click', closeFullscreen);
+$('mini-cover-wrapper')?.addEventListener('click', openFullscreen);
+$('btn-fullscreen')?.addEventListener('click', openFullscreen);
+$('btn-close-fullscreen')?.addEventListener('click', closeFullscreen);
+$('btn-close-fullscreen-x')?.addEventListener('click', closeFullscreen);
+$('btn-more')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!currentTrack) return;
+  openContextMenu(e, currentTrack.path);
+});
 
 // ── Lyrics (LRCLIB) ──
 // A dedicated overlay panel (toggled by #btn-fs-lyrics) rather than a queue
@@ -7138,7 +7416,7 @@ function renderFsLyrics() {
     $('btn-manual-lyrics')?.addEventListener('click', async () => {
       const track = currentTrack;
       if (!track) return;
-      const defVal = [track.artist, track.title].filter(Boolean).join(' - ');
+      const defVal = [track.artist, track.title].filter(Boolean).join(' — ');
       const manual = await promptModal(tr('fs.lyricsSearchManual'), defVal);
       if (manual && manual.trim()) {
         fsLyrics = 'loading';
@@ -7242,7 +7520,7 @@ $('btn-fs-lyrics').addEventListener('click', toggleFsLyricsPanel);
 
 // Playbar shortcut: jumps straight to fullscreen + lyrics in one click instead
 // of opening fullscreen first and hunting for the lyrics toggle inside it.
-$('btn-lyrics').addEventListener('click', () => {
+$('btn-lyrics')?.addEventListener('click', () => {
   if (!currentTrack) return;
   if (!$('fullscreen-overlay').classList.contains('active')) openFullscreen();
   toggleFsLyricsPanel();
@@ -7633,7 +7911,7 @@ function closeContextMenu() {
   pendingContextTrackPath = null;
 }
 document.addEventListener('click', e => {
-  if (!e.target.closest('#track-context-menu') && !e.target.closest('.trow-more')) {
+  if (!e.target.closest('#track-context-menu') && !e.target.closest('.trow-more') && !e.target.closest('#btn-more')) {
     closeContextMenu();
   }
 });
