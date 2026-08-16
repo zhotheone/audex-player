@@ -7229,7 +7229,7 @@ function triggerButtonSquish(btn) {
   const groupBtns = Array.from(document.querySelectorAll('.button-group .icon-btn'));
   const index = groupBtns.indexOf(btn);
   if (index < 0) return;
-  const growDirection = { 0: 'balanced', 1: 'right', 2: 'balanced', 3: 'left', 4: 'balanced' };
+  const growDirection = { 0: 'balanced', 1: 'left', 2: 'balanced', 3: 'right', 4: 'balanced' };
   groupBtns.forEach(b => b.classList.remove('is-expanded', 'is-compressed', 'is-compressed-left', 'is-compressed-right', 'grow-left', 'grow-right'));
   const dir = growDirection[index] || 'balanced';
   btn.classList.add('is-expanded');
@@ -7269,9 +7269,9 @@ function initButtonGroupSquish() {
 
   const growDirection = {
     0: 'balanced', // Shuffle
-    1: 'right',    // Prev
+    1: 'left',     // Prev
     2: 'balanced', // Play
-    3: 'left',     // Next
+    3: 'right',    // Next
     4: 'balanced'  // Repeat
   };
 
@@ -7581,7 +7581,6 @@ function openFullscreen() {
   overlay.classList.add('active');
   updateFullscreenQueue();
   startFsShader();
-  void overlay.offsetHeight;
   $('mini-cover-wrapper')?.classList.add('is-morphing', 'is-fullscreen');
   $('mini-cover-wrapper')?.setAttribute('aria-pressed', 'true');
   const fsIcon = $('fsIcon');
@@ -7601,7 +7600,6 @@ async function closeFullscreen() {
   const overlay = $('fullscreen-overlay');
   if (!overlay.classList.contains('active') || fsAnimating) return;
   if (fsLyricsOpen) closeFsLyricsPanel();
-  stopFsShader();
   fsAnimating = true;
   cancelCoverAnim();
   overlay.classList.remove('is-in');
@@ -7613,6 +7611,7 @@ async function closeFullscreen() {
   fsCoverAnim = flipCover('out');
   const done = () => {
     cancelCoverAnim();
+    stopFsShader();
     overlay.classList.remove('active');
     fsAnimating = false;
     $('mini-cover-wrapper')?.classList.remove('is-morphing');
