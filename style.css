@@ -3597,6 +3597,18 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   opacity: 1;
   transform: scale(1.08);
 }
+.fs-lyrics-line.is-word-synced .fs-lyrics-word {
+  opacity: 0.35;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.fs-lyrics-line.active.is-word-synced .fs-lyrics-word {
+  opacity: 0.4;
+  color: var(--text);
+}
+.fs-lyrics-line.active.is-word-synced .fs-lyrics-word.word-active {
+  opacity: 1;
+  color: var(--text-strong);
+}
 .fs-lyrics-empty { color: var(--text-faint); font-size: 13px; padding: 8px; }
 
 /* Topbar action cluster — keep both close + portrait buttons on the right. */

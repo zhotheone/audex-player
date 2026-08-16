@@ -2886,24 +2886,34 @@ ipcMain.handle('music:lookupLyrics', async (event, query) => {
     const cacheKey = [artist, title, album, duration].join('|').toLowerCase();
     if (lrclibCache.has(cacheKey)) return lrclibCache.get(cacheKey);
 
-    let result = null;
-    const getParams = new URLSearchParams(artist ? { track_name: title, artist_name: artist } : { track_name: title });
-    if (album) getParams.set('album_name', album);
-    if (duration > 0) getParams.set('duration', String(duration));
-    try {
-      const json = await httpsGetJson(`https://lrclib.net/api/get?${getParams}`);
-      if (json && (json.syncedLyrics || json.plainLyrics)) {
-        result = { success: true, synced: json.syncedLyrics || null, plain: json.plainLyrics || null };
-      }
-    } catch (_) { /* no exact match — fall through to search */ }
+    const fetchLyrics = async (t, a, alb) => {
+      const getParams = new URLSearchParams(a ? { track_name: t, artist_name: a } : { track_name: t });
+      if (alb) getParams.set('album_name', alb);
+      if (duration > 0) getParams.set('duration', String(duration));
+      try {
+        const json = await httpsGetJson(`https://lrclib.net/api/get?${getParams}`);
+        if (json && (json.syncedLyrics || json.plainLyrics)) {
+          return { success: true, synced: json.syncedLyrics || null, plain: json.plainLyrics || null };
+        }
+      } catch (_) {}
 
-    if (!result) {
-      const searchParams = new URLSearchParams(artist ? { track_name: title, artist_name: artist } : { q: title });
+      const searchParams = new URLSearchParams(a ? { track_name: t, artist_name: a } : { q: t });
       try {
         const json = await httpsGetJson(`https://lrclib.net/api/search?${searchParams}`);
         const hit = Array.isArray(json) ? (json.find(r => r.syncedLyrics) || json.find(r => r.plainLyrics)) : null;
-        if (hit) result = { success: true, synced: hit.syncedLyrics || null, plain: hit.plainLyrics || null };
-      } catch (_) { /* no match at all */ }
+        if (hit) return { success: true, synced: hit.syncedLyrics || null, plain: hit.plainLyrics || null };
+      } catch (_) {}
+      return null;
+    };
+
+    let result = await fetchLyrics(title, artist, album);
+    if (!result) {
+      const strip = s => s.replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+      const cleanTitle = strip(title);
+      const cleanArtist = strip(artist);
+      if ((cleanTitle && cleanTitle !== title) || (cleanArtist && cleanArtist !== artist)) {
+        result = await fetchLyrics(cleanTitle || title, cleanArtist || artist, strip(album));
+      }
     }
 
     if (!result) result = { success: true, synced: null, plain: null };

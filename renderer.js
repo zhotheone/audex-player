@@ -7341,9 +7341,34 @@ function cancelCoverAnim() {
   fsCoverAnim = null;
 }
 
-// ── Fullscreen WebGL Lava Lamp Shader ──
+// ── Fullscreen WebGL Kawarp Domain Warping Shader ──
 let fsGl = null, fsShaderProg = null, fsTex = null, fsShaderRaf = null;
 let fsShaderTimeLoc = null, fsShaderResLoc = null;
+let fsShaderWarpLoc = null, fsShaderSpeedLoc = null, fsShaderScaleLoc = null;
+let fsShaderSatLoc = null, fsShaderTintLoc = null, fsShaderTintIntLoc = null, fsShaderDitherLoc = null;
+
+let fsShaderParams = {
+  warpIntensity: 1.0,
+  animationSpeed: 1.0,
+  scale: 1.0,
+  saturation: 1.5,
+  tintColor: [0.16, 0.16, 0.24],
+  tintIntensity: 0.15,
+  dithering: 0.008,
+};
+
+function randomizeFsShaderParams() {
+  const r = (min, max) => min + Math.random() * (max - min);
+  fsShaderParams = {
+    warpIntensity: r(0.75, 1.25),
+    animationSpeed: r(0.8, 1.25),
+    scale: r(0.85, 1.15),
+    saturation: r(1.3, 1.7),
+    tintColor: [r(0.12, 0.22), r(0.12, 0.22), r(0.18, 0.28)],
+    tintIntensity: r(0.1, 0.2),
+    dithering: r(0.006, 0.012),
+  };
+}
 
 function initFsShader() {
   const canvas = $('fs-canvas');
@@ -7371,41 +7396,78 @@ function initFsShader() {
     uniform vec2 u_resolution;
     uniform sampler2D u_tex;
 
-    void main() {
-      vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
-      float t = u_time * 0.32;
+    uniform float u_warpIntensity;
+    uniform float u_animationSpeed;
+    uniform float u_scale;
+    uniform float u_saturation;
+    uniform vec3 u_tintColor;
+    uniform float u_tintIntensity;
+    uniform float u_dithering;
 
-      // 4 floating metaballs for lava lamp fluid motion
-      vec2 b1 = vec2(sin(t * 0.7) * 0.65, cos(t * 0.9) * 0.55);
-      vec2 b2 = vec2(cos(t * 0.8 + 1.5) * 0.6, sin(t * 0.6 + 2.0) * 0.6);
-      vec2 b3 = vec2(sin(t * 0.5 + 4.0) * 0.7, cos(t * 0.7 + 3.0) * 0.5);
-      vec2 b4 = vec2(cos(t * 0.6 + 5.0) * 0.5, sin(t * 0.8 + 4.5) * 0.7);
+    vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
 
-      float d1 = length(p - b1);
-      float d2 = length(p - b2);
-      float d3 = length(p - b3);
-      float d4 = length(p - b4);
+    float snoise(vec2 v){
+      const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+      vec2 i  = floor(v + dot(v, C.yy) );
+      vec2 x0 = v -   i + dot(i, C.xx);
+      vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+      vec4 x12 = x0.xyxy + C.xxzz;
+      x12.xy -= i1;
+      i = mod(i, 289.0);
+      vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+      m = m*m ;
+      m = m*m ;
+      vec3 x = 2.0 * fract(p * C.www) - 1.0;
+      vec3 h = abs(x) - 0.5;
+      vec3 ox = floor(x + 0.5);
+      vec3 a0 = x - ox;
+      m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+      vec3 g;
+      g.x  = a0.x  * x0.x  + h.x  * x0.y;
+      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+      return 130.0 * dot(m, g);
+    }
 
-      float m = 0.28 / (d1 * d1 + 0.12)
-              + 0.28 / (d2 * d2 + 0.12)
-              + 0.24 / (d3 * d3 + 0.12)
-              + 0.24 / (d4 * d4 + 0.12);
-
-      vec2 warp = vec2(
-        sin(m * 2.2 + t) * 0.25 + (p.x - b1.x) * 0.15,
-        cos(m * 2.0 - t) * 0.25 + (p.y - b2.y) * 0.15
+    vec2 domainWarp(vec2 p, float t, float intensity) {
+      vec2 q = vec2(
+        snoise(p + vec2(0.0, t * 0.18)),
+        snoise(p + vec2(5.2, 1.3 + t * 0.18))
       );
-      vec2 sampleUv = clamp(v_uv + warp * 0.4, 0.05, 0.95);
+      vec2 r = vec2(
+        snoise(p + 3.0 * q + vec2(1.7, 9.2 + t * 0.12)),
+        snoise(p + 3.0 * q + vec2(8.3, 2.8 + t * 0.12))
+      );
+      return p + intensity * r * 0.35;
+    }
 
-      vec4 c1 = texture2D(u_tex, sampleUv);
-      vec4 c2 = texture2D(u_tex, clamp(vec2(1.0 - sampleUv.y, sampleUv.x), 0.05, 0.95));
-      vec4 c3 = texture2D(u_tex, clamp(vec2(sampleUv.x, 1.0 - sampleUv.y), 0.05, 0.95));
+    vec3 adjustSaturation(vec3 c, float sat) {
+      float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+      return mix(vec3(l), c, sat);
+    }
 
-      vec4 col = mix(c1, c2, smoothstep(0.8, 2.2, m));
-      col = mix(col, c3, sin(m * 1.5 + t * 0.5) * 0.5 + 0.5);
+    float rand(vec2 n) {
+      return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+    }
 
-      float vig = 1.0 - smoothstep(0.8, 2.2, length(p));
-      gl_FragColor = vec4(col.rgb * (0.85 + m * 0.25) * vig, 1.0);
+    void main() {
+      vec2 uv = (v_uv - 0.5) * u_scale + 0.5;
+      float t = u_time * u_animationSpeed * 0.4;
+      vec2 warpedUv = domainWarp(uv * 2.5, t, u_warpIntensity);
+      vec2 sampleUv = clamp(fract(warpedUv * 0.4 + 0.5), 0.02, 0.98);
+
+      vec2 off = vec2(0.025, 0.025) * u_scale;
+      vec4 col = texture2D(u_tex, sampleUv) * 0.4;
+      col += texture2D(u_tex, clamp(sampleUv + off, 0.02, 0.98)) * 0.15;
+      col += texture2D(u_tex, clamp(sampleUv - off, 0.02, 0.98)) * 0.15;
+      col += texture2D(u_tex, clamp(sampleUv + vec2(off.x, -off.y), 0.02, 0.98)) * 0.15;
+      col += texture2D(u_tex, clamp(sampleUv + vec2(-off.x, off.y), 0.02, 0.98)) * 0.15;
+
+      vec3 rgb = adjustSaturation(col.rgb, u_saturation);
+      rgb = mix(rgb, u_tintColor, u_tintIntensity);
+      rgb += (rand(gl_FragCoord.xy) - 0.5) * u_dithering;
+
+      gl_FragColor = vec4(rgb, 1.0);
     }
   `;
 
@@ -7436,6 +7498,13 @@ function initFsShader() {
 
   fsShaderTimeLoc = gl.getUniformLocation(prog, 'u_time');
   fsShaderResLoc = gl.getUniformLocation(prog, 'u_resolution');
+  fsShaderWarpLoc = gl.getUniformLocation(prog, 'u_warpIntensity');
+  fsShaderSpeedLoc = gl.getUniformLocation(prog, 'u_animationSpeed');
+  fsShaderScaleLoc = gl.getUniformLocation(prog, 'u_scale');
+  fsShaderSatLoc = gl.getUniformLocation(prog, 'u_saturation');
+  fsShaderTintLoc = gl.getUniformLocation(prog, 'u_tintColor');
+  fsShaderTintIntLoc = gl.getUniformLocation(prog, 'u_tintIntensity');
+  fsShaderDitherLoc = gl.getUniformLocation(prog, 'u_dithering');
 
   fsTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, fsTex);
@@ -7447,6 +7516,7 @@ function initFsShader() {
 }
 
 function updateFsShaderTexture(imgSrc) {
+  randomizeFsShaderParams();
   if (!fsGl) initFsShader();
   if (!fsGl || !fsTex) return;
   if (!imgSrc) return;
@@ -7481,6 +7551,13 @@ function startFsShader() {
       }
       fsGl.uniform1f(fsShaderTimeLoc, (now - startTime) * 0.001);
       fsGl.uniform2f(fsShaderResLoc, w, h);
+      fsGl.uniform1f(fsShaderWarpLoc, fsShaderParams.warpIntensity);
+      fsGl.uniform1f(fsShaderSpeedLoc, fsShaderParams.animationSpeed);
+      fsGl.uniform1f(fsShaderScaleLoc, fsShaderParams.scale);
+      fsGl.uniform1f(fsShaderSatLoc, fsShaderParams.saturation);
+      fsGl.uniform3f(fsShaderTintLoc, fsShaderParams.tintColor[0], fsShaderParams.tintColor[1], fsShaderParams.tintColor[2]);
+      fsGl.uniform1f(fsShaderTintIntLoc, fsShaderParams.tintIntensity);
+      fsGl.uniform1f(fsShaderDitherLoc, fsShaderParams.dithering);
       fsGl.drawArrays(fsGl.TRIANGLES, 0, 6);
     }
     fsShaderRaf = requestAnimationFrame(render);
@@ -7569,16 +7646,30 @@ let fsLyricsActiveLine = -1;
 const fsLyricsCache = new Map();
 
 function parseLRC(text) {
+  const lineTagRe = /^((?:\[\d{1,2}:\d{2}(?:\.\d{1,3})?\])+)(.*)$/;
   const tagRe = /\[(\d{1,2}):(\d{2}(?:\.\d{1,3})?)\]/g;
+  const wordTagRe = /<(\d{1,2}):(\d{2}(?:\.\d{1,3})?)>([^<]*)/g;
   const lines = [];
   for (const raw of String(text || '').split(/\r?\n/)) {
+    const match = raw.match(lineTagRe);
+    if (!match) continue;
+    const timeHeaders = match[1];
+    const rest = match[2];
     const times = [];
     let m;
     tagRe.lastIndex = 0;
-    while ((m = tagRe.exec(raw))) times.push(parseInt(m[1], 10) * 60 + parseFloat(m[2]));
+    while ((m = tagRe.exec(timeHeaders))) times.push(parseInt(m[1], 10) * 60 + parseFloat(m[2]));
     if (!times.length) continue;
-    const content = raw.replace(tagRe, '').trim();
-    for (const t of times) lines.push({ time: t, text: content });
+    let words = [];
+    wordTagRe.lastIndex = 0;
+    let wm;
+    while ((wm = wordTagRe.exec(rest))) {
+      const wTime = parseInt(wm[1], 10) * 60 + parseFloat(wm[2]);
+      if (wm[3]) words.push({ time: wTime, text: wm[3] });
+    }
+    const plainText = rest.replace(/<[^>]+>/g, '').trim();
+    if (!plainText && !words.length) continue;
+    for (const t of times) lines.push({ time: t, text: plainText || '♪', words: words.length ? words : null });
   }
   return lines.sort((a, b) => a.time - b.time);
 }
@@ -7616,7 +7707,18 @@ function renderFsLyrics() {
   fsLyrics.lines.forEach((ln) => {
     const el = document.createElement('div');
     el.className = 'fs-lyrics-line';
-    el.textContent = ln.text || '♪';
+    if (ln.words && ln.words.length) {
+      el.classList.add('is-word-synced');
+      ln.words.forEach((w) => {
+        const span = document.createElement('span');
+        span.className = 'fs-lyrics-word';
+        span.dataset.time = w.time;
+        span.textContent = w.text;
+        el.appendChild(span);
+      });
+    } else {
+      el.textContent = ln.text || '♪';
+    }
     el.addEventListener('click', () => { if (isFinite(audio.duration)) audio.currentTime = ln.time; });
     list.appendChild(el);
   });
@@ -7651,33 +7753,33 @@ async function loadFsLyrics(track) {
 
 function updateFsLyricsActive(cur) {
   if (!fsLyrics || fsLyrics === 'loading' || !fsLyrics.lines.length) return;
-  // Default to the first line rather than -1: with no active line yet (e.g.
-  // playback hasn't reached the first cue), leaving idx at -1 meant nothing
-  // was highlighted and nothing scrolled, so the panel opened on a blank
-  // stretch of top scroll-padding — the "broken" look reported.
   let idx = 0;
   for (let i = 0; i < fsLyrics.lines.length; i++) {
     if (fsLyrics.lines[i].time <= cur) idx = i; else break;
   }
-  if (idx === fsLyricsActiveLine) return;
   const list = $('fs-lyrics-list');
-  // Fade lines out with distance from the active one — Apple-Music-style
-  // "focused" read instead of a flat highlighted list.
-  Array.from(list.children).forEach((el, i) => {
-    el.classList.toggle('active', i === idx);
-    el.style.opacity = i === idx ? '' : String(Math.max(0.3, 1 - Math.abs(i - idx) * 0.16));
-  });
-  const next = list.children[idx];
-  // Scroll `list` directly instead of next.scrollIntoView(): scrollIntoView
-  // walks every scrollable ancestor to center the target, and can nudge the
-  // whole app viewport (not just this panel) even though .fs-lyrics-list is
-  // itself scrollable.
-  if (next && fsLyricsOpen) {
-    const target = list.scrollTop + (next.getBoundingClientRect().top - list.getBoundingClientRect().top)
-      - (list.clientHeight - next.clientHeight) / 2;
-    list.scrollTo({ top: target, behavior: 'smooth' });
+  if (!list) return;
+
+  if (idx !== fsLyricsActiveLine) {
+    Array.from(list.children).forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+      el.style.opacity = i === idx ? '' : String(Math.max(0.3, 1 - Math.abs(i - idx) * 0.16));
+    });
+    const next = list.children[idx];
+    if (next && fsLyricsOpen) {
+      const target = list.scrollTop + (next.getBoundingClientRect().top - list.getBoundingClientRect().top)
+        - (list.clientHeight - next.clientHeight) / 2;
+      list.scrollTo({ top: target, behavior: 'smooth' });
+    }
+    fsLyricsActiveLine = idx;
   }
-  fsLyricsActiveLine = idx;
+
+  const activeLine = fsLyrics.lines[idx];
+  if (activeLine && activeLine.words && list.children[idx]) {
+    list.children[idx].querySelectorAll('.fs-lyrics-word').forEach(w => {
+      w.classList.toggle('word-active', parseFloat(w.dataset.time) <= cur);
+    });
+  }
 }
 
 function openFsLyricsPanel() {
