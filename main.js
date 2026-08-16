@@ -58,6 +58,9 @@ function isGpuDisabled() {
 if (isGpuDisabled()) {
   app.disableHardwareAcceleration();
   app.commandLine.appendSwitch('disable-gpu');
+} else {
+  app.commandLine.appendSwitch('ignore-gpu-blocklist');
+  app.commandLine.appendSwitch('enable-gpu-rasterization');
 }
 
 let mainWindow = null;

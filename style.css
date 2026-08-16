@@ -2686,7 +2686,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .playbar {
   position: relative;
   width: 100%;
-  background: var(--panel-elev);
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--shape-md);
   padding: 6px 14px;
@@ -2711,7 +2711,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .button-group .icon-btn {
   --base-w: 34px;
   --size: 34px;
-  --radius: var(--shape-full);
+  --radius: calc(var(--size) / 2);
   --radius-pressed: 8px;
   --radius-selected: 10px;
 
@@ -2777,8 +2777,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 /* Toggle selected (shuffle / repeat) */
 .button-group .icon-btn.selected,
 .button-group .icon-btn.active {
-  background: var(--active-bg);
-  color: var(--text-strong);
+  background: color-mix(in srgb, var(--accent) 18%, var(--active-bg));
+  color: var(--accent);
   border-radius: var(--radius-selected);
 }
 
@@ -2791,15 +2791,16 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .button-group .icon-btn.play-pause {
   --base-w: 42px;
   --size: 42px;
-  --radius: var(--shape-full);
+  --radius: calc(var(--size) / 2);
   --radius-pressed: 12px;
-  background: var(--text-strong);
+  background: var(--accent);
   color: var(--bg);
   margin: 0 2px;
 }
 
 .button-group .icon-btn.play-pause:hover {
-  background: var(--text);
+  opacity: 0.92;
+  background: var(--accent);
 }
 
 .button-group .icon-btn.play-pause.is-expanded {
@@ -2820,13 +2821,15 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   font-variation-settings: 'FILL' 1, 'wght' 500;
 }
 
-/* Volume icon button */
-.volume-block .icon-btn {
+/* Volume & Close icon buttons */
+.volume-block .icon-btn,
+.fs-volume .icon-btn,
+.fs-close-btn {
   --size: 34px;
   width: var(--size);
   height: var(--size);
   border: none;
-  border-radius: var(--shape-full);
+  border-radius: calc(var(--size) / 2);
   background: transparent;
   color: var(--text-muted);
   display: grid;
@@ -2840,19 +2843,32 @@ html.is-playing .equalizer > span { animation-play-state: running; }
     transform 0.18s var(--motion-spring);
 }
 
-.volume-block .icon-btn .material-symbols-rounded {
+.volume-block .icon-btn .material-symbols-rounded,
+.fs-volume .icon-btn .material-symbols-rounded,
+.fs-close-btn .material-symbols-rounded {
   font-size: 20px;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-.volume-block .icon-btn:hover {
+.volume-block .icon-btn:hover,
+.fs-volume .icon-btn:hover,
+.fs-close-btn:hover {
   background: var(--hover-bg);
   color: var(--text-strong);
 }
 
-.volume-block .icon-btn:active {
+.volume-block .icon-btn:active,
+.fs-volume .icon-btn:active,
+.fs-close-btn:active {
   transform: scale(0.9);
   border-radius: 8px;
+}
+
+.fs-close-btn {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  z-index: 10;
 }
 
 /* ===== SONG IDENTITY + PROGRESS ===== */
@@ -2878,12 +2894,13 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   align-self: center;
 }
 
-.song-actions .icon-btn {
+.song-actions .icon-btn,
+.fs-song-actions .icon-btn {
   --size: 30px;
   width: var(--size);
   height: var(--size);
   border: none;
-  border-radius: var(--shape-full);
+  border-radius: calc(var(--size) / 2);
   background: transparent;
   color: var(--text-muted);
   display: grid;
@@ -2897,29 +2914,38 @@ html.is-playing .equalizer > span { animation-play-state: running; }
     transform 0.18s var(--motion-spring);
 }
 
-.song-actions .icon-btn .material-symbols-rounded {
+.song-actions .icon-btn .material-symbols-rounded,
+.fs-song-actions .icon-btn .material-symbols-rounded {
   font-size: 18px;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   transition: font-variation-settings 0.2s;
 }
 
-.song-actions .icon-btn:hover {
+.song-actions .icon-btn:hover,
+.fs-song-actions .icon-btn:hover {
   background: var(--hover-bg);
   color: var(--text-strong);
 }
 
-.song-actions .icon-btn:active {
+.song-actions .icon-btn:active,
+.fs-song-actions .icon-btn:active {
   transform: scale(0.9);
   border-radius: 8px;
 }
 
 .song-actions .icon-btn.liked,
-.song-actions .icon-btn.active {
+.song-actions .icon-btn.active,
+.fs-song-actions .icon-btn.liked,
+.fs-song-actions .icon-btn.active,
+.fs-song-actions .icon-btn.selected {
   color: var(--accent-fav, #eb6f92);
 }
 
 .song-actions .icon-btn.liked .material-symbols-rounded,
-.song-actions .icon-btn.active .material-symbols-rounded {
+.song-actions .icon-btn.active .material-symbols-rounded,
+.fs-song-actions .icon-btn.liked .material-symbols-rounded,
+.fs-song-actions .icon-btn.active .material-symbols-rounded,
+.fs-song-actions .icon-btn.selected .material-symbols-rounded {
   font-variation-settings: 'FILL' 1, 'wght' 500;
 }
 
@@ -3128,10 +3154,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .time-label.current { text-align: right; }
 .time-label.remaining { text-align: left; }
 
-.song-block:has(.progress-row:hover) .title,
-.song-block:has(.progress-row:hover) .subtitle {
-  opacity: 0;
-}
+
 
 .progress-row:hover .time-label {
   opacity: 1;
@@ -3210,50 +3233,100 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 0;
 }
-.fs-overlay.is-in::before { opacity: 1; }
-.fs-backdrop {
+.fs-canvas {
   position: absolute;
-  top: -20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1100px;
-  height: 1100px;
-  opacity: 0;
-  filter: blur(120px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  background: var(--panel-alt);
+  opacity: 0;
+  filter: blur(40px);
+  transform: scale(1.15);
   transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
 }
-.fs-overlay.is-in .fs-backdrop { opacity: 0.18; }
+.fs-overlay.is-in .fs-canvas { opacity: 0.65; }
+
+.fs-backdrop {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 130vmax;
+  height: 130vmax;
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(110px);
+  background-image: var(--fs-cover-img, none);
+  background-size: cover;
+  background-position: center;
+  border-radius: 42% 58% 65% 35% / 45% 45% 55% 55%;
+  animation: auraLava 24s ease-in-out infinite alternate;
+  will-change: transform, border-radius;
+  transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
+}
+.fs-backdrop::before,
+.fs-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  background-image: inherit;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+.fs-backdrop::before {
+  border-radius: 58% 42% 35% 65% / 55% 55% 45% 45%;
+  filter: blur(90px);
+  opacity: 0.85;
+  animation: auraDrift 18s ease-in-out infinite alternate;
+}
+.fs-backdrop::after {
+  inset: -10%;
+  border-radius: 45% 55% 40% 60% / 50% 60% 40% 50%;
+  filter: blur(120px);
+  opacity: 0.65;
+  animation: auraPulse 28s ease-in-out infinite alternate;
+}
+.fs-overlay.is-in .fs-backdrop { opacity: 0.35; }
+
+@keyframes auraLava {
+  0%   { transform: translate(-50%, -50%) rotate(0deg) scale(1); border-radius: 42% 58% 65% 35% / 45% 45% 55% 55%; }
+  50%  { transform: translate(-47%, -53%) rotate(180deg) scale(1.15); border-radius: 58% 42% 35% 65% / 55% 55% 45% 45%; }
+  100% { transform: translate(-53%, -47%) rotate(360deg) scale(1.05); border-radius: 35% 65% 50% 50% / 50% 40% 60% 50%; }
+}
+@keyframes auraDrift {
+  0%   { transform: rotate(0deg) translate(-25px, 20px) scale(0.95); }
+  50%  { transform: rotate(-120deg) translate(35px, -25px) scale(1.12); }
+  100% { transform: rotate(-240deg) translate(-20px, -35px) scale(1); }
+}
+@keyframes auraPulse {
+  0%   { transform: rotate(360deg) scale(1.1); }
+  50%  { transform: rotate(180deg) scale(0.92); }
+  100% { transform: rotate(0deg) scale(1.14); }
+}
 
 /* Staggered fade-up for fullscreen UI */
-.fs-overlay .fs-topbar,
-.fs-overlay .fs-queue,
-.fs-overlay .eq-line,
 .fs-overlay .fs-title,
 .fs-overlay .fs-artist,
 .fs-overlay .fs-album,
-.fs-overlay .fs-progress,
-.fs-overlay .fs-ctrls,
-.fs-overlay .fs-secondary,
+.fs-overlay .fs-progress-row,
+.fs-overlay .fs-button-group,
+.fs-overlay .fs-song-actions,
 .fs-overlay .fs-volume {
   opacity: 0;
-  transform: translateY(14px);
+  transform: translateY(18px);
   transition:
-    opacity 380ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 380ms var(--motion-spring),
+    transform 460ms var(--motion-spring);
   will-change: opacity, transform;
 }
-.fs-overlay.is-in .fs-topbar     { opacity: 1; transform: none; transition-delay: 60ms; }
-.fs-overlay.is-in .eq-line       { opacity: 1; transform: none; transition-delay: 160ms; }
-.fs-overlay.is-in .fs-title      { opacity: 1; transform: none; transition-delay: 200ms; }
-.fs-overlay.is-in .fs-artist     { opacity: 1; transform: none; transition-delay: 240ms; }
-.fs-overlay.is-in .fs-album      { opacity: 1; transform: none; transition-delay: 270ms; }
-.fs-overlay.is-in .fs-progress   { opacity: 1; transform: none; transition-delay: 300ms; }
-.fs-overlay.is-in .fs-ctrls      { opacity: 1; transform: none; transition-delay: 330ms; }
-.fs-overlay.is-in .fs-secondary  { opacity: 1; transform: none; transition-delay: 360ms; }
-.fs-overlay.is-in .fs-volume     { opacity: 1; transform: none; transition-delay: 390ms; }
-.fs-overlay.is-in .fs-queue      { opacity: 1; transform: none; transition-delay: 220ms; }
+.fs-overlay.is-in .fs-title         { opacity: 1; transform: none; transition-delay: 120ms; }
+.fs-overlay.is-in .fs-artist        { opacity: 1; transform: none; transition-delay: 160ms; }
+.fs-overlay.is-in .fs-album         { opacity: 1; transform: none; transition-delay: 190ms; }
+.fs-overlay.is-in .fs-progress-row  { opacity: 1; transform: none; transition-delay: 220ms; }
+.fs-overlay.is-in .fs-button-group  { opacity: 1; transform: none; transition-delay: 250ms; }
+.fs-overlay.is-in .fs-song-actions  { opacity: 1; transform: none; transition-delay: 280ms; }
+.fs-overlay.is-in .fs-volume        { opacity: 1; transform: none; transition-delay: 310ms; }
 
 /* During the cover morph the JS drives fs-cover via Web Animations API.
    Smooth class lets it ease back to its rest position if the JS animation is interrupted. */
@@ -3262,64 +3335,45 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 /* Hide the mini-cover while the morph is in flight to avoid a duplicate cover flash. */
 .mini-cover.is-morphing { opacity: 0; }
 
-.fs-topbar {
-  position: relative;
-  z-index: 2;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-}
-.fs-chip {
-  width: 28px;
-  height: 28px;
-  border-radius: 5px;
-  background: var(--hover-bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.fs-chip:hover { background: var(--active-bg); }
-.fs-eyebrow {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 1.4px;
-}
-
 .fs-body {
   position: relative;
   z-index: 1;
   flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 32px;
-  padding: 30px 32px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 32px 40px;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .fs-main {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 56px;
+  gap: 20px;
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+  transition: max-width 0.4s var(--motion-spring), gap 0.4s var(--motion-spring);
 }
 .fs-cover {
-  width: 360px;
-  height: 360px;
-  border-radius: 8px;
+  width: min(340px, 38vh);
+  height: min(340px, 38vh);
+  border-radius: 12px;
   background: var(--panel-alt);
   background-size: cover;
   background-position: center;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 12px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: flex-end;
-  padding: 24px;
+  justify-content: center;
+  padding: 20px;
   flex-shrink: 0;
+  transition: width 0.4s var(--motion-spring), height 0.4s var(--motion-spring), box-shadow 0.4s var(--motion-spring);
 }
 .fs-cover-letter {
   font-family: 'Roboto Serif', serif;
@@ -3333,138 +3387,107 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .fs-info {
   display: flex;
   flex-direction: column;
-  max-width: 340px;
-  min-width: 280px;
-}
-.eq-line {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
 }
 .fs-title {
   font-family: 'Roboto Serif', serif;
-  font-size: 56px;
+  font-size: 32px;
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: -1px;
-  margin-bottom: 12px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
   color: var(--text-strong);
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fs-artist {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--text);
   margin-bottom: 4px;
   font-weight: 500;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fs-album {
   font-size: 13px;
   color: var(--text-muted);
-  margin-bottom: 28px;
-}
-.fs-progress { margin-bottom: 24px; }
-.fs-progress-track {
-  height: 6px;
-  position: relative;
-  margin-bottom: 12px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--text-strong) 16%, transparent);
-  cursor: pointer;
-}
-/* Widen the grab area well past the 6px bar without making the bar itself tall. */
-.fs-progress-track::before {
-  content: '';
-  position: absolute;
-  inset: -11px 0;
-}
-.fs-progress-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  border-radius: 3px;
-  background: var(--accent);
-}
-.fs-time-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.fs-ctrls {
+/* Wavy progress row in fullscreen with immediately visible time labels */
+.fs-progress-row {
+  width: 100%;
+  margin-bottom: 16px;
+  height: 24px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 22px;
-  margin-bottom: 18px;
-}
-.fs-btn-play {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--text-strong);
-  color: var(--bg);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-.fs-btn-play:hover { transform: scale(1.04); }
-.fs-play-i { width: 30px; height: 30px; }
-
-.fs-secondary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
 }
-.fs-secondary .btn-ghost { font-size: 12px; padding: 7px 12px; }
-#fs-btn-favorite.active { color: var(--accent-fav); border-color: rgba(255, 107, 138, 0.3); }
-
-.fs-queue {
-  overflow-y: auto;
-  padding-right: 4px;
-}
-.fs-queue-head {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 1.4px;
+.fs-progress-row .time-label {
+  opacity: 1 !important;
+  transform: none !important;
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  clip: auto !important;
+  overflow: visible !important;
+  font-size: 12px;
   color: var(--text-dim);
-  margin-bottom: 12px;
-  font-weight: 500;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
-.fs-queue-count {
-  color: var(--text-faint);
-  letter-spacing: 0;
-  text-transform: none;
-  font-size: 11px;
-}
-.fs-queue-item {
+.fs-progress-row .wavy-progress {
+  flex: 1;
+  height: 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 5px;
   cursor: pointer;
+  padding: 6px 0;
 }
-.fs-queue-item:hover { background: var(--hover-bg); }
-.fs-queue-cover {
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
-  background: var(--panel-alt);
-  background-size: cover;
-  background-position: center;
-  flex-shrink: 0;
+
+/* Reused button group in fullscreen */
+.fs-button-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
 }
-.fs-queue-body { flex: 1; min-width: 0; }
+.fs-button-group .icon-btn {
+  --base-w: 40px;
+  --size: 40px;
+}
+.fs-button-group .icon-btn .material-symbols-rounded {
+  font-size: 22px;
+}
+.fs-button-group .icon-btn.play-pause {
+  --base-w: 52px;
+  --size: 52px;
+}
+.fs-button-group .icon-btn.play-pause .material-symbols-rounded {
+  font-size: 28px;
+}
+
+/* Reused song action buttons in fullscreen */
+.fs-song-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 
 /* Lyrics is its own overlay panel (not a queue tab) so it works identically
    in portrait/mobile fullscreen, where .fs-queue is hidden entirely — see
@@ -3526,9 +3549,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   max-width: 640px;
   width: 100%;
   margin: 0 auto;
-  padding-block: 20vh;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 12%, black 88%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, black 12%, black 88%, transparent 100%);
+  padding-top: 0;
+  padding-bottom: 40vh;
+  -webkit-mask-image: linear-gradient(to bottom, black 0, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0, black 85%, transparent 100%);
 }
 .fs-lyrics-line {
   padding: 4px 8px;
@@ -3592,70 +3616,52 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: var(--accent);
   border-radius: 2px;
 }
-/* ── Lyrics view transport bar ──
-   The lyrics panel covers the whole fullscreen body, controls included. Rather
-   than duplicate a transport (and its progress/play-icon update paths), the
-   existing .fs-info column is lifted above the panel and laid out as a bar:
-   same elements, same handlers, nothing new to keep in sync. Defined after the
-   portrait/morph rules so it wins in both layouts. */
-.fs-overlay.is-lyrics .fs-info {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 4;
-  max-width: none;
-  min-width: 0;
+/* ── 2-Column Split for Lyrics view ──
+   Left column is .fs-main (artwork, info, and controls), right column is .fs-lyrics-panel */
+.fs-overlay.is-lyrics .fs-body {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
   align-items: center;
-  padding-top: 28px;
-  /* Lyrics scroll under the bar, so fade them out into it. */
-  background: linear-gradient(to top, var(--bg) 62%, transparent);
+  gap: 40px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 40px 30px;
+  height: 100%;
+  min-height: 0;
 }
-/* Everything the bar has no room for. */
-.fs-overlay.is-lyrics .eq-line,
-.fs-overlay.is-lyrics .fs-album,
-.fs-overlay.is-lyrics .fs-secondary,
-.fs-overlay.is-lyrics .fs-volume { display: none; }
-.fs-overlay.is-lyrics .fs-title {
-  font-size: 20px;
-  letter-spacing: 0;
-  margin-bottom: 2px;
-  max-width: 100%;
+.fs-overlay.is-lyrics .fs-main {
+  max-width: 380px;
+  gap: 14px;
 }
-.fs-overlay.is-lyrics .fs-artist { font-size: 13px; margin-bottom: 12px; }
-.fs-overlay.is-lyrics .fs-title,
-.fs-overlay.is-lyrics .fs-artist {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.fs-overlay.is-lyrics .fs-cover {
+  width: min(260px, 30vh);
+  height: min(260px, 30vh);
 }
-.fs-overlay.is-lyrics .fs-progress {
-  width: min(720px, 100%);
-  margin-bottom: 10px;
+.fs-overlay.is-lyrics .fs-lyrics-panel {
+  position: relative;
+  inset: auto;
+  display: flex;
+  height: 100%;
+  max-height: 80vh;
+  z-index: 1;
+  background: transparent;
+  padding: 0;
+  animation: lyricsSpringIn 0.45s var(--motion-spring);
 }
-.fs-overlay.is-lyrics .fs-ctrls { gap: 18px; margin-bottom: 14px; }
-.fs-overlay.is-lyrics .fs-btn-play { width: 44px; height: 44px; }
-.fs-overlay.is-lyrics .fs-play-i { width: 24px; height: 24px; }
-/* Room for the bar so the last lines can still scroll into view. */
-.fs-overlay.is-lyrics .fs-lyrics-panel { padding-bottom: 190px; }
+@keyframes lyricsSpringIn {
+  0% { opacity: 0; transform: translateX(24px) scale(0.96); }
+  100% { opacity: 1; transform: none; }
+}
+.fs-overlay.is-lyrics .fs-lyrics-panel::before {
+  display: none;
+}
+.fs-overlay.is-lyrics .fs-lyrics-list {
+  padding-top: 0;
+  padding-bottom: 40vh;
+}
 
-.fs-queue-title {
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.fs-queue-artist {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 1px;
-}
-.fs-queue-dur {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-}
+
 
 /* ─── Modal ─── */
 .modal-overlay {

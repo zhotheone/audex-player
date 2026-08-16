@@ -1026,64 +1026,67 @@
 
   <!-- Fullscreen Player Overlay -->
   <div id="fullscreen-overlay" class="fs-overlay">
+    <canvas id="fs-canvas" class="fs-canvas"></canvas>
+    <button class="icon-btn fs-close-btn" id="btn-close-fullscreen" aria-label="Close" title="Close" data-i18n-title="btn.close">
+      <span class="material-symbols-rounded">close</span>
+    </button>
     <div class="fs-backdrop" id="fs-backdrop"></div>
-    <div class="fs-topbar">
-      <button id="btn-close-fullscreen" class="fs-chip" title="Minimize" data-i18n-title="btn.minimize">
-        <svg class="i" width="12" height="12" style="transform:rotate(180deg)"><use href="#i-expand"/></svg>
-      </button>
-      <div class="fs-eyebrow"><span data-i18n="fs.nowPlayingFrom">Now playing · from</span> <span style="color:var(--text-strong)" data-i18n="fs.fromLibrary">Library</span></div>
-      <div class="fs-topbar-right">
-        <button class="fs-chip" id="btn-fs-lyrics" title="Lyrics" data-i18n-title="fs.lyrics">
-          <svg class="i" width="13" height="13"><use href="#i-mic"/></svg>
-        </button>
-        <button class="fs-chip" id="btn-close-fullscreen-x" title="Close" data-i18n-title="btn.close"><svg class="i" width="13" height="13"><use href="#i-close"/></svg></button>
-      </div>
-    </div>
+
 
     <div class="fs-body">
       <div class="fs-main">
         <div class="fs-cover" id="fs-cover"><span class="fs-cover-letter" id="fs-cover-letter"></span></div>
         <div class="fs-info">
-          <div class="fs-eyebrow eq-line">
-            <span class="equalizer"><span></span><span></span><span></span></span>
-            <span data-i18n="fs.nowPlaying">Now playing</span>
-          </div>
           <div class="fs-title" id="fs-title">Title</div>
           <div class="fs-artist" id="fs-artist">Artist</div>
           <div class="fs-album" id="fs-album">Album</div>
 
-          <div class="fs-progress">
-            <div class="fs-progress-track" id="fs-progress-track">
-              <div class="fs-progress-fill" id="fs-progress-fill"></div>
+          <div class="progress-row fs-progress-row" id="fs-progress-row">
+            <span class="time-label current" id="fs-time-current">0:00</span>
+            <div class="wavy-progress" id="fs-progress-track" role="slider"
+                 aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+              <svg viewBox="0 0 400 14" preserveAspectRatio="none" aria-hidden="true" style="overflow: visible;">
+                <path class="wavy-track" id="fsTrackPath" d="M 3 7 L 397 7" />
+                <path class="wavy-active" id="fsActivePath" d="M 3 7" />
+                <circle class="wavy-stop" id="fsStopIndicator" cx="397" cy="7" r="2.2" />
+              </svg>
             </div>
-            <div class="fs-time-row">
-              <span id="fs-time-current">0:00</span>
-              <span id="fs-time-total">0:00</span>
-            </div>
+            <span class="time-label remaining" id="fs-time-remaining">-0:00</span>
           </div>
 
-          <div class="fs-ctrls">
-            <button class="btn-ic" id="fs-btn-shuffle"><svg class="i" width="16" height="16"><use href="#i-shuffle"/></svg></button>
-            <button class="btn-ic" id="fs-btn-prev"><svg class="i" width="20" height="20"><use href="#i-prev"/></svg></button>
-            <button class="fs-btn-play" id="fs-btn-play"><svg class="i fs-play-i" width="18" height="18"><use href="#i-play"/></svg></button>
-            <button class="btn-ic" id="fs-btn-next"><svg class="i" width="20" height="20"><use href="#i-next"/></svg></button>
-            <button class="btn-ic" id="fs-btn-repeat"><svg class="i" width="16" height="16"><use href="#i-repeat"/></svg></button>
-          </div>
-
-          <div class="fs-secondary">
-            <button class="btn-ghost" id="fs-btn-favorite">
-              <svg class="i" width="13" height="13"><use href="#i-heart"/></svg>
-              <span id="fs-fav-label" data-i18n="btn.favorite">Favorite</span>
+          <div class="button-group fs-button-group" role="group" aria-label="Playback controls">
+            <button class="icon-btn" id="fs-btn-shuffle" aria-label="Shuffle" aria-pressed="false" title="Shuffle" data-i18n-title="tooltip.shuffle">
+              <span class="material-symbols-rounded">shuffle</span>
             </button>
-            <button class="btn-ghost" id="fs-btn-add-playlist">
-              <svg class="i" width="13" height="13"><use href="#i-plus"/></svg>
-              <span data-i18n="btn.addToPlaylist">Add to playlist</span>
+            <button class="icon-btn" id="fs-btn-prev" aria-label="Previous" title="Previous" data-i18n-title="tooltip.prev">
+              <span class="material-symbols-rounded">skip_previous</span>
+            </button>
+            <button class="icon-btn play-pause" id="fs-btn-play" aria-label="Play" title="Play" data-i18n-title="tooltip.playPause">
+              <span class="material-symbols-rounded" id="fsPlayIcon">play_arrow</span>
+            </button>
+            <button class="icon-btn" id="fs-btn-next" aria-label="Next" title="Next" data-i18n-title="tooltip.next">
+              <span class="material-symbols-rounded">skip_next</span>
+            </button>
+            <button class="icon-btn" id="fs-btn-repeat" aria-label="Repeat" aria-pressed="false" title="Repeat" data-i18n-title="tooltip.repeat">
+              <span class="material-symbols-rounded" id="fsRepeatIcon">repeat</span>
+            </button>
+          </div>
+
+          <div class="song-actions fs-song-actions">
+            <button class="icon-btn" id="fs-btn-favorite" aria-label="Favorite" aria-pressed="false" title="Favorite" data-i18n-title="tooltip.favorite">
+              <span class="material-symbols-rounded">favorite</span>
+            </button>
+            <button class="icon-btn" id="fs-btn-lyrics" aria-label="Lyrics" title="Lyrics" data-i18n-title="fs.lyrics">
+              <span class="material-symbols-rounded">lyrics</span>
+            </button>
+            <button class="icon-btn" id="fs-btn-add-playlist" aria-label="Add to playlist" title="Add to playlist" data-i18n-title="btn.addToPlaylist">
+              <span class="material-symbols-rounded">playlist_add</span>
             </button>
           </div>
 
           <div class="fs-volume">
-            <button class="btn-ic" id="fs-btn-mute" title="Volume" data-i18n-title="tooltip.volume">
-              <svg class="i" width="15" height="15"><use href="#i-volume"/></svg>
+            <button class="icon-btn" id="fs-btn-mute" aria-label="Volume" title="Volume" data-i18n-title="tooltip.volume">
+              <span class="material-symbols-rounded" id="fsVolIcon">volume_up</span>
             </button>
             <div class="fs-vol-track" id="fs-vol-track">
               <div class="fs-vol-fill" id="fs-vol-fill"></div>
@@ -1092,13 +1095,7 @@
         </div>
       </div>
 
-      <div class="fs-queue">
-        <div class="fs-queue-head">
-          <span data-i18n="fs.queue">Queue</span>
-          <span class="fs-queue-count" id="fs-queue-count">0 ahead</span>
-        </div>
-        <div id="fs-queue-list"></div>
-      </div>
+
 
       <div class="fs-lyrics-panel" id="fs-lyrics-panel">
         <div class="fs-lyrics-head" data-i18n="fs.lyrics">Lyrics</div>

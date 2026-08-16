@@ -5771,7 +5771,7 @@ function animateSwap(snap, direction, kind) {
   });
   const targetAnim = originalEl.animate(inFrames, {
     duration: inDuration,
-    easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    easing: 'cubic-bezier(0.34, 1.3, 0.64, 1)',
     fill: 'both',
     delay: inDelay,
   });
@@ -5834,14 +5834,14 @@ function updateNowPlayingUI(track) {
     fsCover.style.backgroundImage = `url('${coverSrc}')`;
     $('fs-cover-letter').textContent = '';
     $('fs-backdrop').style.background = `url('${coverSrc}') center/cover`;
-    // Shared with the lyrics panel's backdrop so both wear the same blurred
-    // album-art wash (see .fs-lyrics-panel::before).
     if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', `url('${coverSrc}')`);
+    updateFsShaderTexture(coverSrc);
   } else {
     fsCover.style.backgroundImage = '';
     $('fs-cover-letter').textContent = (track.title || '?')[0];
     $('fs-backdrop').style.background = 'transparent';
     if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', 'none');
+    updateFsShaderTexture(null);
   }
   $('fs-title').textContent = track.title;
   $('fs-artist').textContent = track.artist;
@@ -5874,8 +5874,10 @@ function updatePlayButtonUI() {
   if (playIcon) playIcon.textContent = isPlaying ? 'pause' : 'play_arrow';
   const playBtn = $('btn-play');
   if (playBtn) playBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
-  const fsPlayBtn = $('fs-btn-play')?.querySelector('use');
-  if (fsPlayBtn) fsPlayBtn.setAttribute('href', isPlaying ? '#i-pause' : '#i-play');
+  const fsPlayIcon = $('fsPlayIcon');
+  if (fsPlayIcon) fsPlayIcon.textContent = isPlaying ? 'pause' : 'play_arrow';
+  const fsPlayBtn = $('fs-btn-play');
+  if (fsPlayBtn) fsPlayBtn.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
   document.documentElement.classList.toggle('is-playing', isPlaying);
   if ('mediaSession' in navigator) {
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
@@ -5951,9 +5953,9 @@ function updateFavoriteUI() {
 
   const fsFav = $('fs-btn-favorite');
   if (fsFav) {
+    fsFav.classList.toggle('liked', fav);
     fsFav.classList.toggle('active', fav);
-    fsFav.querySelector('use')?.setAttribute('href', fav ? '#i-heart-filled' : '#i-heart');
-    $('fs-fav-label').textContent = fav ? tr('btn.favoriteOn') : tr('btn.favorite');
+    fsFav.setAttribute('aria-pressed', fav);
   }
   syncTray();
 }
@@ -6095,9 +6097,11 @@ function updateRepeatUI() {
   }
   const fsBtn = $('fs-btn-repeat');
   if (fsBtn) {
+    fsBtn.classList.toggle('selected', repeatMode > 0);
     fsBtn.classList.toggle('active', repeatMode > 0);
-    const icon = repeatMode === 2 ? '#i-repeat-one' : '#i-repeat';
-    fsBtn.querySelector('use')?.setAttribute('href', icon);
+    fsBtn.setAttribute('aria-pressed', repeatMode > 0);
+    const repIcon = $('fsRepeatIcon') || fsBtn.querySelector('.material-symbols-rounded');
+    if (repIcon) repIcon.textContent = repeatMode === 2 ? 'repeat_one' : 'repeat';
   }
   if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
 }
@@ -6669,20 +6673,30 @@ function setProgressUI() {
   const cur = audio.currentTime || 0;
   const ratio = dur > 0 ? Math.min(1, cur / dur) : 0;
   const progressX = PAD + ratio * (VIEW_W - PAD * 2);
+  const pathD = buildWavyPath(ratio, wavePhase);
+  const endX = VIEW_W - PAD;
+  const trackD = `M ${Math.min(endX, progressX).toFixed(3)} 7 L ${endX} 7`;
+
   const activePath = $('activePath');
-  if (activePath) activePath.setAttribute('d', buildWavyPath(ratio, wavePhase));
+  if (activePath) activePath.setAttribute('d', pathD);
   const trackPath = $('trackPath');
-  if (trackPath) {
-    const endX = VIEW_W - PAD;
-    trackPath.setAttribute('d', `M ${Math.min(endX, progressX).toFixed(3)} 7 L ${endX} 7`);
-  }
+  if (trackPath) trackPath.setAttribute('d', trackD);
+
+  const fsActivePath = $('fsActivePath');
+  if (fsActivePath) fsActivePath.setAttribute('d', pathD);
+  const fsTrackPath = $('fsTrackPath');
+  if (fsTrackPath) fsTrackPath.setAttribute('d', trackD);
+
   const progressTrack = $('progress-track');
   if (progressTrack) {
     progressTrack.setAttribute('aria-valuenow', Math.round(cur));
     progressTrack.setAttribute('aria-valuemax', Math.round(dur));
   }
-  const fsProgress = $('fs-progress-fill');
-  if (fsProgress) fsProgress.style.width = dur > 0 ? `${ratio * 100}%` : '0%';
+  const fsProgressTrack = $('fs-progress-track');
+  if (fsProgressTrack) {
+    fsProgressTrack.setAttribute('aria-valuenow', Math.round(cur));
+    fsProgressTrack.setAttribute('aria-valuemax', Math.round(dur));
+  }
 }
 
 function waveTick() {
@@ -6690,7 +6704,7 @@ function waveTick() {
     waveAnimId = null;
     return;
   }
-  wavePhase += 0.12;
+  wavePhase += 0.028;
   setProgressUI();
   waveAnimId = requestAnimationFrame(waveTick);
 }
@@ -7034,9 +7048,14 @@ audio.addEventListener('timeupdate', () => {
   if (totEl && !isNaN(dur)) totEl.textContent = formatTime(dur);
   const fsCur = $('fs-time-current');
   if (fsCur) fsCur.textContent = formatTime(cur);
+  const fsRem = $('fs-time-remaining');
+  if (fsRem) {
+    const left = !isNaN(dur) && dur >= cur ? dur - cur : 0;
+    fsRem.textContent = '-' + formatTime(left);
+  }
+  const fsTot = $('fs-time-total');
+  if (fsTot && !isNaN(dur)) fsTot.textContent = formatTime(dur);
   if (!isNaN(dur)) {
-    const fsTot = $('fs-time-total');
-    if (fsTot) fsTot.textContent = formatTime(dur);
     setProgressUI();
   }
   if ($('fullscreen-overlay')?.classList.contains('active')) updateFsLyricsActive(cur);
@@ -7113,24 +7132,7 @@ function wireWavySeek(trackEl) {
   });
 }
 wireWavySeek($('progress-track'));
-
-function wireSeek(trackEl) {
-  if (!trackEl) return;
-  let dragging = false;
-  function seekTo(clientX) {
-    const rect = trackEl.getBoundingClientRect();
-    if (!audio.duration || !rect.width) return;
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    audio.currentTime = pct * audio.duration;
-  }
-  trackEl.addEventListener('mousedown', e => {
-    dragging = true;
-    seekTo(e.clientX);
-  });
-  window.addEventListener('mousemove', e => { if (dragging) seekTo(e.clientX); });
-  window.addEventListener('mouseup', () => { dragging = false; });
-}
-wireSeek($('fs-progress-track'));
+wireWavySeek($('fs-progress-track'));
 
 // Volume
 function setVolume(v) {
@@ -7150,25 +7152,18 @@ function updateVolumeUI() {
   const fsFill = $('fs-vol-fill');
   if (fsFill) fsFill.style.width = pct;
 
+  const iconName = (audio.muted || v === 0) ? 'volume_off' : v < 0.35 ? 'volume_down' : 'volume_up';
   const volIcon = $('volIcon');
-  if (volIcon) {
-    if (audio.muted || v === 0) volIcon.textContent = 'volume_off';
-    else if (v < 0.35) volIcon.textContent = 'volume_down';
-    else volIcon.textContent = 'volume_up';
-  }
+  if (volIcon) volIcon.textContent = iconName;
+  const fsVolIcon = $('fsVolIcon');
+  if (fsVolIcon) fsVolIcon.textContent = iconName;
+
   const btnMute = $('btn-mute');
   if (btnMute && btnMute.querySelector('use')) {
     const icon = audio.muted || v === 0 ? '#i-volume-mute'
       : v < 0.5 ? '#i-volume-low'
       : '#i-volume';
     btnMute.querySelector('use').setAttribute('href', icon);
-  }
-  const fsMute = $('fs-btn-mute');
-  if (fsMute && fsMute.querySelector('use')) {
-    const icon = audio.muted || v === 0 ? '#i-volume-mute'
-      : v < 0.5 ? '#i-volume-low'
-      : '#i-volume';
-    fsMute.querySelector('use').setAttribute('href', icon);
   }
 }
 
@@ -7307,7 +7302,7 @@ function flipCover(direction) {
     : [{ transform: 'translate(0, 0) scale(1, 1)' }, { transform: small }];
   return big.animate(frames, {
     duration: direction === 'in' ? 480 : 360,
-    easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    easing: 'cubic-bezier(0.34, 1.3, 0.64, 1)',
     fill: 'both',
   });
 }
@@ -7315,6 +7310,160 @@ function flipCover(direction) {
 function cancelCoverAnim() {
   if (fsCoverAnim) { try { fsCoverAnim.cancel(); } catch {} }
   fsCoverAnim = null;
+}
+
+// ── Fullscreen WebGL Lava Lamp Shader ──
+let fsGl = null, fsShaderProg = null, fsTex = null, fsShaderRaf = null;
+let fsShaderTimeLoc = null, fsShaderResLoc = null;
+
+function initFsShader() {
+  const canvas = $('fs-canvas');
+  if (!canvas) return;
+  let gl = null;
+  try {
+    gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  } catch {}
+  if (!gl) return;
+  fsGl = gl;
+
+  const vsSrc = `
+    attribute vec2 a_pos;
+    varying vec2 v_uv;
+    void main() {
+      v_uv = (a_pos + 1.0) * 0.5;
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }
+  `;
+
+  const fsSrc = `
+    precision mediump float;
+    varying vec2 v_uv;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform sampler2D u_tex;
+
+    void main() {
+      vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
+      float t = u_time * 0.32;
+
+      // 4 floating metaballs for lava lamp fluid motion
+      vec2 b1 = vec2(sin(t * 0.7) * 0.65, cos(t * 0.9) * 0.55);
+      vec2 b2 = vec2(cos(t * 0.8 + 1.5) * 0.6, sin(t * 0.6 + 2.0) * 0.6);
+      vec2 b3 = vec2(sin(t * 0.5 + 4.0) * 0.7, cos(t * 0.7 + 3.0) * 0.5);
+      vec2 b4 = vec2(cos(t * 0.6 + 5.0) * 0.5, sin(t * 0.8 + 4.5) * 0.7);
+
+      float d1 = length(p - b1);
+      float d2 = length(p - b2);
+      float d3 = length(p - b3);
+      float d4 = length(p - b4);
+
+      float m = 0.28 / (d1 * d1 + 0.12)
+              + 0.28 / (d2 * d2 + 0.12)
+              + 0.24 / (d3 * d3 + 0.12)
+              + 0.24 / (d4 * d4 + 0.12);
+
+      vec2 warp = vec2(
+        sin(m * 2.2 + t) * 0.25 + (p.x - b1.x) * 0.15,
+        cos(m * 2.0 - t) * 0.25 + (p.y - b2.y) * 0.15
+      );
+      vec2 sampleUv = clamp(v_uv + warp * 0.4, 0.05, 0.95);
+
+      vec4 c1 = texture2D(u_tex, sampleUv);
+      vec4 c2 = texture2D(u_tex, clamp(vec2(1.0 - sampleUv.y, sampleUv.x), 0.05, 0.95));
+      vec4 c3 = texture2D(u_tex, clamp(vec2(sampleUv.x, 1.0 - sampleUv.y), 0.05, 0.95));
+
+      vec4 col = mix(c1, c2, smoothstep(0.8, 2.2, m));
+      col = mix(col, c3, sin(m * 1.5 + t * 0.5) * 0.5 + 0.5);
+
+      float vig = 1.0 - smoothstep(0.8, 2.2, length(p));
+      gl_FragColor = vec4(col.rgb * (0.85 + m * 0.25) * vig, 1.0);
+    }
+  `;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  fsShaderProg = prog;
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1, -1,  1, -1, -1,  1,
+    -1,  1,  1, -1,  1,  1,
+  ]), gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  fsShaderTimeLoc = gl.getUniformLocation(prog, 'u_time');
+  fsShaderResLoc = gl.getUniformLocation(prog, 'u_resolution');
+
+  fsTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, fsTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([30, 30, 40, 255]));
+}
+
+function updateFsShaderTexture(imgSrc) {
+  if (!fsGl) initFsShader();
+  if (!fsGl || !fsTex) return;
+  if (!imgSrc) return;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    if (!fsGl) return;
+    fsGl.bindTexture(fsGl.TEXTURE_2D, fsTex);
+    fsGl.texImage2D(fsGl.TEXTURE_2D, 0, fsGl.RGBA, fsGl.RGBA, fsGl.UNSIGNED_BYTE, img);
+  };
+  img.src = imgSrc;
+}
+
+function startFsShader() {
+  if (!fsGl) initFsShader();
+  if (!fsGl || fsShaderRaf) return;
+  const startTime = performance.now();
+  const render = (now) => {
+    if (!$('fullscreen-overlay')?.classList.contains('active')) {
+      fsShaderRaf = null;
+      return;
+    }
+    const canvas = $('fs-canvas');
+    if (canvas && fsGl) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      const w = Math.floor(canvas.clientWidth * dpr);
+      const h = Math.floor(canvas.clientHeight * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        fsGl.viewport(0, 0, w, h);
+      }
+      fsGl.uniform1f(fsShaderTimeLoc, (now - startTime) * 0.001);
+      fsGl.uniform2f(fsShaderResLoc, w, h);
+      fsGl.drawArrays(fsGl.TRIANGLES, 0, 6);
+    }
+    fsShaderRaf = requestAnimationFrame(render);
+  };
+  fsShaderRaf = requestAnimationFrame(render);
+}
+
+function stopFsShader() {
+  if (fsShaderRaf) {
+    cancelAnimationFrame(fsShaderRaf);
+    fsShaderRaf = null;
+  }
 }
 
 function openFullscreen() {
@@ -7325,6 +7474,7 @@ function openFullscreen() {
   cancelCoverAnim();
   overlay.classList.add('active');
   updateFullscreenQueue();
+  startFsShader();
   void overlay.offsetHeight;
   $('mini-cover-wrapper')?.classList.add('is-morphing', 'is-fullscreen');
   $('mini-cover-wrapper')?.setAttribute('aria-pressed', 'true');
@@ -7345,6 +7495,7 @@ async function closeFullscreen() {
   const overlay = $('fullscreen-overlay');
   if (!overlay.classList.contains('active') || fsAnimating) return;
   if (fsLyricsOpen) closeFsLyricsPanel();
+  stopFsShader();
   fsAnimating = true;
   cancelCoverAnim();
   overlay.classList.remove('is-in');
@@ -7502,21 +7653,22 @@ function updateFsLyricsActive(cur) {
 
 function openFsLyricsPanel() {
   fsLyricsOpen = true;
-  $('fs-lyrics-panel').classList.add('active');
-  // Re-lays the existing progress bar + controls out as a transport bar above
-  // the panel, which otherwise covers them — see .fs-overlay.is-lyrics in CSS.
-  $('fullscreen-overlay').classList.add('is-lyrics');
-  $('btn-fs-lyrics').classList.add('is-active');
+  $('fs-lyrics-panel')?.classList.add('active');
+  $('fullscreen-overlay')?.classList.add('is-lyrics');
+  $('btn-fs-lyrics')?.classList.add('is-active');
+  $('fs-btn-lyrics')?.classList.add('selected', 'active');
   if (currentTrack) loadFsLyrics(currentTrack);
 }
 function closeFsLyricsPanel() {
   fsLyricsOpen = false;
-  $('fs-lyrics-panel').classList.remove('active');
-  $('fullscreen-overlay').classList.remove('is-lyrics');
-  $('btn-fs-lyrics').classList.remove('is-active');
+  $('fs-lyrics-panel')?.classList.remove('active');
+  $('fullscreen-overlay')?.classList.remove('is-lyrics');
+  $('btn-fs-lyrics')?.classList.remove('is-active');
+  $('fs-btn-lyrics')?.classList.remove('selected', 'active');
 }
 function toggleFsLyricsPanel() { if (fsLyricsOpen) closeFsLyricsPanel(); else openFsLyricsPanel(); }
-$('btn-fs-lyrics').addEventListener('click', toggleFsLyricsPanel);
+$('btn-fs-lyrics')?.addEventListener('click', toggleFsLyricsPanel);
+$('fs-btn-lyrics')?.addEventListener('click', toggleFsLyricsPanel);
 
 // Playbar shortcut: jumps straight to fullscreen + lyrics in one click instead
 // of opening fullscreen first and hunting for the lyrics toggle inside it.
@@ -7526,28 +7678,7 @@ $('btn-lyrics')?.addEventListener('click', () => {
   toggleFsLyricsPanel();
 });
 
-function updateFullscreenQueue() {
-  const list = $('fs-queue-list');
-  list.innerHTML = '';
-  const upcoming = getUpcomingQueue(8);
-  $('fs-queue-count').textContent = tr('fs.queueAhead', { n: upcoming.length });
-  upcoming.forEach(t => {
-    if (!t.cover) ensureCoverFor(t);
-    const el = document.createElement('div');
-    el.className = 'fs-queue-item';
-    const cover = t.cover ? `background-image:url('${t.cover}')` : '';
-    el.innerHTML = `
-      <div class="fs-queue-cover" style="${cover}"></div>
-      <div class="fs-queue-body">
-        <div class="fs-queue-title">${escapeHtml(t.title)}</div>
-        <div class="fs-queue-artist">${escapeHtml(t.artist)}</div>
-      </div>
-      <div class="fs-queue-dur">${formatTime(t.duration)}</div>
-    `;
-    el.addEventListener('click', () => playTrackByPath(t.path, currentQueue));
-    list.appendChild(el);
-  });
-}
+function updateFullscreenQueue() {}
 
 // ── Generic text-input prompt (Electron doesn't implement window.prompt()) ──
 let pendingPromptResolve = null;
