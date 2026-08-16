@@ -16,11 +16,19 @@ try {
     execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root }).toString().trim(), 10
   ) || 0;
 } catch (_) {
-  // Building from a tarball with no git history — leave it blank rather than fail.
+  try {
+    const existing = JSON.parse(fs.readFileSync(path.join(root, 'build-info.json'), 'utf8'));
+    if (existing.commit) commit = existing.commit;
+  } catch {}
 }
 
-fs.writeFileSync(path.join(root, 'build-info.json'), JSON.stringify({ commit }) + '\n');
-console.log(`build-info.json: commit=${commit || '(unknown)'}`);
+if (commit) {
+  fs.writeFileSync(path.join(root, 'build-info.json'), JSON.stringify({ commit }) + '\n');
+  console.log(`build-info.json: commit=${commit}`);
+} else if (!fs.existsSync(path.join(root, 'build-info.json'))) {
+  fs.writeFileSync(path.join(root, 'build-info.json'), JSON.stringify({ commit: '' }) + '\n');
+  console.log('build-info.json: commit=(unknown)');
+}
 
 // package.json's "version" stays real semver for electron-builder's Windows exe
 // metadata, but nobody hand-bumps it — this fork's user-facing version is the
