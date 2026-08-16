@@ -7,49 +7,43 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
+const infoPath = path.join(root, 'build-info.json');
+const pkgPath = path.join(root, 'package.json');
+
 let commit = '';
 let commitCount = 0;
+
+// Read existing build-info.json if present as fallback
+try {
+  const existing = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+  if (existing.commit) commit = existing.commit;
+  if (existing.commitCount) commitCount = existing.commitCount;
+} catch (_) {}
+
+// Query live git if available
 try {
   commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root })
     .toString().trim();
   commitCount = parseInt(
     execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root }).toString().trim(), 10
-  ) || 0;
-} catch (_) {
-  try {
-    const existing = JSON.parse(fs.readFileSync(path.join(root, 'build-info.json'), 'utf8'));
-    if (existing.commit) commit = existing.commit;
-  } catch {}
-}
+  ) || commitCount;
+} catch (_) {}
 
-if (commit) {
-  fs.writeFileSync(path.join(root, 'build-info.json'), JSON.stringify({ commit }) + '\n');
-  console.log(`build-info.json: commit=${commit}`);
-} else if (!fs.existsSync(path.join(root, 'build-info.json'))) {
-  fs.writeFileSync(path.join(root, 'build-info.json'), JSON.stringify({ commit: '' }) + '\n');
-  console.log('build-info.json: commit=(unknown)');
-}
+fs.writeFileSync(infoPath, JSON.stringify({ commit, commitCount }) + '\n');
+console.log(`build-info.json: commit=${commit || '(unknown)'} count=${commitCount}`);
 
 // package.json's "version" stays real semver for electron-builder's Windows exe
 // metadata, but nobody hand-bumps it — this fork's user-facing version is the
 // git hash above. electron-updater needs a version that strictly increases to
 // detect updates at all, so pin it to the commit count on every build: always
 // increases, valid semver, no human has to remember it.
-if (commitCount > 0) {
-  const pkgPath = path.join(root, 'package.json');
+if (commitCount > 0 || commit) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  pkg.version = `0.0.${commitCount}`;
-  // electron-builder has no ${gitHash} artifact-name macro, so the literal
-  // hash has to be baked into the filename template here, before
-  // electron-builder reads this file next build step. Scoped to build.win
-  // (not the root artifactName) so it can't touch the CI mac build's
-  // dmg/zip naming — pkg.version above stays real semver regardless, NSIS's
-  // embedded exe version and electron-updater's comparison both need that,
-  // a hash can't sort.
+  if (commitCount > 0) pkg.version = `0.0.${commitCount}`;
   if (commit && pkg.build) {
     if (pkg.build.nsis) pkg.build.nsis.artifactName = '${productName}-Setup-' + commit + '.${ext}';
     if (pkg.build.win) pkg.build.win.artifactName = '${productName}-' + commit + '-${os}.${ext}';
   }
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-  console.log(`package.json: version=${pkg.version} (commit count)`);
+  console.log(`package.json: version=${pkg.version}`);
 }
