@@ -2736,8 +2736,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   flex-shrink: 0;
   position: relative;
   transition:
-    width 0.32s var(--motion-spring),
-    border-radius 0.32s var(--motion-spring),
     background 0.22s var(--motion-emphasized),
     color 0.22s var(--motion-emphasized);
 }
@@ -2752,35 +2750,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .button-group .icon-btn:hover {
   background: var(--hover-bg);
   color: var(--text-strong);
-}
-
-/* Pressed button expands + shape morph */
-.button-group .icon-btn.is-expanded {
-  width: calc(var(--base-w) * 1.22);
-  border-radius: var(--radius-pressed);
-}
-
-.button-group .icon-btn.grow-right.is-expanded {
-  margin-left: 0;
-  margin-right: calc(var(--base-w) * -0.08);
-}
-
-.button-group .icon-btn.grow-left.is-expanded {
-  margin-right: 0;
-  margin-left: calc(var(--base-w) * -0.08);
-}
-
-/* Adjacent buttons compress */
-.button-group .icon-btn.is-compressed {
-  width: calc(var(--base-w) * 0.80);
-}
-
-.button-group .icon-btn.is-compressed-left {
-  width: calc(var(--base-w) * 0.74);
-}
-
-.button-group .icon-btn.is-compressed-right {
-  width: calc(var(--base-w) * 0.74);
 }
 
 /* Toggle selected (shuffle / repeat) */

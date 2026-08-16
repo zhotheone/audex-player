@@ -5723,6 +5723,13 @@ function cloneForSwap(el) {
   clone.style.width = rect.width + 'px';
   clone.style.height = rect.height + 'px';
   clone.style.margin = '0';
+  clone.style.font = cs.font;
+  clone.style.fontSize = cs.fontSize;
+  clone.style.fontWeight = cs.fontWeight;
+  clone.style.lineHeight = cs.lineHeight;
+  clone.style.letterSpacing = cs.letterSpacing;
+  clone.style.color = cs.color;
+  clone.style.whiteSpace = cs.whiteSpace;
   clone.style.pointerEvents = 'none';
   clone.style.zIndex = '500';
   return { clone, originalEl: el, rect };
@@ -5735,42 +5742,52 @@ function animateSwap(snap, direction, kind) {
   document.body.appendChild(clone);
 
   let outFrames, inFrames, outDuration, inDuration, inDelay;
+  let outEasing = 'cubic-bezier(0.4, 0, 0.2, 1)';
+  let inEasing = 'cubic-bezier(0.34, 1.3, 0.64, 1)';
   if (kind === 'cover') {
     const dist = Math.max(24, rect.width * 0.28);
     if (direction > 0) {
-      outFrames = [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translateX(${-dist}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateX(${dist}px)`, opacity: 0 }, { transform: 'translate(0,0)', opacity: 1 }];
-    } else if (direction < 0) {
       outFrames = [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translateX(${dist}px)`, opacity: 0 }];
       inFrames  = [{ transform: `translateX(${-dist}px)`, opacity: 0 }, { transform: 'translate(0,0)', opacity: 1 }];
+    } else if (direction < 0) {
+      outFrames = [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translateX(${-dist}px)`, opacity: 0 }];
+      inFrames  = [{ transform: `translateX(${dist}px)`, opacity: 0 }, { transform: 'translate(0,0)', opacity: 1 }];
     } else {
       outFrames = [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.92)', opacity: 0 }];
       inFrames  = [{ transform: 'scale(1.06)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }];
     }
     outDuration = 320; inDuration = 440; inDelay = 60;
   } else {
-    const dy = direction === 0 ? 6 : 12;
     if (direction > 0) {
-      outFrames = [{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${-dy}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateY(${dy}px)`, opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }];
+      // Fade out going right to the end of the info container (Next)
+      const rightEnd = Math.max(90, rect.width * 0.85);
+      outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${rightEnd}px)`, opacity: 0 }];
+      inFrames  = [{ transform: 'translateX(-36px)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
+      outDuration = 240; inDuration = 320; inDelay = 40;
+      outEasing = 'cubic-bezier(0.2, 0, 0, 1)';
+      inEasing = 'cubic-bezier(0.34, 1.4, 0.64, 1)';
     } else if (direction < 0) {
-      outFrames = [{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${dy}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateY(${-dy}px)`, opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }];
+      // Very quick spring animation going left (Prev)
+      const dx = 28;
+      outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-dx}px)`, opacity: 0 }];
+      inFrames  = [{ transform: `translateX(${dx}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
+      outDuration = 140; inDuration = 200; inDelay = 25;
+      inEasing = 'cubic-bezier(0.34, 1.6, 0.64, 1)';
     } else {
-      outFrames = [{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${-dy}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateY(${dy}px)`, opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }];
+      outFrames = [{ opacity: 1 }, { opacity: 0 }];
+      inFrames  = [{ opacity: 0 }, { opacity: 1 }];
+      outDuration = 200; inDuration = 280; inDelay = 60;
     }
-    outDuration = 240; inDuration = 320; inDelay = 90;
   }
 
   const cloneAnim = clone.animate(outFrames, {
     duration: outDuration,
-    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    easing: outEasing,
     fill: 'forwards',
   });
   const targetAnim = originalEl.animate(inFrames, {
     duration: inDuration,
-    easing: 'cubic-bezier(0.34, 1.3, 0.64, 1)',
+    easing: inEasing,
     fill: 'both',
     delay: inDelay,
   });
@@ -6039,7 +6056,8 @@ function getUpcomingQueue(limit = 8) {
 // Settings) it drops back to "repeat all" instead of trapping the next track
 // in the same loop.
 function nextTrack({ manual = true } = {}) {
-  if (manual && typeof triggerButtonSquish === 'function') triggerButtonSquish($('btn-next'));
+  const fsActive = $('fullscreen-overlay')?.classList.contains('active');
+  if (manual && typeof triggerButtonSquish === 'function') triggerButtonSquish(fsActive ? $('fs-btn-next') : $('btn-next'));
   if (currentQueue.length === 0) return;
   if (manual && repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = 1;
@@ -6057,7 +6075,8 @@ function nextTrack({ manual = true } = {}) {
 }
 
 function prevTrack() {
-  if (typeof triggerButtonSquish === 'function') triggerButtonSquish($('btn-prev'));
+  const fsActive = $('fullscreen-overlay')?.classList.contains('active');
+  if (typeof triggerButtonSquish === 'function') triggerButtonSquish(fsActive ? $('fs-btn-prev') : $('btn-prev'));
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = -1;
@@ -7222,92 +7241,85 @@ targetVolume = 1;
 audio.volume = 1;
 updateVolumeUI();
 
-// ===== Standard Button Group: neighbor squish + shape morph =====
-let clearSquishTimer = null;
+// ===== Standard Button Group: directional motion + morph =====
+function getGroupTransform(direction, activeBtn, btn, activeIdx, idx) {
+  const isActive = btn === activeBtn;
+  if (direction === -1) {
+    return isActive ? 'translateX(-8px) scaleX(1.35)' : 'translateX(-10px) scale(0.92)';
+  } else if (direction === 1) {
+    return isActive ? 'translateX(8px) scaleX(1.35)' : 'translateX(10px) scale(0.92)';
+  } else {
+    const offset = activeIdx >= 0 ? (idx - activeIdx) * 4 : 0;
+    return isActive ? 'scale(1.18)' : `translateX(${offset}px) scale(0.92)`;
+  }
+}
+
+function applyGroupSquish(group, direction, activeBtn) {
+  if (!group) return;
+  const btns = Array.from(group.querySelectorAll('.icon-btn'));
+  const activeIdx = btns.indexOf(activeBtn);
+  const duration = direction > 0 ? 0.24 : direction < 0 ? 0.14 : 0.18;
+  const easing = direction > 0 ? 'cubic-bezier(0.2, 0, 0, 1)' : 'cubic-bezier(0.34, 1.6, 0.64, 1)';
+  btns.forEach((b, i) => {
+    b.style.transition = `transform ${duration}s ${easing}`;
+    b.style.transform = getGroupTransform(direction, activeBtn, b, activeIdx, i);
+  });
+  const songEl = $('fullscreen-overlay')?.classList.contains('active') ? $('fs-details') : $('songBlock');
+  if (songEl && direction !== 0) {
+    songEl.style.transition = `transform ${duration}s ${easing}`;
+    songEl.style.transform = `translateX(${direction * 8}px)`;
+  }
+}
+
+function releaseGroupSquish(group, direction = 0) {
+  const groups = group ? [group] : document.querySelectorAll('.button-group');
+  const duration = direction > 0 ? 0.32 : direction < 0 ? 0.20 : 0.24;
+  const easing = 'cubic-bezier(0.34, 1.4, 0.64, 1)';
+  groups.forEach(g => {
+    g.querySelectorAll('.icon-btn').forEach(b => {
+      b.style.transition = `transform ${duration}s ${easing}`;
+      b.style.transform = '';
+    });
+  });
+  ['songBlock', 'fs-details'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.style.transition = `transform ${duration}s ${easing}`;
+      el.style.transform = '';
+    }
+  });
+}
+
+let progSquishTimer = null;
 function triggerButtonSquish(btn) {
   if (!btn) return;
-  const groupBtns = Array.from(document.querySelectorAll('.button-group .icon-btn'));
-  const index = groupBtns.indexOf(btn);
-  if (index < 0) return;
-  const growDirection = { 0: 'balanced', 1: 'left', 2: 'balanced', 3: 'right', 4: 'balanced' };
-  groupBtns.forEach(b => b.classList.remove('is-expanded', 'is-compressed', 'is-compressed-left', 'is-compressed-right', 'grow-left', 'grow-right'));
-  const dir = growDirection[index] || 'balanced';
-  btn.classList.add('is-expanded');
-  if (dir === 'right') {
-    btn.classList.add('grow-right');
-    if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
-    if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed', 'is-compressed-right');
-  } else if (dir === 'left') {
-    btn.classList.add('grow-left');
-    if (index > 0) groupBtns[index - 1].classList.add('is-compressed', 'is-compressed-left');
-    if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed');
-  } else {
-    if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
-    if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed');
-  }
-  clearTimeout(clearSquishTimer);
-  clearSquishTimer = setTimeout(() => {
-    groupBtns.forEach(b => b.classList.remove('is-expanded', 'is-compressed', 'is-compressed-left', 'is-compressed-right', 'grow-left', 'grow-right'));
-  }, 220);
+  const group = btn.closest('.button-group') || document.querySelector('.button-group');
+  if (!group) return;
+  const dirMap = { 'btn-prev': -1, 'fs-btn-prev': -1, 'btn-next': 1, 'fs-btn-next': 1, 'btn-play': 0, 'fs-btn-play': 0 };
+  const dir = dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
+  applyGroupSquish(group, dir, btn);
+  clearTimeout(progSquishTimer);
+  progSquishTimer = setTimeout(() => releaseGroupSquish(group, dir), dir > 0 ? 240 : dir < 0 ? 140 : 200);
 }
 
 function initButtonGroupSquish() {
-  const groupBtns = Array.from(document.querySelectorAll('.button-group .icon-btn'));
-  function clearSquish() {
-    clearTimeout(clearSquishTimer);
-    groupBtns.forEach(b => {
-      b.classList.remove(
-        'is-expanded',
-        'is-compressed',
-        'is-compressed-left',
-        'is-compressed-right',
-        'grow-left',
-        'grow-right'
-      );
-    });
-  }
-
-  const growDirection = {
-    0: 'balanced', // Shuffle
-    1: 'left',     // Prev
-    2: 'balanced', // Play
-    3: 'right',    // Next
-    4: 'balanced'  // Repeat
-  };
-
-  groupBtns.forEach((btn, index) => {
-    btn.addEventListener('pointerdown', () => {
-      clearSquish();
-      const dir = growDirection[index] || 'balanced';
-      btn.classList.add('is-expanded');
-      if (dir === 'right') btn.classList.add('grow-right');
-      if (dir === 'left')  btn.classList.add('grow-left');
-
-      if (dir === 'right') {
-        if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
-        if (index < groupBtns.length - 1) {
-          groupBtns[index + 1].classList.add('is-compressed', 'is-compressed-right');
-        }
-      } else if (dir === 'left') {
-        if (index > 0) groupBtns[index - 1].classList.add('is-compressed', 'is-compressed-left');
-        if (index < groupBtns.length - 1) {
-          groupBtns[index + 1].classList.add('is-compressed');
-        }
-      } else {
-        if (index > 0) groupBtns[index - 1].classList.add('is-compressed');
-        if (index < groupBtns.length - 1) groupBtns[index + 1].classList.add('is-compressed');
-      }
-    });
-
-    const release = () => clearSquish();
-    btn.addEventListener('pointerup', release);
-    btn.addEventListener('pointercancel', release);
-    btn.addEventListener('pointerleave', (e) => {
-      if (e.buttons === 0) clearSquish();
+  document.querySelectorAll('.button-group').forEach(group => {
+    group.querySelectorAll('.icon-btn').forEach(btn => {
+      btn.addEventListener('pointerdown', () => {
+        clearTimeout(progSquishTimer);
+        const dirMap = { 'btn-prev': -1, 'fs-btn-prev': -1, 'btn-next': 1, 'fs-btn-next': 1, 'btn-play': 0, 'fs-btn-play': 0 };
+        const dir = dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
+        applyGroupSquish(group, dir, btn);
+      });
+      const release = () => releaseGroupSquish(group);
+      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointercancel', release);
+      btn.addEventListener('pointerleave', (e) => {
+        if (e.buttons === 0) release();
+      });
     });
   });
-
-  document.addEventListener('pointerup', clearSquish);
+  document.addEventListener('pointerup', () => releaseGroupSquish());
 }
 initButtonGroupSquish();
 
