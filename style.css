@@ -2150,16 +2150,18 @@ html.is-playing .equalizer > span { animation-play-state: running; }
    Scoped to #view-album-detail — playlist and artist heroes keep 168px. Sized
    off the viewport so it keeps its presence on a wide window without crowding
    the metadata at the 1024px minimum. */
-#view-album-detail .pl-hero { gap: 32px; padding-bottom: 32px; }
+#view-album-detail .pl-hero { gap: clamp(16px, 3vw, 32px); padding-bottom: 32px; flex-wrap: wrap; }
 #view-album-detail .pl-hero-cover {
-  width: clamp(320px, 26vw, 420px);
-  height: clamp(320px, 26vw, 420px);
+  width: clamp(160px, 26vw, 420px);
+  height: auto;
+  aspect-ratio: 1;
+  max-width: 100%;
   border-radius: 10px;
   padding: 18px;
 }
-#view-album-detail .pl-hero-cover span { font-family: 'Roboto Serif', serif; font-weight: 700; font-size: 120px; }
-#view-album-detail .pl-title { font-size: clamp(36px, 4vw, 56px); margin-bottom: 16px; line-height: 1.1; word-break: break-word; overflow-wrap: anywhere; }
-#view-album-detail .pl-meta { font-size: 15px; gap: 14px; margin-bottom: 24px; }
+#view-album-detail .pl-hero-cover span { font-family: 'Roboto Serif', serif; font-weight: 700; font-size: clamp(64px, 10vw, 120px); }
+#view-album-detail .pl-title { font-size: clamp(28px, 4vw, 56px); margin-bottom: 16px; line-height: 1.1; word-break: break-word; overflow-wrap: anywhere; }
+#view-album-detail .pl-meta { font-size: 15px; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
 #view-album-detail .pl-eyebrow { font-size: 12.5px; margin-bottom: 12px; }
 
 .pl-meta-link { cursor: pointer; }
