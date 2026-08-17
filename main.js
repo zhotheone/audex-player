@@ -1860,6 +1860,45 @@ ipcMain.handle('ytm:artistTopSongs', async (event, browseId) => {
   }
 });
 
+ipcMain.handle('ytm:artistSimilar', async (event, browseIdOrName) => {
+  let id = String(browseIdOrName || '').trim();
+  if (!id) return { success: false, error: 'No artist' };
+  try {
+    if (!id.startsWith('UC') && !id.startsWith('FEmusic_')) {
+      const searchData = await ytmInnertube('search', { query: id, params: 'EgWKAQIgAWoKEAkQBRAKEAMQBA==' });
+      let foundId = '';
+      ytmWalk(searchData, n => {
+        if (foundId) return;
+        const r = n.musicResponsiveListItemRenderer;
+        if (!r) return;
+        const nav = r.navigationEndpoint;
+        if (ytmBrowsePageType(nav) === 'MUSIC_PAGE_TYPE_ARTIST') {
+          foundId = nav.browseEndpoint && nav.browseEndpoint.browseId;
+        }
+      });
+      if (!foundId) return { success: true, artists: [] };
+      id = foundId;
+    }
+    const data = await ytmInnertube('browse', { browseId: id });
+    const artists = [];
+    const seen = new Set([id]);
+    ytmWalk(data, n => {
+      const r = n.musicTwoRowItemRenderer || n.musicResponsiveListItemRenderer;
+      if (!r) return;
+      const nav = r.navigationEndpoint || (((r.title || {}).runs || [])[0] || {}).navigationEndpoint;
+      if (ytmBrowsePageType(nav) !== 'MUSIC_PAGE_TYPE_ARTIST') return;
+      const artistBrowseId = nav.browseEndpoint && nav.browseEndpoint.browseId;
+      const name = ytmRunsText(r.title) || ytmFlexText(r, 0);
+      if (!artistBrowseId || !name || seen.has(artistBrowseId)) return;
+      seen.add(artistBrowseId);
+      artists.push({ browseId: artistBrowseId, name, thumb: ytmFirstThumb(r) });
+    });
+    return { success: true, artists: artists.slice(0, 12) };
+  } catch (e) {
+    return { success: false, error: String(e.message || e) };
+  }
+});
+
 ipcMain.handle('ytm:albumTracks', async (event, browseId) => {
   const id = String(browseId || '').trim();
   if (!id) return { success: false, error: 'No album id' };

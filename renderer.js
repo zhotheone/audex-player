@@ -5068,52 +5068,55 @@ function renderArtistDetail(name) {
   };
   $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
 
-  renderArtistLastfm(artist.name);
+  renderArtistSimilar(artist.name);
 }
 
-// ── Similar artists from Last.fm ──
+// ── Similar artists from YouTube Music ──
 // Cached per artist so re-renders (search typing, sort) don't re-hit the API.
-const lfmArtistCache = readStore('lastfm-similar', 'audex-lfm-similar') || {};
+const ytmSimilarCache = readStore('ytm-similar', 'audex-ytm-similar') || {};
 $('artist-similar-list')?.addEventListener('wheel', e => {
   if (e.deltaY) {
     e.preventDefault();
     $('artist-similar-list').scrollLeft += e.deltaY;
   }
 }, { passive: false });
-async function renderArtistLastfm(name) {
+async function renderArtistSimilar(name) {
   const simList = $('artist-similar-list');
   if (!simList) return;
   simList.hidden = true; simList.innerHTML = '';
-  if (!lfmConfigured() || !name) return;
+  if (!name || !window.electronAPI || !window.electronAPI.ytmArtistSimilar) return;
 
   const key = name.toLowerCase();
-  let similar = lfmArtistCache[key];
+  let similar = ytmSimilarCache[key];
   if (!similar) {
-    similar = await lfmSimilarArtists(name);
-    if (similar) {
-      lfmArtistCache[key] = similar;
-      writeStore('lastfm-similar', lfmArtistCache, 'audex-lfm-similar');
+    const res = await window.electronAPI.ytmArtistSimilar(name);
+    if (res && res.success && Array.isArray(res.artists)) {
+      similar = res.artists;
+      ytmSimilarCache[key] = similar;
+      writeStore('ytm-similar', ytmSimilarCache, 'audex-ytm-similar');
     }
   }
   if (activeArtistName !== name || currentView !== 'artist-detail') return;  // navigated away
 
   if (similar && similar.length) {
     const known = new Set(buildArtistsIndex().map(a => a.name.toLowerCase()));
-    similar.forEach(n => {
-      const inLib = known.has(n.toLowerCase());
+    similar.forEach(a => {
+      const aName = typeof a === 'string' ? a : a.name;
+      if (!aName) return;
+      const inLib = known.has(aName.toLowerCase());
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'tag-pill';
       chip.innerHTML = inLib
-        ? escapeHtml(n)
-        : `<svg class="i" width="11" height="11"><use href="#i-youtube"/></svg><span>${escapeHtml(n)}</span>`;
-      chip.title = inLib ? n : tr('ytm.browseArtist');
+        ? escapeHtml(aName)
+        : `<svg class="i" width="11" height="11"><use href="#i-youtube"/></svg><span>${escapeHtml(aName)}</span>`;
+      chip.title = inLib ? aName : tr('ytm.browseArtist');
       chip.addEventListener('click', () => {
         if (inLib) {
-          activeArtistName = n;
+          activeArtistName = aName;
           setView('artist-detail');
         } else {
-          ytmBrowser.open(n);
+          ytmBrowser.open(aName, a.browseId);
         }
       });
       simList.appendChild(chip);
@@ -6652,17 +6655,15 @@ const VIEW_W = 400;
 const VIEW_H = 14;
 const PAD = 4;
 
-function buildWavyPath(progressRatio, phase) {
+function buildWavyPath(progressX, progressRatio, phase) {
   const midY = VIEW_H / 2;
-  const progressX = PAD + progressRatio * (VIEW_W - PAD * 2);
-
   if (progressX <= PAD + 0.8) {
     return `M ${PAD} ${midY}`;
   }
 
   const ampScale = Math.min(1, progressRatio * 10);
   const amp = AMPLITUDE * ampScale;
-  const steps = Math.max(24, Math.ceil((progressX - PAD) / 1.5));
+  const steps = Math.max(16, Math.ceil((progressX - PAD) / 2));
   const pts = [];
 
   for (let i = 0; i <= steps; i++) {
@@ -6672,10 +6673,9 @@ function buildWavyPath(progressRatio, phase) {
     pts.push({ x, y });
   }
 
-  let d = `M ${pts[0].x.toFixed(3)} ${pts[0].y.toFixed(3)}`;
+  let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
   if (pts.length === 2) {
-    d += ` L ${pts[1].x.toFixed(3)} ${pts[1].y.toFixed(3)}`;
-    return d;
+    return d + ` L ${pts[1].x.toFixed(1)} ${pts[1].y.toFixed(1)}`;
   }
 
   for (let i = 0; i < pts.length - 1; i++) {
@@ -6689,29 +6689,48 @@ function buildWavyPath(progressRatio, phase) {
     const cp2x = p2.x - (p3.x - p1.x) / 6;
     const cp2y = p2.y - (p3.y - p1.y) / 6;
 
-    d += ` C ${cp1x.toFixed(3)} ${cp1y.toFixed(3)} ${cp2x.toFixed(3)} ${cp2y.toFixed(3)} ${p2.x.toFixed(3)} ${p2.y.toFixed(3)}`;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)} ${cp2x.toFixed(1)} ${cp2y.toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
   }
   return d;
+}
+
+function updateProgressSvg(trackId, activeId, trackPathId, dotId, stopId, ratio) {
+  const trackEl = $(trackId);
+  if (!trackEl) return;
+  const w = Math.round(trackEl.clientWidth) || VIEW_W;
+  const svg = trackEl.querySelector('svg');
+  if (svg) svg.setAttribute('viewBox', `0 0 ${w} ${VIEW_H}`);
+
+  const progressX = PAD + ratio * (w - PAD * 2);
+  const midY = VIEW_H / 2;
+  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * Math.min(1, ratio * 10);
+  const progressY = midY + Math.sin((progressX / WAVELENGTH) * Math.PI * 2 + wavePhase) * amp;
+
+  const pathD = buildWavyPath(progressX, ratio, wavePhase);
+  const endX = w - PAD;
+  const remainingStart = Math.min(endX, progressX + 7);
+  const trackD = remainingStart < endX ? `M ${remainingStart.toFixed(1)} 7 L ${endX} 7` : `M ${endX} 7`;
+
+  const activePath = $(activeId);
+  if (activePath) activePath.setAttribute('d', pathD);
+  const trackPath = $(trackPathId);
+  if (trackPath) trackPath.setAttribute('d', trackD);
+  const dot = $(dotId);
+  if (dot) {
+    dot.setAttribute('cx', progressX.toFixed(1));
+    dot.setAttribute('cy', progressY.toFixed(1));
+  }
+  const stop = $(stopId);
+  if (stop) stop.setAttribute('cx', endX.toFixed(1));
 }
 
 function setProgressUI() {
   const dur = audio.duration || 0;
   const cur = audio.currentTime || 0;
   const ratio = dur > 0 ? Math.min(1, cur / dur) : 0;
-  const progressX = PAD + ratio * (VIEW_W - PAD * 2);
-  const pathD = buildWavyPath(ratio, wavePhase);
-  const endX = VIEW_W - PAD;
-  const trackD = `M ${Math.min(endX, progressX).toFixed(3)} 7 L ${endX} 7`;
 
-  const activePath = $('activePath');
-  if (activePath) activePath.setAttribute('d', pathD);
-  const trackPath = $('trackPath');
-  if (trackPath) trackPath.setAttribute('d', trackD);
-
-  const fsActivePath = $('fsActivePath');
-  if (fsActivePath) fsActivePath.setAttribute('d', pathD);
-  const fsTrackPath = $('fsTrackPath');
-  if (fsTrackPath) fsTrackPath.setAttribute('d', trackD);
+  updateProgressSvg('progress-track', 'activePath', 'trackPath', 'progressDot', 'stopIndicator', ratio);
+  updateProgressSvg('fs-progress-track', 'fsActivePath', 'fsTrackPath', 'fsProgressDot', 'fsStopIndicator', ratio);
 
   const progressTrack = $('progress-track');
   if (progressTrack) {
@@ -7258,6 +7277,10 @@ function getGroupTransform(direction, activeBtn, btn, activeIdx, idx) {
     return isActive ? 'translateX(-8px) scaleX(1.35)' : 'translateX(-10px) scale(0.92)';
   } else if (direction === 1) {
     return isActive ? 'translateX(8px) scaleX(1.35)' : 'translateX(10px) scale(0.92)';
+  } else if (direction === 'shuffle') {
+    return isActive ? 'scale(1.22)' : 'scale(0.95)';
+  } else if (direction === 'repeat') {
+    return isActive ? 'scale(1.22)' : 'scale(0.95)';
   } else {
     const offset = activeIdx >= 0 ? (idx - activeIdx) * 4 : 0;
     return isActive ? 'scale(1.18)' : `translateX(${offset}px) scale(0.92)`;
@@ -7277,9 +7300,17 @@ function applyGroupSquish(group, direction, activeBtn) {
   const songEl = $('fullscreen-overlay')?.classList.contains('active')
     ? document.querySelector('.fs-info')
     : $('songBlock');
-  if (songEl && direction !== 0) {
-    songEl.style.transition = `transform ${duration}s ${easing}`;
-    songEl.style.transform = `translateX(${direction * 8}px)`;
+  if (songEl) {
+    let offset = 0;
+    if (direction === -1) offset = -8;
+    else if (direction === 1) offset = 8;
+    else if (direction === 'repeat') offset = 6;
+    else if (direction === 'shuffle') offset = -4;
+    else if (direction === 0) offset = 4;
+    if (offset !== 0) {
+      songEl.style.transition = `transform ${duration}s ${easing}`;
+      songEl.style.transform = `translateX(${offset}px)`;
+    }
   }
 }
 
@@ -7304,12 +7335,20 @@ function releaseGroupSquish(group, direction = 0) {
 let progSquishTimer = null;
 let pointerIsDown = false;
 
+function getButtonSquishDir(btn) {
+  if (!btn) return 0;
+  if (btn.id?.includes('prev')) return -1;
+  if (btn.id?.includes('next')) return 1;
+  if (btn.id?.includes('shuffle')) return 'shuffle';
+  if (btn.id?.includes('repeat')) return 'repeat';
+  return 0;
+}
+
 function triggerButtonSquish(btn) {
   if (!btn || pointerIsDown) return;
   const group = btn.closest('.button-group') || document.querySelector('.button-group');
   if (!group) return;
-  const dirMap = { 'btn-prev': -1, 'fs-btn-prev': -1, 'btn-next': 1, 'fs-btn-next': 1, 'btn-play': 0, 'fs-btn-play': 0 };
-  const dir = dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
+  const dir = getButtonSquishDir(btn);
   applyGroupSquish(group, dir, btn);
   clearTimeout(progSquishTimer);
   progSquishTimer = setTimeout(() => releaseGroupSquish(group, dir), 150);
@@ -7318,14 +7357,10 @@ function triggerButtonSquish(btn) {
 function initButtonGroupSquish() {
   document.querySelectorAll('.button-group').forEach(group => {
     group.querySelectorAll('.icon-btn').forEach(btn => {
-      const getDir = () => {
-        const dirMap = { 'btn-prev': -1, 'fs-btn-prev': -1, 'btn-next': 1, 'fs-btn-next': 1, 'btn-play': 0, 'fs-btn-play': 0 };
-        return dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
-      };
       btn.addEventListener('pointerdown', () => {
         pointerIsDown = true;
         clearTimeout(progSquishTimer);
-        applyGroupSquish(group, getDir(), btn);
+        applyGroupSquish(group, getButtonSquishDir(btn), btn);
       });
       const release = () => {
         if (!pointerIsDown) return;
@@ -10564,15 +10599,6 @@ async function lfmTopTags(kind, artist, name) {
       : await lfmCall('track.getTopTags', { artist, track: name });
     const tags = (d && d.toptags && d.toptags.tag) || [];
     return tags.map(t => t.name).filter(Boolean).slice(0, 6);
-  } catch (_) { return []; }
-}
-
-async function lfmSimilarArtists(artist, limit = 8) {
-  if (!lfmConfigured()) return [];
-  try {
-    const d = await lfmCall('artist.getSimilar', { artist, limit });
-    const arr = (d && d.similarartists && d.similarartists.artist) || [];
-    return arr.map(a => a.name).filter(Boolean);
   } catch (_) { return []; }
 }
 

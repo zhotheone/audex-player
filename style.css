@@ -95,6 +95,7 @@
 }
 
 :root[data-radius="sharp"] {
+  --radius-container: 0px;
   --radius-card: 0px;
   --radius-search: 0px;
   --radius-control: 0px;
@@ -102,6 +103,7 @@
   --radius-row: 0px;
 }
 :root[data-radius="subtle"] {
+  --radius-container: 6px;
   --radius-card: 4px;
   --radius-search: 4px;
   --radius-control: 3px;
@@ -109,6 +111,7 @@
   --radius-row: 3px;
 }
 :root[data-radius="default"] {
+  --radius-container: 16px;
   --radius-card: 10px;
   --radius-search: 6px;
   --radius-control: 5px;
@@ -116,6 +119,7 @@
   --radius-row: 5px;
 }
 :root[data-radius="round"] {
+  --radius-container: 22px;
   --radius-card: 16px;
   --radius-search: 12px;
   --radius-control: 8px;
@@ -123,6 +127,7 @@
   --radius-row: 8px;
 }
 :root[data-radius="pill"] {
+  --radius-container: 28px;
   --radius-card: 20px;
   --radius-search: 999px;
   --radius-control: 999px;
@@ -486,7 +491,8 @@ input { font-family: inherit; color: inherit; }
 /* Surfaces go translucent so the background actually reads through. The
    backdrop blur keeps text legible over busy images. */
 :root.has-custom-bg .sidebar,
-:root.has-custom-bg .main-content {
+:root.has-custom-bg .main-content,
+:root.has-custom-bg .playbar {
   background: color-mix(in srgb, var(--panel) calc(var(--surface-alpha, 1) * 100%), transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -496,13 +502,6 @@ input { font-family: inherit; color: inherit; }
 :root.has-custom-bg .ed-wave-wrap {
   background: color-mix(in srgb, var(--panel) calc(var(--surface-alpha, 1) * 100%), transparent);
 }
-/* The playbar island floats over the background image, so it blurs like the
-   sidebar but keeps its own elevated shade. */
-:root.has-custom-bg .playbar {
-  background: color-mix(in srgb, var(--panel-elev) calc(var(--surface-alpha, 1) * 100%), transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
 
 /* ─── Sidebar ─── */
 .sidebar {
@@ -510,7 +509,7 @@ input { font-family: inherit; color: inherit; }
   padding: 20px 16px 16px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-container, 16px);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -812,7 +811,7 @@ input { font-family: inherit; color: inherit; }
   padding: 20px 28px 16px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-container, 16px);
   overflow-y: auto;
   min-width: 0;
 }
@@ -2805,7 +2804,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   width: 100%;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: var(--shape-md);
+  border-radius: var(--radius-container, var(--shape-md));
   padding: 6px 14px;
   display: flex;
   align-items: center;
@@ -3240,6 +3239,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .wavy-stop {
   fill: var(--accent);
   opacity: 0.9;
+}
+
+.wavy-dot {
+  fill: var(--accent);
 }
 
 .time-label {
