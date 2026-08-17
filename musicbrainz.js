@@ -34,7 +34,6 @@ const esc = (s) => String(s || '').replace(/["\\]/g, ' ').trim();
 
 const topGenres = (entity) =>
   ((entity && entity.genres) || [])
-    .slice()
     .sort((a, b) => (b.count || 0) - (a.count || 0))
     .slice(0, 3)
     .map((g) => g.name);
@@ -160,7 +159,7 @@ function formatRecordingMatch(rec) {
     year = date;
   }
   const tags = (rec.tags || []).concat(rec.genres || [])
-    .slice().sort((a, b) => (b.count || 0) - (a.count || 0))
+    .sort((a, b) => (b.count || 0) - (a.count || 0))
     .map(t => t.name).filter(Boolean);
   const genre = tags.slice(0, 3).join(', ');
   const url = rec.id ? `https://musicbrainz.org/recording/${rec.id}` : '';

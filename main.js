@@ -152,14 +152,13 @@ app.on('will-quit', clearGlobalHotkeys);
 
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.opus', '.flac', '.m4a', '.aac']);
 
-function scanDir(dirPath) {
-  let results = [];
+function scanDir(dirPath, results = []) {
   try {
     const items = fs.readdirSync(dirPath, { withFileTypes: true });
     for (const item of items) {
       const fullPath = path.join(dirPath, item.name);
       if (item.isDirectory()) {
-        results = results.concat(scanDir(fullPath));
+        scanDir(fullPath, results);
       } else if (AUDIO_EXTENSIONS.has(path.extname(item.name).toLowerCase())) {
         results.push(fullPath);
       }
@@ -498,11 +497,11 @@ ipcMain.handle('dialog:openFiles', async () => {
   });
   if (canceled) return [];
 
-  let allFiles = [];
+  const allFiles = [];
   for (const p of filePaths) {
     const stat = fs.statSync(p);
     if (stat.isDirectory()) {
-      allFiles = allFiles.concat(scanDir(p));
+      scanDir(p, allFiles);
     } else {
       allFiles.push(p);
     }

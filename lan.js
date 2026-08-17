@@ -72,7 +72,8 @@ function clientIp(req) {
 
 function noteInbound(req) {
   const ip = clientIp(req);
-  if (!ip || [...peers.values()].some(p => p.host === ip)) return; // already visible as a real peer
+  if (!ip) return;
+  for (const p of peers.values()) if (p.host === ip) return; // already visible as a real peer
   const isNew = !inbound.has(ip);
   const ua = String(req.headers['user-agent'] || '');
   const name = /pixelplayer/i.test(ua) ? 'PixelPlayer' : ip;
@@ -216,10 +217,10 @@ function sendFile(req, res, filePath, mime) {
 async function sendCover(res, trackPath) {
   const hash = crypto.createHash('sha1').update(trackPath).digest('hex');
   try {
-    for (const name of fs.readdirSync(coverDir)) {
-      if (name.startsWith(hash)) {
-        const ext = path.extname(name).slice(1) || 'jpeg';
-        return sendFile({ headers: {} }, res, path.join(coverDir, name), `image/${ext}`);
+    for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
+      const coverFile = path.join(coverDir, hash + ext);
+      if (fs.existsSync(coverFile)) {
+        return sendFile({ headers: {} }, res, coverFile, `image/${ext === '.jpg' ? 'jpeg' : ext.slice(1)}`);
       }
     }
   } catch (_) { /* no cache dir yet — fall through to the tags */ }
@@ -355,13 +356,21 @@ function notePeer(p) {
 // one matches a specific route and is forced out its own adapter.
 function subnetBroadcasts() {
   const out = [];
-  for (const list of Object.values(os.networkInterfaces())) {
-    for (const ni of list || []) {
+  const ifaces = os.networkInterfaces();
+  for (const name in ifaces) {
+    const list = ifaces[name];
+    if (!list) continue;
+    for (let i = 0; i < list.length; i++) {
+      const ni = list[i];
       if (ni.family !== 'IPv4' || ni.internal || !ni.netmask) continue;
-      const addr = ni.address.split('.').map(Number);
-      const mask = ni.netmask.split('.').map(Number);
+      const addr = ni.address.split('.');
+      const mask = ni.netmask.split('.');
       if (addr.length !== 4 || mask.length !== 4) continue;
-      out.push(addr.map((o, i) => o | (~mask[i] & 255)).join('.'));
+      const b0 = (+addr[0]) | (~(+mask[0]) & 255);
+      const b1 = (+addr[1]) | (~(+mask[1]) & 255);
+      const b2 = (+addr[2]) | (~(+mask[2]) & 255);
+      const b3 = (+addr[3]) | (~(+mask[3]) & 255);
+      out.push(`${b0}.${b1}.${b2}.${b3}`);
     }
   }
   return out;
@@ -423,10 +432,16 @@ function removePeer(id) {
 }
 
 function listPeers() {
-  const known = [...peers.values()].map(p => ({ ...p, base: `http://${p.host}:${p.port}` }));
-  const knownHosts = new Set(known.map(p => p.host));
-  const inboundOnly = [...inbound.values()].filter(c => !knownHosts.has(c.host));
-  return [...known, ...inboundOnly];
+  const known = [];
+  const knownHosts = new Set();
+  for (const p of peers.values()) {
+    known.push({ ...p, base: `http://${p.host}:${p.port}` });
+    knownHosts.add(p.host);
+  }
+  for (const c of inbound.values()) {
+    if (!knownHosts.has(c.host)) known.push(c);
+  }
+  return known;
 }
 
 // ── lifecycle ──
@@ -466,8 +481,12 @@ function stop() {
 
 function addresses() {
   const out = [];
-  for (const list of Object.values(os.networkInterfaces())) {
-    for (const ni of list || []) {
+  const ifaces = os.networkInterfaces();
+  for (const name in ifaces) {
+    const list = ifaces[name];
+    if (!list) continue;
+    for (let i = 0; i < list.length; i++) {
+      const ni = list[i];
       if (ni.family === 'IPv4' && !ni.internal) out.push(ni.address);
     }
   }
