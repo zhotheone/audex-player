@@ -5764,8 +5764,8 @@ function animateSwap(snap, direction, kind) {
   document.body.appendChild(clone);
 
   let outFrames, inFrames, outDuration, inDuration, inDelay;
-  let outEasing = 'cubic-bezier(0.4, 0, 0.2, 1)';
-  let inEasing = 'cubic-bezier(0.34, 1.3, 0.64, 1)';
+  let outEasing = 'cubic-bezier(0.27, 1.06, 0.18, 1.00)';
+  let inEasing = 'cubic-bezier(0.38, 1.21, 0.22, 1.00)';
   if (kind === 'cover') {
     const dist = Math.max(24, rect.width * 0.28);
     if (direction > 0) {
@@ -5778,27 +5778,30 @@ function animateSwap(snap, direction, kind) {
       outFrames = [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.92)', opacity: 0 }];
       inFrames  = [{ transform: 'scale(1.06)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }];
     }
-    outDuration = 320; inDuration = 440; inDelay = 60;
+    outDuration = 350; inDuration = 500; inDelay = 60;
   } else {
     if (direction > 0) {
       // Fade out going right to the end of the info container (Next)
       const rightEnd = Math.max(90, rect.width * 0.85);
       outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${rightEnd}px)`, opacity: 0 }];
       inFrames  = [{ transform: 'translateX(-36px)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
-      outDuration = 240; inDuration = 320; inDelay = 40;
-      outEasing = 'cubic-bezier(0.2, 0, 0, 1)';
-      inEasing = 'cubic-bezier(0.34, 1.4, 0.64, 1)';
+      outDuration = 350; inDuration = 350; inDelay = 40;
+      outEasing = 'cubic-bezier(0.27, 1.06, 0.18, 1.00)';
+      inEasing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
     } else if (direction < 0) {
       // Very quick spring animation going left (Prev)
       const dx = 28;
       outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-dx}px)`, opacity: 0 }];
       inFrames  = [{ transform: `translateX(${dx}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
-      outDuration = 140; inDuration = 200; inDelay = 25;
-      inEasing = 'cubic-bezier(0.34, 1.6, 0.64, 1)';
+      outDuration = 150; inDuration = 350; inDelay = 25;
+      outEasing = 'cubic-bezier(0.31, 0.94, 0.34, 1.00)';
+      inEasing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
     } else {
       outFrames = [{ opacity: 1 }, { opacity: 0 }];
       inFrames  = [{ opacity: 0 }, { opacity: 1 }];
-      outDuration = 200; inDuration = 280; inDelay = 60;
+      outDuration = 200; inDuration = 300; inDelay = 60;
+      outEasing = 'cubic-bezier(0.34, 0.80, 0.34, 1.00)';
+      inEasing = 'cubic-bezier(0.34, 0.88, 0.34, 1.00)';
     }
   }
 
@@ -7280,8 +7283,8 @@ function applyGroupSquish(group, direction, activeBtn) {
   if (!group) return;
   const btns = Array.from(group.querySelectorAll('.icon-btn'));
   const activeIdx = btns.indexOf(activeBtn);
-  const duration = direction > 0 ? 0.24 : direction < 0 ? 0.14 : 0.18;
-  const easing = direction > 0 ? 'cubic-bezier(0.2, 0, 0, 1)' : 'cubic-bezier(0.34, 1.6, 0.64, 1)';
+  const duration = 0.15;
+  const easing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
   btns.forEach((b, i) => {
     b.style.transition = `transform ${duration}s ${easing}`;
     b.style.transform = getGroupTransform(direction, activeBtn, b, activeIdx, i);
@@ -7295,8 +7298,8 @@ function applyGroupSquish(group, direction, activeBtn) {
 
 function releaseGroupSquish(group, direction = 0) {
   const groups = group ? [group] : document.querySelectorAll('.button-group');
-  const duration = direction > 0 ? 0.32 : direction < 0 ? 0.20 : 0.24;
-  const easing = 'cubic-bezier(0.34, 1.4, 0.64, 1)';
+  const duration = 0.35;
+  const easing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
   groups.forEach(g => {
     g.querySelectorAll('.icon-btn').forEach(b => {
       b.style.transition = `transform ${duration}s ${easing}`;
@@ -7364,8 +7367,8 @@ function flipCover(direction) {
     ? [{ transform: small }, { transform: 'translate(0, 0) scale(1, 1)' }]
     : [{ transform: 'translate(0, 0) scale(1, 1)' }, { transform: small }];
   return big.animate(frames, {
-    duration: direction === 'in' ? 480 : 360,
-    easing: 'cubic-bezier(0.34, 1.3, 0.64, 1)',
+    duration: direction === 'in' ? 500 : 350,
+    easing: 'cubic-bezier(0.38, 1.21, 0.22, 1.00)',
     fill: 'both',
   });
 }

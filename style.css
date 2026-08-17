@@ -48,9 +48,46 @@
   --radius-menu: 6px;
   --radius-row: 5px;
 
-  /* Motion */
-  --motion-emphasized: cubic-bezier(0.2, 0, 0, 1);
-  --motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Motion tokens (docs/animations.md) */
+  --motion-expressive-fast-spatial: 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90);
+  --motion-expressive-default-spatial: 500ms cubic-bezier(0.38, 1.21, 0.22, 1.00);
+  --motion-expressive-slow-spatial: 650ms cubic-bezier(0.39, 1.29, 0.35, 0.98);
+  --motion-expressive-fast-effects: 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00);
+  --motion-expressive-default-effects: 200ms cubic-bezier(0.34, 0.80, 0.34, 1.00);
+  --motion-expressive-slow-effects: 300ms cubic-bezier(0.34, 0.88, 0.34, 1.00);
+  --motion-standard-fast-spatial: 350ms cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --motion-standard-default-spatial: 500ms cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --motion-standard-slow-spatial: 750ms cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --motion-standard-fast-effects: 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00);
+  --motion-standard-default-effects: 200ms cubic-bezier(0.34, 0.80, 0.34, 1.00);
+  --motion-standard-slow-effects: 300ms cubic-bezier(0.34, 0.88, 0.34, 1.00);
+
+  /* Curve tokens */
+  --ease-expressive-fast-spatial: cubic-bezier(0.42, 1.67, 0.21, 0.90);
+  --ease-expressive-default-spatial: cubic-bezier(0.38, 1.21, 0.22, 1.00);
+  --ease-expressive-slow-spatial: cubic-bezier(0.39, 1.29, 0.35, 0.98);
+  --ease-expressive-fast-effects: cubic-bezier(0.31, 0.94, 0.34, 1.00);
+  --ease-expressive-default-effects: cubic-bezier(0.34, 0.80, 0.34, 1.00);
+  --ease-expressive-slow-effects: cubic-bezier(0.34, 0.88, 0.34, 1.00);
+  --ease-standard-fast-spatial: cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --ease-standard-default-spatial: cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --ease-standard-slow-spatial: cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --ease-standard-fast-effects: cubic-bezier(0.31, 0.94, 0.34, 1.00);
+  --ease-standard-default-effects: cubic-bezier(0.34, 0.80, 0.34, 1.00);
+  --ease-standard-slow-effects: cubic-bezier(0.34, 0.88, 0.34, 1.00);
+
+  /* Duration tokens */
+  --dur-fast-effects: 150ms;
+  --dur-default-effects: 200ms;
+  --dur-slow-effects: 300ms;
+  --dur-fast-spatial: 350ms;
+  --dur-default-spatial: 500ms;
+  --dur-expressive-slow-spatial: 650ms;
+  --dur-standard-slow-spatial: 750ms;
+
+  /* Aliases */
+  --motion-emphasized: cubic-bezier(0.27, 1.06, 0.18, 1.00);
+  --motion-spring: cubic-bezier(0.42, 1.67, 0.21, 0.90);
 
   /* Wavy progress tokens */
   --wave-stroke: 4px;
@@ -559,7 +596,7 @@ input { font-family: inherit; color: inherit; }
   font-size: 12.5px;
   font-weight: 400;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
 }
 .nav-item:hover {
   background: var(--hover-bg);
@@ -599,7 +636,7 @@ input { font-family: inherit; color: inherit; }
   width: 14px;
   height: 14px;
   transform-origin: 60% 60%;
-  transition: transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1), color 160ms ease;
+  transition: transform var(--motion-expressive-fast-spatial), color var(--motion-standard-fast-effects);
 }
 .nav-search-shortcut {
   padding: 2px 6px;
@@ -607,7 +644,11 @@ input { font-family: inherit; color: inherit; }
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-faint);
-  transition: background 180ms ease, color 180ms ease, border-color 180ms ease, transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    background var(--motion-standard-fast-effects),
+    color var(--motion-standard-fast-effects),
+    border-color var(--motion-standard-fast-effects),
+    transform var(--motion-expressive-fast-spatial);
 }
 /* A diagonal sheen that sweeps across the row on hover. Sits behind the
    content via z-index so the text stays readable. */
@@ -625,7 +666,7 @@ input { font-family: inherit; color: inherit; }
   opacity: 0;
   pointer-events: none;
   z-index: -1;
-  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms ease;
+  transition: transform var(--motion-expressive-slow-spatial), opacity var(--motion-expressive-default-effects);
 }
 .nav-search:hover::before {
   transform: translateX(110%);
@@ -643,11 +684,11 @@ input { font-family: inherit; color: inherit; }
 }
 .nav-search:active .nav-search-icon {
   transform: rotate(-4deg) scale(0.94);
-  transition-duration: 120ms;
+  transition-duration: var(--dur-fast-effects);
 }
 .nav-search:active .nav-search-shortcut {
   transform: translateY(0);
-  transition-duration: 80ms;
+  transition-duration: var(--dur-fast-effects);
 }
 
 /* Brief celebratory pulse when the user actually triggers the palette —
@@ -659,7 +700,7 @@ input { font-family: inherit; color: inherit; }
   100% { transform: rotate(0)    scale(1); }
 }
 .nav-search.is-pinging .nav-search-icon {
-  animation: nav-search-ping 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: nav-search-ping var(--motion-expressive-default-spatial);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -759,7 +800,7 @@ input { font-family: inherit; color: inherit; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: opacity 0.15s;
+  transition: opacity var(--motion-standard-fast-effects);
 }
 .btn-primary:hover { opacity: 0.9; }
 
@@ -777,7 +818,7 @@ input { font-family: inherit; color: inherit; }
 }
 
 .view-section { display: none; }
-.view-section.active { display: block; animation: fadeIn 0.2s ease; }
+.view-section.active { display: block; animation: fadeIn var(--motion-standard-default-effects); }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -959,7 +1000,7 @@ input { font-family: inherit; color: inherit; }
   font-size: 12.5px;
   border-radius: var(--radius-row);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--motion-standard-fast-effects);
 }
 .trow:hover { background: var(--hover-bg); }
 .trow.playing { background: var(--row-active-bg); color: var(--accent); }
@@ -1421,7 +1462,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 6px 14px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
 }
 .dl-tab:hover { color: var(--text-strong); }
 .dl-tab.is-active {
@@ -1450,7 +1491,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 5px 12px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
 }
 .dl-subtab:hover { color: var(--text-strong); }
 .dl-subtab.is-active {
@@ -1521,7 +1562,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 6px 12px;
   color: var(--text-muted);
   font-size: 12.5px;
-  transition: border-color 120ms ease;
+  transition: border-color var(--motion-standard-fast-effects);
 }
 .dl-search-field:focus-within { border-color: var(--border-strong); }
 .dl-search-field .i { color: var(--text-muted); }
@@ -1551,7 +1592,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: opacity 0.15s;
+  transition: opacity var(--motion-standard-fast-effects);
 }
 .dl-search-btn:hover { opacity: 0.9; }
 .dl-search-btn:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -1650,7 +1691,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition:
+    background var(--motion-standard-fast-effects),
+    color var(--motion-standard-fast-effects),
+    border-color var(--motion-standard-fast-effects);
 }
 .dl-download-btn:hover { background: var(--active-bg); }
 .dl-download-btn:disabled { cursor: not-allowed; opacity: 0.45; }
@@ -1686,11 +1730,11 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   width: 0%;
   background: var(--text-strong);
   border-radius: 999px;
-  transition: width 180ms ease;
+  transition: width var(--motion-standard-fast-spatial);
 }
 .dl-progress.is-indeterminate .dl-progress-fill {
   width: 40% !important;
-  animation: dl-indet 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: dl-indet 1.2s var(--ease-standard-default-spatial) infinite;
 }
 @keyframes dl-indet {
   0%   { transform: translateX(-100%); }
@@ -1915,7 +1959,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition:
+    background var(--motion-standard-fast-effects),
+    color var(--motion-standard-fast-effects),
+    border-color var(--motion-standard-fast-effects);
 }
 .dl-icon-btn:hover {
   background: var(--active-bg);
@@ -2001,7 +2048,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-radius: var(--radius-card);
   padding: 14px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--motion-standard-fast-effects), background var(--motion-standard-fast-effects);
 }
 .playlist-card:hover {
   border-color: var(--border-strong);
@@ -2258,7 +2305,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    background var(--motion-standard-fast-effects),
+    color var(--motion-standard-fast-effects),
+    transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial);
 }
 .btn-ic:hover {
   background: var(--hover-bg);
@@ -2323,7 +2373,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 6px 11px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background .15s ease, color .15s ease;
+  transition: background var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
   white-space: nowrap;
 }
 .seg-btn:hover { color: var(--text); }
@@ -2386,7 +2436,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: border-color .15s ease, color .15s ease;
+  transition: border-color var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
 }
 .hotkey-combo:hover { border-color: var(--accent); }
 .hotkey-combo.is-empty { color: var(--text-dim); }
@@ -2407,7 +2457,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-radius: 6px;
   padding: 5px 7px;
   cursor: pointer;
-  transition: color .15s ease, border-color .15s ease, background .15s ease;
+  transition:
+    color var(--motion-standard-fast-effects),
+    border-color var(--motion-standard-fast-effects),
+    background var(--motion-standard-fast-effects);
 }
 .hotkey-global:hover:not(:disabled) { color: var(--text-strong); border-color: var(--accent); }
 .hotkey-global.is-on {
@@ -2472,7 +2525,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  transition:
+    background var(--motion-standard-fast-effects),
+    color var(--motion-standard-fast-effects),
+    border-color var(--motion-standard-fast-effects);
 }
 .settings-tab span { flex: 1; }
 .settings-tab .i { opacity: .7; flex-shrink: 0; }
@@ -2520,7 +2576,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background var(--motion-standard-fast-effects);
 }
 .scale-stepper .stepper-btn:hover {
   background: color-mix(in srgb, var(--text-strong) 10%, var(--active-bg));
@@ -2598,7 +2654,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  transition: all 0.15s;
+  transition: all var(--motion-standard-fast-effects);
 }
 .toggle.on {
   background: var(--text-strong);
@@ -2667,7 +2723,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 0;
   position: relative;
   background-clip: padding-box;
-  transition: transform 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial),
+    border-color var(--motion-standard-fast-effects);
 }
 .accent-swatch:hover { transform: scale(1.08); }
 .accent-swatch.active {
@@ -2756,7 +2814,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
     0 1px 2px rgba(0,0,0,0.08),
     0 4px 16px rgba(0,0,0,0.12);
   flex-shrink: 0;
-  transition: background-color 0.5s ease, border-color 0.5s ease;
+  transition: background-color var(--motion-standard-default-spatial), border-color var(--motion-standard-default-spatial);
 }
 
 /* ===== STANDARD BUTTON GROUP (M3 Expressive) ===== */
@@ -2786,14 +2844,14 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   flex-shrink: 0;
   position: relative;
   transition:
-    background 0.22s var(--motion-emphasized),
-    color 0.22s var(--motion-emphasized);
+    background var(--motion-expressive-default-effects),
+    color var(--motion-expressive-default-effects);
 }
 
 .button-group .icon-btn .material-symbols-rounded {
   font-size: 20px;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  transition: font-variation-settings 0.2s;
+  transition: font-variation-settings var(--motion-expressive-default-effects);
   pointer-events: none;
 }
 
@@ -2865,10 +2923,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   cursor: pointer;
   flex-shrink: 0;
   transition:
-    background 0.22s var(--motion-emphasized),
-    color 0.22s var(--motion-emphasized),
-    border-radius 0.32s var(--motion-spring),
-    transform 0.18s var(--motion-spring);
+    background var(--motion-expressive-default-effects),
+    color var(--motion-expressive-default-effects),
+    border-radius var(--motion-expressive-fast-spatial),
+    transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial);
 }
 
 .volume-block .icon-btn .material-symbols-rounded,
@@ -2936,17 +2994,17 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   cursor: pointer;
   flex-shrink: 0;
   transition:
-    background 0.22s var(--motion-emphasized),
-    color 0.22s var(--motion-emphasized),
-    border-radius 0.32s var(--motion-spring),
-    transform 0.18s var(--motion-spring);
+    background var(--motion-expressive-default-effects),
+    color var(--motion-expressive-default-effects),
+    border-radius var(--motion-expressive-fast-spatial),
+    transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial);
 }
 
 .song-actions .icon-btn .material-symbols-rounded,
 .fs-song-actions .icon-btn .material-symbols-rounded {
   font-size: 18px;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  transition: font-variation-settings 0.2s;
+  transition: font-variation-settings var(--motion-expressive-default-effects);
 }
 
 .song-actions .icon-btn:hover,
@@ -2985,7 +3043,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 
 .song-actions .icon-btn.is-animating .material-symbols-rounded {
-  animation: fav-pop 0.35s var(--motion-spring);
+  animation: fav-pop var(--motion-expressive-fast-spatial);
 }
 
 /* Thumbnail */
@@ -3008,9 +3066,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   align-items: center;
   justify-content: center;
   transition:
-    border-radius 0.35s var(--motion-spring),
-    transform 0.28s var(--motion-spring),
-    box-shadow 0.28s var(--motion-emphasized);
+    border-radius var(--motion-expressive-fast-spatial),
+    transform var(--motion-expressive-fast-spatial),
+    box-shadow var(--motion-expressive-slow-effects);
 }
 
 .artwork::before {
@@ -3042,8 +3100,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   opacity: 0;
   transform: scale(0.7);
   transition:
-    opacity 0.22s var(--motion-emphasized),
-    transform 0.28s var(--motion-spring);
+    opacity var(--motion-expressive-default-effects),
+    transform var(--motion-expressive-fast-spatial);
   pointer-events: none;
 }
 
@@ -3093,7 +3151,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
-  transition: opacity 0.18s var(--motion-emphasized);
+  transition: opacity var(--motion-expressive-default-effects);
 }
 
 .song-block .title:hover {
@@ -3121,7 +3179,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: opacity 0.18s var(--motion-emphasized);
+  transition: opacity var(--motion-expressive-default-effects);
 }
 
 .song-block .subtitle .artist-link,
@@ -3193,8 +3251,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transform: translateY(3px);
   pointer-events: none;
   transition:
-    opacity 0.18s var(--motion-emphasized),
-    transform 0.18s var(--motion-emphasized);
+    opacity var(--motion-expressive-default-effects),
+    transform var(--motion-expressive-default-effects);
 }
 
 .time-label.current { text-align: right; }
@@ -3243,7 +3301,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   background: var(--accent);
   border: 2px solid var(--panel-elev);
   box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-  transition: transform 0.18s var(--motion-spring);
+  transition: transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial);
 }
 
 .volume-slider::-webkit-slider-thumb:hover {
@@ -3280,7 +3338,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   opacity: 0;
   filter: blur(40px);
   transform: scale(1.15);
-  transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
+  transition: opacity var(--motion-expressive-default-spatial);
 }
 .fs-overlay.is-in .fs-canvas { opacity: 0.65; }
 
@@ -3300,7 +3358,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   border-radius: 42% 58% 65% 35% / 45% 45% 55% 55%;
   animation: auraLava 24s ease-in-out infinite alternate;
   will-change: transform, border-radius;
-  transition: opacity 520ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
+  transition: opacity var(--motion-expressive-default-spatial);
 }
 .fs-backdrop::before,
 .fs-backdrop::after {
@@ -3354,8 +3412,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   opacity: 0;
   transform: translateY(18px);
   transition:
-    opacity 380ms var(--motion-spring),
-    transform 460ms var(--motion-spring);
+    opacity var(--motion-expressive-slow-effects),
+    transform var(--motion-expressive-default-spatial);
   will-change: opacity, transform;
 }
 .fs-overlay.is-in .fs-title         { opacity: 1; transform: none; transition-delay: 120ms; }
@@ -3396,7 +3454,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   width: 100%;
   max-width: 420px;
   margin: auto;
-  transition: max-width 0.4s var(--motion-spring), gap 0.4s var(--motion-spring);
+  transition: max-width var(--motion-expressive-default-spatial), gap var(--motion-expressive-default-spatial);
 }
 .fs-cover {
   width: min(340px, 38vh);
@@ -3411,7 +3469,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   justify-content: center;
   padding: 20px;
   flex-shrink: 0;
-  transition: width 0.4s var(--motion-spring), height 0.4s var(--motion-spring), box-shadow 0.4s var(--motion-spring);
+  transition: width var(--motion-expressive-default-spatial), height var(--motion-expressive-default-spatial), box-shadow var(--motion-expressive-default-spatial);
 }
 .fs-cover-letter {
   font-family: 'Roboto Serif', serif;
@@ -3541,7 +3599,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   padding: 30px 32px 40px;
   overflow: hidden;
 }
-.fs-lyrics-panel.active { display: flex; animation: fadeIn 0.2s ease; }
+.fs-lyrics-panel.active { display: flex; animation: fadeIn var(--motion-standard-default-effects); }
 /* Same blurred album-art wash as the fullscreen backdrop (.fs-backdrop), fed by
    the shared --fs-cover-img variable, so the lyrics view reads as the same
    surface instead of a flat panel. The var(--bg) base above still occludes the
@@ -3604,9 +3662,9 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transform: scale(0.94);
   transform-origin: left center;
   transition:
-    opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.3s ease,
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity var(--motion-expressive-fast-spatial),
+    color var(--motion-expressive-slow-effects),
+    transform var(--motion-expressive-fast-spatial);
   will-change: transform, opacity;
 }
 .fs-lyrics-line:hover { background: var(--hover-bg); opacity: 0.85; }
@@ -3618,7 +3676,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .fs-lyrics-line.is-word-synced .fs-lyrics-word {
   opacity: 0.35;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity var(--motion-expressive-default-effects), color var(--motion-expressive-default-effects);
 }
 .fs-lyrics-line.active.is-word-synced .fs-lyrics-word {
   opacity: 0.4;
@@ -3716,7 +3774,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   z-index: 1;
   background: transparent;
   padding: 0;
-  animation: lyricsSpringIn 0.45s var(--motion-spring);
+  animation: lyricsSpringIn var(--motion-expressive-default-spatial);
 }
 @keyframes lyricsSpringIn {
   0% { opacity: 0; transform: translateX(24px) scale(0.96); }
@@ -3744,10 +3802,10 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   justify-content: center;
   z-index: 200;
 }
-.modal-overlay.active { display: flex; animation: modalScrimIn 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+.modal-overlay.active { display: flex; animation: modalScrimIn var(--motion-expressive-default-effects); }
 .modal-overlay.active .modal-card,
 .modal-overlay.active .settings-card,
-.modal-overlay.active .editor-card { animation: modalCardIn 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+.modal-overlay.active .editor-card { animation: modalCardIn var(--motion-expressive-fast-spatial); }
 
 /* ── In-app YouTube Music browser (full-page view) ── */
 .ytm-page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
@@ -3770,7 +3828,14 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .ytm-releases { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-bottom: 18px; }
 .ytm-release { cursor: pointer; }
 .ytm-release-cover { position: relative; aspect-ratio: 1; border-radius: 10px; background: var(--panel-alt) center/cover no-repeat; overflow: hidden; }
-.ytm-release-cover .ytm-add-all { position: absolute; right: 8px; bottom: 8px; opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s; }
+.ytm-release-cover .ytm-add-all {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--motion-standard-fast-effects), transform var(--motion-standard-fast-effects);
+}
 .ytm-release:hover .ytm-add-all { opacity: 1; transform: none; }
 .ytm-release-title { margin-top: 8px; font-size: 13px; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ytm-release-meta { font-size: 12px; color: var(--text-dim); }
@@ -3816,7 +3881,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
 }
 .btn-dl-anim {
-  animation: btn-dl-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: btn-dl-pop var(--motion-expressive-fast-spatial);
   background: var(--accent) !important;
   color: #fff !important;
   border-color: var(--accent) !important;
@@ -3828,7 +3893,7 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   height: 5px;
   border-radius: 50%;
   z-index: 9999;
-  animation: dl-particle-fade 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  animation: dl-particle-fade var(--motion-expressive-default-spatial) forwards;
 }
 
 /* Perf: a blurred full-screen overlay (tag editor, palette, etc.) re-runs its
@@ -3858,7 +3923,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 }
 #add-to-playlist-modal.active .sl-item,
 #add-to-playlist-modal.active .sl-empty {
-  animation: modalListItemIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: modalListItemIn var(--motion-expressive-fast-spatial) both;
 }
 #add-to-playlist-modal.active .sl-item:nth-child(1) { animation-delay: 90ms; }
 #add-to-playlist-modal.active .sl-item:nth-child(2) { animation-delay: 130ms; }
@@ -3869,7 +3934,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 #add-to-playlist-modal.active .sl-empty { animation-delay: 120ms; }
 
 /* Tactile press feedback on the trigger */
-#fs-btn-add-playlist { transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1); }
+#fs-btn-add-playlist { transition: transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial); }
 #fs-btn-add-playlist:active { transform: scale(0.94); }
 .modal-card {
   width: 380px;
@@ -4084,7 +4149,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   font-size: 13.5px;
   font-family: 'Roboto Flex', sans-serif;
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color var(--motion-standard-fast-effects), box-shadow var(--motion-standard-fast-effects);
 }
 .field-input:focus {
   border-color: var(--accent);
@@ -4331,7 +4396,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   cursor: pointer;
   padding: 6px 4px;
   border-radius: var(--radius-card);
-  transition: background 0.12s;
+  transition: background var(--motion-standard-fast-effects);
 }
 .artist-card:hover { background: var(--hover-bg); }
 .artists-sentinel {
@@ -4573,7 +4638,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
 /* Album cards grid (artist detail, Cards mode) */
 #artist-albums.cards-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
 .aa-card { cursor: pointer; }
-.aa-card-cover { width: 100%; aspect-ratio: 1/1; border-radius: 8px; margin-bottom: 10px; background: var(--panel-alt); background-size: cover; background-position: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); transition: transform 0.15s; }
+.aa-card-cover { width: 100%; aspect-ratio: 1/1; border-radius: 8px; margin-bottom: 10px; background: var(--panel-alt); background-size: cover; background-position: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); transition: transform var(--dur-fast-effects) var(--ease-expressive-fast-spatial); }
 .aa-card:hover .aa-card-cover { transform: translateY(-3px); }
 .aa-card-name { font-size: 12.5px; font-weight: 500; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aa-card-meta { font-size: 10.5px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.6px; }
@@ -4680,9 +4745,9 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   color: var(--text-strong);
   font-size: 13px;
   line-height: 1.4;
-  animation: toast-in 0.18s ease;
+  animation: toast-in var(--motion-expressive-default-effects);
 }
-.toast.leaving { animation: toast-out 0.18s ease forwards; }
+.toast.leaving { animation: toast-out var(--motion-expressive-slow-effects) forwards; }
 .toast-error { border-left-color: var(--danger); }
 .toast-warn { border-left-color: var(--accent); }
 .toast-body { flex: 1 1 auto; white-space: pre-wrap; word-break: break-word; }
@@ -4766,7 +4831,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   font-size: 12px;
   color: var(--text-muted);
   background: transparent;
-  transition: all 0.12s;
+  transition: all var(--motion-standard-fast-effects);
 }
 .rep-tab:hover { color: var(--text-strong); }
 .rep-tab.active {
@@ -5247,7 +5312,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   user-select: none;
   cursor: default;
   opacity: 1;
-  transition: opacity 0.45s ease;
+  transition: opacity var(--motion-standard-default-spatial);
 }
 #boot-overlay::before {
   content: '';
@@ -5265,7 +5330,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   display: flex;
   flex-direction: column;
   align-items: center;
-  animation: bootFadeUp 0.6s ease both;
+  animation: bootFadeUp var(--motion-expressive-slow-spatial) both;
 }
 .boot-mark { position: relative; width: 120px; height: 120px; }
 .boot-halo {
@@ -5313,7 +5378,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   width: 35%;
   border-radius: 3px;
   background: linear-gradient(90deg, transparent, var(--accent, #e8912e), transparent);
-  animation: bootBarSweep 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation: bootBarSweep 1.4s var(--ease-standard-default-spatial) infinite;
 }
 .boot-status {
   margin-top: 14px;
@@ -5838,7 +5903,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   border: 1px solid var(--border-strong);
   line-height: 1.3;
   white-space: nowrap;
-  transition: all 120ms ease;
+  transition: all var(--motion-standard-fast-effects);
   user-select: none;
 }
 .md-lfm-tags .tag-pill, .lfm-tag-chip {
@@ -5938,7 +6003,7 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   border: 1px solid var(--border);
   text-align: left;
   cursor: pointer;
-  transition: background .12s, border-color .12s;
+  transition: background var(--motion-standard-fast-effects), border-color var(--motion-standard-fast-effects);
 }
 .mb-result-item:hover {
   border-color: var(--svc-mb);
@@ -5969,7 +6034,7 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   padding: 1px 3px;
   border-radius: 3px;
   text-decoration: none;
-  transition: opacity .12s, color .12s;
+  transition: opacity var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
 }
 .mb-link:hover {
   opacity: 1;
