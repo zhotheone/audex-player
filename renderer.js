@@ -5585,6 +5585,11 @@ function playTrackByPath(path, queue) {
   currentTrack = track;
   currentQueue = q;
   if (!track.cover && !isRemotePath(track.path)) ensureCoverFor(track);
+
+  // Update UI and trigger swap animation immediately without waiting for audio load/crossfade
+  updateNowPlayingUI(track);
+  refreshPlayingHighlight();
+
   const fade = !!settings.crossfade && !audio.paused && !!audio.src;
   // The swap (killing the old track's sound by reassigning audio.src) must wait
   // until the tail has actually taken over — otherwise there's a silent gap
@@ -5607,8 +5612,7 @@ function playTrackByPath(path, queue) {
       saveRecents();
       renderRecents();
     }
-    updateNowPlayingUI(track);
-    refreshPlayingHighlight();
+    updatePlayButtonUI();
   };
   if (fade) startCrossfadeTail(swap); else swap();
 }
@@ -5765,44 +5769,25 @@ function animateSwap(snap, direction, kind) {
 
   let outFrames, inFrames, outDuration, inDuration, inDelay;
   let outEasing = 'cubic-bezier(0.27, 1.06, 0.18, 1.00)';
-  let inEasing = 'cubic-bezier(0.38, 1.21, 0.22, 1.00)';
-  if (kind === 'cover') {
-    const dist = Math.max(24, rect.width * 0.28);
-    if (direction > 0) {
-      outFrames = [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translateX(${dist}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateX(${-dist}px)`, opacity: 0 }, { transform: 'translate(0,0)', opacity: 1 }];
-    } else if (direction < 0) {
-      outFrames = [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translateX(${-dist}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateX(${dist}px)`, opacity: 0 }, { transform: 'translate(0,0)', opacity: 1 }];
-    } else {
-      outFrames = [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.92)', opacity: 0 }];
-      inFrames  = [{ transform: 'scale(1.06)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }];
-    }
-    outDuration = 350; inDuration = 500; inDelay = 60;
+  let inEasing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
+  const dist = kind === 'cover' ? Math.max(32, rect.width * 0.4) : Math.max(48, rect.width * 0.6);
+
+  if (direction > 0) {
+    // Next: outgoing slides right, incoming enters from left
+    outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${dist}px)`, opacity: 0 }];
+    inFrames  = [{ transform: `translateX(${-dist}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
+    outDuration = 350; inDuration = 350; inDelay = 0;
+  } else if (direction < 0) {
+    // Prev: outgoing slides left, incoming enters from right
+    outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-dist}px)`, opacity: 0 }];
+    inFrames  = [{ transform: `translateX(${dist}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
+    outDuration = 350; inDuration = 350; inDelay = 0;
   } else {
-    if (direction > 0) {
-      // Fade out going right to the end of the info container (Next)
-      const rightEnd = Math.max(90, rect.width * 0.85);
-      outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${rightEnd}px)`, opacity: 0 }];
-      inFrames  = [{ transform: 'translateX(-36px)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
-      outDuration = 350; inDuration = 350; inDelay = 40;
-      outEasing = 'cubic-bezier(0.27, 1.06, 0.18, 1.00)';
-      inEasing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
-    } else if (direction < 0) {
-      // Very quick spring animation going left (Prev)
-      const dx = 28;
-      outFrames = [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${-dx}px)`, opacity: 0 }];
-      inFrames  = [{ transform: `translateX(${dx}px)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }];
-      outDuration = 150; inDuration = 350; inDelay = 25;
-      outEasing = 'cubic-bezier(0.31, 0.94, 0.34, 1.00)';
-      inEasing = 'cubic-bezier(0.42, 1.67, 0.21, 0.90)';
-    } else {
-      outFrames = [{ opacity: 1 }, { opacity: 0 }];
-      inFrames  = [{ opacity: 0 }, { opacity: 1 }];
-      outDuration = 200; inDuration = 300; inDelay = 60;
-      outEasing = 'cubic-bezier(0.34, 0.80, 0.34, 1.00)';
-      inEasing = 'cubic-bezier(0.34, 0.88, 0.34, 1.00)';
-    }
+    outFrames = [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.96)' }];
+    inFrames  = [{ opacity: 0, transform: 'scale(1.04)' }, { opacity: 1, transform: 'scale(1)' }];
+    outDuration = 200; inDuration = 300; inDelay = 40;
+    outEasing = 'cubic-bezier(0.34, 0.80, 0.34, 1.00)';
+    inEasing = 'cubic-bezier(0.34, 0.88, 0.34, 1.00)';
   }
 
   const cloneAnim = clone.animate(outFrames, {
@@ -7289,11 +7274,6 @@ function applyGroupSquish(group, direction, activeBtn) {
     b.style.transition = `transform ${duration}s ${easing}`;
     b.style.transform = getGroupTransform(direction, activeBtn, b, activeIdx, i);
   });
-  const songEl = $('fullscreen-overlay')?.classList.contains('active') ? $('fs-details') : $('songBlock');
-  if (songEl && direction !== 0) {
-    songEl.style.transition = `transform ${duration}s ${easing}`;
-    songEl.style.transform = `translateX(${direction * 8}px)`;
-  }
 }
 
 function releaseGroupSquish(group, direction = 0) {
@@ -7305,13 +7285,6 @@ function releaseGroupSquish(group, direction = 0) {
       b.style.transition = `transform ${duration}s ${easing}`;
       b.style.transform = '';
     });
-  });
-  ['songBlock', 'fs-details'].forEach(id => {
-    const el = $(id);
-    if (el) {
-      el.style.transition = `transform ${duration}s ${easing}`;
-      el.style.transform = '';
-    }
   });
 }
 
