@@ -17,6 +17,7 @@
         var t = s.theme || 'dark';
         if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', t);
+        if (s.cornerRadius) document.documentElement.setAttribute('data-radius', s.cornerRadius);
         if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
       } catch (e) {}
     })();
@@ -1249,6 +1250,22 @@
                 <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
               </button>
               <button type="button" class="btn-ghost stepper-reset" id="scale-reset" data-i18n="setting.uiScaleReset">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-card setting-card-tight">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.cornerRadius">Rounded corners</div>
+              <div class="setting-desc" data-i18n="setting.cornerRadiusDesc">Corner roundness for cards, search, buttons, and rows.</div>
+            </div>
+            <div class="seg" id="corner-radius-seg">
+              <button class="seg-btn" data-radius="sharp" data-i18n="radius.sharp">Sharp</button>
+              <button class="seg-btn" data-radius="subtle" data-i18n="radius.subtle">Subtle</button>
+              <button class="seg-btn" data-radius="default" data-i18n="radius.default">Default</button>
+              <button class="seg-btn" data-radius="round" data-i18n="radius.round">Round</button>
+              <button class="seg-btn" data-radius="pill" data-i18n="radius.pill">Pill</button>
             </div>
           </div>
         </div>

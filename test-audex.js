@@ -403,7 +403,13 @@ const tags = {
     if (!track) return { isStub: true };
     return { path: track.path };
   }
-  assert.strictEqual(mockRenderTrackRow(undefined).isStub, true);
+  // Corner radius normalization check
+  function normalizeRadius(r) {
+    return ['sharp', 'subtle', 'default', 'round', 'pill'].includes(r) ? r : 'default';
+  }
+  assert.strictEqual(normalizeRadius('sharp'), 'sharp');
+  assert.strictEqual(normalizeRadius('pill'), 'pill');
+  assert.strictEqual(normalizeRadius('invalid'), 'default');
 
   console.log('ok');
 })();

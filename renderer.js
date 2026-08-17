@@ -119,6 +119,7 @@ let playlists = JSON.parse(localStorage.getItem(LS.playlists) || '[]');
 let settings = Object.assign({
   theme: 'dark',          // 'dark' | 'light' | 'system' | 'rose-pine' | 'rose-pine-moon' | 'rose-pine-dawn'
   accent: '',             // '' = theme default; otherwise a hex like '#5b9eff'
+  cornerRadius: 'default', // 'sharp' | 'subtle' | 'default' | 'round' | 'pill'
   randomTheme: false,     // pick a random palette on every launch
   language: 'en',
   defaultFolder: '',
@@ -414,7 +415,8 @@ function currentBackgroundUrl() {
 function applyAppearance() {
   const url = currentBackgroundUrl();
   const on = !!url;
-  root.classList.toggle('has-custom-bg', on);
+  const hasTranslucentPanels = on || (Number(settings.surfaceAlpha) || 100) < 100;
+  root.classList.toggle('has-custom-bg', hasTranslucentPanels);
   const layer = document.getElementById('app-bg-image');
   if (layer) {
     layer.style.backgroundImage = on ? `url("${String(url).replace(/"/g, '%22')}")` : '';
@@ -447,6 +449,11 @@ function applyUiScale(scale) {
     document.documentElement.style.zoom = String(s);
   }
 }
+function applyCornerRadius(r) {
+  const val = ['sharp', 'subtle', 'default', 'round', 'pill'].includes(r) ? r : 'default';
+  root.setAttribute('data-radius', val);
+}
+applyCornerRadius(settings.cornerRadius);
 applyUiScale(settings.uiScale);
 applyAppearance();
 
@@ -944,6 +951,13 @@ const I18N = {
     'setting.uiScale': 'Interface scale',
     'setting.uiScaleDesc': 'Makes the entire UI larger or smaller. Applies instantly.',
     'setting.uiScaleReset': 'Reset',
+    'setting.cornerRadius': 'Rounded corners',
+    'setting.cornerRadiusDesc': 'Corner roundness for cards, search, buttons, and rows.',
+    'radius.sharp': 'Sharp',
+    'radius.subtle': 'Subtle',
+    'radius.default': 'Default',
+    'radius.round': 'Round',
+    'radius.pill': 'Pill',
     'setting.scanSubdirs': 'Scan subfolders',
     'setting.scanSubdirsDesc': 'Include nested directories during indexing.',
     'setting.artistMinTracks': 'Hide small artists',
@@ -1639,6 +1653,13 @@ const I18N = {
     'setting.uiScale': 'Масштаб інтерфейсу',
     'setting.uiScaleDesc': 'Збільшує або зменшує весь інтерфейс. Застосовується одразу.',
     'setting.uiScaleReset': 'Скинути',
+    'setting.cornerRadius': 'Закруглення кутів',
+    'setting.cornerRadiusDesc': 'Налаштування закруглення для карток, пошуку, кнопок та рядків.',
+    'radius.sharp': 'Гострі',
+    'radius.subtle': 'Легкі',
+    'radius.default': 'Типові',
+    'radius.round': 'Круглі',
+    'radius.pill': 'Капсульні',
     'setting.scanSubdirs': 'Сканувати підтеки',
     'setting.scanSubdirsDesc': 'Враховувати вкладені каталоги під час індексації.',
     'setting.artistMinTracks': 'Приховати малих виконавців',
@@ -9123,7 +9144,7 @@ function renderBackgroundSettings() {
   show('bg-fit-row', src !== 'none');
   show('bg-blur-row', src !== 'none');
   show('bg-dim-row', src !== 'none');
-  show('bg-alpha-row', src !== 'none');
+  show('bg-alpha-row', true);
 
   const set = (id, valId, value, suffix) => {
     const el = $(id); const out = $(valId);
@@ -9211,6 +9232,24 @@ async function pickBackgroundImage() {
   } catch (_) { /* dialog unavailable */ }
 }
 wireBackgroundSettings();
+
+function renderCornerRadiusSettings() {
+  const rad = ['sharp', 'subtle', 'default', 'round', 'pill'].includes(settings.cornerRadius) ? settings.cornerRadius : 'default';
+  document.querySelectorAll('#corner-radius-seg .seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.radius === rad);
+  });
+}
+function wireCornerRadiusSettings() {
+  document.querySelectorAll('#corner-radius-seg .seg-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      settings.cornerRadius = b.dataset.radius;
+      saveSettings();
+      applyCornerRadius(settings.cornerRadius);
+      renderCornerRadiusSettings();
+    });
+  });
+}
+wireCornerRadiusSettings();
 
 function renderAccentPalette() {
   const host = $('accent-palette');
@@ -9503,6 +9542,7 @@ function renderSettings() {
   // Discord lives in its own tab now — always expanded, no collapse.
   applySettingsTab(settings.settingsTab);
   renderVolWheelStep();
+  renderCornerRadiusSettings();
   renderBackgroundSettings();
   renderHotkeys();
   renderDiscord();
@@ -10983,7 +11023,7 @@ async function lanRefresh() {
 // file path, a per-screen scale, or the sharing switch itself (pulling that
 // remotely could silently turn a peer's networking off).
 const LAN_SYNCABLE_SETTINGS = [
-  'theme', 'accent', 'language', 'dlFormat', 'scanSubdirs', 'healthCheck',
+  'theme', 'accent', 'cornerRadius', 'language', 'dlFormat', 'scanSubdirs', 'healthCheck',
   'reports', 'editor', 'crossfade', 'crossfadeSec', 'volumeWheelStep',
   'downloads', 'showParserBrowser',
 ];
@@ -11153,6 +11193,7 @@ async function lanSyncSettingsFrom(peer) {
     saveSettings();
     applyTheme(settings.theme);
     applyAccent(settings.accent);
+    applyCornerRadius(settings.cornerRadius);
     applyLanguage(settings.language);
     renderSettings();
   } catch (e) {
