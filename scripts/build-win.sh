@@ -11,6 +11,7 @@ node "$WSL_DIR/scripts/build-info.js"
 
 if [ -d "$WIN_DIR" ]; then
   echo "==> Syncing files to $WIN_DIR..."
+  rm -rf "$WIN_DIR/.git"
   rsync -a --delete \
     --exclude '.git' \
     --exclude 'node_modules' \

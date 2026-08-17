@@ -7274,6 +7274,13 @@ function applyGroupSquish(group, direction, activeBtn) {
     b.style.transition = `transform ${duration}s ${easing}`;
     b.style.transform = getGroupTransform(direction, activeBtn, b, activeIdx, i);
   });
+  const songEl = $('fullscreen-overlay')?.classList.contains('active')
+    ? document.querySelector('.fs-info')
+    : $('songBlock');
+  if (songEl && direction !== 0) {
+    songEl.style.transition = `transform ${duration}s ${easing}`;
+    songEl.style.transform = `translateX(${direction * 8}px)`;
+  }
 }
 
 function releaseGroupSquish(group, direction = 0) {
@@ -7286,30 +7293,45 @@ function releaseGroupSquish(group, direction = 0) {
       b.style.transform = '';
     });
   });
+  [$('songBlock'), document.querySelector('.fs-info')].forEach(el => {
+    if (el) {
+      el.style.transition = `transform ${duration}s ${easing}`;
+      el.style.transform = '';
+    }
+  });
 }
 
 let progSquishTimer = null;
+let pointerIsDown = false;
+
 function triggerButtonSquish(btn) {
-  if (!btn) return;
+  if (!btn || pointerIsDown) return;
   const group = btn.closest('.button-group') || document.querySelector('.button-group');
   if (!group) return;
   const dirMap = { 'btn-prev': -1, 'fs-btn-prev': -1, 'btn-next': 1, 'fs-btn-next': 1, 'btn-play': 0, 'fs-btn-play': 0 };
   const dir = dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
   applyGroupSquish(group, dir, btn);
   clearTimeout(progSquishTimer);
-  progSquishTimer = setTimeout(() => releaseGroupSquish(group, dir), dir > 0 ? 240 : dir < 0 ? 140 : 200);
+  progSquishTimer = setTimeout(() => releaseGroupSquish(group, dir), 150);
 }
 
 function initButtonGroupSquish() {
   document.querySelectorAll('.button-group').forEach(group => {
     group.querySelectorAll('.icon-btn').forEach(btn => {
-      btn.addEventListener('pointerdown', () => {
-        clearTimeout(progSquishTimer);
+      const getDir = () => {
         const dirMap = { 'btn-prev': -1, 'fs-btn-prev': -1, 'btn-next': 1, 'fs-btn-next': 1, 'btn-play': 0, 'fs-btn-play': 0 };
-        const dir = dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
-        applyGroupSquish(group, dir, btn);
+        return dirMap[btn.id] ?? (btn.id?.includes('prev') ? -1 : btn.id?.includes('next') ? 1 : 0);
+      };
+      btn.addEventListener('pointerdown', () => {
+        pointerIsDown = true;
+        clearTimeout(progSquishTimer);
+        applyGroupSquish(group, getDir(), btn);
       });
-      const release = () => releaseGroupSquish(group);
+      const release = () => {
+        if (!pointerIsDown) return;
+        pointerIsDown = false;
+        releaseGroupSquish(group);
+      };
       btn.addEventListener('pointerup', release);
       btn.addEventListener('pointercancel', release);
       btn.addEventListener('pointerleave', (e) => {
@@ -7317,7 +7339,12 @@ function initButtonGroupSquish() {
       });
     });
   });
-  document.addEventListener('pointerup', () => releaseGroupSquish());
+  document.addEventListener('pointerup', () => {
+    if (pointerIsDown) {
+      pointerIsDown = false;
+      releaseGroupSquish();
+    }
+  });
 }
 initButtonGroupSquish();
 
