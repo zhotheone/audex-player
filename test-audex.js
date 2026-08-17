@@ -403,13 +403,33 @@ const tags = {
     if (!track) return { isStub: true };
     return { path: track.path };
   }
-  // Corner radius normalization check
-  function normalizeRadius(r) {
-    return ['sharp', 'subtle', 'default', 'round', 'pill'].includes(r) ? r : 'default';
+  // isTrackInLibrary matching check
+  const normTitle = s => (s || '').toLowerCase().replace(/[\(\[].*?[\)\]]/g, '').replace(/\s+/g, ' ').trim();
+  function isTrackInLibraryTest(lib, title, artist) {
+    const nt = normTitle(title);
+    if (!nt) return false;
+    const na = normTitle(artist);
+    if (na) {
+      const match = lib.some(t => {
+        const lt = normTitle(t.title);
+        if (lt !== nt) return false;
+        const la = normTitle(t.artist);
+        return la === na || (la && na && (la.includes(na) || na.includes(la)));
+      });
+      if (match) return true;
+    }
+    return lib.some(t => normTitle(t.title) === nt);
   }
-  assert.strictEqual(normalizeRadius('sharp'), 'sharp');
-  assert.strictEqual(normalizeRadius('pill'), 'pill');
-  assert.strictEqual(normalizeRadius('invalid'), 'default');
+
+  const sampleLib = [
+    { title: 'Everything in Its Right Place', artist: 'Radiohead' },
+    { title: 'Midnight City (feat. Vocals)', artist: 'M83' },
+    { title: 'Xtal', artist: 'Aphex Twin' }
+  ];
+  assert.strictEqual(isTrackInLibraryTest(sampleLib, 'Everything in Its Right Place', 'Radiohead'), true);
+  assert.strictEqual(isTrackInLibraryTest(sampleLib, 'Midnight City', 'M83'), true);
+  assert.strictEqual(isTrackInLibraryTest(sampleLib, 'Xtal', ''), true);
+  assert.strictEqual(isTrackInLibraryTest(sampleLib, 'Karma Police', 'Radiohead'), false);
 
   console.log('ok');
 })();

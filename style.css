@@ -3775,6 +3775,11 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .ytm-release-title { margin-top: 8px; font-size: 13px; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ytm-release-meta { font-size: 12px; color: var(--text-dim); }
 
+.ytm-release.in-lib { opacity: 0.55; }
+.ytm-release.in-lib:hover { opacity: 0.85; }
+.ytm-release.in-lib .ytm-add-all { opacity: 0.4; pointer-events: none; }
+.ytm-rel-badge { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); color: var(--accent-ok); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); z-index: 2; }
+
 /* Tracklist */
 .ytm-album-head { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
 .ytm-album-cover { width: 72px; height: 72px; border-radius: 10px; background: var(--panel-alt) center/cover no-repeat; flex: 0 0 auto; }
@@ -3785,7 +3790,14 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .ytm-track:hover { background: var(--panel-alt); }
 .ytm-track-no { width: 20px; text-align: right; font-size: 12px; color: var(--text-dim); flex: 0 0 auto; }
 .ytm-track-title { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ytm-track.in-lib { opacity: 0.5; }
+.ytm-track.in-lib:hover { opacity: 0.8; }
+.ytm-track.in-lib .ytm-add { opacity: 0.4; pointer-events: none; }
 .ytm-track.queued .ytm-add { color: var(--text-dim); pointer-events: none; }
+.ytm-inlib-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--accent-ok); margin-left: 6px; vertical-align: middle; }
+.dl-row-parse.is-in-lib { opacity: 0.5; }
+.dl-row-parse.is-in-lib:hover { opacity: 0.8; }
+.dl-row-parse.is-in-lib .dl-download-btn { opacity: 0.5; pointer-events: none; }
 
 .ytm-group-head { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 10px; }
 .ytm-group-head .ytm-group-title { margin: 0; }

@@ -2819,6 +2819,25 @@ function saveYtmState() {
   } catch (_) { /* ignore */ }
 }
 
+// Loose match for library ↔ remote tracks: drops "(feat...)" / "[...]" noise and whitespace.
+const normTitle = s => (s || '').toLowerCase().replace(/[\(\[].*?[\)\]]/g, '').replace(/\s+/g, ' ').trim();
+
+function isTrackInLibrary(title, artist) {
+  const nt = normTitle(title);
+  if (!nt) return false;
+  const na = normTitle(artist);
+  if (na) {
+    const match = library.some(t => {
+      const lt = normTitle(t.title);
+      if (lt !== nt) return false;
+      const la = normTitle(t.artist);
+      return la === na || (la && na && (la.includes(na) || na.includes(la)));
+    });
+    if (match) return true;
+  }
+  return library.some(t => normTitle(t.title) === nt);
+}
+
 function isYtmTrackInQueue(t) {
   return t ? isYtResultInQueue({ id: t.id, url: t.url }) : false;
 }
@@ -2847,38 +2866,33 @@ function renderYtmResults(tracks) {
   }
   const disabledAttr = ytmParseActive ? ' disabled' : '';
   rows.innerHTML = ytmTracks.map((t, i) => {
+    const inLib = isTrackInLibrary(t.title, t.artist);
     const queued = isYtmTrackInQueue(t);
     const queuedCls = queued ? ' is-done' : '';
-    const queueDis = ytmParseActive || queued ? ' disabled' : '';
-    const queueLabel = queued ? tr('downloads.queue.queued') : tr('downloads.queue.add');
+    const inLibCls = inLib ? ' is-in-lib' : '';
+    const queueDis = ytmParseActive || queued || inLib ? ' disabled' : '';
+    const queueLabel = queued ? tr('downloads.queue.queued') : (inLib ? tr('artist.inLibrary') : tr('downloads.queue.add'));
     const coverStyle = t.cover ? `background-image:url('${escapeHtml(t.cover)}')` : '';
     return `
-      <div class="dl-row-parse dl-row-ytm" data-ytm-row="${i}">
+      <div class="dl-row-parse dl-row-ytm${inLibCls}" data-ytm-row="${i}">
         <div class="num">${i + 1}</div>
         <div class="cover" style="${coverStyle}"></div>
         <div class="artist" title="${escapeHtml(t.artist || '')}">${escapeHtml(t.artist || '')}</div>
-        <div class="title" title="${escapeHtml(t.title || '')}">${explicitBadge(t.explicit)}${escapeHtml(t.title || '')}</div>
+        <div class="title" title="${escapeHtml(t.title || '')}">
+          ${explicitBadge(t.explicit)}${escapeHtml(t.title || '')}
+          ${inLib ? `<span class="ytm-inlib-badge"><svg class="i" width="11" height="11"><use href="#i-check"/></svg>${escapeHtml(tr('artist.inLibrary'))}</span>` : ''}
+        </div>
         <div class="duration">${escapeHtml(t.duration || '')}</div>
         <div class="action">
           <button type="button" class="dl-download-btn dl-queue-btn${queuedCls}" data-ytm-queue="${i}"${queueDis} title="${escapeHtml(queueLabel)}">
-            <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
+            <svg class="i" width="12" height="12"><use href="${inLib ? '#i-check' : '#i-plus'}"/></svg>
             <span>${escapeHtml(queueLabel)}</span>
-          </button>
-          <button type="button" class="dl-download-btn" data-ytm-dl="${i}"${disabledAttr}>
-            <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-            <span>${escapeHtml(tr('downloads.yt.action.download'))}</span>
           </button>
         </div>
       </div>
     `;
   }).join('');
   wrap.hidden = false;
-  rows.querySelectorAll('[data-ytm-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-ytm-dl'), 10);
-      if (!isNaN(idx)) downloadYtmTrack(idx, btn);
-    });
-  });
   rows.querySelectorAll('[data-ytm-queue]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.getAttribute('data-ytm-queue'), 10);
@@ -3047,7 +3061,7 @@ function enqueueAllYtmTracks() {
   if (!ytmTracks || !ytmTracks.length) return;
   let added = 0;
   ytmTracks.forEach((t, i) => {
-    if (isYtmTrackInQueue(t)) return;
+    if (isYtmTrackInQueue(t) || isTrackInLibrary(t.title, t.artist)) return;
     downloadQueue.push(buildQueueItemFromYtm(t, i + 1));
     added++;
   });
@@ -3171,24 +3185,14 @@ function renderSpResults(tracks) {
         <div class="duration">${escapeHtml(t.duration || '')}</div>
         <div class="action">
           <button type="button" class="dl-download-btn dl-queue-btn${queuedCls}" data-sp-queue="${i}"${queueDis} title="${escapeHtml(queueLabel)}">
-            <svg class="i" width="12" height="12"><use href="#i-plus"/></svg>
+            <svg class="i" width="12" height="12"><use href="${queued ? '#i-check' : '#i-plus'}"/></svg>
             <span>${escapeHtml(queueLabel)}</span>
-          </button>
-          <button type="button" class="dl-download-btn" data-sp-dl="${i}"${disabledAttr}>
-            <svg class="i" width="12" height="12"><use href="#i-download"/></svg>
-            <span>${escapeHtml(tr('downloads.yt.action.download'))}</span>
           </button>
         </div>
       </div>
     `;
   }).join('');
   wrap.hidden = false;
-  rows.querySelectorAll('[data-sp-dl]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.getAttribute('data-sp-dl'), 10);
-      if (!isNaN(idx)) downloadSpTrack(idx, btn);
-    });
-  });
   rows.querySelectorAll('[data-sp-queue]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.getAttribute('data-sp-queue'), 10);
@@ -5120,9 +5124,6 @@ async function renderArtistLastfm(name) {
 
 // ── Artist top-tracks columns (local plays | YouTube Music popularity) ──
 const mmss = sec => { sec = Math.round(sec || 0); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
-// Loose title match for library ↔ YT Music: drop bracketed "(feat…)" / "[…]"
-// noise and collapse whitespace so "Song (feat. X)" ≈ "Song".
-const normTitle = s => (s || '').toLowerCase().replace(/[\(\[].*?[\)\]]/g, '').replace(/\s+/g, ' ').trim();
 
 function renderArtistTops(artist) {
   renderArtistTopLocal(artist);
@@ -11553,14 +11554,21 @@ const ytmBrowser = (function () {
           ${pager}
         </div>
         <div class="ytm-releases">
-          ${list.map(r => `
-            <div class="ytm-release" data-id="${escapeHtml(r.albumBrowseId)}">
+          ${list.map(r => {
+            const isSingle = releaseKind(r.kind) !== 'album';
+            const inLib = isSingle
+              ? isTrackInLibrary(r.title, curArtist && curArtist.name)
+              : library.some(t => normTitle(t.album) === normTitle(r.title) && (!curArtist || normTitle(t.artist) === normTitle(curArtist.name)));
+            return `
+            <div class="ytm-release${inLib ? ' in-lib' : ''}" data-id="${escapeHtml(r.albumBrowseId)}">
               <div class="ytm-release-cover" style="${r.thumb ? `background-image:url('${r.thumb}')` : ''}">
-                <button class="btn-solid icon-only ytm-add-all" title="${escapeHtml(tr('ytm.addAll'))}"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg></button>
+                ${inLib ? `<span class="ytm-rel-badge" title="${escapeHtml(tr('artist.inLibrary'))}"><svg class="i" width="11" height="11"><use href="#i-check"/></svg></span>` : ''}
+                <button class="btn-solid icon-only ytm-add-all" ${inLib ? 'disabled ' : ''}title="${escapeHtml(inLib ? tr('artist.inLibrary') : tr('ytm.addAll'))}"><svg class="i" width="12" height="12"><use href="${inLib ? '#i-check' : '#i-plus'}"/></svg></button>
               </div>
               <div class="ytm-release-title" title="${escapeHtml(r.title)}">${escapeHtml(r.title)}</div>
               <div class="ytm-release-meta">${escapeHtml([r.kind, r.year].filter(Boolean).join(' · '))}</div>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         </div>`;
     };
 
@@ -11655,7 +11663,8 @@ const ytmBrowser = (function () {
   async function addWholeRelease(al) {
     const parsed = await parsedTracksFor(al);
     const tracks = parsed && parsed.length ? parsed : al.tracks.map(asParseTrack);
-    return enqueueParsed(tracks);
+    const needed = tracks.filter(t => !isTrackInLibrary(t.title, al.artist || (curArtist && curArtist.name) || t.artist));
+    return enqueueParsed(needed.length ? needed : tracks);
   }
 
   async function quickAdd(r) {
@@ -11690,13 +11699,21 @@ const ytmBrowser = (function () {
           <div style="margin-top:10px"><button class="btn-solid" id="ytm-add-album"><svg class="i" width="12" height="12"><use href="#i-plus"/></svg><span>${escapeHtml(tr('ytm.addAll'))}</span></button></div>
         </div>
       </div>`;
-    const rows = al.tracks.map((t, i) => `
-      <div class="ytm-track${isYtmTrackInQueue({ id: t.id }) ? ' queued' : ''}" data-i="${i}">
+    const rows = al.tracks.map((t, i) => {
+      const inLib = isTrackInLibrary(t.title, al.artist || (curArtist && curArtist.name) || t.artist);
+      const queued = isYtmTrackInQueue({ id: t.id });
+      const rowCls = ['ytm-track', queued ? 'queued' : '', inLib ? 'in-lib' : ''].filter(Boolean).join(' ');
+      return `
+      <div class="${rowCls}" data-i="${i}">
         <div class="ytm-track-no">${i + 1}</div>
-        <div class="ytm-track-title">${escapeHtml(t.title)}${t.explicit ? '<span class="ytm-e">E</span>' : ''}</div>
+        <div class="ytm-track-title">
+          ${escapeHtml(t.title)}${t.explicit ? '<span class="ytm-e">E</span>' : ''}
+          ${inLib ? `<span class="ytm-inlib-badge"><svg class="i" width="11" height="11"><use href="#i-check"/></svg>${escapeHtml(tr('artist.inLibrary'))}</span>` : ''}
+        </div>
         <div class="ytm-track-dur">${escapeHtml(t.duration || '')}</div>
-        <button class="btn-ic ytm-add" title="${escapeHtml(tr('ytm.addOne'))}"><svg class="i" width="14" height="14"><use href="#i-plus"/></svg></button>
-      </div>`).join('');
+        <button class="btn-ic ytm-add" ${inLib ? 'disabled ' : ''}title="${escapeHtml(inLib ? tr('artist.inLibrary') : tr('ytm.addOne'))}"><svg class="i" width="14" height="14"><use href="${inLib ? '#i-check' : '#i-plus'}"/></svg></button>
+      </div>`;
+    }).join('');
     body().innerHTML = head + rows;
     el('ytm-add-album').addEventListener('click', async () => {
       const btn = el('ytm-add-album');
@@ -11707,19 +11724,21 @@ const ytmBrowser = (function () {
       renderAlbum(al);
     });
     body().querySelectorAll('.ytm-track').forEach(row => {
-      row.querySelector('.ytm-add').addEventListener('click', async () => {
-        const btn = row.querySelector('.ytm-add');
-        spawnDownloadParticles(btn);
-        const i = +row.dataset.i;
-        const t = al.tracks[i];
-        setStatus(tr('ytm.adding'));
-        // Prefer the parse-tab track for this exact id so its download handling
-        // is identical to the direct-link path; fall back to the id itself.
-        const parsed = await parsedTracksFor(al);
-        const track = (parsed && parsed.find(p => p.id === t.id)) || asParseTrack(t);
-        if (enqueueParsed([track], i + 1)) { row.classList.add('queued'); setStatus(tr('ytm.addedOne')); }
-        else setStatus(tr('ytm.already'));
-      });
+      const btn = row.querySelector('.ytm-add');
+      if (btn && !btn.disabled) {
+        btn.addEventListener('click', async () => {
+          spawnDownloadParticles(btn);
+          const i = +row.dataset.i;
+          const t = al.tracks[i];
+          setStatus(tr('ytm.adding'));
+          // Prefer the parse-tab track for this exact id so its download handling
+          // is identical to the direct-link path; fall back to the id itself.
+          const parsed = await parsedTracksFor(al);
+          const track = (parsed && parsed.find(p => p.id === t.id)) || asParseTrack(t);
+          if (enqueueParsed([track], i + 1)) { row.classList.add('queued'); setStatus(tr('ytm.addedOne')); }
+          else setStatus(tr('ytm.already'));
+        });
+      }
     });
   }
 
