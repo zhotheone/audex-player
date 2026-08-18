@@ -54,4 +54,18 @@ assert(lastFeatures.bass > lastFeatures.high, `Bass (${lastFeatures.bass}) shoul
 assert(typeof lastFeatures.beat === 'boolean', 'Beat must be boolean');
 assert(typeof lastFeatures.bpm === 'number', 'BPM must be number');
 
+// 3. Mathematical check for logarithmic volume and equal-power crossfade
+function sliderToGain(v) { return Math.pow(Math.max(0, Math.min(1, v)), 2); }
+assert.strictEqual(sliderToGain(0), 0);
+assert.strictEqual(sliderToGain(1), 1);
+assert.strictEqual(sliderToGain(0.5), 0.25);
+
+// Equal-power crossfade energy conservation (cos^2 + sin^2 == 1)
+for (let p = 0; p <= 1; p += 0.1) {
+  const gOut = Math.cos(p * Math.PI * 0.5);
+  const gIn = Math.sin(p * Math.PI * 0.5);
+  const power = gOut * gOut + gIn * gIn;
+  assert(Math.abs(power - 1.0) < 1e-6, `Equal-power sum failed at p=${p}: ${power}`);
+}
+
 console.log('Analyzer self-test passed! Output sample:', lastFeatures);

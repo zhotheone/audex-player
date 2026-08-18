@@ -303,12 +303,12 @@ let artistsObserver = null;          // IntersectionObserver on the sentinel
 
 // ── DOM ──
 const $ = id => document.getElementById(id);
-const audio = $('audio-player');
-// Needed so the equalizer's Web Audio graph doesn't mute cross-origin sources.
-// LAN peer streams send Access-Control-Allow-Origin:*, and file:/blob: are
-// same-origin, so this is safe for every source we play and must be set before
-// any src is assigned (changing it later forces a reload).
-audio.crossOrigin = 'anonymous';
+const audioA = $('audio-player');
+const audioB = $('audio-player-b');
+let activeChannel = 'A';
+let audio = audioA;
+if (audioA) audioA.crossOrigin = 'anonymous';
+if (audioB) audioB.crossOrigin = 'anonymous';
 const root = document.documentElement;
 
 // A modal opened from a click-driven action (closing a popover first, etc.)
@@ -5521,92 +5521,85 @@ function renderAlbumDetail(key) {
   $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress', { albumActions: true, name: album.name });
 }
 
-// ── Crossfade ──
-// Gated by settings.crossfade. The main <audio> element stays the single source
-// of truth for everything else (progress, seek, MediaSession); the
-// outgoing track is handed to a transient Audio object that plays only its tail
-// while the main element fades the new track in. That way no existing wiring has
-// to learn about a second element.
-// Read live from settings so a drag of the slider applies to the next switch
-// without a reload. Clamped to the slider's own 0–10 s range.
-function crossfadeMs() {
-  const s = Number(settings.crossfadeSec);
-  return (Number.isFinite(s) ? Math.max(0, Math.min(10, s)) : 3) * 1000;
-}
-let crossfadeTail = null;      // transient Audio playing the outgoing track
-let crossfadeTailTimer = null;
-let crossfadeRampId = null;    // rAF id of the incoming fade-in
-let crossfadeArmed = false;    // per-track guard for the end-of-track trigger
-// The user's chosen volume. audio.volume is transient while a fade runs, so the
-// slider, the mute icon, and the fade ceiling all read this instead.
-let targetVolume = 1;
+// ── Volume & Crossfade (Web Audio Dual-Channel) ──
+let targetVolume = 1; // 0..1 slider position
+let isMuted = false;
+let crossfadeArmed = false;
 
-function rampVolume(el, to, ms, onDone) {
-  const from = el.volume;
-  const rising = to >= from;
-  const start = performance.now();
-  let id = 0;
-  const step = (now) => {
-    // ms === 0 (crossfade length 0) would make this NaN — jump straight to the end.
-    const k = ms > 0 ? Math.min(1, (now - start) / ms) : 1;
-    // Equal-power (sin/cos) curve, not linear: an outgoing cos and incoming sin
-    // ramp keep a²+b² constant, so perceived loudness holds steady through the
-    // crossover. A linear amplitude ramp instead dips to ~71% at the midpoint —
-    // that mid-fade dip is the audible "switch".
-    const g = rising ? Math.sin(k * Math.PI / 2) : Math.cos(k * Math.PI / 2);
-    const v = rising ? from + (to - from) * g : to + (from - to) * g;
-    try { el.volume = Math.max(0, Math.min(1, v)); } catch (_) {}
-    if (k < 1) id = requestAnimationFrame(step);
-    else if (onDone) onDone();
-  };
-  id = requestAnimationFrame(step);
-  return () => cancelAnimationFrame(id);
+function sliderToGain(sliderValue) {
+  const value = Math.max(0, Math.min(1, Number(sliderValue) || 0));
+  return Math.pow(value, 2);
 }
 
-function stopCrossfadeTail() {
-  if (crossfadeTailTimer) { clearTimeout(crossfadeTailTimer); crossfadeTailTimer = null; }
-  if (crossfadeTail) {
-    try { crossfadeTail.pause(); crossfadeTail.src = ''; } catch (_) {}
-    crossfadeTail = null;
+function setGlobalVolume(sliderValue) {
+  targetVolume = Math.max(0, Math.min(1, Number(sliderValue) || 0));
+  const targetGain = isMuted ? 0 : sliderToGain(targetVolume);
+  if (ensureEqGraph() && masterGainNode) {
+    masterGainNode.gain.setTargetAtTime(targetGain, eqCtx.currentTime, 0.015);
   }
 }
 
-// Hand the currently playing track to a transient element and fade it out.
-// `onReady` fires once the tail has actually taken over playback (or failed
-// to) — the caller must not touch audio.src before then, or the outgoing
-// track's sound dies while the tail is still loading, leaving a silent gap.
-function startCrossfadeTail(onReady) {
-  stopCrossfadeTail();
-  if (!audio.src || audio.paused || audio.muted) { onReady(); return; }
-  const pos = audio.currentTime;
-  const tail = new Audio();
-  crossfadeTail = tail;
-  tail.volume = audio.volume;
-  // currentTime only sticks once metadata is in (local files: a few ms) —
-  // setting it right after .src assignment is silently dropped and the tail
-  // would restart the outgoing track from 0:00.
-  tail.addEventListener('loadedmetadata', () => {
-    if (crossfadeTail !== tail) return;
-    try { tail.currentTime = pos; } catch (_) {}
-    tail.play().then(() => {
-      if (crossfadeTail !== tail) { try { tail.pause(); } catch (_) {} return; }
-      rampVolume(tail, 0, crossfadeMs());
-      onReady();
-    }).catch(() => { if (crossfadeTail === tail) stopCrossfadeTail(); onReady(); });
-  }, { once: true });
-  tail.src = audio.src;
-  // Hard stop so a tail can never outlive its fade (e.g. if the ramp is lost).
-  crossfadeTailTimer = setTimeout(() => {
-    if (crossfadeTail === tail) stopCrossfadeTail();
-  }, crossfadeMs() + 1500);
+function setVolume(v) {
+  isMuted = false;
+  setGlobalVolume(v);
+  updateVolumeUI();
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  setGlobalVolume(targetVolume);
+  updateVolumeUI();
+}
+
+function triggerCrossfade(newStreamUrl) {
+  const duration = Number(settings.crossfadeSec) || 3;
+  const currentKey = activeChannel;
+  const nextKey = activeChannel === 'A' ? 'B' : 'A';
+  const currentChan = currentKey === 'A' ? audioA : audioB;
+  const nextChan = nextKey === 'A' ? audioA : audioB;
+  const curGainNode = channelGains[currentKey];
+  const nxtGainNode = channelGains[nextKey];
+
+  nextChan.src = newStreamUrl;
+  nextChan.currentTime = 0;
+  nextChan.volume = 1.0;
+  nextChan.play().catch(e => console.warn('play error:', e));
+
+  if (ensureEqGraph() && curGainNode && nxtGainNode && duration > 0 && isPlaying) {
+    const now = eqCtx.currentTime;
+    curGainNode.gain.cancelScheduledValues(now);
+    nxtGainNode.gain.cancelScheduledValues(now);
+
+    const sampleRate = 100;
+    const totalSteps = Math.max(2, Math.round(duration * sampleRate));
+    const currentGainValues = new Float32Array(totalSteps);
+    const nextGainValues = new Float32Array(totalSteps);
+
+    for (let i = 0; i < totalSteps; i++) {
+      const progress = i / (totalSteps - 1);
+      currentGainValues[i] = Math.cos(progress * Math.PI * 0.5);
+      nextGainValues[i] = Math.sin(progress * Math.PI * 0.5);
+    }
+
+    curGainNode.gain.setValueCurveAtTime(currentGainValues, now, duration);
+    nxtGainNode.gain.setValueCurveAtTime(nextGainValues, now, duration);
+
+    setTimeout(() => {
+      if (activeChannel === nextKey) {
+        try { currentChan.pause(); currentChan.src = ''; } catch (_) {}
+      }
+    }, duration * 1000 + 50);
+  } else {
+    if (curGainNode) curGainNode.gain.value = 0;
+    if (nxtGainNode) nxtGainNode.gain.value = 1;
+    try { currentChan.pause(); currentChan.src = ''; } catch (_) {}
+  }
+
+  activeChannel = nextKey;
+  audio = nextChan;
 }
 
 // ── Playback ──
-// A remote track's `path` is the peer's signed stream URL, so it plays through
-// exactly the same code as a local file — only the src prefix differs.
-// `blob:` is a local-session file (mobile's file-picker fallback, no disk
-// path behind it) — it behaves exactly like a remote track everywhere here:
-// playable as-is, but no tag edits/cover lookups/reveal-in-folder.
 function isRemotePath(p) { return /^(https?|blob):/.test(String(p || '')); }
 function isTagEditingLocked(p) {
   if (!p || !currentTrack || currentTrack.path !== p) return false;
@@ -5615,8 +5608,6 @@ function isTagEditingLocked(p) {
 }
 function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
 
-// Resolve against the queue before the library: a queue of peer tracks has no
-// entries in `library`, and next/prev/shuffle all route through here.
 function playTrackByPath(path, queue) {
   const q = queue && queue.length > 0 ? queue : library;
   const track = q.find(t => t.path === path) || trackByPath(path);
@@ -5625,35 +5616,30 @@ function playTrackByPath(path, queue) {
   currentQueue = q;
   if (!track.cover && !isRemotePath(track.path)) ensureCoverFor(track);
 
-  // Update UI and trigger swap animation immediately without waiting for audio load/crossfade
   updateNowPlayingUI(track);
   refreshPlayingHighlight();
 
-  const fade = !!settings.crossfade && !audio.paused && !!audio.src;
-  // The swap (killing the old track's sound by reassigning audio.src) must wait
-  // until the tail has actually taken over — otherwise there's a silent gap
-  // between the old track dying and the tail loading in.
-  const swap = () => {
-    if (crossfadeRampId) { crossfadeRampId(); crossfadeRampId = null; }
-    crossfadeArmed = false;
+  crossfadeArmed = false;
+  const fade = !!settings.crossfade && isPlaying && !!audio.src;
+  if (fade) {
+    triggerCrossfade(srcFor(track));
+  } else {
+    if (ensureEqGraph()) {
+      if (channelGains[activeChannel]) channelGains[activeChannel].gain.value = 1;
+      const other = activeChannel === 'A' ? 'B' : 'A';
+      if (channelGains[other]) channelGains[other].gain.value = 0;
+    }
     audio.src = srcFor(track);
-    if (fade) {
-      audio.volume = 0;
-      crossfadeRampId = rampVolume(audio, targetVolume, crossfadeMs(), () => { crossfadeRampId = null; });
-    } else {
-      audio.volume = targetVolume;
-    }
+    audio.volume = 1.0;
     audio.play().catch(e => console.warn('play error:', e));
-    isPlaying = true;
-    // recent — a peer's URL is not something a later session could reopen.
-    if (!isRemotePath(path)) {
-      recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
-      saveRecents();
-      renderRecents();
-    }
-    updatePlayButtonUI();
-  };
-  if (fade) startCrossfadeTail(swap); else swap();
+  }
+  isPlaying = true;
+  if (!isRemotePath(path)) {
+    recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
+    saveRecents();
+    renderRecents();
+  }
+  updatePlayButtonUI();
 }
 
 // ── Session ──
@@ -6700,7 +6686,7 @@ async function ensureAudioAnalyzer() {
   try {
     audioAnalyzer = new AudioAnalyzerNode(eqCtx);
     await audioAnalyzer.init();
-    audioAnalyzer.connectSource(eqSource);
+    audioAnalyzer.connectSource(masterGainNode);
     audioAnalyzer.subscribe(features => {
       lastAudioFeatures = features;
     });
@@ -6750,6 +6736,91 @@ function buildWavyPath(progressX, progressRatio, phase) {
   }
   return d;
 }
+
+// ── Audio events ──
+[audioA, audioB].filter(Boolean).forEach(el => {
+  el.addEventListener('play', (e) => {
+    if (e.target !== audio) return;
+    isPlaying = true;
+    updatePlayButtonUI();
+    plStartIfNeeded();
+    pushDiscordActivity(true);
+    if (isSettingsOpen()) renderDiscordPreviewOnly();
+    if (eqCtx && eqCtx.state === 'suspended') eqCtx.resume().catch(() => {});
+    ensureAudioAnalyzer();
+  });
+  el.addEventListener('pause', (e) => {
+    if (e.target !== audio) return;
+    plTick();
+    isPlaying = false;
+    updatePlayButtonUI();
+    savePlayLog();
+    pushDiscordActivity(true);
+    if (isSettingsOpen()) renderDiscordPreviewOnly();
+    saveSession(true);
+  });
+  el.addEventListener('seeked', (e) => {
+    if (e.target !== audio) return;
+    pushDiscordActivity(true);
+    if (isSettingsOpen()) renderDiscordPreviewOnly();
+  });
+  el.addEventListener('error', async (e) => {
+    if (e.target !== audio || revalidatingLibrary || !currentTrack || isRemotePath(currentTrack.path)) return;
+    revalidatingLibrary = true;
+    const removed = await revalidateLibrary();
+    revalidatingLibrary = false;
+    if (removed > 0) toast(tr('library.ghostsRemoved', { count: removed }));
+  });
+  el.addEventListener('timeupdate', (e) => {
+    if (e.target !== audio) return;
+    const cur = audio.currentTime, dur = audio.duration;
+    saveSession();
+    const curEl = $('time-current');
+    if (curEl) curEl.textContent = formatTime(cur);
+    const remEl = $('time-remaining');
+    if (remEl) {
+      const left = !isNaN(dur) && dur >= cur ? dur - cur : 0;
+      remEl.textContent = '-' + formatTime(left);
+    }
+    const totEl = $('time-total');
+    if (totEl && !isNaN(dur)) totEl.textContent = formatTime(dur);
+    const fsCur = $('fs-time-current');
+    if (fsCur) fsCur.textContent = formatTime(cur);
+    const fsRem = $('fs-time-remaining');
+    if (fsRem) {
+      const left = !isNaN(dur) && dur >= cur ? dur - cur : 0;
+      fsRem.textContent = '-' + formatTime(left);
+    }
+    const fsTot = $('fs-time-total');
+    if (fsTot && !isNaN(dur)) fsTot.textContent = formatTime(dur);
+    if (!isNaN(dur)) setProgressUI();
+    if ($('fullscreen-overlay')?.classList.contains('active')) updateFsLyricsActive(cur);
+
+    if (settings.crossfade && !isNaN(dur) && dur > 0) {
+      const left = dur - cur;
+      const fadeSec = Number(settings.crossfadeSec) || 3;
+      if (left > fadeSec + 0.5) {
+        crossfadeArmed = false;
+      } else if (!crossfadeArmed && repeatMode !== 2 && fadeSec > 0 && left <= fadeSec) {
+        crossfadeArmed = true;
+        nextTrack({ manual: false });
+        return;
+      }
+    }
+    plTick();
+    if (plSaveAccum >= 15) { plSaveAccum = 0; savePlayLog(); }
+    if (isSettingsOpen() && settings.discord.showTimer) {
+      const sec = Math.floor(cur);
+      if (sec !== discordPreviewSec) { discordPreviewSec = sec; renderDiscordPreviewOnly(); }
+    }
+  });
+  el.addEventListener('ended', (e) => {
+    if (e.target !== audio) return;
+    plFinalize();
+    if (repeatMode === 2) { audio.currentTime = 0; audio.play(); }
+    else nextTrack({ manual: false });
+  });
+});
 
 function updateProgressSvg(trackId, activeId, trackPathId, dotId, stopId, ratio) {
   const trackEl = $(trackId);
@@ -7127,76 +7198,6 @@ function renderReport() {
   ensureReportCovers(r);
 }
 
-// ── Audio events ──
-audio.addEventListener('play', () => { isPlaying = true; updatePlayButtonUI(); plStartIfNeeded(); pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
-audio.addEventListener('pause', () => { plTick(); isPlaying = false; updatePlayButtonUI(); savePlayLog(); pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
-audio.addEventListener('seeked', () => { pushDiscordActivity(true); if (isSettingsOpen()) renderDiscordPreviewOnly(); });
-// file:// 404s (moved/deleted track) and a genuinely corrupt file both land
-// here indistinguishably — revalidateLibrary() tells them apart by checking
-// disk, so a codec error a still-present file doesn't wrongly get purged.
-let revalidatingLibrary = false;
-audio.addEventListener('error', async () => {
-  if (revalidatingLibrary || !currentTrack || isRemotePath(currentTrack.path)) return;
-  revalidatingLibrary = true;
-  const removed = await revalidateLibrary();
-  revalidatingLibrary = false;
-  if (removed > 0) toast(tr('library.ghostsRemoved', { count: removed }));
-});
-audio.addEventListener('timeupdate', () => {
-  const cur = audio.currentTime, dur = audio.duration;
-  saveSession();
-  const curEl = $('time-current');
-  if (curEl) curEl.textContent = formatTime(cur);
-  const remEl = $('time-remaining');
-  if (remEl) {
-    const left = !isNaN(dur) && dur >= cur ? dur - cur : 0;
-    remEl.textContent = '-' + formatTime(left);
-  }
-  const totEl = $('time-total');
-  if (totEl && !isNaN(dur)) totEl.textContent = formatTime(dur);
-  const fsCur = $('fs-time-current');
-  if (fsCur) fsCur.textContent = formatTime(cur);
-  const fsRem = $('fs-time-remaining');
-  if (fsRem) {
-    const left = !isNaN(dur) && dur >= cur ? dur - cur : 0;
-    fsRem.textContent = '-' + formatTime(left);
-  }
-  const fsTot = $('fs-time-total');
-  if (fsTot && !isNaN(dur)) fsTot.textContent = formatTime(dur);
-  if (!isNaN(dur)) {
-    setProgressUI();
-  }
-  if ($('fullscreen-overlay')?.classList.contains('active')) updateFsLyricsActive(cur);
-  if (settings.crossfade && !isNaN(dur) && dur > 0) {
-    const left = dur - cur;
-    const fadeSec = crossfadeMs() / 1000;
-    if (left > fadeSec + 0.5) {
-      crossfadeArmed = false;
-    } else if (!crossfadeArmed && repeatMode !== 2 && fadeSec > 0 && left <= fadeSec) {
-      crossfadeArmed = true;
-      nextTrack({ manual: false });
-      return;
-    }
-  }
-  plTick();
-  if (plSaveAccum >= 15) { plSaveAccum = 0; savePlayLog(); }
-  if (isSettingsOpen() && settings.discord.showTimer) {
-    const sec = Math.floor(cur);
-    if (sec !== discordPreviewSec) { discordPreviewSec = sec; renderDiscordPreviewOnly(); }
-  }
-});
-// The EQ's AudioContext starts (and can later go) suspended under the autoplay
-// policy; a suspended context silences the whole graph. Resume on every play so
-// no playback path — button, keyboard, crossfade swap — comes out muted.
-audio.addEventListener('play', () => {
-  if (eqCtx && eqCtx.state === 'suspended') eqCtx.resume().catch(() => {});
-  ensureAudioAnalyzer();
-});
-audio.addEventListener('ended', () => {
-  plFinalize();
-  if (repeatMode === 2) { audio.currentTime = 0; audio.play(); }
-  else nextTrack({ manual: false });
-});
 
 // Progress track click/drag (wavy M3 progress & fullscreen bar)
 function wireWavySeek(trackEl) {
@@ -7245,43 +7246,6 @@ function wireWavySeek(trackEl) {
 wireWavySeek($('progress-track'));
 wireWavySeek($('fs-progress-track'));
 
-// Volume
-function setVolume(v) {
-  audio.muted = false;
-  targetVolume = Math.max(0, Math.min(1, v));
-  if (!crossfadeRampId) audio.volume = targetVolume;
-  updateVolumeUI();
-}
-
-function updateVolumeUI() {
-  const v = audio.muted ? 0 : targetVolume;
-  const pct = `${v * 100}%`;
-  const volSlider = $('vol-slider');
-  if (volSlider) volSlider.value = Math.round(v * 100);
-  const volFill = $('vol-fill');
-  if (volFill) volFill.style.width = pct;
-  const fsFill = $('fs-vol-fill');
-  if (fsFill) fsFill.style.width = pct;
-
-  const iconName = (audio.muted || v === 0) ? 'volume_off' : v < 0.35 ? 'volume_down' : 'volume_up';
-  const volIcon = $('volIcon');
-  if (volIcon) volIcon.textContent = iconName;
-  const fsVolIcon = $('fsVolIcon');
-  if (fsVolIcon) fsVolIcon.textContent = iconName;
-
-  const btnMute = $('btn-mute');
-  if (btnMute && btnMute.querySelector('use')) {
-    const icon = audio.muted || v === 0 ? '#i-volume-mute'
-      : v < 0.5 ? '#i-volume-low'
-      : '#i-volume';
-    btnMute.querySelector('use').setAttribute('href', icon);
-  }
-}
-
-function toggleMute() {
-  audio.muted = !audio.muted;
-  updateVolumeUI();
-}
 $('btn-mute')?.addEventListener('click', toggleMute);
 $('fs-btn-mute')?.addEventListener('click', toggleMute);
 
@@ -7594,18 +7558,27 @@ function initFsShader() {
       vec2 warpedUv = domainWarp(uv * 2.5, t, u_warpIntensity);
       vec2 sampleUv = clamp(fract(warpedUv * 0.4 + 0.5), 0.02, 0.98);
 
-      vec2 off = vec2(0.025, 0.025) * u_scale;
-      vec4 col = texture2D(u_tex, sampleUv) * 0.4;
-      col += texture2D(u_tex, clamp(sampleUv + off, 0.02, 0.98)) * 0.15;
-      col += texture2D(u_tex, clamp(sampleUv - off, 0.02, 0.98)) * 0.15;
-      col += texture2D(u_tex, clamp(sampleUv + vec2(off.x, -off.y), 0.02, 0.98)) * 0.15;
-      col += texture2D(u_tex, clamp(sampleUv + vec2(-off.x, off.y), 0.02, 0.98)) * 0.15;
+      // Chromatic RGB displacement on transients/bass
+      vec2 chrOff = (sampleUv - 0.5) * (0.012 * u_warpIntensity);
+      float rCol = texture2D(u_tex, clamp(sampleUv + chrOff, 0.02, 0.98)).r;
+      float gCol = texture2D(u_tex, sampleUv).g;
+      float bCol = texture2D(u_tex, clamp(sampleUv - chrOff, 0.02, 0.98)).b;
+      vec3 col = vec3(rCol, gCol, bCol);
 
-      vec3 rgb = adjustSaturation(col.rgb, u_saturation);
+      // Color variance check: for single-shaded / flat covers, inject harmonic audio hues
+      float cMax = max(col.r, max(col.g, col.b));
+      float cMin = min(col.r, min(col.g, col.b));
+      float spread = cMax - cMin;
+      vec3 harmonicHue = 0.5 + 0.5 * cos(vec3(0.0, 2.0, 4.0) + t * 0.8 + warpedUv.xyx * 0.5);
+      col = mix(col, col * harmonicHue * 1.5 + harmonicHue * 0.15, smoothstep(0.35, 0.05, spread));
+
+      vec3 rgb = adjustSaturation(col, u_saturation);
+      // High contrast S-curve punch
+      rgb = (rgb - 0.5) * 1.35 + 0.5;
       rgb = mix(rgb, u_tintColor, u_tintIntensity);
       rgb += (rand(gl_FragCoord.xy) - 0.5) * u_dithering;
 
-      gl_FragColor = vec4(rgb, 1.0);
+      gl_FragColor = vec4(clamp(rgb, 0.0, 1.0), 1.0);
     }
   `;
 
@@ -9461,7 +9434,7 @@ function renderVolWheelStep() {
 // and permanently routes playback through Web Audio, so we defer it until the
 // user opts in. When off, an existing graph is flattened to 0 dB (transparent),
 // not torn down.
-let eqCtx = null, eqSource = null, eqFilters = [];
+let eqCtx = null, masterGainNode = null, channelGains = { A: null, B: null }, channelSources = { A: null, B: null }, eqFilters = [];
 
 function clampEqGain(v) { return Math.max(-EQ_GAIN_MAX, Math.min(EQ_GAIN_MAX, Number(v) || 0)); }
 function eqPresetLabel(id) { return EQ_PRESET_LABELS[id] || id; }
@@ -9473,8 +9446,23 @@ function ensureEqGraph() {
   if (!Ctx) return false;
   try {
     eqCtx = new Ctx();
-    eqSource = eqCtx.createMediaElementSource(audio);
-    let node = eqSource;
+    masterGainNode = eqCtx.createGain();
+    masterGainNode.gain.value = isMuted ? 0 : sliderToGain(targetVolume);
+
+    if (audioA) {
+      channelSources.A = eqCtx.createMediaElementSource(audioA);
+      channelGains.A = eqCtx.createGain();
+      channelGains.A.gain.value = activeChannel === 'A' ? 1.0 : 0.0;
+      channelSources.A.connect(channelGains.A).connect(masterGainNode);
+    }
+    if (audioB) {
+      channelSources.B = eqCtx.createMediaElementSource(audioB);
+      channelGains.B = eqCtx.createGain();
+      channelGains.B.gain.value = activeChannel === 'B' ? 1.0 : 0.0;
+      channelSources.B.connect(channelGains.B).connect(masterGainNode);
+    }
+
+    let node = masterGainNode;
     eqFilters = EQ_BANDS.map((freq, i) => {
       const f = eqCtx.createBiquadFilter();
       f.type = i === 0 ? 'lowshelf' : i === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
@@ -9486,10 +9474,11 @@ function ensureEqGraph() {
       return f;
     });
     node.connect(eqCtx.destination);
+    ensureAudioAnalyzer();
     return true;
   } catch (e) {
     console.warn('EQ init failed:', e);
-    eqCtx = null; eqSource = null; eqFilters = [];
+    eqCtx = null; masterGainNode = null; channelGains = { A: null, B: null }; channelSources = { A: null, B: null }; eqFilters = [];
     return false;
   }
 }
