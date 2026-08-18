@@ -7838,10 +7838,14 @@ function startFsShader() {
           if (settings.shaderDebug) {
             dbg.hidden = false;
             const f = lastAudioFeatures || {};
+            const spdBass = (0.35 + 1.5 * fsSmoothBass).toFixed(2);
+            const spdMid = (0.55 + 2.0 * fsSmoothMid).toFixed(2);
+            const spdHigh = (0.85 + 2.8 * fsSmoothHigh).toFixed(2);
             dbg.innerHTML = `<div>FPS: <b>${fsFps}</b> (${fsFrameTime.toFixed(1)}ms)</div>` +
               `<div>Bass: <b>${fsSmoothBass.toFixed(2)}</b> (raw: ${(f.bass || 0).toFixed(2)})</div>` +
               `<div>Mid: <b>${fsSmoothMid.toFixed(2)}</b> (raw: ${(f.mid || 0).toFixed(2)})</div>` +
               `<div>High: <b>${fsSmoothHigh.toFixed(2)}</b> (raw: ${(f.high || 0).toFixed(2)})</div>` +
+              `<div>Lava Speed: <b>${spdBass}</b> / <b>${spdMid}</b> / <b>${spdHigh}</b></div>` +
               `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Onset: <b>${(f.onset || 0).toFixed(2)}</b></div>` +
               `<div>BPM: <b>${f.bpm || '—'}</b>${f.beat ? ' [BEAT]' : ''}</div>`;
           } else {
