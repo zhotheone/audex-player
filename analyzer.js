@@ -99,23 +99,25 @@ class AudioAnalyzerProcessor extends AudioWorkletProcessor {
     }
 
     const rms = Math.sqrt(sumSq / this.fftSize);
-    const targetEnergy = Math.min(1.0, rms * 4.0);
+    const rmsDb = 20 * Math.log10(rms + 1e-5);
+    const targetEnergy = Math.max(0, Math.min(1.0, (rmsDb + 50) / 45));
     this.smoothedEnergy += (targetEnergy - this.smoothedEnergy) * (targetEnergy > this.smoothedEnergy ? 0.3 : 0.1);
 
     this.fft();
+    const normFactor = 2.0 / this.fftSize;
     for (let i = 0; i < this.halfSize; i++) {
-      this.mag[i] = Math.sqrt(this.real[i] * this.real[i] + this.imag[i] * this.imag[i]);
+      this.mag[i] = Math.sqrt(this.real[i] * this.real[i] + this.imag[i] * this.imag[i]) * normFactor;
     }
 
     const bandResults = {};
     for (const [key, b] of Object.entries(this.bands)) {
-      let energy = 0;
-      for (let k = b.start; k <= b.end; k++) energy += this.mag[k];
-      energy /= (b.end - b.start + 1);
+      let sumSq = 0;
+      for (let k = b.start; k <= b.end; k++) sumSq += this.mag[k] * this.mag[k];
+      const energy = Math.sqrt(sumSq);
 
       const db = 20 * Math.log10(energy + 1e-5);
-      const norm = Math.max(0, Math.min(1, (db + 60) / 60));
-      const alpha = norm > b.val ? 0.2 : 0.85;
+      const norm = Math.max(0, Math.min(1.0, (db + 45) / 45));
+      const alpha = norm > b.val ? 0.25 : 0.82;
       b.val = b.val * alpha + norm * (1 - alpha);
       bandResults[key] = Math.round(b.val * 100) / 100;
     }
@@ -127,7 +129,7 @@ class AudioAnalyzerProcessor extends AudioWorkletProcessor {
       this.prevMag[i] = this.mag[i];
     }
 
-    const normFlux = Math.min(1.0, flux * 0.15);
+    const normFlux = Math.min(1.0, flux * 12.0);
     this.smoothedOnset += (normFlux - this.smoothedOnset) * 0.3;
 
     this.fluxHistory[this.fluxIdx] = normFlux;

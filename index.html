@@ -1068,6 +1068,7 @@
   <!-- Fullscreen Player Overlay -->
   <div id="fullscreen-overlay" class="fs-overlay">
     <canvas id="fs-canvas" class="fs-canvas"></canvas>
+    <div id="fs-debug-panel" class="fs-debug-panel" hidden></div>
     <button class="icon-btn fs-close-btn" id="btn-close-fullscreen" aria-label="Close" title="Close" data-i18n-title="btn.close">
       <span class="material-symbols-rounded">close</span>
     </button>
@@ -1263,11 +1264,11 @@
             <div class="svc-legend-grid">
               <div class="svc-legend-item">
                 <span class="svc-badge svc-ytm"><span class="svc-dot"></span><span data-i18n="service.ytm">YouTube Music</span></span>
-                <span class="svc-legend-desc" data-i18n="service.ytmDesc">Browse, popularity charts, parsing & downloads (Red)</span>
+                <span class="svc-legend-desc" data-i18n="service.ytmDesc">Browse, popularity charts, similar artists, parsing & downloads (Red)</span>
               </div>
               <div class="svc-legend-item">
                 <span class="svc-badge svc-lfm"><span class="svc-dot"></span><span data-i18n="service.lastfm">Last.fm</span></span>
-                <span class="svc-legend-desc" data-i18n="service.lastfmDesc">Scrobbling, genre tags, corrections & similar artists (Purple)</span>
+                <span class="svc-legend-desc" data-i18n="service.lastfmDesc">Scrobbling, genre tags & corrections (Purple)</span>
               </div>
               <div class="svc-legend-item">
                 <span class="svc-badge svc-mb"><span class="svc-dot"></span><span data-i18n="service.musicbrainz">MusicBrainz</span></span>
@@ -1414,6 +1415,13 @@
               <input type="range" id="surface-alpha" class="ui-range" min="20" max="100" step="1" value="100">
               <output class="range-val" id="surface-alpha-val">100 %</output>
             </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.shaderDebug">Shader debug panel</div>
+              <div class="setting-desc" data-i18n="setting.shaderDebugDesc">Display real-time FPS, frametime, and audio analyzer spectrum metrics over the fullscreen shader.</div>
+            </div>
+            <button class="toggle" data-setting="shader-debug"><div class="toggle-knob"></div></button>
           </div>
         </div>
       </section>
@@ -1685,6 +1693,20 @@
                 <div class="select-opt" data-dlfmt="m4a">M4A</div>
               </div>
             </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.ytSimilarArtists">Similar artists</div>
+              <div class="setting-desc" data-i18n="setting.ytSimilarArtistsDesc">Show similar artists suggestions from YouTube Music in artist details.</div>
+            </div>
+            <button class="toggle on" data-setting="yt-similar-artists"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.ytPopular">Popular on YouTube Music</div>
+              <div class="setting-desc" data-i18n="setting.ytPopularDesc">Show the top popular tracks from YouTube Music in artist details.</div>
+            </div>
+            <button class="toggle on" data-setting="yt-popular"><div class="toggle-knob"></div></button>
           </div>
           <div class="setting-row">
             <div class="setting-text">

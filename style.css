@@ -6103,15 +6103,34 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
 }
 .artist-similar-list .tag-pill {
   flex-shrink: 0;
-  border-color: var(--svc-lfm-border);
-  color: var(--svc-lfm);
-  background: var(--svc-lfm-dim);
+  border-color: var(--svc-ytm-border);
+  color: var(--svc-ytm);
+  background: var(--svc-ytm-dim);
 }
 .artist-similar-list button.tag-pill:hover {
-  border-color: var(--svc-lfm);
+  border-color: var(--svc-ytm);
   color: var(--text-strong);
-  background: var(--svc-lfm-border);
+  background: var(--svc-ytm-border);
 }
+
+.fs-debug-panel {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 20;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #a6e3a1;
+  background: rgba(10, 12, 18, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  user-select: none;
+}
+.fs-debug-panel b { color: #fff; }
 
 /* MusicBrainz matches in Metadata Editor */
 .mb-results {

@@ -140,8 +140,11 @@ let settings = Object.assign({
   eq: { enabled: false, preset: 'flat', gains: [0, 0, 0, 0, 0, 0] },  // graphic equalizer
   downloads: true,
   ytMusic: false,        // "YouTube Music" sidebar tab (the in-app browser)
+  ytSimilarArtists: true,
+  ytPopular: true,
   lanSharing: false,     // master switch for Devices/LAN sharing — off by default, opens a network port
   showParserBrowser: true,
+  shaderDebug: false,
   uiScale: 1,
   settingsTab: 'appearance', // active tab in the Settings view
   hotkeys: {},               // only user overrides; see HOTKEY_DEFAULTS
@@ -971,9 +974,9 @@ const I18N = {
     'setting.serviceColors': 'Network services',
     'setting.serviceColorsDesc': 'Predefined accent colors identify data sources across the app.',
     'service.ytm': 'YouTube Music',
-    'service.ytmDesc': 'Browse, popularity charts, parsing & downloads (Red)',
+    'service.ytmDesc': 'Browse, popularity charts, similar artists, parsing & downloads (Red)',
     'service.lastfm': 'Last.fm',
-    'service.lastfmDesc': 'Scrobbling, genre tags, corrections & similar artists (Purple)',
+    'service.lastfmDesc': 'Scrobbling, genre tags & corrections (Purple)',
     'service.musicbrainz': 'MusicBrainz',
     'service.musicbrainzDesc': 'Track metadata lookup & release matches (Blue)',
     'setting.defaultFolder': 'Default folder',
@@ -1015,6 +1018,12 @@ const I18N = {
     'setting.showDevicesDesc': 'Lets this app be found and controlled by your other devices on the same LAN or Tailscale network. Opens a local network port; off by default.',
     'setting.showParserBrowser': 'Show the browser window while parsing',
     'setting.showParserBrowserDesc': 'Useful for signing in to Spotify on the first run, solving a captcha, or seeing where the parser got stuck. Turn off to run the browser silently in the background.',
+    'setting.ytSimilarArtists': 'Similar artists',
+    'setting.ytSimilarArtistsDesc': 'Show similar artists suggestions from YouTube Music in artist details.',
+    'setting.ytPopular': 'Popular on YouTube Music',
+    'setting.ytPopularDesc': 'Show the top popular tracks from YouTube Music in artist details.',
+    'setting.shaderDebug': 'Shader debug panel',
+    'setting.shaderDebugDesc': 'Display real-time FPS, frametime, and audio analyzer spectrum metrics over the fullscreen shader.',
     'setting.ytLogin': 'Sign in to YouTube',
     'setting.ytLoginDesc': 'Fixes "Sign in to confirm you\'re not a bot" download errors. Opens a browser window — sign in, then close it.',
     'setting.ytLogin.signedIn': 'Signed in',
@@ -1687,9 +1696,9 @@ const I18N = {
     'setting.serviceColors': 'Мережеві сервіси',
     'setting.serviceColorsDesc': 'Фіксовані кольори акцентів для розрізнення джерел даних.',
     'service.ytm': 'YouTube Music',
-    'service.ytmDesc': 'Перегляд, рейтинг популярності, парсинг і завантаження (Червоний)',
+    'service.ytmDesc': 'Огляд, чарти популярності, схожі виконавці, парсинг та завантаження (Червоний)',
     'service.lastfm': 'Last.fm',
-    'service.lastfmDesc': 'Скробблінг, жанрові теги, виправлення та схожі виконавці (Фіолетовий)',
+    'service.lastfmDesc': 'Скробблінг, жанрові теги та виправлення (Фіолетовий)',
     'service.musicbrainz': 'MusicBrainz',
     'service.musicbrainzDesc': 'Пошук метаданих треку та зіставлення релізів (Синій)',
     'setting.defaultFolder': 'Тека за замовчуванням',
@@ -1731,6 +1740,12 @@ const I18N = {
     'setting.showDevicesDesc': 'Дозволяє іншим вашим пристроям у тій самій локальній мережі чи Tailscale знаходити цей застосунок і керувати ним. Відкриває локальний мережевий порт; вимкнено за замовчуванням.',
     'setting.showParserBrowser': 'Показувати вікно браузера під час парсингу',
     'setting.showParserBrowserDesc': 'Потрібно, щоб увійти в Spotify при першому запуску, пройти капчу або побачити, на чому парсер спіткнувся. Якщо вимкнути — браузер запуститься у фоні і вікно не з\'явиться.',
+    'setting.ytSimilarArtists': 'Схожі виконавці',
+    'setting.ytSimilarArtistsDesc': 'Показувати схожих виконавців з YouTube Music у картці виконавця.',
+    'setting.ytPopular': 'Популярне на YouTube Music',
+    'setting.ytPopularDesc': 'Показувати популярні треки з YouTube Music у картці виконавця.',
+    'setting.shaderDebug': 'Панель налагодження шейдера',
+    'setting.shaderDebugDesc': 'Відображати FPS, час кадру та вивід аудіоаналізатора поверх повноекранного шейдера.',
     'setting.ytLogin': 'Увійти в YouTube',
     'setting.ytLoginDesc': 'Виправляє помилку завантаження «Sign in to confirm you\'re not a bot». Відкриває вікно браузера — увійдіть, потім закрийте його.',
     'setting.ytLogin.signedIn': 'Виконано вхід',
@@ -5172,7 +5187,7 @@ async function renderArtistSimilar(name) {
   const simList = $('artist-similar-list');
   if (!simList) return;
   simList.hidden = true; simList.innerHTML = '';
-  if (!name || !window.electronAPI || !window.electronAPI.ytmArtistSimilar) return;
+  if (!settings.ytSimilarArtists || !name || !window.electronAPI || !window.electronAPI.ytmArtistSimilar) return;
 
   const key = name.toLowerCase();
   let similar = ytmSimilarCache[key];
@@ -5219,8 +5234,8 @@ const mmss = sec => { sec = Math.round(sec || 0); return Math.floor(sec / 60) + 
 function renderArtistTops(artist) {
   renderArtistTopLocal(artist);
   const col = $('artist-ytm-col');
-  if (!settings.ytMusic) { col.hidden = true; return; }
-  col.hidden = false;
+  if (!settings.ytMusic || !settings.ytPopular) { if (col) col.hidden = true; return; }
+  if (col) col.hidden = false;
   renderArtistTopYtm(artist);
 }
 
@@ -7761,14 +7776,18 @@ let fsBassPhase = 0;
 let fsMidPhase = 0;
 let fsHighPhase = 0;
 let fsLastRenderNow = 0;
+let fsFps = 60, fsFrameTime = 16.6, fsFrameCount = 0, fsLastFpsUpdate = 0;
 let fsSmoothBass = 0.5;
 let fsSmoothMid = 0.5;
 let fsSmoothHigh = 0.2;
 
 function startFsShader() {
+  ensureAudioAnalyzer();
   if (!fsGl) initFsShader();
   if (!fsGl || fsShaderRaf) return;
   fsLastRenderNow = performance.now();
+  fsLastFpsUpdate = fsLastRenderNow;
+  fsFrameCount = 0;
   const render = (now) => {
     if (!$('fullscreen-overlay')?.classList.contains('active')) {
       fsShaderRaf = null;
@@ -7785,7 +7804,30 @@ function startFsShader() {
         fsGl.viewport(0, 0, w, h);
       }
       const dt = Math.min(0.05, (now - fsLastRenderNow) * 0.001) || 0.016;
+      fsFrameTime = now - fsLastRenderNow;
       fsLastRenderNow = now;
+      fsFrameCount++;
+
+      if (now - fsLastFpsUpdate >= 200) {
+        fsFps = Math.round((fsFrameCount * 1000) / (now - fsLastFpsUpdate));
+        fsFrameCount = 0;
+        fsLastFpsUpdate = now;
+        const dbg = $('fs-debug-panel');
+        if (dbg) {
+          if (settings.shaderDebug) {
+            dbg.hidden = false;
+            const f = lastAudioFeatures || {};
+            dbg.innerHTML = `<div>FPS: <b>${fsFps}</b> (${fsFrameTime.toFixed(1)}ms)</div>` +
+              `<div>Bass: <b>${fsSmoothBass.toFixed(2)}</b> (raw: ${(f.bass || 0).toFixed(2)})</div>` +
+              `<div>Mid: <b>${fsSmoothMid.toFixed(2)}</b> (raw: ${(f.mid || 0).toFixed(2)})</div>` +
+              `<div>High: <b>${fsSmoothHigh.toFixed(2)}</b> (raw: ${(f.high || 0).toFixed(2)})</div>` +
+              `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Onset: <b>${(f.onset || 0).toFixed(2)}</b></div>` +
+              `<div>BPM: <b>${f.bpm || '—'}</b>${f.beat ? ' [BEAT]' : ''}</div>`;
+          } else {
+            dbg.hidden = true;
+          }
+        }
+      }
 
       const feats = lastAudioFeatures;
       const tBass = feats ? feats.bass : 0.5;
@@ -7823,6 +7865,8 @@ function stopFsShader() {
     cancelAnimationFrame(fsShaderRaf);
     fsShaderRaf = null;
   }
+  const dbg = $('fs-debug-panel');
+  if (dbg) dbg.hidden = true;
 }
 
 function openFullscreen() {
@@ -9390,8 +9434,11 @@ const TOGGLE_KEY_MAP = {
   'repeat-one-reset': 'repeatOneResetOnSkip',
   'downloads': 'downloads',
   'yt-music': 'ytMusic',
+  'yt-similar-artists': 'ytSimilarArtists',
+  'yt-popular': 'ytPopular',
   'lan-sharing': 'lanSharing',
   'show-parser-browser': 'showParserBrowser',
+  'shader-debug': 'shaderDebug',
 };
 
 // ── Background settings UI ──
@@ -10028,6 +10075,19 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'randomTheme') applyTheme(settings.randomTheme ? randomThemeId() : settings.theme);
     if (key === 'lanSharing') applyLanSharingVisibility();
     if (key === 'animations' || key === 'animWavy' || key === 'animTransitions' || key === 'animEffects') applyAnimations();
+    if (key === 'ytSimilarArtists' || key === 'ytPopular') {
+      if (currentView === 'artist-detail' && activeArtistName) {
+        const artist = buildArtistsIndex().find(a => a.name.toLowerCase() === activeArtistName.toLowerCase());
+        if (artist) {
+          if (key === 'ytSimilarArtists') renderArtistSimilar(artist.name);
+          if (key === 'ytPopular') renderArtistTops(artist);
+        }
+      }
+    }
+    if (key === 'shaderDebug') {
+      const dbg = $('fs-debug-panel');
+      if (dbg && !settings.shaderDebug) dbg.hidden = true;
+    }
     if (key === 'artistMinTracksEnabled') {
       renderArtistMinTracks();
       if (currentView === 'artists') renderArtists();
@@ -11303,7 +11363,7 @@ async function lanRefresh() {
 const LAN_SYNCABLE_SETTINGS = [
   'theme', 'accent', 'cornerRadius', 'language', 'dlFormat', 'scanSubdirs', 'healthCheck',
   'reports', 'editor', 'crossfade', 'crossfadeSec', 'volumeWheelStep',
-  'downloads', 'showParserBrowser',
+  'downloads', 'showParserBrowser', 'ytSimilarArtists', 'ytPopular', 'shaderDebug',
 ];
 function lanConfigSnapshot() {
   const out = {};
