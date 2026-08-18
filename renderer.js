@@ -6064,7 +6064,6 @@ if (window.electronAPI && window.electronAPI.onTrayCommand) {
 }
 
 function togglePlay() {
-  if (typeof triggerButtonSquish === 'function') triggerButtonSquish($('btn-play'));
   if (!currentTrack && library.length > 0) {
     playTrackByPath(library[0].path, library);
     return;
@@ -6117,10 +6116,6 @@ function getUpcomingQueue(limit = 8) {
 // Settings) it drops back to "repeat all" instead of trapping the next track
 // in the same loop.
 function nextTrack({ manual = true } = {}) {
-  if (manual && typeof triggerButtonSquish === 'function') {
-    if ($('btn-next')) triggerButtonSquish($('btn-next'));
-    if ($('fs-btn-next')) triggerButtonSquish($('fs-btn-next'));
-  }
   if (currentQueue.length === 0) return;
   if (manual && repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = 1;
@@ -6138,10 +6133,6 @@ function nextTrack({ manual = true } = {}) {
 }
 
 function prevTrack() {
-  if (typeof triggerButtonSquish === 'function') {
-    if ($('btn-prev')) triggerButtonSquish($('btn-prev'));
-    if ($('fs-btn-prev')) triggerButtonSquish($('fs-btn-prev'));
-  }
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = -1;
@@ -7394,6 +7385,7 @@ function releaseGroupSquish(group, direction = 0) {
 
 let progSquishTimer = null;
 let pointerIsDown = false;
+let activeKeySquish = null;
 
 function getButtonSquishDir(btn) {
   if (!btn) return 0;
@@ -7404,8 +7396,20 @@ function getButtonSquishDir(btn) {
   return 0;
 }
 
+function getActionSquishButton(actionId) {
+  const isFs = $('fullscreen-overlay')?.classList.contains('active');
+  switch (actionId) {
+    case 'prevTrack': return isFs ? $('fs-btn-prev') : $('btn-prev');
+    case 'nextTrack': return isFs ? $('fs-btn-next') : $('btn-next');
+    case 'playPause': return isFs ? $('fs-btn-play') : $('btn-play');
+    case 'shuffle':   return isFs ? $('fs-btn-shuffle') : $('btn-shuffle');
+    case 'repeat':    return isFs ? $('fs-btn-repeat') : $('btn-repeat');
+    default: return null;
+  }
+}
+
 function triggerButtonSquish(btn) {
-  if (!btn || pointerIsDown) return;
+  if (!btn || pointerIsDown || activeKeySquish) return;
   const group = btn.closest('.button-group') || document.querySelector('.button-group');
   if (!group) return;
   const dir = getButtonSquishDir(btn);
@@ -7427,7 +7431,10 @@ function initButtonGroupSquish() {
         pointerIsDown = false;
         releaseGroupSquish(group);
       };
-      btn.addEventListener('pointerup', release);
+      btn.addEventListener('pointerup', () => {
+        btn.blur();
+        release();
+      });
       btn.addEventListener('pointercancel', release);
       btn.addEventListener('pointerleave', (e) => {
         if (e.buttons === 0) release();
@@ -7438,6 +7445,12 @@ function initButtonGroupSquish() {
     if (pointerIsDown) {
       pointerIsDown = false;
       releaseGroupSquish();
+    }
+  });
+  window.addEventListener('blur', () => {
+    if (activeKeySquish) {
+      releaseGroupSquish(activeKeySquish.group, activeKeySquish.dir);
+      activeKeySquish = null;
     }
   });
 }
@@ -9082,6 +9095,24 @@ document.addEventListener('keydown', e => {
   const action = HOTKEY_ACTIONS.find(a => bindings[a.id] === combo);
   if (!action) return;
   e.preventDefault();
+  e.stopPropagation();
+  if (document.activeElement && document.activeElement !== document.body && !isInput) {
+    document.activeElement.blur();
+  }
+
+  const sqBtn = getActionSquishButton(action.id);
+  if (sqBtn) {
+    if (activeKeySquish) releaseGroupSquish(activeKeySquish.group, activeKeySquish.dir);
+    const group = sqBtn.closest('.button-group') || document.querySelector('.button-group');
+    if (group) {
+      clearTimeout(progSquishTimer);
+      const dir = getButtonSquishDir(sqBtn);
+      activeKeySquish = { code: e.code, group, dir, action };
+      applyGroupSquish(group, dir, sqBtn);
+    }
+    return;
+  }
+
   // A successfully registered global grab already delivers this combo through
   // the main process. Running it here too would fire the action twice on any
   // platform where the key still reaches the focused window.
@@ -9090,12 +9121,32 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('keyup', e => {
-  if (!hotkeyCapture) return;
-  e.preventDefault();
-  e.stopPropagation();
-  if (e.code === 'Escape' || e.code === 'Backspace') return;
+  if (activeKeySquish && activeKeySquish.code === e.code) {
+    const { group, dir, action } = activeKeySquish;
+    activeKeySquish = null;
+    releaseGroupSquish(group, dir);
+    if (!isGlobalOn(action.id) || globalHotkeyFailures.has(action.id) || !comboToAccelerator(comboFromEvent(e))) {
+      action.run();
+    }
+  }
+  if (hotkeyCapture) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.code === 'Escape' || e.code === 'Backspace') return;
+    const combo = comboFromEvent(e);
+    if (combo) hotkeySet(hotkeyCapture, combo);
+    return;
+  }
+  const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
   const combo = comboFromEvent(e);
-  if (combo) hotkeySet(hotkeyCapture, combo);
+  if (!combo) return;
+  const bare = !e.ctrlKey && !e.metaKey && !e.altKey;
+  if (bare && isInput) return;
+  const bindings = hotkeyBindings();
+  if (HOTKEY_ACTIONS.some(a => bindings[a.id] === combo)) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
 });
 
 // Mouse-button shortcuts. Bound on the capture phase so a side button still
