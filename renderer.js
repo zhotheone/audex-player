@@ -127,7 +127,8 @@ let settings = Object.assign({
   defaultPlaylistId: null,   // used when defaultView === 'playlist-detail'
   dlFormat: 'opus',       // yt-dlp --audio-format: opus | flac | m4a
   scanSubdirs: true,
-  albumsSort: 'alpha',    // Albums view filter chip: alpha | tracks | recent
+  albumsSort: 'title-asc',
+  artistsSort: 'artist-asc',
   artistMinTracksEnabled: false,
   artistMinTracks: 2,     // artists with fewer tracks than this are hidden from the Artists view when the toggle above is on
   healthCheck: false,
@@ -294,10 +295,9 @@ let pendingAddPath = null;
 let activePlaylistId = null;
 let activeArtistName = null;
 let activeAlbumKey = null;
-// A hand-edited localStorage value would otherwise leave every chip inactive.
-let albumsSort = ['alpha', 'tracks', 'recent'].includes(settings.albumsSort) ? settings.albumsSort : 'alpha';
+let albumsSort = settings.albumsSort || 'title-asc';
 let albumsViewMode = 'cards';        // 'cards' | 'list'
-let artistsSort = 'alpha';           // 'alpha' | 'tracks' | 'recent'
+let artistsSort = settings.artistsSort || 'artist-asc';
 let artistAlbumsSort = 'year-desc';  // 'year-desc' | 'year-asc' — album order within an artist
 let artistView = 'list';             // 'list' | 'cards' — album layout on the artist page
 const artistYtmCache = new Map();    // artist name → { state, songs } for the "Popular on YT Music" column
@@ -803,6 +803,8 @@ const I18N = {
     'sort.artistDesc': 'Artist Z→A',
     'sort.durationAsc': 'Duration ↑',
     'sort.durationDesc': 'Duration ↓',
+    'sort.tracksDesc': 'Number of tracks ↓',
+    'sort.tracksAsc': 'Number of tracks ↑',
     'sort.alpha': 'Alphabetical',
     'sort.byTracks': 'By track count',
     'sort.recent': 'Recently added',
@@ -883,8 +885,8 @@ const I18N = {
     'eyebrow.playlist': 'Playlist',
     'eyebrow.album': 'Album',
     'eyebrow.artist': 'Artist',
-    'autoChip.artists': 'List is built automatically from your library',
-    'autoChip.albums': 'List is built automatically from your library',
+    'autoChip.artists': 'Gathered from the library automatically',
+    'autoChip.albums': 'Gathered from the library automatically',
     'np.empty.title': 'Nothing selected',
     'np.empty.artist': '—',
     'fs.nowPlayingFrom': 'Now playing · from',
@@ -1527,6 +1529,8 @@ const I18N = {
     'sort.artistDesc': 'Виконавець Я→А',
     'sort.durationAsc': 'Тривалість ↑',
     'sort.durationDesc': 'Тривалість ↓',
+    'sort.tracksDesc': 'Кількість треків ↓',
+    'sort.tracksAsc': 'Кількість треків ↑',
     'sort.alpha': 'За алфавітом',
     'sort.byTracks': 'За кількістю треків',
     'sort.recent': 'Нещодавно додані',
@@ -1607,8 +1611,8 @@ const I18N = {
     'eyebrow.playlist': 'Плейлист',
     'eyebrow.album': 'Альбом',
     'eyebrow.artist': 'Виконавець',
-    'autoChip.artists': 'Список збирається автоматично з бібліотеки',
-    'autoChip.albums': 'Список збирається автоматично з бібліотеки',
+    'autoChip.artists': 'Зібрано з бібліотеки автоматично',
+    'autoChip.albums': 'Зібрано з бібліотеки автоматично',
     'np.empty.title': 'Не обрано',
     'np.empty.artist': '—',
     'fs.nowPlayingFrom': 'Зараз грає · з',
@@ -2293,6 +2297,14 @@ function sortedFilteredLibrary() {
 function setView(view) {
   if (librarySelectMode && view !== 'library') setLibrarySelectMode(false);
   if (currentView === 'editor' && view !== 'editor') stopEditorPreview();
+  if (view === 'artist-detail') {
+    openArtistSidebar(activeArtistName);
+    return;
+  }
+  if (view === 'album-detail') {
+    openAlbumSidebar(activeAlbumKey);
+    return;
+  }
   currentView = view;
   document.querySelectorAll('.nav-item').forEach(n => {
     n.classList.toggle('active', n.dataset.view === view);
@@ -2300,17 +2312,12 @@ function setView(view) {
   document.querySelectorAll('.view-section').forEach(s => {
     s.classList.toggle('active', s.id === `view-${view}`);
   });
-  // All view-sections share one scroller (.main-content), so without this a
-  // navigation lands wherever the previous, possibly-taller view happened to
-  // be scrolled. Callers that need to land on a specific row (e.g. scrolling
-  // to the current track) override this afterwards via requestAnimationFrame.
   scrollEl.scrollTop = 0;
   if (view === 'library') renderLibrary();
   else if (view === 'favorites') renderFavorites();
   else if (view === 'playlists') renderPlaylists();
   else if (view === 'playlist-detail') renderPlaylistDetail(activePlaylistId);
   else if (view === 'artists') renderArtists();
-  else if (view === 'artist-detail') renderArtistDetail(activeArtistName);
   else if (view === 'albums') renderAlbums();
   else if (view === 'album-detail') renderAlbumDetail(activeAlbumKey);
   else if (view === 'report') renderReport();
@@ -4897,9 +4904,22 @@ function buildArtistsIndex() {
 
 function sortArtists(arr) {
   const c = arr.slice();
-  if (artistsSort === 'tracks') c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
-  else if (artistsSort === 'recent') c.sort((a, b) => b.lastIdx - a.lastIdx);
-  else c.sort((a, b) => a.name.localeCompare(b.name));
+  if (artistsSort === 'date-desc') c.sort((a, b) => b.lastIdx - a.lastIdx);
+  else if (artistsSort === 'date-asc') c.sort((a, b) => a.lastIdx - b.lastIdx);
+  else if (artistsSort === 'artist-desc' || artistsSort === 'title-desc') c.sort((a, b) => b.name.localeCompare(a.name));
+  else if (artistsSort === 'duration-asc') {
+    const dur = a => a.tracks.reduce((s, t) => s + (t.duration || 0), 0);
+    c.sort((a, b) => dur(a) - dur(b));
+  } else if (artistsSort === 'duration-desc') {
+    const dur = a => a.tracks.reduce((s, t) => s + (t.duration || 0), 0);
+    c.sort((a, b) => dur(b) - dur(a));
+  } else if (artistsSort === 'tracks-desc') {
+    c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
+  } else if (artistsSort === 'tracks-asc') {
+    c.sort((a, b) => a.trackCount - b.trackCount || a.name.localeCompare(b.name));
+  } else {
+    c.sort((a, b) => a.name.localeCompare(b.name));
+  }
   return c;
 }
 
@@ -5029,6 +5049,159 @@ function refreshArtistsCoversInPlace() {
     avatar.style.backgroundImage = `url('${cover}')`;
     const letter = avatar.querySelector('.artist-avatar-letter');
     if (letter) letter.remove();
+  });
+}
+
+function openArtistSidebar(name) {
+  if (!name) return;
+  activeArtistName = name;
+  renderArtistSidebar(name);
+  const sb = $('artist-sidebar');
+  if (sb) sb.hidden = false;
+  document.body.classList.add('sidebar-collapsed', 'artist-sidebar-open');
+}
+
+function closeArtistSidebar() {
+  const sb = $('artist-sidebar');
+  if (sb) sb.hidden = true;
+  document.body.classList.remove('sidebar-collapsed', 'artist-sidebar-open');
+}
+
+function renderArtistSidebar(name) {
+  const sidebar = $('artist-sidebar');
+  if (!sidebar) return;
+  const all = buildArtistsIndex();
+  const artist = all.find(a => a.name === name);
+  if (!artist) { closeArtistSidebar(); return; }
+
+  // Top 5 tracks: by play count or first 5
+  const paths = new Set(artist.tracks.map(t => t.path));
+  const counts = new Map();
+  for (const e of playLog) { if (paths.has(e.p)) counts.set(e.p, (counts.get(e.p) || 0) + 1); }
+  const topList = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([p]) => artist.tracks.find(t => t.path === p)).filter(Boolean);
+  const topTracks = (topList.length >= 5 ? topList : artist.tracks).slice(0, 5);
+
+  // Group albums and sort by release date (newest first)
+  const byAlbumMap = new Map();
+  artist.tracks.forEach(t => {
+    const key = t.album || tr('label.noAlbum');
+    if (!byAlbumMap.has(key)) byAlbumMap.set(key, { name: key, year: t.year, cover: t.cover, tracks: [] });
+    const alb = byAlbumMap.get(key);
+    alb.tracks.push(t);
+    if (!alb.cover && t.cover) alb.cover = t.cover;
+  });
+  const albums = [...byAlbumMap.values()].sort((a, b) => (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0));
+
+  const coverStyle = artist.cover ? `background-image:url('${artist.cover}')` : '';
+  sidebar.innerHTML = `
+    <div class="artist-sb-header">
+      <button class="artist-sb-close" id="btn-close-artist-sidebar" title="${escapeHtml(tr('btn.close'))}">
+        <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div class="artist-sb-hero">
+      <div class="artist-sb-info">
+        <div class="artist-sb-title">${escapeHtml(artist.name)}</div>
+        <div class="artist-sb-meta">
+          <span>${artist.trackCount} ${pluralTracks(artist.trackCount)}</span>
+          <span>·</span>
+          <span>${artist.albumCount} ${pluralAlbums(artist.albumCount)}</span>
+        </div>
+      </div>
+      <div class="artist-sb-actions">
+        <button class="btn-solid" id="btn-sb-artist-play">
+          <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
+          <span data-i18n="btn.playAll">${escapeHtml(tr('btn.playAll'))}</span>
+        </button>
+        <button class="btn-ghost" id="btn-sb-artist-shuffle">
+          <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
+          <span data-i18n="btn.shuffle">${escapeHtml(tr('btn.shuffle'))}</span>
+        </button>
+        <button class="btn-ghost icon-only" id="btn-sb-artist-ytm" title="${escapeHtml(tr('ytm.browseArtist'))}">
+          <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+        </button>
+        <button class="btn-ghost icon-only" id="btn-sb-artist-fix-tags" title="${escapeHtml(tr('btn.albumMenuTooltip'))}">
+          <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
+        </button>
+      </div>
+      <div class="artist-sb-avatar" style="${coverStyle}">
+        ${artist.cover ? '' : escapeHtml(artistInitials(artist.name))}
+      </div>
+    </div>
+
+    <div class="artist-sb-section">
+      <span class="artist-sb-section-title" data-i18n="artist.mostPlayed">${escapeHtml(tr('artist.mostPlayed'))}</span>
+      <div class="artist-sb-tracks" id="artist-sb-top-tracks"></div>
+    </div>
+
+    <div class="artist-sb-section">
+      <span class="artist-sb-section-title" data-i18n="nav.albums">${escapeHtml(tr('nav.albums'))}</span>
+      <div class="artist-sb-albums-carousel" id="artist-sb-albums"></div>
+    </div>
+  `;
+
+  $('btn-close-artist-sidebar').onclick = closeArtistSidebar;
+  $('btn-sb-artist-play').onclick = () => { if (artist.tracks.length > 0) playTrackByPath(artist.tracks[0].path, artist.tracks); };
+  $('btn-sb-artist-shuffle').onclick = () => {
+    if (artist.tracks.length > 0) {
+      isShuffle = true;
+      updateShuffleUI();
+      const rand = artist.tracks[Math.floor(Math.random() * artist.tracks.length)];
+      playTrackByPath(rand.path, artist.tracks);
+    }
+  };
+  $('btn-sb-artist-ytm').onclick = () => {
+    const main = document.querySelector('.main-content');
+    if (main) {
+      main.classList.remove('slide-from-artist');
+      void main.offsetWidth;
+      main.classList.add('slide-from-artist');
+      setTimeout(() => main.classList.remove('slide-from-artist'), 400);
+    }
+    ytmBrowser.open(artist.name);
+  };
+  $('btn-sb-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
+
+  const topBox = $('artist-sb-top-tracks');
+  topTracks.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'artist-sb-track';
+    row.innerHTML = `
+      <span class="artist-sb-track-num">${i + 1}</span>
+      <span class="artist-sb-track-cover" style="${t.cover ? `background-image:url('${t.cover}')` : ''}"></span>
+      <span class="artist-sb-track-body">
+        <span class="artist-sb-track-title">${escapeHtml(t.title)}</span>
+        <span class="artist-sb-track-album">${escapeHtml(t.album || '—')}</span>
+      </span>
+      <span class="artist-sb-track-dur">${formatTime(t.duration)}</span>
+    `;
+    row.onclick = () => playTrackByPath(t.path, artist.tracks);
+    topBox.appendChild(row);
+  });
+
+  const albBox = $('artist-sb-albums');
+  albBox.addEventListener('wheel', e => {
+    if (e.deltaY) {
+      e.preventDefault();
+      albBox.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+  albums.forEach(alb => {
+    const card = document.createElement('div');
+    card.className = 'artist-sb-album-card';
+    card.innerHTML = `
+      <div class="artist-sb-album-cover" style="${alb.cover ? `background-image:url('${alb.cover}')` : ''}"></div>
+      <div class="artist-sb-album-name" title="${escapeHtml(alb.name)}">${escapeHtml(alb.name)}</div>
+      <div class="artist-sb-album-meta">${[alb.year ? String(alb.year) : '', `${alb.tracks.length} ${pluralTracks(alb.tracks.length)}`].filter(Boolean).join(' · ')}</div>
+    `;
+    card.onclick = () => {
+      if (alb.tracks.length > 0) {
+        activeAlbumKey = albumKeyFor(alb.tracks[0]);
+        setView('album-detail');
+      }
+    };
+    albBox.appendChild(card);
   });
 }
 
@@ -5407,9 +5580,24 @@ function buildAlbumsIndex() {
 
 function sortAlbums(arr) {
   const c = arr.slice();
-  if (albumsSort === 'tracks') c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
-  else if (albumsSort === 'recent') c.sort((a, b) => b.lastIdx - a.lastIdx);
-  else c.sort((a, b) => a.name.localeCompare(b.name));
+  if (albumsSort === 'date-desc') c.sort((a, b) => b.lastIdx - a.lastIdx);
+  else if (albumsSort === 'date-asc') c.sort((a, b) => a.lastIdx - b.lastIdx);
+  else if (albumsSort === 'title-desc') c.sort((a, b) => b.name.localeCompare(a.name));
+  else if (albumsSort === 'artist-asc') c.sort((a, b) => a.artist.localeCompare(b.artist) || a.name.localeCompare(b.name));
+  else if (albumsSort === 'artist-desc') c.sort((a, b) => b.artist.localeCompare(a.artist) || a.name.localeCompare(b.name));
+  else if (albumsSort === 'duration-asc') {
+    const dur = a => a.tracks.reduce((s, t) => s + (t.duration || 0), 0);
+    c.sort((a, b) => dur(a) - dur(b));
+  } else if (albumsSort === 'duration-desc') {
+    const dur = a => a.tracks.reduce((s, t) => s + (t.duration || 0), 0);
+    c.sort((a, b) => dur(b) - dur(a));
+  } else if (albumsSort === 'tracks-desc') {
+    c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
+  } else if (albumsSort === 'tracks-asc') {
+    c.sort((a, b) => a.trackCount - b.trackCount || a.name.localeCompare(b.name));
+  } else {
+    c.sort((a, b) => a.name.localeCompare(b.name));
+  }
   return c;
 }
 
@@ -5428,11 +5616,6 @@ function sortAlbumTracks(tracks) {
 }
 
 function renderAlbums() {
-  // The active chip is markup-default in index.html, so restore the stored one
-  // here — this runs on every entry to the view, boot included.
-  document.querySelectorAll('#view-albums .chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.albumsSort === albumsSort);
-  });
   const all = buildAlbumsIndex();
   const q = ($('albums-search').value || '').trim().toLowerCase();
   const filtered = q
@@ -5550,6 +5733,97 @@ function refreshAlbumsCoversInPlace() {
     }
     const aac = card.querySelector('.artist-album-cover');   // list-mode block
     if (aac && !/url\(/.test(aac.style.backgroundImage)) aac.style.backgroundImage = `url('${url}')`;
+  });
+}
+
+function openAlbumSidebar(key) {
+  if (!key) return;
+  activeAlbumKey = key;
+  renderAlbumSidebar(key);
+  const sb = $('artist-sidebar');
+  if (sb) sb.hidden = false;
+  document.body.classList.add('sidebar-collapsed', 'artist-sidebar-open');
+}
+
+function renderAlbumSidebar(key) {
+  const sidebar = $('artist-sidebar');
+  if (!sidebar) return;
+  const all = buildAlbumsIndex();
+  const album = all.find(a => a.key === key);
+  if (!album) { closeArtistSidebar(); return; }
+
+  const tracks = sortAlbumTracks(album.tracks);
+  const coverStyle = album.cover ? `background-image:url('${album.cover}')` : '';
+
+  sidebar.innerHTML = `
+    <div class="artist-sb-header">
+      <button class="artist-sb-close" id="btn-close-artist-sidebar" title="${escapeHtml(tr('btn.close'))}">
+        <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div class="artist-sb-hero">
+      <div class="artist-sb-info">
+        <div class="artist-sb-title">${escapeHtml(album.name)}</div>
+        <div class="artist-sb-meta">
+          <span class="pl-meta-link" id="album-sb-artist-link">${escapeHtml(album.artist)}</span>
+          <span>·</span>
+          <span>${album.trackCount} ${pluralTracks(album.trackCount)}</span>
+          ${album.year ? `<span>·</span><span>${escapeHtml(String(album.year))}</span>` : ''}
+          <span>·</span>
+          <span>${formatTotalDuration(album.tracks)}</span>
+        </div>
+      </div>
+      <div class="artist-sb-actions">
+        <button class="btn-solid" id="btn-sb-album-play">
+          <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
+          <span data-i18n="btn.playAll">${escapeHtml(tr('btn.playAll'))}</span>
+        </button>
+        <button class="btn-ghost" id="btn-sb-album-shuffle">
+          <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
+          <span data-i18n="btn.shuffle">${escapeHtml(tr('btn.shuffle'))}</span>
+        </button>
+        <button class="btn-ghost icon-only" id="btn-sb-album-fix-tags" title="${escapeHtml(tr('btn.albumMenuTooltip'))}">
+          <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
+        </button>
+      </div>
+      <div class="artist-sb-avatar" style="${coverStyle}">
+        ${album.cover ? '' : escapeHtml((album.name || '?')[0])}
+      </div>
+    </div>
+
+    <div class="artist-sb-section">
+      <div class="artist-sb-tracks" id="album-sb-tracks"></div>
+    </div>
+  `;
+
+  $('btn-close-artist-sidebar').onclick = closeArtistSidebar;
+  $('album-sb-artist-link').onclick = () => openArtistSidebar(album.artist);
+  $('btn-sb-album-play').onclick = () => { if (tracks.length > 0) playTrackByPath(tracks[0].path, tracks); };
+  $('btn-sb-album-shuffle').onclick = () => {
+    if (tracks.length > 0) {
+      isShuffle = true;
+      updateShuffleUI();
+      const rand = tracks[Math.floor(Math.random() * tracks.length)];
+      playTrackByPath(rand.path, tracks);
+    }
+  };
+  $('btn-sb-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress', { albumActions: true, name: album.name });
+
+  const trackBox = $('album-sb-tracks');
+  tracks.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'artist-sb-track';
+    row.innerHTML = `
+      <span class="artist-sb-track-num">${t.trackNo || (i + 1)}</span>
+      <span class="artist-sb-track-body">
+        <span class="artist-sb-track-title">${escapeHtml(t.title)}</span>
+        <span class="artist-sb-track-album">${escapeHtml(t.artist || album.artist)}</span>
+      </span>
+      <span class="artist-sb-track-dur">${formatTime(t.duration)}</span>
+    `;
+    row.onclick = () => playTrackByPath(t.path, tracks);
+    trackBox.appendChild(row);
   });
 }
 
@@ -5674,7 +5948,10 @@ function triggerCrossfade(newStreamUrl, { manual = false } = {}) {
   const curGainNode = channelGains[currentKey];
   const nxtGainNode = channelGains[nextKey];
 
-  nextChan.src = newStreamUrl;
+  if (nextChan.dataset.trackPath !== currentTrack?.path && nextChan.src !== newStreamUrl) {
+    nextChan.src = newStreamUrl;
+  }
+  nextChan.dataset.trackPath = currentTrack ? currentTrack.path : '';
   nextChan.currentTime = 0;
   nextChan.volume = 1.0;
   nextChan.play().catch(e => console.warn('play error:', e));
@@ -5701,12 +5978,16 @@ function triggerCrossfade(newStreamUrl, { manual = false } = {}) {
     setTimeout(() => {
       if (activeChannel === nextKey) {
         try { currentChan.pause(); currentChan.src = ''; } catch (_) {}
+        delete currentChan.dataset.trackPath;
+        preloadNextTrack();
       }
     }, duration * 1000 + 50);
   } else {
     if (curGainNode) curGainNode.gain.value = 0;
     if (nxtGainNode) nxtGainNode.gain.value = 1;
     try { currentChan.pause(); currentChan.src = ''; } catch (_) {}
+    delete currentChan.dataset.trackPath;
+    preloadNextTrack();
   }
 
   activeChannel = nextKey;
@@ -5721,6 +6002,38 @@ function isTagEditingLocked(p) {
   return ext !== 'opus' && ext !== 'ogg';
 }
 function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
+
+function getNextTrackInQueue() {
+  if (!currentTrack || currentQueue.length === 0) return null;
+  const curPath = currentTrack.path;
+  const activeQ = (isShuffle && shuffledQueue.length === currentQueue.length) ? shuffledQueue : currentQueue;
+  const inQueueIdx = activeQ.findIndex(t => t.path === curPath);
+  if (inQueueIdx < 0) return null;
+  let nextIdx = inQueueIdx + 1;
+  if (nextIdx >= activeQ.length) {
+    if (repeatMode === 0) return null;
+    nextIdx = 0;
+  }
+  return activeQ[nextIdx] || null;
+}
+
+function preloadNextTrack() {
+  const next = getNextTrackInQueue();
+  const standbyKey = activeChannel === 'A' ? 'B' : 'A';
+  const standbyChan = standbyKey === 'A' ? audioA : audioB;
+  if (!standbyChan) return;
+  if (!next || (repeatMode === 2 && !settings.repeatOneResetOnSkip)) {
+    if (standbyChan.dataset.trackPath) {
+      try { standbyChan.pause(); standbyChan.src = ''; } catch (_) {}
+      delete standbyChan.dataset.trackPath;
+    }
+    return;
+  }
+  if (standbyChan.dataset.trackPath === next.path) return;
+  standbyChan.preload = 'auto';
+  standbyChan.src = srcFor(next);
+  standbyChan.dataset.trackPath = next.path;
+}
 
 function playTrackByPath(path, queue, { manual = true } = {}) {
   const q = queue && queue.length > 0 ? queue : library;
@@ -5738,14 +6051,40 @@ function playTrackByPath(path, queue, { manual = true } = {}) {
   if (fade) {
     triggerCrossfade(srcFor(track), { manual });
   } else {
-    if (ensureEqGraph()) {
-      if (channelGains[activeChannel]) channelGains[activeChannel].gain.value = 1;
-      const other = activeChannel === 'A' ? 'B' : 'A';
-      if (channelGains[other]) channelGains[other].gain.value = 0;
+    const currentKey = activeChannel;
+    const nextKey = activeChannel === 'A' ? 'B' : 'A';
+    const currentChan = currentKey === 'A' ? audioA : audioB;
+    const nextChan = nextKey === 'A' ? audioA : audioB;
+
+    if (isPlaying && currentChan && nextChan) {
+      if (nextChan.dataset.trackPath !== track.path) {
+        nextChan.src = srcFor(track);
+      }
+      nextChan.dataset.trackPath = track.path;
+      nextChan.currentTime = 0;
+      nextChan.volume = 1.0;
+      if (ensureEqGraph()) {
+        if (channelGains[nextKey]) channelGains[nextKey].gain.value = 1;
+        if (channelGains[currentKey]) channelGains[currentKey].gain.value = 0;
+      }
+      activeChannel = nextKey;
+      audio = nextChan;
+      audio.play().catch(e => console.warn('play error:', e));
+      try { currentChan.pause(); currentChan.src = ''; } catch (_) {}
+      delete currentChan.dataset.trackPath;
+    } else {
+      if (ensureEqGraph()) {
+        if (channelGains[activeChannel]) channelGains[activeChannel].gain.value = 1;
+        const other = activeChannel === 'A' ? 'B' : 'A';
+        if (channelGains[other]) channelGains[other].gain.value = 0;
+      }
+      audio.src = srcFor(track);
+      audio.dataset.trackPath = track.path;
+      audio.currentTime = 0;
+      audio.volume = 1.0;
+      audio.play().catch(e => console.warn('play error:', e));
     }
-    audio.src = srcFor(track);
-    audio.volume = 1.0;
-    audio.play().catch(e => console.warn('play error:', e));
+    preloadNextTrack();
   }
   isPlaying = true;
   if (!isRemotePath(path)) {
@@ -6244,6 +6583,7 @@ function updateShuffleUI() {
   }
   $('fs-btn-shuffle')?.classList.toggle('active', isShuffle);
   if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
+  preloadNextTrack();
 }
 
 function updateRepeatUI() {
@@ -6265,6 +6605,7 @@ function updateRepeatUI() {
     if (repIcon) repIcon.textContent = repeatMode === 2 ? 'repeat_one' : 'repeat';
   }
   if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
+  preloadNextTrack();
 }
 
 // ── Sidebar tabs & actions ──
@@ -9356,52 +9697,55 @@ const SORT_I18N = {
   'artist-desc': 'sort.artistDesc',
   'duration-asc': 'sort.durationAsc',
   'duration-desc': 'sort.durationDesc',
+  'tracks-desc': 'sort.tracksDesc',
+  'tracks-asc': 'sort.tracksAsc',
 };
-function refreshSortUI() {
-  const labelEl = $('sort-label');
-  if (labelEl) {
-    const key = SORT_I18N[activeSort] || SORT_I18N['date-desc'];
-    labelEl.setAttribute('data-i18n', key);
-    labelEl.textContent = tr(key);
+
+function bindSortSelect(id, labelId, getVal, setVal, onSelect) {
+  const root = $(id);
+  if (!root) return;
+  const label = $(labelId);
+  function refresh() {
+    const v = getVal();
+    if (label) {
+      const key = SORT_I18N[v] || SORT_I18N['title-asc'] || SORT_I18N['artist-asc'] || SORT_I18N['date-desc'];
+      label.setAttribute('data-i18n', key);
+      label.textContent = tr(key);
+    }
+    root.querySelectorAll('.sort-opt').forEach(o => o.classList.toggle('active', o.dataset.sort === v));
   }
-  document.querySelectorAll('#sort-select .sort-opt').forEach(o => {
-    o.classList.toggle('active', o.dataset.sort === activeSort);
-  });
-}
-const sortSelect = $('sort-select');
-if (sortSelect) {
-  sortSelect.querySelector('.sort-btn').addEventListener('click', e => {
+  root.querySelector('.sort-btn')?.addEventListener('click', e => {
     e.stopPropagation();
-    sortSelect.classList.toggle('open');
+    document.querySelectorAll('.sort-select.open').forEach(s => { if (s !== root) s.classList.remove('open'); });
+    root.classList.toggle('open');
   });
-  sortSelect.querySelectorAll('.sort-opt').forEach(o => {
+  root.querySelectorAll('.sort-opt').forEach(o => {
     o.addEventListener('click', () => {
-      activeSort = o.dataset.sort;
-      sortSelect.classList.remove('open');
-      refreshSortUI();
-      renderLibrary();
+      setVal(o.dataset.sort);
+      root.classList.remove('open');
+      refresh();
+      onSelect();
     });
   });
-  document.addEventListener('click', e => {
-    if (!e.target.closest('#sort-select')) sortSelect.classList.remove('open');
-  });
-  refreshSortUI();
+  refresh();
 }
+
+bindSortSelect('sort-select', 'sort-label', () => activeSort, v => { activeSort = v; }, renderLibrary);
+bindSortSelect('albums-sort-select', 'albums-sort-label', () => albumsSort, v => { albumsSort = settings.albumsSort = v; saveSettings(); }, renderAlbums);
+bindSortSelect('artists-sort-select', 'artists-sort-label', () => artistsSort, v => { artistsSort = settings.artistsSort = v; saveSettings(); }, renderArtists);
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.sort-select')) {
+    document.querySelectorAll('.sort-select.open').forEach(s => s.classList.remove('open'));
+  }
+});
 
 // Library inline search
 $('library-search').addEventListener('input', () => {
   renderLibrary();
 });
 
-// Artists sort chips + search
-document.querySelectorAll('#view-artists .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#view-artists .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    artistsSort = chip.dataset.artistsSort;
-    renderArtists();
-  });
-});
+// Artists search
 $('artists-search').addEventListener('input', () => renderArtists());
 $('artist-detail-search').addEventListener('input', () => {
   if (activeArtistName) renderArtistDetail(activeArtistName);
@@ -9423,16 +9767,7 @@ document.querySelectorAll('#artist-view-seg .seg-btn').forEach(btn => {
   });
 });
 
-// Albums sort chips + search
-document.querySelectorAll('#view-albums .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#view-albums .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    albumsSort = settings.albumsSort = chip.dataset.albumsSort;
-    saveSettings();
-    renderAlbums();
-  });
-});
+// Albums search & view mode
 $('albums-search').addEventListener('input', () => renderAlbums());
 document.querySelectorAll('#albums-view-seg .seg-btn').forEach(btn => {
   btn.addEventListener('click', () => {

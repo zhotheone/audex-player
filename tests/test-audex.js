@@ -431,5 +431,16 @@ const tags = {
   assert.strictEqual(isTrackInLibraryTest(sampleLib, 'Xtal', ''), true);
   assert.strictEqual(isTrackInLibraryTest(sampleLib, 'Karma Police', 'Radiohead'), false);
 
+  // Sorting by track count (artists & albums)
+  const sortItems = (arr, mode) => {
+    const c = arr.slice();
+    if (mode === 'tracks-desc') return c.sort((a, b) => b.trackCount - a.trackCount || a.name.localeCompare(b.name));
+    if (mode === 'tracks-asc') return c.sort((a, b) => a.trackCount - b.trackCount || a.name.localeCompare(b.name));
+    return c;
+  };
+  const testItems = [{ name: 'B', trackCount: 5 }, { name: 'A', trackCount: 10 }, { name: 'C', trackCount: 5 }];
+  assert.deepStrictEqual(sortItems(testItems, 'tracks-desc').map(x => x.name), ['A', 'B', 'C']);
+  assert.deepStrictEqual(sortItems(testItems, 'tracks-asc').map(x => x.name), ['B', 'C', 'A']);
+
   console.log('ok');
 })();

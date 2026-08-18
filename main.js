@@ -1818,6 +1818,7 @@ ipcMain.handle('ytm:artistReleases', async (event, browseId) => {
       }
     });
 
+    parseReleases(data);
     if (discogEndpoints.length) {
       await Promise.all(discogEndpoints.map(async ep => {
         try {
@@ -1825,8 +1826,6 @@ ipcMain.handle('ytm:artistReleases', async (event, browseId) => {
           parseReleases(discog, /single/i.test(ep.title) ? 'Single' : 'Album');
         } catch (_) {}
       }));
-    } else {
-      parseReleases(data);
     }
     return { success: true, releases };
   } catch (e) {

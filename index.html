@@ -200,13 +200,6 @@
                   <span data-i18n="nav.devices">Devices</span>
                   <span class="nav-meta" id="count-devices">0</span>
                 </a>
-                <a href="#" class="nav-item nav-search" data-action="open-palette">
-                  <span class="nav-search-icon">
-                    <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
-                  </span>
-                  <span data-i18n="nav.search">Search</span>
-                  <span class="nav-shortcut nav-search-shortcut">⌘K</span>
-                </a>
               </div>
             </nav>
 
@@ -439,25 +432,43 @@
             <span class="crumb-item active" data-i18n="nav.albums">Albums</span>
             <span class="crumb-count" id="albums-count-label">0 albums</span>
           </div>
-          <div class="searchbox">
-            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" placeholder="Search album…" data-i18n-placeholder="search.albumPlaceholder" id="albums-search">
+          <div class="auto-chip-wrap">
+            <span class="auto-chip">
+              <svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg>
+              <span data-i18n="autoChip.albums">Gathered from the library automatically</span>
+            </span>
           </div>
         </header>
 
         <div class="filters">
-          <button class="chip active" data-albums-sort="alpha" data-i18n="sort.alpha">Alphabetical</button>
-          <button class="chip" data-albums-sort="tracks" data-i18n="sort.byTracks">By track count</button>
-          <button class="chip" data-albums-sort="recent" data-i18n="sort.recent">Recently added</button>
-          <div class="auto-chip-wrap">
-            <span class="auto-chip">
-              <svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg>
-              <span data-i18n="autoChip.albums">List is built automatically from your library</span>
-            </span>
-          </div>
           <div class="seg" id="albums-view-seg">
             <button class="seg-btn active" data-albums-view="cards" data-i18n="view.cards">Cards</button>
             <button class="seg-btn" data-albums-view="list" data-i18n="view.list">List</button>
+          </div>
+          <div class="searchbox">
+            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+            <input type="text" placeholder="Search album…" data-i18n-placeholder="search.albumPlaceholder" id="albums-search">
+          </div>
+          <div class="sort-right">
+            <span data-i18n="sort.label">Sort:</span>
+            <div class="sort-select" id="albums-sort-select">
+              <button class="sort-btn" type="button">
+                <span id="albums-sort-label" data-i18n="sort.titleAsc">Title A→Z</span>
+                <svg class="i" width="10" height="10"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="sort-menu">
+                <div class="sort-opt" data-sort="title-asc" data-i18n="sort.titleAsc">Title A→Z</div>
+                <div class="sort-opt" data-sort="title-desc" data-i18n="sort.titleDesc">Title Z→A</div>
+                <div class="sort-opt" data-sort="artist-asc" data-i18n="sort.artistAsc">Artist A→Z</div>
+                <div class="sort-opt" data-sort="artist-desc" data-i18n="sort.artistDesc">Artist Z→A</div>
+                <div class="sort-opt" data-sort="date-desc" data-i18n="sort.dateDesc">Date added ↓</div>
+                <div class="sort-opt" data-sort="date-asc" data-i18n="sort.dateAsc">Date added ↑</div>
+                <div class="sort-opt" data-sort="duration-asc" data-i18n="sort.durationAsc">Duration ↑</div>
+                <div class="sort-opt" data-sort="duration-desc" data-i18n="sort.durationDesc">Duration ↓</div>
+                <div class="sort-opt" data-sort="tracks-desc" data-i18n="sort.tracksDesc">Number of tracks ↓</div>
+                <div class="sort-opt" data-sort="tracks-asc" data-i18n="sort.tracksAsc">Number of tracks ↑</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -525,21 +536,37 @@
             <span class="crumb-item active" data-i18n="nav.artists">Artists</span>
             <span class="crumb-count" id="artists-count-label">0 artists</span>
           </div>
-          <div class="searchbox">
-            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" placeholder="Search artist…" data-i18n-placeholder="search.artistPlaceholder" id="artists-search">
+          <div class="auto-chip-wrap">
+            <span class="auto-chip">
+              <svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg>
+              <span data-i18n="autoChip.artists">Gathered from the library automatically</span>
+            </span>
           </div>
         </header>
 
         <div class="filters">
-          <button class="chip active" data-artists-sort="alpha" data-i18n="sort.alpha">Alphabetical</button>
-          <button class="chip" data-artists-sort="tracks" data-i18n="sort.byTracks">By track count</button>
-          <button class="chip" data-artists-sort="recent" data-i18n="sort.recent">Recently added</button>
-          <div class="auto-chip-wrap">
-            <span class="auto-chip">
-              <svg class="i" width="11" height="11"><use href="#i-sparkle"/></svg>
-              <span data-i18n="autoChip.artists">List is built automatically from your library</span>
-            </span>
+          <div class="searchbox">
+            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+            <input type="text" placeholder="Search artist…" data-i18n-placeholder="search.artistPlaceholder" id="artists-search">
+          </div>
+          <div class="sort-right">
+            <span data-i18n="sort.label">Sort:</span>
+            <div class="sort-select" id="artists-sort-select">
+              <button class="sort-btn" type="button">
+                <span id="artists-sort-label" data-i18n="sort.artistAsc">Artist A→Z</span>
+                <svg class="i" width="10" height="10"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="sort-menu">
+                <div class="sort-opt" data-sort="artist-asc" data-i18n="sort.artistAsc">Artist A→Z</div>
+                <div class="sort-opt" data-sort="artist-desc" data-i18n="sort.artistDesc">Artist Z→A</div>
+                <div class="sort-opt" data-sort="date-desc" data-i18n="sort.dateDesc">Date added ↓</div>
+                <div class="sort-opt" data-sort="date-asc" data-i18n="sort.dateAsc">Date added ↑</div>
+                <div class="sort-opt" data-sort="duration-asc" data-i18n="sort.durationAsc">Duration ↑</div>
+                <div class="sort-opt" data-sort="duration-desc" data-i18n="sort.durationDesc">Duration ↓</div>
+                <div class="sort-opt" data-sort="tracks-desc" data-i18n="sort.tracksDesc">Number of tracks ↓</div>
+                <div class="sort-opt" data-sort="tracks-asc" data-i18n="sort.tracksAsc">Number of tracks ↑</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -974,6 +1001,9 @@
       </section>
 
     </main>
+
+    <!-- Right Sidebar for Artist View -->
+    <aside class="artist-sidebar" id="artist-sidebar" hidden></aside>
   </div>
 
   <!-- Playback Bar (M3 Expressive) -->
@@ -1255,28 +1285,6 @@
           </div>
         </div>
 
-        <div class="setting-card setting-card-tight">
-          <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
-            <div class="setting-text">
-              <div class="setting-label" data-i18n="setting.serviceColors">Network services</div>
-              <div class="setting-desc" data-i18n="setting.serviceColorsDesc">Predefined accent colors identify data sources across the app.</div>
-            </div>
-            <div class="svc-legend-grid">
-              <div class="svc-legend-item">
-                <span class="svc-badge svc-ytm"><span class="svc-dot"></span><span data-i18n="service.ytm">YouTube Music</span></span>
-                <span class="svc-legend-desc" data-i18n="service.ytmDesc">Browse, popularity charts, similar artists, parsing & downloads (Red)</span>
-              </div>
-              <div class="svc-legend-item">
-                <span class="svc-badge svc-lfm"><span class="svc-dot"></span><span data-i18n="service.lastfm">Last.fm</span></span>
-                <span class="svc-legend-desc" data-i18n="service.lastfmDesc">Scrobbling, genre tags & corrections (Purple)</span>
-              </div>
-              <div class="svc-legend-item">
-                <span class="svc-badge svc-mb"><span class="svc-dot"></span><span data-i18n="service.musicbrainz">MusicBrainz</span></span>
-                <span class="svc-legend-desc" data-i18n="service.musicbrainzDesc">Track metadata lookup & release matches (Blue)</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div class="setting-card setting-card-tight">
           <div class="setting-row">
