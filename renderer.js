@@ -2339,13 +2339,21 @@ document.querySelectorAll('.nav-item').forEach(item => {
     }
     if (item.dataset.action === 'open-settings') return openSettings();
     if (item.dataset.view) {
+      const targetView = item.dataset.view;
       // A direct click on the Library nav item shows the full library, not a
       // lingering Health-check result filter.
-      if (item.dataset.view === 'library') clearHealthFilter();
+      const clearedHealthFilter = targetView === 'library' && !!healthFilterPaths;
+      if (targetView === 'library') clearHealthFilter();
+      // Clicking the already-active destination should not rebuild its DOM and
+      // indexes. Only Library needs one refresh when that click cleared a filter.
+      if (targetView === currentView) {
+        if (clearedHealthFilter) renderLibrary();
+        return;
+      }
       // The YT Music view is inert until the browser resets its header/search,
       // so go through its own entry point rather than a bare setView.
-      if (item.dataset.view === 'ytmusic') return ytmBrowser.open();
-      setView(item.dataset.view);
+      if (targetView === 'ytmusic') return ytmBrowser.open();
+      setView(targetView);
     }
   });
 });
@@ -3912,14 +3920,32 @@ function restoreDownloadsState() {
 }
 
 // ── Render: sidebar counts + recents ──
+function collectionCounts() {
+  const artistCounts = new Map();
+  const albums = new Set();
+  for (const track of libraryWithNetwork()) {
+    const artists = splitArtists(track.artist);
+    for (const name of artists) artistCounts.set(name, (artistCounts.get(name) || 0) + 1);
+    const primaryArtist = artists[0] || '';
+    albums.add((track.album || tr('label.noAlbum')).toLowerCase() + '\0' + primaryArtist.toLowerCase());
+  }
+  const minTracks = settings.artistMinTracksEnabled
+    ? Math.max(1, Number(settings.artistMinTracks) || 1)
+    : 1;
+  let artistCount = 0;
+  for (const count of artistCounts.values()) if (count >= minTracks) artistCount++;
+  return { artists: artistCount, albums: albums.size };
+}
+
 function renderCounts() {
   $('count-library').textContent = library.length;
   $('count-playlists').textContent = playlists.length;
   $('count-favorites').textContent = favorites.length;
+  const counts = collectionCounts();
   const artistsCountEl = $('count-artists');
-  if (artistsCountEl) artistsCountEl.textContent = visibleArtists().length;
+  if (artistsCountEl) artistsCountEl.textContent = counts.artists;
   const albumsCountEl = $('count-albums');
-  if (albumsCountEl) albumsCountEl.textContent = buildAlbumsIndex().length;
+  if (albumsCountEl) albumsCountEl.textContent = counts.albums;
   updateQueueTabBadge();
 }
 function renderRecents() {
@@ -4544,7 +4570,6 @@ function renderTrackRow(track, displayIndex, queue) {
   // lazily as rows scroll into view. A peer's track already carries what it has —
   // there's no local file here to read tags from.
   if (!track.remote && (!track.cover || track.quality === undefined)) ensureCoverFor(track);
-  const realIndex = trackIndexByPath(track.path);
   const isPlayingRow = !!currentTrack
     && currentTrack.path === track.path;
   const selectable = librarySelectMode && currentView === 'library';
@@ -6030,6 +6055,12 @@ function isTagEditingLocked(p) {
 }
 function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
 
+// Keep input-critical work to state/audio/text updates. Expensive list rebuilds
+// and artwork filters run only after the interaction has reached a paint.
+function scheduleAfterInteraction(callback) {
+  requestAnimationFrame(() => requestAnimationFrame(callback));
+}
+
 function getNextTrackInQueue() {
   if (!currentTrack || currentQueue.length === 0) return null;
   const curPath = currentTrack.path;
@@ -6071,7 +6102,9 @@ function playTrackByPath(path, queue, { manual = true } = {}) {
   if (!track.cover && !isRemotePath(track.path)) ensureCoverFor(track);
 
   updateNowPlayingUI(track);
-  refreshPlayingHighlight();
+  scheduleAfterInteraction(() => {
+    if (currentTrack === track) refreshPlayingHighlight();
+  });
 
   crossfadeArmed = false;
   const fade = !!settings.crossfade && isPlaying && !!audio.src;
@@ -6117,9 +6150,12 @@ function playTrackByPath(path, queue, { manual = true } = {}) {
   if (!isRemotePath(path)) {
     recents = [path, ...recents.filter(p => p !== path)].slice(0, 50);
     saveRecents();
-    renderRecents();
   }
-  renderPlaybackQueue();
+  scheduleAfterInteraction(() => {
+    if (currentTrack !== track) return;
+    renderRecents();
+    renderPlaybackQueue();
+  });
   updatePlayButtonUI();
 }
 
@@ -6319,12 +6355,13 @@ function animateSwap(snap, direction, kind) {
 }
 
 function updateNowPlayingUI(track) {
-  // Repaint the backdrop when it follows the artwork of the playing track.
-  if (settings.bgSource === 'cover') applyAppearance();
   const sb = $('right-sidebar');
   if (sb && !sb.hidden && track) {
-    if (rightSidebarMode === 'album') openAlbumSidebar(albumKeyFor(track));
-    else if (track.artist) openArtistSidebar(track.artist);
+    scheduleAfterInteraction(() => {
+      if (currentTrack !== track) return;
+      if (rightSidebarMode === 'album') openAlbumSidebar(albumKeyFor(track));
+      else if (track.artist) openArtistSidebar(track.artist);
+    });
   }
   const coverSrc = track.cover || null;
   const isTrackChange = lastNowPlayingPath !== null && lastNowPlayingPath !== track.path;
@@ -6336,15 +6373,11 @@ function updateNowPlayingUI(track) {
   // When the fullscreen overlay is open, the mini-player is hidden behind it —
   // skip its clones so they don't float over the overlay.
   let snaps = null;
-  if (isTrackChange) {
+  if (isTrackChange && !overlayActive && settings.animTransitions !== false) {
     snaps = {
-      miniCover:  overlayActive ? null : cloneForSwap($('mini-cover-wrapper')),
-      miniTitle:  overlayActive ? null : cloneForSwap($('track-title')),
-      miniArtist: overlayActive ? null : cloneForSwap($('track-artist')),
-      fsCover:    overlayActive ? cloneForSwap($('fs-cover'))   : null,
-      fsTitle:    overlayActive ? cloneForSwap($('fs-title'))   : null,
-      fsArtist:   overlayActive ? cloneForSwap($('fs-artist'))  : null,
-      fsAlbum:    overlayActive ? cloneForSwap($('fs-album'))   : null,
+      miniCover: cloneForSwap($('mini-cover-wrapper')),
+      miniTitle: cloneForSwap($('track-title')),
+      miniArtist: cloneForSwap($('track-artist')),
     };
   }
 
@@ -6368,30 +6401,46 @@ function updateNowPlayingUI(track) {
   if (coverSrc) {
     fsCover.style.backgroundImage = `url('${coverSrc}')`;
     $('fs-cover-letter').textContent = '';
-    $('fs-backdrop').style.background = `url('${coverSrc}') center/cover`;
-    if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', `url('${coverSrc}')`);
-    if (jsNationViz) jsNationViz.setEmblem(coverSrc);
   } else {
     fsCover.style.backgroundImage = '';
     $('fs-cover-letter').textContent = (track.title || '?')[0];
-    $('fs-backdrop').style.background = 'transparent';
-    if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', 'none');
-    if (jsNationViz) jsNationViz.setEmblem(null);
   }
   $('fs-title').textContent = track.title;
   $('fs-artist').textContent = track.artist;
   $('fs-album').textContent = track.album + (track.year ? ` · ${track.year}` : '');
 
   if (snaps) {
-    animateSwap(snaps.miniCover,  direction, 'cover');
-    animateSwap(snaps.miniTitle,  direction, 'text');
+    animateSwap(snaps.miniCover, direction, 'cover');
+    animateSwap(snaps.miniTitle, direction, 'text');
     animateSwap(snaps.miniArtist, direction, 'text');
-    animateSwap(snaps.fsCover,    direction, 'cover');
-    animateSwap(snaps.fsTitle,    direction, 'text');
-    animateSwap(snaps.fsArtist,   direction, 'text');
-    animateSwap(snaps.fsAlbum,    direction, 'text');
+  } else if (isTrackChange && overlayActive && settings.animTransitions !== false) {
+    const fromX = direction < 0 ? 12 : -12;
+    [$('fs-cover'), $('fs-title'), $('fs-artist'), $('fs-album')].forEach(el => {
+      el.animate([
+        { opacity: 0.45, transform: `translateX(${fromX}px)` },
+        { opacity: 1, transform: 'translateX(0)' },
+      ], { duration: 180, easing: 'ease-out' });
+    });
   }
   lastNowPlayingPath = track.path;
+
+  // The fullscreen aura uses three viewport-sized, heavily blurred copies of
+  // the artwork. Updating it in the click task delayed the next paint by up to
+  // a second on integrated GPUs; let the text/controls paint first.
+  scheduleAfterInteraction(() => {
+    if (currentTrack !== track) return;
+    if (settings.bgSource === 'cover') applyAppearance();
+    const backdrop = $('fs-backdrop');
+    if (coverSrc) {
+      if (backdrop) backdrop.style.background = `url('${coverSrc}') center/cover`;
+      if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', `url('${coverSrc}')`);
+      if (jsNationViz) jsNationViz.setEmblem(coverSrc);
+    } else {
+      if (backdrop) backdrop.style.background = 'transparent';
+      if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', 'none');
+      if (jsNationViz) jsNationViz.setEmblem(null);
+    }
+  });
 
   setProgressUI();
 
@@ -11968,12 +12017,19 @@ function openDefaultView() {
 
 (async () => {
   splashStatus('splash.covers');
-  await warmCoversFromDisk();
+  // Start the bulk cache lookup immediately, but never hold first content paint
+  // behind a full-directory scan for a large library.
+  const cachedCovers = warmCoversFromDisk();
   openDefaultView();
   renderRecents();
   loadLastTrack();
   restoreDownloadsState();
   hideBootOverlay();
+
+  try {
+    await cachedCovers;
+    scheduleCoverRefresh();
+  } catch (_) { /* cache is best-effort */ }
   try { await restoreCovers(); } catch (_) { /* ignore */ }
   try { await rescanFolders(); } catch (_) { /* ignore */ }
   checkForUpdates();

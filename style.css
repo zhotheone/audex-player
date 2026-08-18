@@ -1468,6 +1468,23 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
 .ta-right { text-align: right; }
 
 /* ── Condensed track rows ── */
+body.condensed-tracks .topbar {
+  margin-bottom: 8px;
+}
+body.condensed-tracks .filters {
+  margin-bottom: 6px;
+  gap: 4px;
+}
+body.condensed-tracks .topbar .searchbox,
+body.condensed-tracks .filters .searchbox {
+  padding: 3px 10px;
+}
+body.condensed-tracks .chip {
+  padding: 2px 8px;
+}
+body.condensed-tracks .sort-btn {
+  padding: 2px 6px;
+}
 body.condensed-tracks .trow {
   height: 18px;
   padding: 0 10px;
