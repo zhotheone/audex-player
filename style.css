@@ -3243,6 +3243,15 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 
 .wavy-dot {
   fill: var(--accent);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), rx 0.15s ease;
+}
+
+.wavy-progress.is-seeking .wavy-dot,
+.wavy-progress:active .wavy-dot {
+  transform: scale(1, 2);
+  rx: 2px;
 }
 
 .time-label {

@@ -6649,6 +6649,7 @@ $('fs-btn-repeat').addEventListener('click', () => {
 // ── Wavy Progress (M3 Expressive) ──
 let wavePhase = 0;
 let waveAnimId = null;
+let waveAmp = 0;
 const AMPLITUDE = 3.0;
 const WAVELENGTH = 24;
 const VIEW_W = 400;
@@ -6660,9 +6661,12 @@ function buildWavyPath(progressX, progressRatio, phase) {
   if (progressX <= PAD + 0.8) {
     return `M ${PAD} ${midY}`;
   }
+  if (waveAmp <= 0.001) {
+    return `M ${PAD} ${midY} L ${progressX.toFixed(1)} ${midY}`;
+  }
 
   const ampScale = Math.min(1, progressRatio * 10);
-  const amp = AMPLITUDE * ampScale;
+  const amp = AMPLITUDE * ampScale * waveAmp;
   const steps = Math.max(16, Math.ceil((progressX - PAD) / 2));
   const pts = [];
 
@@ -6703,12 +6707,12 @@ function updateProgressSvg(trackId, activeId, trackPathId, dotId, stopId, ratio)
 
   const progressX = PAD + ratio * (w - PAD * 2);
   const midY = VIEW_H / 2;
-  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * Math.min(1, ratio * 10);
-  const progressY = midY + Math.sin((progressX / WAVELENGTH) * Math.PI * 2 + wavePhase) * amp;
+  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * Math.min(1, ratio * 10) * waveAmp;
+  const progressY = midY + (amp ? Math.sin((progressX / WAVELENGTH) * Math.PI * 2 + wavePhase) * amp : 0);
 
   const pathD = buildWavyPath(progressX, ratio, wavePhase);
   const endX = w - PAD;
-  const remainingStart = Math.min(endX, progressX + 7);
+  const remainingStart = Math.min(endX, progressX + 8);
   const trackD = remainingStart < endX ? `M ${remainingStart.toFixed(1)} 7 L ${endX} 7` : `M ${endX} 7`;
 
   const activePath = $(activeId);
@@ -6717,8 +6721,8 @@ function updateProgressSvg(trackId, activeId, trackPathId, dotId, stopId, ratio)
   if (trackPath) trackPath.setAttribute('d', trackD);
   const dot = $(dotId);
   if (dot) {
-    dot.setAttribute('cx', progressX.toFixed(1));
-    dot.setAttribute('cy', progressY.toFixed(1));
+    dot.setAttribute('x', (progressX - 3).toFixed(1));
+    dot.setAttribute('y', (progressY - 3).toFixed(1));
   }
   const stop = $(stopId);
   if (stop) stop.setAttribute('cx', endX.toFixed(1));
@@ -6745,25 +6749,29 @@ function setProgressUI() {
 }
 
 function waveTick() {
-  if (!isPlaying) {
+  const targetAmp = isPlaying ? 1 : 0;
+  const diff = targetAmp - waveAmp;
+  if (Math.abs(diff) < 0.01) {
+    waveAmp = targetAmp;
+  } else {
+    waveAmp += diff * 0.14;
+  }
+
+  if (waveAmp > 0.001) {
+    wavePhase += 0.028;
+  }
+
+  setProgressUI();
+
+  if (!isPlaying && waveAmp === 0) {
     waveAnimId = null;
     return;
   }
-  wavePhase += 0.028;
-  setProgressUI();
   waveAnimId = requestAnimationFrame(waveTick);
 }
 
 function syncWaveAnim() {
-  if (isPlaying) {
-    if (!waveAnimId) waveAnimId = requestAnimationFrame(waveTick);
-  } else {
-    if (waveAnimId) {
-      cancelAnimationFrame(waveAnimId);
-      waveAnimId = null;
-    }
-    setProgressUI();
-  }
+  if (!waveAnimId) waveAnimId = requestAnimationFrame(waveTick);
 }
 
 // ── Play history logging (feeds the Listening Report) ──
@@ -7148,6 +7156,7 @@ function wireWavySeek(trackEl) {
   let isDragging = false;
   trackEl.addEventListener('pointerdown', (e) => {
     isDragging = true;
+    trackEl.classList.add('is-seeking');
     try { trackEl.setPointerCapture(e.pointerId); } catch {}
     seekFromEvent(e);
   });
@@ -7157,6 +7166,7 @@ function wireWavySeek(trackEl) {
   const stopDrag = (e) => {
     if (isDragging) {
       isDragging = false;
+      trackEl.classList.remove('is-seeking');
       try { trackEl.releasePointerCapture(e.pointerId); } catch {}
     }
   };
