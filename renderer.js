@@ -7579,27 +7579,32 @@ function initFsShader() {
 
     void main() {
       vec2 uv = (v_uv - 0.5) * u_scale + 0.5;
-      float t = u_time * u_animationSpeed * 0.4;
+      float t = u_time * 0.35;
       vec2 warpedUv = domainWarp(uv * 2.5, t, u_warpIntensity);
       vec2 sampleUv = clamp(fract(warpedUv * 0.4 + 0.5), 0.02, 0.98);
 
-      // Chromatic RGB displacement on transients/bass
+      // Sample primary color from thumbnail
+      vec4 colA = texture2D(u_tex, sampleUv);
+      // Sample offset contrasting region of thumbnail for vibrant color interplay
+      vec2 altUv = clamp(fract(vec2(1.0 - sampleUv.y, sampleUv.x) + 0.25 * sin(t + warpedUv)), 0.02, 0.98);
+      vec4 colB = texture2D(u_tex, altUv);
+
+      // Fluid color blending
+      float mixFactor = 0.5 + 0.5 * sin(warpedUv.x * 1.2 + warpedUv.y * 1.2 + t);
+      vec3 col = mix(colA.rgb, colB.rgb, mixFactor);
+
+      // Chromatic RGB displacement across regions
       vec2 chrOff = (sampleUv - 0.5) * (0.012 * u_warpIntensity);
-      float rCol = texture2D(u_tex, clamp(sampleUv + chrOff, 0.02, 0.98)).r;
-      float gCol = texture2D(u_tex, sampleUv).g;
-      float bCol = texture2D(u_tex, clamp(sampleUv - chrOff, 0.02, 0.98)).b;
-      vec3 col = vec3(rCol, gCol, bCol);
+      col.r = texture2D(u_tex, clamp(sampleUv + chrOff, 0.02, 0.98)).r;
+      col.b = texture2D(u_tex, clamp(altUv - chrOff, 0.02, 0.98)).b;
 
-      // Color variance check: for single-shaded / flat covers, inject harmonic audio hues
-      float cMax = max(col.r, max(col.g, col.b));
-      float cMin = min(col.r, min(col.g, col.b));
-      float spread = cMax - cMin;
-      vec3 harmonicHue = 0.5 + 0.5 * cos(vec3(0.0, 2.0, 4.0) + t * 0.8 + warpedUv.xyx * 0.5);
-      col = mix(col, col * harmonicHue * 1.5 + harmonicHue * 0.15, smoothstep(0.35, 0.05, spread));
+      // Harmonic color expansion derived from fluid warping
+      vec3 colorShift = 0.5 + 0.5 * cos(vec3(0.0, 2.0, 4.0) + t * 0.4 + warpedUv.xyx * 0.35);
+      col = mix(col, col * colorShift * 1.35 + colorShift * 0.12, 0.32);
 
-      vec3 rgb = adjustSaturation(col, u_saturation);
-      // High contrast S-curve punch
-      rgb = (rgb - 0.5) * 1.35 + 0.5;
+      vec3 rgb = adjustSaturation(col, u_saturation * 1.35);
+      // S-curve contrast punch
+      rgb = (rgb - 0.5) * 1.3 + 0.5;
       rgb = mix(rgb, u_tintColor, u_tintIntensity);
       rgb += (rand(gl_FragCoord.xy) - 0.5) * u_dithering;
 
@@ -7666,10 +7671,16 @@ function updateFsShaderTexture(imgSrc) {
   img.src = imgSrc;
 }
 
+let fsShaderPhase = 0;
+let fsLastRenderNow = 0;
+let fsSmoothBass = 0.5;
+let fsSmoothEnergy = 0.5;
+let fsSmoothMid = 0.5;
+
 function startFsShader() {
   if (!fsGl) initFsShader();
   if (!fsGl || fsShaderRaf) return;
-  const startTime = performance.now();
+  fsLastRenderNow = performance.now();
   const render = (now) => {
     if (!$('fullscreen-overlay')?.classList.contains('active')) {
       fsShaderRaf = null;
@@ -7685,20 +7696,27 @@ function startFsShader() {
         canvas.height = h;
         fsGl.viewport(0, 0, w, h);
       }
+      const dt = Math.min(0.05, (now - fsLastRenderNow) * 0.001) || 0.016;
+      fsLastRenderNow = now;
+
       const feats = lastAudioFeatures;
-      const energy = feats ? feats.energy : 0.5;
-      const bass = feats ? feats.bass : 0.5;
-      const mid = feats ? feats.mid : 0.5;
-      const high = feats ? feats.high : 0.2;
-      const onset = feats ? feats.onset : 0;
-      const beat = feats?.beat ? 1 : 0;
+      const tEnergy = feats ? feats.energy : 0.5;
+      const tBass = feats ? feats.bass : 0.5;
+      const tMid = feats ? feats.mid : 0.5;
 
-      const warp = fsShaderParams.warpIntensity * (0.6 + 0.8 * bass + 0.4 * energy);
-      const speed = fsShaderParams.animationSpeed * (0.5 + 1.2 * energy);
-      const scale = fsShaderParams.scale * (1.0 - 0.12 * onset - 0.08 * beat);
-      const sat = fsShaderParams.saturation * (0.8 + 0.4 * mid + 0.3 * high);
+      // Low-pass EMA smoothing to kill transient jitter
+      fsSmoothBass += (tBass - fsSmoothBass) * 0.08;
+      fsSmoothEnergy += (tEnergy - fsSmoothEnergy) * 0.08;
+      fsSmoothMid += (tMid - fsSmoothMid) * 0.08;
 
-      fsGl.uniform1f(fsShaderTimeLoc, (now - startTime) * 0.001);
+      const speed = fsShaderParams.animationSpeed * (0.7 + 0.6 * fsSmoothEnergy);
+      fsShaderPhase += dt * speed;
+
+      const warp = fsShaderParams.warpIntensity * (0.8 + 0.4 * fsSmoothBass);
+      const scale = fsShaderParams.scale * (1.0 - 0.05 * fsSmoothBass);
+      const sat = fsShaderParams.saturation * (0.9 + 0.25 * fsSmoothMid);
+
+      fsGl.uniform1f(fsShaderTimeLoc, fsShaderPhase);
       fsGl.uniform2f(fsShaderResLoc, w, h);
       fsGl.uniform1f(fsShaderWarpLoc, warp);
       fsGl.uniform1f(fsShaderSpeedLoc, speed);
