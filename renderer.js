@@ -160,6 +160,7 @@ let settings = Object.assign({
   animWavy: true,            // wavy progress bar animation
   animTransitions: true,     // page and track crossfade transitions
   animEffects: true,         // button squishes, tactile pops, and hover sheens
+  condensedTracks: false,    // track row height matches font size
 }, JSON.parse(localStorage.getItem(LS.settings) || '{}'));
 // Shallow-merge above replaces `eq` wholesale — normalize so an old/partial
 // saved object still has a valid gains array of the right length.
@@ -475,9 +476,22 @@ function applyAnimations() {
     }
   });
 }
+let libraryVList = null;
+let favoritesVList = null;
+let playlistVList = null;
+let albumVList = null;
+
+function applyCondensedTracks() {
+  document.body.classList.toggle('condensed-tracks', !!settings.condensedTracks);
+  [libraryVList, favoritesVList, playlistVList, albumVList].forEach(v => {
+    if (v) v.setItems(v.getItems());
+  });
+}
+
 applyCornerRadius(settings.cornerRadius);
 applyUiScale(settings.uiScale);
 applyAnimations();
+applyCondensedTracks();
 applyAppearance();
 
 // ── Persistence ──
@@ -965,6 +979,8 @@ const I18N = {
     'setting.animTransitionsDesc': 'Smooth crossfades for views, artwork, and titles.',
     'setting.animEffects': 'Tactile UI feedback',
     'setting.animEffectsDesc': 'Micro-interactions, button squishes, and hover effects.',
+    'setting.condensedTracks': 'Condensed tracks',
+    'setting.condensedTracksDesc': 'Row height matches font size.',
     'setting.randomTheme': 'Random theme',
     'setting.randomThemeDesc': 'Pick a random palette every time the app starts.',
     'setting.accent': 'Accent color',
@@ -1687,6 +1703,8 @@ const I18N = {
     'setting.animTransitionsDesc': 'Плавна зміна обкладинок, назв та сторінок.',
     'setting.animEffects': 'Тактильний відгук UI',
     'setting.animEffectsDesc': 'Мікро-анімації, натискання кнопок та ефекти наведення.',
+    'setting.condensedTracks': 'Компактні треки',
+    'setting.condensedTracksDesc': 'Висота рядка відповідає розміру шрифту.',
     'setting.randomTheme': 'Випадкова тема',
     'setting.randomThemeDesc': 'Обирати випадкову палітру під час кожного запуску.',
     'setting.accent': 'Колір акценту',
@@ -2049,14 +2067,20 @@ function escapeHtml(s) {
 // Fixed-height virtualizer — has to match .trow's actual rendered height (see
 // style.css's own padding/line-height math) or rows overlap.
 const ROW_HEIGHT = 42;
+const CONDENSED_ROW_HEIGHT = 18;
+function getTrackRowHeight() {
+  return settings.condensedTracks ? CONDENSED_ROW_HEIGHT : ROW_HEIGHT;
+}
 const OVERSCAN = 8;
 
-function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan = OVERSCAN }) {
+function createVirtualList({ listEl, scrollEl, rowHeight = getTrackRowHeight, overscan = OVERSCAN }) {
   let items = [];
   let renderRow = () => document.createElement('div');
   const nodes = new Map(); // index -> element
   let rafPending = false;
   let lastScrollTop = scrollEl.scrollTop;
+
+  const getH = () => (typeof rowHeight === 'function' ? rowHeight() : rowHeight);
 
   // listEl's offset within the scroll container's content (header/topbar above it).
   // It's constant while scrolling, so cache it and avoid a forced layout every frame.
@@ -2069,7 +2093,7 @@ function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan 
 
   function placeNode(node, index) {
     node.style.position = 'absolute';
-    node.style.top = `${index * rowHeight}px`;
+    node.style.top = `${index * getH()}px`;
     node.style.left = '0';
     node.style.right = '0';
   }
@@ -2077,9 +2101,10 @@ function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan 
   function update() {
     rafPending = false;
     const total = items.length;
+    const rH = getH();
     listEl.style.position = 'relative';
     listEl.style.paddingTop = '0';
-    listEl.style.height = `${total * rowHeight}px`;
+    listEl.style.height = `${total * rH}px`;
     if (total === 0) {
       for (const [, node] of nodes) node.remove();
       nodes.clear();
@@ -2094,11 +2119,11 @@ function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan 
     // mounted ahead of the viewport. Capped to bound per-frame work.
     const delta = scrollTop - lastScrollTop;
     lastScrollTop = scrollTop;
-    const velRows = Math.min(80, Math.ceil(Math.abs(delta) / rowHeight));
+    const velRows = Math.min(80, Math.ceil(Math.abs(delta) / rH));
     const aheadExtra = delta >= 0 ? velRows : 0;
     const behindExtra = delta < 0 ? velRows : 0;
-    const visibleStart = (scrollTop - listOffset) / rowHeight;
-    const visibleEnd = (scrollTop - listOffset + viewportH) / rowHeight;
+    const visibleStart = (scrollTop - listOffset) / rH;
+    const visibleEnd = (scrollTop - listOffset + viewportH) / rH;
     const start = Math.max(0, Math.floor(visibleStart) - overscan - behindExtra);
     const end = Math.min(total, Math.ceil(visibleEnd) + overscan + aheadExtra);
 
@@ -2163,13 +2188,9 @@ function createVirtualList({ listEl, scrollEl, rowHeight = ROW_HEIGHT, overscan 
 }
 
 const scrollEl = document.querySelector('.main-content');
-let libraryVList = null;
 let librarySelectMode = false;      // library-view multi-select (bulk delete)
 const selectedPaths = new Set();
 let lastSelectedPath = null;        // anchor for shift-click range selection
-let favoritesVList = null;
-let playlistVList = null;
-let albumVList = null;
 
 // ── Lazy cover loading ──
 // Covers can be heavy (base64 data URLs). Only fetch them for tracks that actually become visible.
@@ -9439,6 +9460,7 @@ const TOGGLE_KEY_MAP = {
   'lan-sharing': 'lanSharing',
   'show-parser-browser': 'showParserBrowser',
   'shader-debug': 'shaderDebug',
+  'condensed-tracks': 'condensedTracks',
 };
 
 // ── Background settings UI ──
@@ -10080,6 +10102,7 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'randomTheme') applyTheme(settings.randomTheme ? randomThemeId() : settings.theme);
     if (key === 'lanSharing') applyLanSharingVisibility();
     if (key === 'animations' || key === 'animWavy' || key === 'animTransitions' || key === 'animEffects') applyAnimations();
+    if (key === 'condensedTracks') applyCondensedTracks();
     if (key === 'ytSimilarArtists' || key === 'ytPopular') {
       if (currentView === 'artist-detail' && activeArtistName) {
         const artist = buildArtistsIndex().find(a => a.name.toLowerCase() === activeArtistName.toLowerCase());

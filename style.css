@@ -1169,6 +1169,31 @@ input { font-family: inherit; color: inherit; }
 
 .ta-right { text-align: right; }
 
+/* ── Condensed track rows ── */
+body.condensed-tracks .trow {
+  height: 18px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 18px;
+  gap: 12px;
+}
+body.condensed-tracks .trow-cover {
+  display: none;
+}
+body.condensed-tracks .trow-title-cell {
+  gap: 6px;
+}
+body.condensed-tracks .thead {
+  padding: 3px 10px;
+  font-size: 10px;
+}
+body.condensed-tracks .trow-num {
+  font-size: 11px;
+}
+body.condensed-tracks .equalizer {
+  height: 10px;
+}
+
 /* ── Quality badge ── */
 /* Small monospace pill on every track row showing real audio quality. Amber
    (suspicious) marks a likely transcode caught by the spectral detector. */
