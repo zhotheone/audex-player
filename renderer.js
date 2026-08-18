@@ -6817,7 +6817,7 @@ async function ensureAudioAnalyzer() {
   try {
     audioAnalyzer = new AudioAnalyzerNode(eqCtx);
     await audioAnalyzer.init();
-    audioAnalyzer.connectSource(masterGainNode);
+    audioAnalyzer.connectSource(analyzerTapNode || masterGainNode);
     audioAnalyzer.subscribe(features => {
       lastAudioFeatures = features;
     });
@@ -9656,7 +9656,7 @@ function renderVolWheelStep() {
 // and permanently routes playback through Web Audio, so we defer it until the
 // user opts in. When off, an existing graph is flattened to 0 dB (transparent),
 // not torn down.
-let eqCtx = null, masterGainNode = null, channelGains = { A: null, B: null }, channelSources = { A: null, B: null }, eqFilters = [];
+let eqCtx = null, masterGainNode = null, analyzerTapNode = null, channelGains = { A: null, B: null }, channelSources = { A: null, B: null }, eqFilters = [];
 
 function clampEqGain(v) { return Math.max(-EQ_GAIN_MAX, Math.min(EQ_GAIN_MAX, Number(v) || 0)); }
 function eqPresetLabel(id) { return EQ_PRESET_LABELS[id] || id; }
@@ -9668,6 +9668,7 @@ function ensureEqGraph() {
   if (!Ctx) return false;
   try {
     eqCtx = new Ctx();
+    analyzerTapNode = eqCtx.createGain();
     masterGainNode = eqCtx.createGain();
     masterGainNode.gain.value = isMuted ? 0 : sliderToGain(targetVolume);
 
@@ -9675,13 +9676,17 @@ function ensureEqGraph() {
       channelSources.A = eqCtx.createMediaElementSource(audioA);
       channelGains.A = eqCtx.createGain();
       channelGains.A.gain.value = activeChannel === 'A' ? 1.0 : 0.0;
-      channelSources.A.connect(channelGains.A).connect(masterGainNode);
+      channelSources.A.connect(channelGains.A);
+      channelGains.A.connect(masterGainNode);
+      channelGains.A.connect(analyzerTapNode);
     }
     if (audioB) {
       channelSources.B = eqCtx.createMediaElementSource(audioB);
       channelGains.B = eqCtx.createGain();
       channelGains.B.gain.value = activeChannel === 'B' ? 1.0 : 0.0;
-      channelSources.B.connect(channelGains.B).connect(masterGainNode);
+      channelSources.B.connect(channelGains.B);
+      channelGains.B.connect(masterGainNode);
+      channelGains.B.connect(analyzerTapNode);
     }
 
     let node = masterGainNode;
@@ -9700,7 +9705,7 @@ function ensureEqGraph() {
     return true;
   } catch (e) {
     console.warn('EQ init failed:', e);
-    eqCtx = null; masterGainNode = null; channelGains = { A: null, B: null }; channelSources = { A: null, B: null }; eqFilters = [];
+    eqCtx = null; masterGainNode = null; analyzerTapNode = null; channelGains = { A: null, B: null }; channelSources = { A: null, B: null }; eqFilters = [];
     return false;
   }
 }
