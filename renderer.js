@@ -5539,6 +5539,31 @@ function setGlobalVolume(sliderValue) {
   }
 }
 
+function updateVolumeUI() {
+  const v = isMuted ? 0 : targetVolume;
+  const pct = `${v * 100}%`;
+  const volSlider = $('vol-slider');
+  if (volSlider) volSlider.value = Math.round(v * 100);
+  const volFill = $('vol-fill');
+  if (volFill) volFill.style.width = pct;
+  const fsFill = $('fs-vol-fill');
+  if (fsFill) fsFill.style.width = pct;
+
+  const iconName = (isMuted || v === 0) ? 'volume_off' : v < 0.35 ? 'volume_down' : 'volume_up';
+  const volIcon = $('volIcon');
+  if (volIcon) volIcon.textContent = iconName;
+  const fsVolIcon = $('fsVolIcon');
+  if (fsVolIcon) fsVolIcon.textContent = iconName;
+
+  const btnMute = $('btn-mute');
+  if (btnMute && btnMute.querySelector('use')) {
+    const icon = isMuted || v === 0 ? '#i-volume-mute'
+      : v < 0.5 ? '#i-volume-low'
+      : '#i-volume';
+    btnMute.querySelector('use').setAttribute('href', icon);
+  }
+}
+
 function setVolume(v) {
   isMuted = false;
   setGlobalVolume(v);
@@ -9415,7 +9440,7 @@ function renderCrossfadeLen() {
   const el = $('crossfade-len');
   const out = $('crossfade-len-val');
   if (row) row.hidden = !settings.crossfade;
-  const sec = crossfadeMs() / 1000;
+  const sec = Number(settings.crossfadeSec) || 3;
   if (el) el.value = String(sec);
   if (out) out.textContent = `${sec} ${tr('unit.sec')}`;
 }
