@@ -221,7 +221,7 @@
         connect(source) {
             if (!this.audioCtx) {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                this.audioCtx = new AudioContextClass();
+                this.audioCtx = (source && source.context) || new AudioContextClass();
                 this.analyser = this.audioCtx.createAnalyser();
                 this.analyser.fftSize = FFT_SIZE;
                 this.analyser.smoothingTimeConstant = 0.1;
@@ -267,7 +267,8 @@
 
             // Spectrum Mesh
             this.texData = new Float32Array(KEEP_BINS * SPECTRUM_COUNT);
-            this.audioTex = new THREE.DataTexture(this.texData, KEEP_BINS, SPECTRUM_COUNT, THREE.LuminanceFormat, THREE.FloatType);
+            const format = THREE.RedFormat || THREE.LuminanceFormat || 1028;
+            this.audioTex = new THREE.DataTexture(this.texData, KEEP_BINS, SPECTRUM_COUNT, format, THREE.FloatType);
             this.audioTex.minFilter = THREE.LinearFilter;
             this.audioTex.magFilter = THREE.LinearFilter;
 
@@ -293,7 +294,8 @@
                 depthWrite: false
             });
 
-            this.spectrumMesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), this.spectrumMaterial);
+            const GeomClass = THREE.PlaneGeometry || THREE.PlaneBufferGeometry;
+            this.spectrumMesh = new THREE.Mesh(new GeomClass(2, 2), this.spectrumMaterial);
             this.spectrumMesh.frustumCulled = false;
             this.scene.add(this.spectrumMesh);
 
@@ -325,16 +327,27 @@
                 this._resetParticleVelocity(i);
             }
 
-            this.particlesGeom.addAttribute('position', new THREE.BufferAttribute(posArr, 3));
-            this.particlesGeom.addAttribute('size', new THREE.BufferAttribute(sizeArr, 1));
-            this.particlesGeom.addAttribute('alpha', new THREE.BufferAttribute(alphaArr, 1));
+            const setAttr = (geom, name, attr) => (geom.setAttribute || geom.addAttribute).call(geom, name, attr);
+            setAttr(this.particlesGeom, 'position', new THREE.BufferAttribute(posArr, 3));
+            setAttr(this.particlesGeom, 'size', new THREE.BufferAttribute(sizeArr, 1));
+            setAttr(this.particlesGeom, 'alpha', new THREE.BufferAttribute(alphaArr, 1));
             this.particlesGeom.setDrawRange(0, this.particleCount);
 
-            let texLoader = new THREE.TextureLoader();
-            texLoader.crossOrigin = "";
-            let texLoc = this.options.particleTexture || (location.protocol === 'file:' && /Chrome/.test(navigator.userAgent) ? 'https://i.imgur.com/Qz4ftah.png' : './img/particle.png');
-            this.particleTexture = texLoader.load(texLoc);
-            this.particleTexture.minFilter = THREE.LinearFilter;
+            if (this.options.particleTexture && typeof this.options.particleTexture === 'object') {
+                this.particleTexture = this.options.particleTexture;
+            } else {
+                const c = document.createElement('canvas');
+                c.width = 32; c.height = 32;
+                const ctx = c.getContext('2d');
+                const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+                g.addColorStop(0, 'rgba(255,255,255,1)');
+                g.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+                g.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = g;
+                ctx.fillRect(0, 0, 32, 32);
+                this.particleTexture = new THREE.CanvasTexture(c);
+                this.particleTexture.minFilter = THREE.LinearFilter;
+            }
 
             this.particleMaterial = new THREE.ShaderMaterial({
                 uniforms: {

@@ -491,7 +491,7 @@ input { font-family: inherit; color: inherit; }
 /* Surfaces go translucent so the background actually reads through. The
    backdrop blur keeps text legible over busy images. */
 :root.has-custom-bg .sidebar,
-:root.has-custom-bg .artist-sidebar,
+:root.has-custom-bg .right-sidebar,
 :root.has-custom-bg .main-content,
 :root.has-custom-bg .playbar {
   background: color-mix(in srgb, var(--panel) calc(var(--surface-alpha, 1) * 100%), transparent);
@@ -516,8 +516,6 @@ input { font-family: inherit; color: inherit; }
   flex-shrink: 0;
   min-height: 0;
   overflow: hidden;
-  transition: width var(--motion-standard-default-spatial),
-              padding var(--motion-standard-default-spatial);
 }
 .sidebar > .brand,
 .sidebar > .sidebar-bottom {
@@ -1002,41 +1000,33 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
   border-radius: var(--radius-row);
 }
 
-/* ─── Right-side artist sidebar ─── */
-.artist-sidebar {
+/* ─── Right-side drawer sidebar ─── */
+.right-sidebar {
+  position: relative;
   width: 400px;
   min-width: 360px;
   max-width: 440px;
   min-height: 0;
-  padding: 20px 24px 16px;
+  padding: 16px 20px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-container, 16px);
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
   overflow-y: auto;
   flex-shrink: 0;
 }
-.artist-sidebar[hidden] { display: none; }
+.right-sidebar[hidden] { display: none; }
 .artist-sb-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: -16px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
 }
 .artist-sb-close {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
   cursor: pointer;
-  padding: 4px;
-  border-radius: var(--radius-control);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-.artist-sb-close:hover { color: var(--text-strong); background: var(--hover-bg); }
 
 /* Avatar rectangle */
 .artist-sb-hero {
@@ -1045,6 +1035,7 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
   gap: 12px;
 }
 .artist-sb-avatar {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
   border-radius: var(--radius-container, 12px);
@@ -1052,34 +1043,62 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
   background-size: cover;
   background-position: center;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+  gap: 10px;
+  overflow: hidden;
+}
+.artist-sb-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.35) 55%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
+}
+.artist-sb-avatar > * {
+  position: relative;
+  z-index: 1;
+}
+.artist-sb-avatar-letter {
+  position: absolute;
+  font-family: 'Roboto Serif', serif;
+  font-size: 72px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: rgba(255, 255, 255, 0.18);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
 }
 .artist-sb-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 .artist-sb-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-strong);
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
   line-height: 1.2;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.95);
 }
 .artist-sb-meta {
   font-size: 11.5px;
-  color: var(--text-dim);
+  color: rgba(255, 255, 255, 0.85);
   display: flex;
   gap: 6px;
   align-items: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+.artist-sb-meta .pl-meta-link {
+  color: #fff;
 }
 .artist-sb-actions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
 /* Sections */
@@ -1234,17 +1253,6 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
   border-radius: 999px;
   padding: 3px 10px;
   white-space: nowrap;
-}
-.dl-account-badge.is-premium {
-  color: var(--accent-ok);
-  border-color: var(--accent-ok);
-}
-@keyframes slideFromArtist {
-  from { opacity: 0; transform: translateX(48px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.main-content.slide-from-artist {
-  animation: slideFromArtist var(--motion-expressive-default-spatial, 0.3s cubic-bezier(0.2, 0, 0, 1)) both;
 }
 .crumb {
   display: flex;
@@ -2691,25 +2699,76 @@ html.is-playing .equalizer > span { animation-play-state: running; }
    Scoped to #view-album-detail — playlist and artist heroes keep 168px. Sized
    off the viewport so it keeps its presence on a wide window without crowding
    the metadata at the 1024px minimum. */
-#view-album-detail .pl-hero { gap: clamp(16px, 3vw, 32px); padding-bottom: 32px; flex-wrap: wrap; }
+#view-album-detail .pl-hero { padding-bottom: 24px; }
 #view-album-detail .pl-hero-cover {
-  width: clamp(160px, 26vw, 420px);
+  position: relative;
+  width: clamp(260px, 32vw, 420px);
   height: auto;
   aspect-ratio: 1;
   max-width: 100%;
-  border-radius: 10px;
-  padding: 18px;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
 }
-#view-album-detail .pl-hero-cover span { font-family: 'Roboto Serif', serif; font-weight: 700; font-size: clamp(64px, 10vw, 120px); }
-#view-album-detail .pl-title { font-size: clamp(28px, 4vw, 56px); margin-bottom: 16px; line-height: 1.1; word-break: break-word; overflow-wrap: anywhere; }
-#view-album-detail .pl-meta { font-size: 15px; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
-#view-album-detail .pl-eyebrow { font-size: 12.5px; margin-bottom: 12px; }
-
-.pl-meta-link { cursor: pointer; }
-.pl-meta-link:hover { color: var(--text-strong); text-decoration: underline; }
-.pl-actions {
+#view-album-detail .pl-hero-cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.35) 55%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
+}
+#view-album-detail .pl-hero-cover > * {
+  position: relative;
+  z-index: 1;
+}
+#view-album-detail .pl-hero-cover #album-hero-letter {
+  position: absolute;
+  font-family: 'Roboto Serif', serif;
+  font-weight: 700;
+  font-size: clamp(64px, 10vw, 120px);
+  color: rgba(255, 255, 255, 0.18);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+#view-album-detail .pl-title {
+  font-size: clamp(22px, 3vw, 36px);
+  margin-bottom: 6px;
+  line-height: 1.15;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.95);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+#view-album-detail .pl-meta {
+  font-size: 12px;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  flex-wrap: wrap;
+}
+#view-album-detail .pl-meta .pl-meta-link {
+  color: #fff;
+}
+#view-album-detail .pl-eyebrow {
+  font-size: 11px;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+#view-album-detail .pl-actions {
   display: flex;
   gap: 8px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
 /* ─── Settings ─── */
@@ -3820,6 +3879,18 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 }
 .fs-overlay.is-in .fs-canvas { opacity: 0.85; }
 
+.fs-jsnation-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--motion-expressive-default-spatial);
+}
+.fs-overlay.is-in .fs-jsnation-wrap { opacity: 0.95; }
+
 .fs-backdrop {
   position: absolute;
   top: 50%;
@@ -4440,7 +4511,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   padding: 8px 12px;
   background: var(--bg);
   border: 1px solid var(--border-strong);
-  border-radius: 5px;
+  border-radius: var(--radius-search);
   color: var(--text-strong);
   font-size: 13px;
   outline: none;
@@ -4453,7 +4524,7 @@ html:has(.palette-overlay.active) .dl-progress-fill {
   overflow-y: auto;
   margin: 12px 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-card);
 }
 .select-list .sl-item {
   padding: 10px 12px;

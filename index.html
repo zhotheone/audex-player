@@ -493,23 +493,25 @@
         </header>
 
         <div class="pl-hero">
-          <div class="pl-hero-cover" id="album-hero-cover"><span id="album-hero-letter"></span></div>
-          <div class="pl-hero-body">
-            <div class="pl-eyebrow" data-i18n="eyebrow.album">Album</div>
-            <div class="pl-title" id="album-detail-title"></div>
-            <div class="pl-meta" id="album-detail-meta"></div>
-            <div class="pl-actions">
-              <button class="btn-solid" id="btn-album-play">
-                <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                <span data-i18n="btn.playAll">Play all</span>
-              </button>
-              <button class="btn-ghost" id="btn-album-shuffle">
-                <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-                <span data-i18n="btn.shuffle">Shuffle</span>
-              </button>
-              <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-album-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
-                <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
-              </button>
+          <div class="pl-hero-cover" id="album-hero-cover">
+            <span id="album-hero-letter"></span>
+            <div class="pl-hero-body">
+              <div class="pl-eyebrow" data-i18n="eyebrow.album">Album</div>
+              <div class="pl-title" id="album-detail-title"></div>
+              <div class="pl-meta" id="album-detail-meta"></div>
+              <div class="pl-actions">
+                <button class="btn-solid" id="btn-album-play">
+                  <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
+                  <span data-i18n="btn.playAll">Play all</span>
+                </button>
+                <button class="btn-ghost" id="btn-album-shuffle">
+                  <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
+                  <span data-i18n="btn.shuffle">Shuffle</span>
+                </button>
+                <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-album-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
+                  <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1002,8 +1004,8 @@
 
     </main>
 
-    <!-- Right Sidebar for Artist View -->
-    <aside class="artist-sidebar" id="artist-sidebar" hidden></aside>
+    <!-- Right Sidebar for Artist and Album Detail -->
+    <aside class="right-sidebar" id="right-sidebar" hidden></aside>
   </div>
 
   <!-- Playback Bar (M3 Expressive) -->
@@ -1098,6 +1100,7 @@
   <!-- Fullscreen Player Overlay -->
   <div id="fullscreen-overlay" class="fs-overlay">
     <canvas id="fs-canvas" class="fs-canvas"></canvas>
+    <div id="fs-jsnation-wrap" class="fs-jsnation-wrap" hidden></div>
     <div id="fs-debug-panel" class="fs-debug-panel" hidden></div>
     <button class="icon-btn fs-close-btn" id="btn-close-fullscreen" aria-label="Close" title="Close" data-i18n-title="btn.close">
       <span class="material-symbols-rounded">close</span>
@@ -1148,6 +1151,9 @@
           <div class="song-actions fs-song-actions">
             <button class="icon-btn" id="fs-btn-favorite" aria-label="Favorite" aria-pressed="false" title="Favorite" data-i18n-title="tooltip.favorite">
               <span class="material-symbols-rounded">favorite</span>
+            </button>
+            <button class="icon-btn" id="fs-btn-viz" aria-label="Visualizer" title="Visualizer style" data-i18n-title="fs.visualizer">
+              <span class="material-symbols-rounded" id="fsVizIcon">blur_on</span>
             </button>
             <button class="icon-btn" id="fs-btn-lyrics" aria-label="Lyrics" title="Lyrics" data-i18n-title="fs.lyrics">
               <span class="material-symbols-rounded">lyrics</span>
@@ -2077,6 +2083,11 @@
 
   <audio id="audio-player"></audio>
   <audio id="audio-player-b"></audio>
+  <script type="module">
+    import * as THREE from './node_modules/three/build/three.module.js';
+    window.THREE = THREE;
+  </script>
+  <script src="jsnation.js"></script>
   <script src="analyzer.js"></script>
   <script src="renderer.js"></script>
 </body>

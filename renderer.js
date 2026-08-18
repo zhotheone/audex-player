@@ -3922,12 +3922,14 @@ function renderCounts() {
   updateQueueTabBadge();
 }
 function renderRecents() {
+  if (currentSidebarTab !== 'recents') return;
   const list = $('recents-list');
   if (!list) return;
   list.innerHTML = '';
   const emptyEl = $('recents-empty');
   const validRecents = recents.map(path => trackByPath(path)).filter(Boolean);
   if (emptyEl) emptyEl.hidden = validRecents.length > 0;
+  const frag = document.createDocumentFragment();
   validRecents.slice(0, 50).forEach(t => {
     if (!t.cover) ensureCoverFor(t);
     const el = document.createElement('div');
@@ -3941,20 +3943,20 @@ function renderRecents() {
       </div>
     `;
     el.addEventListener('click', () => playTrackByPath(t.path, library));
-    list.appendChild(el);
+    frag.appendChild(el);
   });
+  list.appendChild(frag);
 }
 
 function renderPlaybackQueue() {
-  const list = $('playback-queue-list');
-  if (!list) return;
-  list.innerHTML = '';
-  const emptyEl = $('playback-queue-empty');
   const countEl = $('playback-queue-count');
+  const emptyEl = $('playback-queue-empty');
   const activeQ = (isShuffle && shuffledQueue.length === currentQueue.length) ? shuffledQueue : currentQueue;
   if (!activeQ || activeQ.length === 0) {
     if (emptyEl) emptyEl.hidden = false;
     if (countEl) countEl.hidden = true;
+    const list = $('playback-queue-list');
+    if (list) list.innerHTML = '';
     return;
   }
   if (emptyEl) emptyEl.hidden = true;
@@ -3962,8 +3964,15 @@ function renderPlaybackQueue() {
     countEl.hidden = false;
     countEl.textContent = activeQ.length;
   }
+  if (currentSidebarTab !== 'queue') return;
+  const list = $('playback-queue-list');
+  if (!list) return;
+  list.innerHTML = '';
   const curPath = currentTrack ? currentTrack.path : null;
-  activeQ.forEach(t => {
+  const curIdx = Math.max(0, activeQ.findIndex(t => t.path === curPath));
+  const windowSlice = activeQ.slice(curIdx, curIdx + 100);
+  const frag = document.createDocumentFragment();
+  windowSlice.forEach(t => {
     if (!t.cover && !isRemotePath(t.path)) ensureCoverFor(t);
     const el = document.createElement('div');
     const isCur = t.path === curPath;
@@ -3979,8 +3988,9 @@ function renderPlaybackQueue() {
       </div>
     `;
     el.addEventListener('click', () => playTrackByPath(t.path, currentQueue));
-    list.appendChild(el);
+    frag.appendChild(el);
   });
+  list.appendChild(frag);
 }
 
 // ── Track quality ──
@@ -5056,19 +5066,19 @@ function openArtistSidebar(name) {
   if (!name) return;
   activeArtistName = name;
   renderArtistSidebar(name);
-  const sb = $('artist-sidebar');
+  const sb = $('right-sidebar');
   if (sb) sb.hidden = false;
-  document.body.classList.add('sidebar-collapsed', 'artist-sidebar-open');
+  document.body.classList.add('sidebar-collapsed', 'right-sidebar-open');
 }
 
 function closeArtistSidebar() {
-  const sb = $('artist-sidebar');
+  const sb = $('right-sidebar');
   if (sb) sb.hidden = true;
-  document.body.classList.remove('sidebar-collapsed', 'artist-sidebar-open');
+  document.body.classList.remove('sidebar-collapsed', 'right-sidebar-open');
 }
 
 function renderArtistSidebar(name) {
-  const sidebar = $('artist-sidebar');
+  const sidebar = $('right-sidebar');
   if (!sidebar) return;
   const all = buildArtistsIndex();
   const artist = all.find(a => a.name === name);
@@ -5095,38 +5105,38 @@ function renderArtistSidebar(name) {
   const coverStyle = artist.cover ? `background-image:url('${artist.cover}')` : '';
   sidebar.innerHTML = `
     <div class="artist-sb-header">
-      <button class="artist-sb-close" id="btn-close-artist-sidebar" title="${escapeHtml(tr('btn.close'))}">
+      <button class="btn-ghost icon-only artist-sb-close" id="btn-close-artist-sidebar" title="${escapeHtml(tr('btn.close'))}">
         <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
       </button>
     </div>
 
     <div class="artist-sb-hero">
-      <div class="artist-sb-info">
-        <div class="artist-sb-title">${escapeHtml(artist.name)}</div>
-        <div class="artist-sb-meta">
-          <span>${artist.trackCount} ${pluralTracks(artist.trackCount)}</span>
-          <span>·</span>
-          <span>${artist.albumCount} ${pluralAlbums(artist.albumCount)}</span>
-        </div>
-      </div>
-      <div class="artist-sb-actions">
-        <button class="btn-solid" id="btn-sb-artist-play">
-          <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-          <span data-i18n="btn.playAll">${escapeHtml(tr('btn.playAll'))}</span>
-        </button>
-        <button class="btn-ghost" id="btn-sb-artist-shuffle">
-          <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-          <span data-i18n="btn.shuffle">${escapeHtml(tr('btn.shuffle'))}</span>
-        </button>
-        <button class="btn-ghost icon-only" id="btn-sb-artist-ytm" title="${escapeHtml(tr('ytm.browseArtist'))}">
-          <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-        </button>
-        <button class="btn-ghost icon-only" id="btn-sb-artist-fix-tags" title="${escapeHtml(tr('btn.albumMenuTooltip'))}">
-          <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
-        </button>
-      </div>
       <div class="artist-sb-avatar" style="${coverStyle}">
-        ${artist.cover ? '' : escapeHtml(artistInitials(artist.name))}
+        ${artist.cover ? '' : `<span class="artist-sb-avatar-letter">${escapeHtml(artistInitials(artist.name))}</span>`}
+        <div class="artist-sb-info">
+          <div class="artist-sb-title">${escapeHtml(artist.name)}</div>
+          <div class="artist-sb-meta">
+            <span>${artist.trackCount} ${pluralTracks(artist.trackCount)}</span>
+            <span>·</span>
+            <span>${artist.albumCount} ${pluralAlbums(artist.albumCount)}</span>
+          </div>
+        </div>
+        <div class="artist-sb-actions">
+          <button class="btn-solid" id="btn-sb-artist-play">
+            <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
+            <span data-i18n="btn.playAll">${escapeHtml(tr('btn.playAll'))}</span>
+          </button>
+          <button class="btn-ghost" id="btn-sb-artist-shuffle">
+            <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
+            <span data-i18n="btn.shuffle">${escapeHtml(tr('btn.shuffle'))}</span>
+          </button>
+          <button class="btn-ghost icon-only" id="btn-sb-artist-ytm" title="${escapeHtml(tr('ytm.browseArtist'))}">
+            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
+          </button>
+          <button class="btn-ghost icon-only" id="btn-sb-artist-fix-tags" title="${escapeHtml(tr('btn.albumMenuTooltip'))}">
+            <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -5152,13 +5162,6 @@ function renderArtistSidebar(name) {
     }
   };
   $('btn-sb-artist-ytm').onclick = () => {
-    const main = document.querySelector('.main-content');
-    if (main) {
-      main.classList.remove('slide-from-artist');
-      void main.offsetWidth;
-      main.classList.add('slide-from-artist');
-      setTimeout(() => main.classList.remove('slide-from-artist'), 400);
-    }
     ytmBrowser.open(artist.name);
   };
   $('btn-sb-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
@@ -5740,13 +5743,13 @@ function openAlbumSidebar(key) {
   if (!key) return;
   activeAlbumKey = key;
   renderAlbumSidebar(key);
-  const sb = $('artist-sidebar');
+  const sb = $('right-sidebar');
   if (sb) sb.hidden = false;
-  document.body.classList.add('sidebar-collapsed', 'artist-sidebar-open');
+  document.body.classList.add('sidebar-collapsed', 'right-sidebar-open');
 }
 
 function renderAlbumSidebar(key) {
-  const sidebar = $('artist-sidebar');
+  const sidebar = $('right-sidebar');
   if (!sidebar) return;
   const all = buildAlbumsIndex();
   const album = all.find(a => a.key === key);
@@ -5757,38 +5760,38 @@ function renderAlbumSidebar(key) {
 
   sidebar.innerHTML = `
     <div class="artist-sb-header">
-      <button class="artist-sb-close" id="btn-close-artist-sidebar" title="${escapeHtml(tr('btn.close'))}">
+      <button class="btn-ghost icon-only artist-sb-close" id="btn-close-artist-sidebar" title="${escapeHtml(tr('btn.close'))}">
         <svg class="i" width="14" height="14"><use href="#i-close"/></svg>
       </button>
     </div>
 
     <div class="artist-sb-hero">
-      <div class="artist-sb-info">
-        <div class="artist-sb-title">${escapeHtml(album.name)}</div>
-        <div class="artist-sb-meta">
-          <span class="pl-meta-link" id="album-sb-artist-link">${escapeHtml(album.artist)}</span>
-          <span>·</span>
-          <span>${album.trackCount} ${pluralTracks(album.trackCount)}</span>
-          ${album.year ? `<span>·</span><span>${escapeHtml(String(album.year))}</span>` : ''}
-          <span>·</span>
-          <span>${formatTotalDuration(album.tracks)}</span>
-        </div>
-      </div>
-      <div class="artist-sb-actions">
-        <button class="btn-solid" id="btn-sb-album-play">
-          <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-          <span data-i18n="btn.playAll">${escapeHtml(tr('btn.playAll'))}</span>
-        </button>
-        <button class="btn-ghost" id="btn-sb-album-shuffle">
-          <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-          <span data-i18n="btn.shuffle">${escapeHtml(tr('btn.shuffle'))}</span>
-        </button>
-        <button class="btn-ghost icon-only" id="btn-sb-album-fix-tags" title="${escapeHtml(tr('btn.albumMenuTooltip'))}">
-          <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
-        </button>
-      </div>
       <div class="artist-sb-avatar" style="${coverStyle}">
-        ${album.cover ? '' : escapeHtml((album.name || '?')[0])}
+        ${album.cover ? '' : `<span class="artist-sb-avatar-letter">${escapeHtml((album.name || '?')[0])}</span>`}
+        <div class="artist-sb-info">
+          <div class="artist-sb-title">${escapeHtml(album.name)}</div>
+          <div class="artist-sb-meta">
+            <span class="pl-meta-link" id="album-sb-artist-link">${escapeHtml(album.artist)}</span>
+            <span>·</span>
+            <span>${album.trackCount} ${pluralTracks(album.trackCount)}</span>
+            ${album.year ? `<span>·</span><span>${escapeHtml(String(album.year))}</span>` : ''}
+            <span>·</span>
+            <span>${formatTotalDuration(album.tracks)}</span>
+          </div>
+        </div>
+        <div class="artist-sb-actions">
+          <button class="btn-solid" id="btn-sb-album-play">
+            <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
+            <span data-i18n="btn.playAll">${escapeHtml(tr('btn.playAll'))}</span>
+          </button>
+          <button class="btn-ghost" id="btn-sb-album-shuffle">
+            <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
+            <span data-i18n="btn.shuffle">${escapeHtml(tr('btn.shuffle'))}</span>
+          </button>
+          <button class="btn-ghost icon-only" id="btn-sb-album-fix-tags" title="${escapeHtml(tr('btn.albumMenuTooltip'))}">
+            <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -6339,12 +6342,14 @@ function updateNowPlayingUI(track) {
     $('fs-backdrop').style.background = `url('${coverSrc}') center/cover`;
     if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', `url('${coverSrc}')`);
     updateFsShaderTexture(coverSrc);
+    if (jsNationViz) jsNationViz.setEmblem(coverSrc);
   } else {
     fsCover.style.backgroundImage = '';
     $('fs-cover-letter').textContent = (track.title || '?')[0];
     $('fs-backdrop').style.background = 'transparent';
     if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', 'none');
     updateFsShaderTexture(null);
+    if (jsNationViz) jsNationViz.setEmblem(null);
   }
   $('fs-title').textContent = track.title;
   $('fs-artist').textContent = track.artist;
@@ -8179,15 +8184,15 @@ function startFsShader() {
           if (settings.shaderDebug) {
             dbg.hidden = false;
             const f = lastAudioFeatures || {};
-            const spdBass = (0.35 + 1.5 * fsSmoothBass).toFixed(2);
-            const spdMid = (0.55 + 2.0 * fsSmoothMid).toFixed(2);
-            const spdHigh = (0.85 + 2.8 * fsSmoothHigh).toFixed(2);
+            const spdBass = (0.3 + 3.6 * Math.pow(fsSmoothBass, 1.2) + 1.8 * (f.multiplier || f.energy || 0)).toFixed(2);
+            const spdMid = (0.45 + 1.8 * fsSmoothMid).toFixed(2);
+            const spdHigh = (0.75 + 2.2 * fsSmoothHigh).toFixed(2);
             dbg.innerHTML = `<div>FPS: <b>${fsFps}</b> (${fsFrameTime.toFixed(1)}ms)</div>` +
               `<div>Bass: <b>${fsSmoothBass.toFixed(2)}</b> (raw: ${(f.bass || 0).toFixed(2)})</div>` +
               `<div>Mid: <b>${fsSmoothMid.toFixed(2)}</b> (raw: ${(f.mid || 0).toFixed(2)})</div>` +
               `<div>High: <b>${fsSmoothHigh.toFixed(2)}</b> (raw: ${(f.high || 0).toFixed(2)})</div>` +
-              `<div>Lava Speed: <b>${spdBass}</b> / <b>${spdMid}</b> / <b>${spdHigh}</b></div>` +
-              `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Onset: <b>${(f.onset || 0).toFixed(2)}</b></div>` +
+              `<div>Lava Speed (Bass): <b>${spdBass}</b> (Mid: ${spdMid}, High: ${spdHigh})</div>` +
+              `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Mult: <b>${(f.multiplier || 0).toFixed(2)}</b></div>` +
               `<div>BPM: <b>${f.bpm || '—'}</b>${f.beat ? ' [BEAT]' : ''}</div>`;
           } else {
             dbg.hidden = true;
@@ -8196,19 +8201,24 @@ function startFsShader() {
       }
 
       const feats = lastAudioFeatures;
-      const tBass = feats ? feats.bass : 0.5;
-      const tMid = feats ? feats.mid : 0.5;
-      const tHigh = feats ? feats.high : 0.2;
+      const tBass = feats ? (feats.bass || 0) : 0.0;
+      const tMid = feats ? (feats.mid || 0) : 0.0;
+      const tHigh = feats ? (feats.high || 0) : 0.0;
+      const mult = feats ? (feats.multiplier || feats.energy || 0) : 0.0;
 
-      // Smooth low-pass EMA filter (0.06) for organic, flicker-free movement
-      fsSmoothBass += (tBass - fsSmoothBass) * 0.06;
-      fsSmoothMid += (tMid - fsSmoothMid) * 0.06;
-      fsSmoothHigh += (tHigh - fsSmoothHigh) * 0.06;
+      // Smooth low-pass EMA filter for responsive fluid motion
+      fsSmoothBass += (tBass - fsSmoothBass) * 0.14;
+      fsSmoothMid += (tMid - fsSmoothMid) * 0.08;
+      fsSmoothHigh += (tHigh - fsSmoothHigh) * 0.08;
 
-      // Lava blob speed accelerates with spectrum energy
-      fsBassPhase += dt * (0.35 + 1.5 * fsSmoothBass);
-      fsMidPhase  += dt * (0.55 + 2.0 * fsSmoothMid);
-      fsHighPhase += dt * (0.85 + 2.8 * fsSmoothHigh);
+      // More bass - quicker the lava
+      const spdBass = 0.3 + 3.6 * Math.pow(fsSmoothBass, 1.2) + 1.8 * mult;
+      const spdMid = 0.45 + 1.8 * fsSmoothMid;
+      const spdHigh = 0.75 + 2.2 * fsSmoothHigh;
+
+      fsBassPhase += dt * spdBass;
+      fsMidPhase  += dt * spdMid;
+      fsHighPhase += dt * spdHigh;
 
       fsGl.uniform2f(fsShaderResLoc, w, h);
       fsGl.uniform1f(fsShaderBassPhaseLoc, fsBassPhase);
@@ -8235,6 +8245,79 @@ function stopFsShader() {
   if (dbg) dbg.hidden = true;
 }
 
+let jsNationViz = null;
+
+function getFsVisualizerMode() {
+  return settings.fsVisualizer || 'shader';
+}
+
+function updateFsVizButtonUI() {
+  const mode = getFsVisualizerMode();
+  const btn = $('fs-btn-viz');
+  const icon = $('fsVizIcon');
+  if (btn) {
+    btn.classList.toggle('active', mode !== 'off');
+    btn.title = `Visualizer: ${mode === 'jsnation' ? 'JsNation' : mode === 'shader' ? 'Fluid Lava' : 'Off'}`;
+  }
+  if (icon) {
+    icon.textContent = mode === 'jsnation' ? 'equalizer' : mode === 'shader' ? 'blur_on' : 'blur_off';
+  }
+}
+
+function startFsVisualizer() {
+  if (!$('fullscreen-overlay')?.classList.contains('active')) return;
+  const mode = getFsVisualizerMode();
+  const canvas = $('fs-canvas');
+  const jsWrap = $('fs-jsnation-wrap');
+
+  if (mode === 'shader') {
+    if (canvas) canvas.hidden = false;
+    if (jsWrap) jsWrap.hidden = true;
+    if (jsNationViz) jsNationViz.stop();
+    startFsShader();
+  } else if (mode === 'jsnation') {
+    if (canvas) canvas.hidden = true;
+    if (jsWrap) jsWrap.hidden = false;
+    stopFsShader();
+    if (!jsNationViz && typeof JsNationVisualizer !== 'undefined' && window.THREE) {
+      jsNationViz = new JsNationVisualizer({
+        container: jsWrap,
+        background: 'transparent',
+        glow: true,
+        particles: true,
+        spectrum: true,
+        fovPunch: false,
+        emblem: currentTrack ? (currentTrack.cover || null) : null
+      });
+      if (ensureEqGraph()) jsNationViz.connect(analyzerTapNode || masterGainNode);
+    }
+    if (jsNationViz) {
+      if (currentTrack) jsNationViz.setEmblem(currentTrack.cover || null);
+      jsNationViz.start();
+    }
+  } else {
+    if (canvas) canvas.hidden = true;
+    if (jsWrap) jsWrap.hidden = true;
+    stopFsShader();
+    if (jsNationViz) jsNationViz.stop();
+  }
+  updateFsVizButtonUI();
+}
+
+function stopFsVisualizer() {
+  stopFsShader();
+  if (jsNationViz) jsNationViz.stop();
+}
+
+function toggleFsVisualizer() {
+  const modes = ['shader', 'jsnation', 'off'];
+  const curIdx = modes.indexOf(getFsVisualizerMode());
+  settings.fsVisualizer = modes[(curIdx + 1) % modes.length];
+  saveSettings();
+  startFsVisualizer();
+  toast(`Visualizer: ${settings.fsVisualizer === 'jsnation' ? 'JsNation' : settings.fsVisualizer === 'shader' ? 'Fluid Lava' : 'Off'}`);
+}
+
 function openFullscreen() {
   if (!currentTrack || fsAnimating) return;
   const overlay = $('fullscreen-overlay');
@@ -8243,7 +8326,8 @@ function openFullscreen() {
   cancelCoverAnim();
   overlay.classList.add('active');
   updateFullscreenQueue();
-  startFsShader();
+  startFsVisualizer();
+  updateFsVizButtonUI();
   $('mini-cover-wrapper')?.classList.add('is-morphing', 'is-fullscreen');
   $('mini-cover-wrapper')?.setAttribute('aria-pressed', 'true');
   const fsIcon = $('fsIcon');
@@ -8274,7 +8358,7 @@ async function closeFullscreen() {
   fsCoverAnim = flipCover('out');
   const done = () => {
     cancelCoverAnim();
-    stopFsShader();
+    stopFsVisualizer();
     overlay.classList.remove('active');
     fsAnimating = false;
     $('mini-cover-wrapper')?.classList.remove('is-morphing');
@@ -8282,6 +8366,8 @@ async function closeFullscreen() {
   if (fsCoverAnim) fsCoverAnim.finished.then(done).catch(done);
   else setTimeout(done, 320);
 }
+
+$('fs-btn-viz')?.addEventListener('click', toggleFsVisualizer);
 
 $('mini-cover-wrapper')?.addEventListener('click', openFullscreen);
 $('btn-fullscreen')?.addEventListener('click', openFullscreen);

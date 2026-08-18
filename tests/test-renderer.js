@@ -116,6 +116,9 @@ const mockDoc = {
     el.tagName = tag.toUpperCase();
     return el;
   },
+  createDocumentFragment() {
+    return createMockElement('fragment');
+  },
   addEventListener() {},
   removeEventListener() {},
   activeElement: null,
