@@ -128,6 +128,43 @@
                 float alpha = max(finalColor.a, clamp(length(totalGlow) * 0.8, 0.0, 1.0));
                 gl_FragColor = vec4(rgb, alpha);
             }
+        `,
+        fragLava: `
+            precision highp float;
+            uniform vec2 uResolution;
+            uniform vec3 uBlobs[3];
+            uniform vec3 uBlobColors[3];
+            uniform float uAudioMultiplier;
+
+            void main() {
+                vec2 st = gl_FragCoord.xy / uResolution.xy;
+                float aspect = uResolution.x / max(1.0, uResolution.y);
+                vec2 p = vec2(st.x * aspect, st.y);
+
+                float totalField = 0.0;
+                vec3 colSum = vec3(0.0);
+
+                for (int i = 0; i < 3; i++) {
+                    vec2 bPos = vec2(uBlobs[i].x * aspect, uBlobs[i].y);
+                    float r = uBlobs[i].z;
+                    float d = length(p - bPos);
+                    float f = (r * r) / (d * d + 0.002);
+                    totalField += f;
+                    colSum += uBlobColors[i] * f;
+                }
+
+                vec3 blobColor = colSum / max(0.001, totalField);
+
+                float edge = smoothstep(0.7, 1.25, totalField);
+                float inner = smoothstep(1.25, 2.4, totalField);
+                float glow = smoothstep(0.12, 0.7, totalField) * 0.45;
+
+                vec3 bg = mix(vec3(0.04, 0.03, 0.06), blobColor * 0.15, glow);
+                vec3 finalCol = mix(bg, blobColor, edge);
+                finalCol = mix(finalCol, min(blobColor * 1.3 + vec3(0.08), vec3(1.0)), inner * 0.35);
+
+                gl_FragColor = vec4(finalCol, 1.0);
+            }
         `
     };
 
@@ -144,8 +181,8 @@
                 spectrum: true,
                 background: '#111111',
                 emblem: null,
-                minEmblemSize: 480,
-                maxEmblemSize: 600,
+                minEmblemSize: 320,
+                maxEmblemSize: 400,
                 spectrumHeightScalar: 0.4,
                 glowRadius: 25,
                 loudness: 1.0,
@@ -309,15 +346,66 @@
             const GeomClass = THREE.PlaneGeometry || THREE.PlaneBufferGeometry;
             this.spectrumMesh = new THREE.Mesh(new GeomClass(2, 2), this.spectrumMaterial);
             this.spectrumMesh.frustumCulled = false;
+            this.spectrumMesh.visible = !this.isLavaLamp;
             this.scene.add(this.spectrumMesh);
 
             // Particles System
             this._initParticles();
+
+            // Lava Lamp Mesh
+            this._initLavaLamp();
+        }
+
+        _initLavaLamp() {
+            this.blobCount = 3;
+            this.blobs = [
+                { baseRadius: 0.32, phaseX: 0.0, phaseY: 1.2, freqX: 0.45, freqY: 0.35, ampX: 0.35, ampY: 0.28 },
+                { baseRadius: 0.36, phaseX: 2.1, phaseY: 3.5, freqX: 0.32, freqY: 0.48, ampX: 0.38, ampY: 0.32 },
+                { baseRadius: 0.28, phaseX: 4.3, phaseY: 0.8, freqX: 0.55, freqY: 0.38, ampX: 0.30, ampY: 0.34 }
+            ];
+            this.blobUniformData = [
+                new THREE.Vector3(0.5, 0.5, 0.32),
+                new THREE.Vector3(0.3, 0.7, 0.36),
+                new THREE.Vector3(0.7, 0.3, 0.28)
+            ];
+
+            const DEFAULT_PALETTE = [
+                new THREE.Vector3(1.0, 0.28, 0.15),
+                new THREE.Vector3(0.95, 0.65, 0.1),
+                new THREE.Vector3(0.65, 0.1, 0.9)
+            ];
+            this.blobColorUniformData = DEFAULT_PALETTE.map(c => c.clone());
+            this.targetLavaColors = DEFAULT_PALETTE.map(c => c.clone());
+
+            const w = this.wrapper ? (this.wrapper.clientWidth || window.innerWidth) : window.innerWidth;
+            const h = this.wrapper ? (this.wrapper.clientHeight || window.innerHeight) : window.innerHeight;
+
+            this.lavaUniforms = {
+                uResolution: { type: 'v2', value: new THREE.Vector2(w, h) },
+                uBlobs: { type: 'v3v', value: this.blobUniformData },
+                uBlobColors: { type: 'v3v', value: this.blobColorUniformData },
+                uAudioMultiplier: { type: 'f', value: 0.0 }
+            };
+
+            this.lavaMaterial = new THREE.ShaderMaterial({
+                uniforms: this.lavaUniforms,
+                vertexShader: SHADERS.vertSpectrum,
+                fragmentShader: SHADERS.fragLava,
+                transparent: false,
+                depthTest: false,
+                depthWrite: false
+            });
+
+            const GeomClass = THREE.PlaneGeometry || THREE.PlaneBufferGeometry;
+            this.lavaMesh = new THREE.Mesh(new GeomClass(2, 2), this.lavaMaterial);
+            this.lavaMesh.frustumCulled = false;
+            this.lavaMesh.visible = this.isLavaLamp;
+            this.scene.add(this.lavaMesh);
         }
 
         _initParticles() {
             this.maxParticles = this.options.maxParticles || 10000;
-            this.particleCount = Math.min(this.options.particleCount || (this.isLavaLamp ? 140 : 2400), this.maxParticles);
+            this.particleCount = Math.min(this.options.particleCount || 2400, this.maxParticles);
             
             if (this.particleSystem && this.scene) {
                 this.scene.remove(this.particleSystem);
@@ -331,20 +419,12 @@
             this.particleData = [];
             this.baseSizes = [];
 
-            if (this.isLavaLamp) {
-                for (let i = 0; i < this.particleCount; i++) {
-                    this.baseSizes[i] = 20 + Math.random() * 45;
-                    alphaArr[i] = 0.5 + Math.random() * 0.4;
-                    this._resetParticleVelocity(i);
-                }
-            } else {
-                for (let i = 0; i < max / 2; i++) {
-                    this.baseSizes[i] = 8 + Math.random() * 5;
-                    let alpha = 0.9 + Math.random() * 0.1;
-                    alphaArr[i] = alpha;
-                    alphaArr[i + max / 2] = alpha;
-                    this._resetParticleVelocity(i);
-                }
+            for (let i = 0; i < max / 2; i++) {
+                this.baseSizes[i] = 8 + Math.random() * 5;
+                let alpha = 0.9 + Math.random() * 0.1;
+                alphaArr[i] = alpha;
+                alphaArr[i + max / 2] = alpha;
+                this._resetParticleVelocity(i);
             }
 
             const setAttr = (geom, name, attr) => (geom.setAttribute || geom.addAttribute).call(geom, name, attr);
@@ -360,17 +440,9 @@
                 c.width = 64; c.height = 64;
                 const ctx = c.getContext('2d');
                 const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-                if (this.isLavaLamp) {
-                    g.addColorStop(0, 'rgba(255,255,255,1)');
-                    g.addColorStop(0.2, 'rgba(255,200,80,0.9)');
-                    g.addColorStop(0.5, 'rgba(255,80,20,0.6)');
-                    g.addColorStop(0.8, 'rgba(200,20,80,0.25)');
-                    g.addColorStop(1, 'rgba(0,0,0,0)');
-                } else {
-                    g.addColorStop(0, 'rgba(255,255,255,1)');
-                    g.addColorStop(0.3, 'rgba(255,255,255,0.7)');
-                    g.addColorStop(1, 'rgba(255,255,255,0)');
-                }
+                g.addColorStop(0, 'rgba(255,255,255,1)');
+                g.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+                g.addColorStop(1, 'rgba(255,255,255,0)');
                 ctx.fillStyle = g;
                 ctx.fillRect(0, 0, 64, 64);
                 this.particleTexture = new THREE.CanvasTexture(c);
@@ -390,18 +462,13 @@
             });
 
             this.particleSystem = new THREE.Points(this.particlesGeom, this.particleMaterial);
+            this.particleSystem.visible = !this.isLavaLamp;
             this.scene.add(this.particleSystem);
 
             this._updateParticleSizes();
 
-            if (this.isLavaLamp) {
-                for (let i = 0; i < this.particleCount; i++) {
-                    this._updateParticle(i, 0, true);
-                }
-            } else {
-                for (let i = 0; i < max / 2; i++) {
-                    this._updateParticle(i, Math.random() * CAMERA_Z, true);
-                }
+            for (let i = 0; i < max / 2; i++) {
+                this._updateParticle(i, Math.random() * CAMERA_Z, true);
             }
         }
 
@@ -414,23 +481,6 @@
         }
 
         _resetParticleVelocity(i) {
-            if (this.isLavaLamp) {
-                const w = this.wrapper ? (this.wrapper.clientWidth || 1920) : 1920;
-                const h = this.wrapper ? (this.wrapper.clientHeight || 1080) : 1080;
-                const spreadX = (w / (h || 1)) * 140;
-                this.particleData[i] = {
-                    x: (Math.random() - 0.5) * spreadX * 2,
-                    y: (Math.random() - 0.5) * 240,
-                    z: (Math.random() - 0.5) * 60,
-                    speedY: 0.25 + Math.random() * 0.5,
-                    driftPhase: Math.random() * Math.PI * 2,
-                    driftSpeed: 0.015 + Math.random() * 0.025,
-                    driftAmp: 0.2 + Math.random() * 0.4,
-                    baseSize: 20 + Math.random() * 45
-                };
-                this.baseSizes[i] = this.particleData[i].baseSize;
-                return;
-            }
             let r = 10 + Math.random() * 110;
             let theta = Math.PI * Math.random() - Math.PI / 2;
             this.particleData[i] = {
@@ -445,33 +495,6 @@
         _updateParticle(i, multiplier, ignoreSpeed) {
             let data = this.particleData[i];
             if (!data) return;
-
-            if (this.isLavaLamp) {
-                let boost = 1.0 + multiplier * 2.5;
-                data.y += data.speedY * (ignoreSpeed ? 1 : boost);
-                data.driftPhase += data.driftSpeed;
-                data.x += Math.sin(data.driftPhase) * data.driftAmp;
-
-                if (data.y > 130) {
-                    data.y = -130;
-                    const w = this.wrapper ? (this.wrapper.clientWidth || 1920) : 1920;
-                    const h = this.wrapper ? (this.wrapper.clientHeight || 1080) : 1080;
-                    const spreadX = (w / (h || 1)) * 140;
-                    data.x = (Math.random() - 0.5) * spreadX * 2;
-                    data.z = (Math.random() - 0.5) * 60;
-                }
-
-                let idx = VERTEX_SIZE * i;
-                let pos = this.particlesGeom.attributes.position.array;
-                let sizeArr = this.particlesGeom.attributes.size.array;
-                let res = this._getResMult();
-
-                pos[idx + 0] = data.x;
-                pos[idx + 1] = data.y;
-                pos[idx + 2] = data.z;
-                sizeArr[i] = data.baseSize * res * (1.0 + multiplier * 0.75);
-                return;
-            }
 
             let speed = ignoreSpeed ? 1 : data.speed;
             let adjustedSpeed = Math.max(speed * multiplier, 0.035);
@@ -502,19 +525,37 @@
             data.phase.y += data.phaseSpeed.y * speedMult;
         }
 
+        _updateLavaLamp(multiplier) {
+            if (!this.blobs || !this.lavaMesh || !this.lavaMesh.visible) return;
+            const speed = 1.0 + multiplier * 5.5;
+            const dt = 1.0 / 60.0;
+            for (let i = 0; i < this.blobCount; i++) {
+                const b = this.blobs[i];
+                b.phaseX += b.freqX * dt * speed;
+                b.phaseY += b.freqY * dt * speed;
+
+                const x = 0.5 + b.ampX * Math.sin(b.phaseX) + 0.04 * Math.sin(b.phaseX * 2.1);
+                const y = 0.5 + b.ampY * Math.cos(b.phaseY) + 0.04 * Math.cos(b.phaseY * 1.8);
+                const r = b.baseRadius * (1.0 + multiplier * 0.28 + 0.04 * Math.sin(b.phaseX * 1.4));
+
+                this.blobUniformData[i].set(x, y, r);
+
+                if (this.targetLavaColors && this.targetLavaColors[i]) {
+                    this.blobColorUniformData[i].lerp(this.targetLavaColors[i], 0.06);
+                }
+            }
+            if (this.lavaUniforms) {
+                this.lavaUniforms.uAudioMultiplier.value = multiplier;
+            }
+        }
+
         _updateParticleSizes() {
             let res = this._getResMult();
             let arr = this.particlesGeom.attributes.size.array;
-            if (this.isLavaLamp) {
-                for (let i = 0; i < this.particleCount; i++) {
-                    arr[i] = (this.baseSizes[i] || 30) * res;
-                }
-            } else {
-                let half = this.particleCount / 2;
-                for (let i = 0; i < half; i++) {
-                    arr[i] = this.baseSizes[i] * res;
-                    arr[i + half] = arr[i];
-                }
+            let half = this.particleCount / 2;
+            for (let i = 0; i < half; i++) {
+                arr[i] = this.baseSizes[i] * res;
+                arr[i + half] = arr[i];
             }
             this.particlesGeom.attributes.size.needsUpdate = true;
         }
@@ -522,12 +563,12 @@
         setMode(mode) {
             this.options.mode = mode;
             this.isLavaLamp = mode === 'lavalamp';
-            if (this.spectrumUniforms) {
-                this.spectrumUniforms.uColors.value = this.isLavaLamp ? COLORS_LAVALAMP : COLORS_JSNATION;
+            if (this.spectrumMesh) this.spectrumMesh.visible = !this.isLavaLamp;
+            if (this.particleSystem) this.particleSystem.visible = !this.isLavaLamp;
+            if (this.lavaMesh) this.lavaMesh.visible = this.isLavaLamp;
+            if (this.isLavaLamp && this.ctx2d) {
+                this.ctx2d.clearRect(0, 0, this.canvas2d.width, this.canvas2d.height);
             }
-            this.options.particleCount = this.isLavaLamp ? 140 : 2400;
-            this.options.particleTexture = null;
-            this._initParticles();
         }
 
         _initEmblem() {
@@ -547,17 +588,81 @@
             }
         }
 
+        _extractThumbnailColors(img) {
+            if (!img || !img.width || !img.height) return;
+            try {
+                const cvs = document.createElement('canvas');
+                cvs.width = 32;
+                cvs.height = 32;
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(img, 0, 0, 32, 32);
+                const data = ctx.getImageData(0, 0, 32, 32).data;
+                const sampled = [];
+
+                for (let i = 0; i < data.length; i += 16) {
+                    const r = data[i] / 255;
+                    const g = data[i + 1] / 255;
+                    const b = data[i + 2] / 255;
+                    if (data[i + 3] < 128) continue;
+
+                    const max = Math.max(r, g, b);
+                    const min = Math.min(r, g, b);
+                    const lum = (max + min) / 2;
+                    const sat = max === 0 ? 0 : (max - min) / max;
+
+                    if (lum > 0.08 && lum < 0.92) {
+                        sampled.push({ r, g, b, sat, lum });
+                    }
+                }
+
+                if (sampled.length === 0) return;
+                sampled.sort((a, b) => b.sat - a.sat);
+
+                const picked = [sampled[0]];
+                for (let i = 1; i < sampled.length && picked.length < 3; i++) {
+                    const c = sampled[i];
+                    const distinct = picked.every(p => {
+                        const dr = p.r - c.r, dg = p.g - c.g, db = p.b - c.b;
+                        return (dr * dr + dg * dg + db * db) > 0.07;
+                    });
+                    if (distinct) picked.push(c);
+                }
+
+                while (picked.length < 3) {
+                    const base = picked[0];
+                    picked.push({ r: base.g, g: base.b, b: base.r });
+                }
+
+                this.targetLavaColors = picked.slice(0, 3).map(c => new THREE.Vector3(c.r, c.g, c.b));
+            } catch (_) {
+                // Ignore cross-origin canvas security errors
+            }
+        }
+
         setEmblem(emblem) {
             this.options.emblem = emblem;
             if (!emblem) {
                 this.emblemImg = null;
                 this.emblemLoaded = false;
+                const DEFAULT_PALETTE = [
+                    new THREE.Vector3(1.0, 0.28, 0.15),
+                    new THREE.Vector3(0.95, 0.65, 0.1),
+                    new THREE.Vector3(0.65, 0.1, 0.9)
+                ];
+                this.targetLavaColors = DEFAULT_PALETTE.map(c => c.clone());
                 return;
             }
             this.emblemImg = new Image();
             this.emblemImg.crossOrigin = 'anonymous';
-            this.emblemImg.onload = () => { this.emblemLoaded = true; };
+            this.emblemImg.onload = () => {
+                this.emblemLoaded = true;
+                this._extractThumbnailColors(this.emblemImg);
+            };
             this.emblemImg.src = emblem;
+            if (this.emblemImg.complete && this.emblemImg.naturalWidth) {
+                this.emblemLoaded = true;
+                this._extractThumbnailColors(this.emblemImg);
+            }
         }
 
         setGlow(enabled) {
@@ -569,12 +674,12 @@
 
         setParticles(enabled) {
             this.options.particles = !!enabled;
-            if (this.particleSystem) this.particleSystem.visible = this.options.particles;
+            if (this.particleSystem) this.particleSystem.visible = this.options.particles && !this.isLavaLamp;
         }
 
         setSpectrum(enabled) {
             this.options.spectrum = !!enabled;
-            if (this.spectrumMesh) this.spectrumMesh.visible = this.options.spectrum;
+            if (this.spectrumMesh) this.spectrumMesh.visible = this.options.spectrum && !this.isLavaLamp;
         }
 
         _getResMult() {
@@ -655,45 +760,50 @@
                 multiplier = this._calcMultiplier(spectrum);
             }
 
-            this._updateShake(multiplier);
+            if (this.isLavaLamp) {
+                this._updateLavaLamp(multiplier);
+            } else {
+                this._updateShake(multiplier);
 
-            // Audio Spectrum update
-            if (this.options.spectrum) {
-                if (this.spectrumCache.length >= MAX_DELAY + 1) {
-                    this.spectrumCache.shift();
-                }
-                this.spectrumCache.push(spectrum);
-
-                for (let s = 0; s < SPECTRUM_COUNT; s++) {
-                    let past = this.spectrumCache[Math.max(this.spectrumCache.length - DELAYS[s] - 1, 0)] || spectrum;
-                    let smoothed = this._smooth(past, SMOOTH_MARGINS[s]);
-                    for (let i = 0; i < KEEP_BINS; i++) {
-                        this.texData[s * KEEP_BINS + i] = smoothed[i] || 0;
+                // Audio Spectrum update
+                if (this.options.spectrum) {
+                    if (this.spectrumCache.length >= MAX_DELAY + 1) {
+                        this.spectrumCache.shift();
                     }
+                    this.spectrumCache.push(spectrum);
+
+                    for (let s = 0; s < SPECTRUM_COUNT; s++) {
+                        let past = this.spectrumCache[Math.max(this.spectrumCache.length - DELAYS[s] - 1, 0)] || spectrum;
+                        let smoothed = this._smooth(past, SMOOTH_MARGINS[s]);
+                        for (let i = 0; i < KEEP_BINS; i++) {
+                            this.texData[s * KEEP_BINS + i] = smoothed[i] || 0;
+                        }
+                    }
+                    this.audioTex.needsUpdate = true;
+
+                    let curRad = this._getResMult() * (multiplier * (this.options.maxEmblemSize - this.options.minEmblemSize) + this.options.minEmblemSize) / 2;
+                    let w = this.wrapper.clientWidth;
+                    let h = this.wrapper.clientHeight;
+
+                    this.spectrumUniforms.uCurRadius.value = curRad;
+                    this.spectrumUniforms.uCenter.value.set(w / 2 + this.currentDx, h / 2 + this.currentDy);
+                    this.spectrumUniforms.uResMult.value = this._getResMult();
+                    this.spectrumUniforms.uGlowRadius.value = this.options.glowRadius * this._getResMult();
                 }
-                this.audioTex.needsUpdate = true;
 
-                let curRad = this._getResMult() * (multiplier * (this.options.maxEmblemSize - this.options.minEmblemSize) + this.options.minEmblemSize) / 2;
-                let w = this.wrapper.clientWidth;
-                let h = this.wrapper.clientHeight;
-
-                this.spectrumUniforms.uCurRadius.value = curRad;
-                this.spectrumUniforms.uCenter.value.set(w / 2 + this.currentDx, h / 2 + this.currentDy);
-                this.spectrumUniforms.uResMult.value = this._getResMult();
-                this.spectrumUniforms.uGlowRadius.value = this.options.glowRadius * this._getResMult();
-            }
-
-            // Particles update
-            if (this.options.particles) {
-                for (let i = 0; i < PARTICLE_COUNT / 2; i++) {
-                    this._updateParticle(i, multiplier);
+                // Particles update
+                if (this.options.particles) {
+                    const count = Math.floor(this.particleCount / 2);
+                    for (let i = 0; i < count; i++) {
+                        this._updateParticle(i, multiplier);
+                    }
+                    this.particlesGeom.attributes.position.needsUpdate = true;
                 }
-                this.particlesGeom.attributes.position.needsUpdate = true;
-            }
 
-            if (this.options.fovPunch && this.camera) {
-                this.camera.fov = 45 - (multiplier * 3.5);
-                this.camera.updateProjectionMatrix();
+                if (this.options.fovPunch && this.camera) {
+                    this.camera.fov = 45 - (multiplier * 3.5);
+                    this.camera.updateProjectionMatrix();
+                }
             }
 
             // Render WebGL
@@ -708,23 +818,38 @@
             let h = this.canvas2d.height;
             this.ctx2d.clearRect(0, 0, w, h);
 
+            if (this.isLavaLamp) return;
+
             let rad = this._getResMult() * (multiplier * (this.options.maxEmblemSize - this.options.minEmblemSize) + this.options.minEmblemSize) / 2;
             let cx = w / 2 + this.currentDx;
             let cy = h / 2 + this.currentDy;
 
+            if (rad <= 0) return;
+
+            this.ctx2d.save();
+            this.ctx2d.beginPath();
+            this.ctx2d.arc(cx, cy, rad, 0, Math.PI * 2);
+            this.ctx2d.closePath();
+            this.ctx2d.clip();
+
             if (this.emblemLoaded && this.emblemImg) {
-                this.ctx2d.save();
-                this.ctx2d.drawImage(this.emblemImg, cx - rad, cy - rad, rad * 2, rad * 2);
-                this.ctx2d.restore();
+                const img = this.emblemImg;
+                const iw = img.naturalWidth || img.width || 1;
+                const ih = img.naturalHeight || img.height || 1;
+                let sx = 0, sy = 0, sw = iw, sh = ih;
+                if (iw > ih) {
+                    sw = ih;
+                    sx = (iw - ih) / 2;
+                } else if (ih > iw) {
+                    sh = iw;
+                    sy = (ih - iw) / 2;
+                }
+                this.ctx2d.drawImage(img, sx, sy, sw, sh, cx - rad, cy - rad, rad * 2, rad * 2);
             } else if (!this.options.emblem) {
-                // Fallback default dark center circle
-                this.ctx2d.save();
-                this.ctx2d.beginPath();
-                this.ctx2d.arc(cx, cy, rad, 0, Math.PI * 2);
                 this.ctx2d.fillStyle = '#0a0a0a';
                 this.ctx2d.fill();
-                this.ctx2d.restore();
             }
+            this.ctx2d.restore();
         }
 
         start() {
@@ -754,6 +879,9 @@
                 this.spectrumUniforms.uResMult.value = this._getResMult();
                 this.spectrumUniforms.uGlowRadius.value = this.options.glowRadius * this._getResMult();
             }
+            if (this.lavaUniforms) {
+                this.lavaUniforms.uResolution.value.set(w, h);
+            }
             this._updateParticleSizes();
         }
 
@@ -762,6 +890,9 @@
             window.removeEventListener('resize', this._onResize);
             if (this.renderer) {
                 this.renderer.dispose();
+            }
+            if (this.lavaMaterial) {
+                this.lavaMaterial.dispose();
             }
             if (this.wrapper && this.wrapper.parentNode) {
                 this.wrapper.parentNode.removeChild(this.wrapper);

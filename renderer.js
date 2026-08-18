@@ -7408,8 +7408,9 @@ function waveTick() {
   }
 
   if (waveAmp > 0.001) {
-    const energy = lastAudioFeatures ? lastAudioFeatures.energy : 0.5;
-    wavePhase += 0.014 + 0.028 * energy;
+    const loudness = lastAudioFeatures ? (lastAudioFeatures.multiplier ?? lastAudioFeatures.energy ?? 0.5) : (isPlaying ? 0.3 : 0);
+    const bass = lastAudioFeatures ? (lastAudioFeatures.bass ?? 0) : 0;
+    wavePhase += 0.012 + loudness * 0.045 + bass * 0.035;
   }
 
   setProgressUI();
@@ -8015,9 +8016,10 @@ function startFsVisualizer() {
   if (!overlay?.classList.contains('active')) return;
   const mode = getFsVisualizerMode();
   const jsWrap = $('fs-jsnation-wrap');
-  const isViz = mode === 'shader' || mode === 'jsnation';
-
-  overlay.classList.toggle('is-jsnation', isViz);
+  const isViz = mode !== 'off';
+  overlay.classList.toggle('is-viz', isViz);
+  overlay.classList.toggle('is-jsnation', mode === 'jsnation');
+  overlay.classList.toggle('is-lavalamp', mode === 'shader');
 
   if (isViz) {
     if (jsWrap) jsWrap.hidden = false;
@@ -8031,8 +8033,7 @@ function startFsVisualizer() {
         particles: true,
         spectrum: true,
         fovPunch: false,
-        // TODO: REVIEW THIS
-        loudness: 0.2,
+        loudness: 0.2, // Pleasing to the eye, 1.0 is way too much junkiness
         emblem: currentTrack ? (currentTrack.cover || null) : null
       });
       if (ensureEqGraph()) jsNationViz.connect(analyzerTapNode || masterGainNode);

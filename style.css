@@ -3888,11 +3888,48 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transition: opacity var(--motion-expressive-default-spatial);
 }
 .fs-overlay.is-in .fs-jsnation-wrap { opacity: 1; }
-.fs-overlay.is-jsnation .fs-cover,
-.fs-overlay.is-jsnation .fs-backdrop,
-.fs-overlay.is-jsnation .fs-canvas {
+.fs-overlay.is-viz .fs-backdrop,
+.fs-overlay.is-viz .fs-canvas {
   opacity: 0 !important;
   pointer-events: none;
+}
+.fs-overlay.is-jsnation .fs-cover {
+  display: none !important;
+}
+.fs-overlay.is-jsnation .fs-body {
+  justify-content: flex-end;
+  padding: 20px 24px 28px;
+  pointer-events: none;
+}
+.fs-overlay.is-jsnation .fs-main {
+  max-width: 520px;
+  margin: 0 auto;
+  gap: 12px;
+}
+.fs-overlay.is-jsnation .fs-info {
+  max-width: 520px;
+  pointer-events: auto;
+}
+.fs-overlay.is-jsnation .fs-title {
+  font-size: 22px;
+  margin-bottom: 2px;
+}
+.fs-overlay.is-jsnation .fs-artist {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.fs-overlay.is-jsnation .fs-album {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.fs-overlay.is-jsnation .fs-progress-row {
+  margin-bottom: 8px;
+}
+.fs-overlay.is-jsnation .fs-button-group {
+  margin-bottom: 8px;
+}
+.fs-overlay.is-jsnation .fs-song-actions {
+  margin-bottom: 6px;
 }
 
 .fs-backdrop {
