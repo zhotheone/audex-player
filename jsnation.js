@@ -25,14 +25,19 @@
     const SMOOTH_MARGINS = [0, 2, 2, 3, 3, 3, 5, 5];
     const DELAYS = [0, 1, 2, 3, 4, 5, 6, 7];
     const MAX_DELAY = 7;
-    const COLORS = [
+    const COLORS_JSNATION = [
         new THREE.Color(0xFFFFFF), new THREE.Color(0xFFFF00),
         new THREE.Color(0xFF0000), new THREE.Color(0xFF66FF),
         new THREE.Color(0x333399), new THREE.Color(0x0000FF),
         new THREE.Color(0x33CCFF), new THREE.Color(0x00FF00)
     ];
+    const COLORS_LAVALAMP = [
+        new THREE.Color(0xFFFFFF), new THREE.Color(0xFFCC00),
+        new THREE.Color(0xFF6600), new THREE.Color(0xFF1744),
+        new THREE.Color(0xD500F9), new THREE.Color(0xFF007F),
+        new THREE.Color(0xFF9100), new THREE.Color(0xFF4500)
+    ];
 
-    const PARTICLE_COUNT = 2400;
     const VERTEX_SIZE = 3;
     const CAMERA_Z = 200;
 
@@ -52,11 +57,11 @@
             }
         `,
         fragParticle: `
-            uniform sampler2D texture;
+            uniform sampler2D pointTexture;
             varying float vAlpha;
             varying vec3 vColor;
             void main() {
-                gl_FragColor = vec4(vColor, vAlpha) * texture2D(texture, gl_PointCoord);
+                gl_FragColor = vec4(vColor, vAlpha) * texture2D(pointTexture, gl_PointCoord);
             }
         `,
         vertSpectrum: `
@@ -133,6 +138,7 @@
                 : (options.container || document.body);
 
             this.options = Object.assign({
+                mode: 'jsnation',
                 glow: true,
                 particles: true,
                 spectrum: true,
@@ -146,6 +152,11 @@
                 fovPunch: true,
                 particleCount: 2400
             }, options);
+
+            this.isLavaLamp = this.options.mode === 'lavalamp';
+            if (this.isLavaLamp && !options.particleCount) {
+                this.options.particleCount = 140;
+            }
 
             this.running = false;
             this.spectrumCache = [];
@@ -272,12 +283,13 @@
             this.audioTex.minFilter = THREE.LinearFilter;
             this.audioTex.magFilter = THREE.LinearFilter;
 
+            const spectrumColors = this.isLavaLamp ? COLORS_LAVALAMP : COLORS_JSNATION;
             this.spectrumUniforms = {
                 uResolution: { type: 'v2', value: new THREE.Vector2(width, height) },
                 uCenter: { type: 'v2', value: new THREE.Vector2(width / 2, height / 2) },
                 uCurRadius: { type: 'f', value: 0.0 },
                 uAudioTex: { type: 't', value: this.audioTex },
-                uColors: { type: 'v3v', value: COLORS },
+                uColors: { type: 'v3v', value: spectrumColors },
                 uExponents: { type: 'fv1', value: EXPONENTS },
                 uSpectrumHeightScalar: { type: 'f', value: this.options.spectrumHeightScalar },
                 uResMult: { type: 'f', value: this._getResMult() },
@@ -305,7 +317,7 @@
 
         _initParticles() {
             this.maxParticles = this.options.maxParticles || 10000;
-            this.particleCount = Math.min(this.options.particleCount || 2400, this.maxParticles);
+            this.particleCount = Math.min(this.options.particleCount || (this.isLavaLamp ? 140 : 2400), this.maxParticles);
             
             if (this.particleSystem && this.scene) {
                 this.scene.remove(this.particleSystem);
@@ -319,12 +331,20 @@
             this.particleData = [];
             this.baseSizes = [];
 
-            for (let i = 0; i < max / 2; i++) {
-                this.baseSizes[i] = 8 + Math.random() * 5;
-                let alpha = 0.9 + Math.random() * 0.1;
-                alphaArr[i] = alpha;
-                alphaArr[i + max / 2] = alpha;
-                this._resetParticleVelocity(i);
+            if (this.isLavaLamp) {
+                for (let i = 0; i < this.particleCount; i++) {
+                    this.baseSizes[i] = 20 + Math.random() * 45;
+                    alphaArr[i] = 0.5 + Math.random() * 0.4;
+                    this._resetParticleVelocity(i);
+                }
+            } else {
+                for (let i = 0; i < max / 2; i++) {
+                    this.baseSizes[i] = 8 + Math.random() * 5;
+                    let alpha = 0.9 + Math.random() * 0.1;
+                    alphaArr[i] = alpha;
+                    alphaArr[i + max / 2] = alpha;
+                    this._resetParticleVelocity(i);
+                }
             }
 
             const setAttr = (geom, name, attr) => (geom.setAttribute || geom.addAttribute).call(geom, name, attr);
@@ -337,14 +357,22 @@
                 this.particleTexture = this.options.particleTexture;
             } else {
                 const c = document.createElement('canvas');
-                c.width = 32; c.height = 32;
+                c.width = 64; c.height = 64;
                 const ctx = c.getContext('2d');
-                const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-                g.addColorStop(0, 'rgba(255,255,255,1)');
-                g.addColorStop(0.3, 'rgba(255,255,255,0.7)');
-                g.addColorStop(1, 'rgba(255,255,255,0)');
+                const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+                if (this.isLavaLamp) {
+                    g.addColorStop(0, 'rgba(255,255,255,1)');
+                    g.addColorStop(0.2, 'rgba(255,200,80,0.9)');
+                    g.addColorStop(0.5, 'rgba(255,80,20,0.6)');
+                    g.addColorStop(0.8, 'rgba(200,20,80,0.25)');
+                    g.addColorStop(1, 'rgba(0,0,0,0)');
+                } else {
+                    g.addColorStop(0, 'rgba(255,255,255,1)');
+                    g.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+                    g.addColorStop(1, 'rgba(255,255,255,0)');
+                }
                 ctx.fillStyle = g;
-                ctx.fillRect(0, 0, 32, 32);
+                ctx.fillRect(0, 0, 64, 64);
                 this.particleTexture = new THREE.CanvasTexture(c);
                 this.particleTexture.minFilter = THREE.LinearFilter;
             }
@@ -352,7 +380,7 @@
             this.particleMaterial = new THREE.ShaderMaterial({
                 uniforms: {
                     color: { type: 'c', value: new THREE.Color(0xFFFFFF) },
-                    texture: { type: 't', value: this.particleTexture }
+                    pointTexture: { type: 't', value: this.particleTexture }
                 },
                 vertexShader: SHADERS.vertParticle,
                 fragmentShader: SHADERS.fragParticle,
@@ -366,8 +394,14 @@
 
             this._updateParticleSizes();
 
-            for (let i = 0; i < max / 2; i++) {
-                this._updateParticle(i, Math.random() * CAMERA_Z, true);
+            if (this.isLavaLamp) {
+                for (let i = 0; i < this.particleCount; i++) {
+                    this._updateParticle(i, 0, true);
+                }
+            } else {
+                for (let i = 0; i < max / 2; i++) {
+                    this._updateParticle(i, Math.random() * CAMERA_Z, true);
+                }
             }
         }
 
@@ -380,6 +414,23 @@
         }
 
         _resetParticleVelocity(i) {
+            if (this.isLavaLamp) {
+                const w = this.wrapper ? (this.wrapper.clientWidth || 1920) : 1920;
+                const h = this.wrapper ? (this.wrapper.clientHeight || 1080) : 1080;
+                const spreadX = (w / (h || 1)) * 140;
+                this.particleData[i] = {
+                    x: (Math.random() - 0.5) * spreadX * 2,
+                    y: (Math.random() - 0.5) * 240,
+                    z: (Math.random() - 0.5) * 60,
+                    speedY: 0.25 + Math.random() * 0.5,
+                    driftPhase: Math.random() * Math.PI * 2,
+                    driftSpeed: 0.015 + Math.random() * 0.025,
+                    driftAmp: 0.2 + Math.random() * 0.4,
+                    baseSize: 20 + Math.random() * 45
+                };
+                this.baseSizes[i] = this.particleData[i].baseSize;
+                return;
+            }
             let r = 10 + Math.random() * 110;
             let theta = Math.PI * Math.random() - Math.PI / 2;
             this.particleData[i] = {
@@ -394,6 +445,33 @@
         _updateParticle(i, multiplier, ignoreSpeed) {
             let data = this.particleData[i];
             if (!data) return;
+
+            if (this.isLavaLamp) {
+                let boost = 1.0 + multiplier * 2.5;
+                data.y += data.speedY * (ignoreSpeed ? 1 : boost);
+                data.driftPhase += data.driftSpeed;
+                data.x += Math.sin(data.driftPhase) * data.driftAmp;
+
+                if (data.y > 130) {
+                    data.y = -130;
+                    const w = this.wrapper ? (this.wrapper.clientWidth || 1920) : 1920;
+                    const h = this.wrapper ? (this.wrapper.clientHeight || 1080) : 1080;
+                    const spreadX = (w / (h || 1)) * 140;
+                    data.x = (Math.random() - 0.5) * spreadX * 2;
+                    data.z = (Math.random() - 0.5) * 60;
+                }
+
+                let idx = VERTEX_SIZE * i;
+                let pos = this.particlesGeom.attributes.position.array;
+                let sizeArr = this.particlesGeom.attributes.size.array;
+                let res = this._getResMult();
+
+                pos[idx + 0] = data.x;
+                pos[idx + 1] = data.y;
+                pos[idx + 2] = data.z;
+                sizeArr[i] = data.baseSize * res * (1.0 + multiplier * 0.75);
+                return;
+            }
 
             let speed = ignoreSpeed ? 1 : data.speed;
             let adjustedSpeed = Math.max(speed * multiplier, 0.035);
@@ -427,12 +505,29 @@
         _updateParticleSizes() {
             let res = this._getResMult();
             let arr = this.particlesGeom.attributes.size.array;
-            let half = this.particleCount / 2;
-            for (let i = 0; i < half; i++) {
-                arr[i] = this.baseSizes[i] * res;
-                arr[i + half] = arr[i];
+            if (this.isLavaLamp) {
+                for (let i = 0; i < this.particleCount; i++) {
+                    arr[i] = (this.baseSizes[i] || 30) * res;
+                }
+            } else {
+                let half = this.particleCount / 2;
+                for (let i = 0; i < half; i++) {
+                    arr[i] = this.baseSizes[i] * res;
+                    arr[i + half] = arr[i];
+                }
             }
             this.particlesGeom.attributes.size.needsUpdate = true;
+        }
+
+        setMode(mode) {
+            this.options.mode = mode;
+            this.isLavaLamp = mode === 'lavalamp';
+            if (this.spectrumUniforms) {
+                this.spectrumUniforms.uColors.value = this.isLavaLamp ? COLORS_LAVALAMP : COLORS_JSNATION;
+            }
+            this.options.particleCount = this.isLavaLamp ? 140 : 2400;
+            this.options.particleTexture = null;
+            this._initParticles();
         }
 
         _initEmblem() {
@@ -443,7 +538,7 @@
         setBackground(bg) {
             this.options.background = bg;
             if (!this.wrapper) return;
-            if (!bg) {
+            if (!bg || bg === 'transparent' || bg === 'none') {
                 this.wrapper.style.background = 'transparent';
             } else if (bg.startsWith('#') || bg.startsWith('rgb') || bg.startsWith('hsl')) {
                 this.wrapper.style.background = bg;

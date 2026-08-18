@@ -295,6 +295,7 @@ let pendingAddPath = null;
 let activePlaylistId = null;
 let activeArtistName = null;
 let activeAlbumKey = null;
+let rightSidebarMode = null; // 'artist' | 'album'
 let albumsSort = settings.albumsSort || 'title-asc';
 let albumsViewMode = 'cards';        // 'cards' | 'list'
 let artistsSort = settings.artistsSort || 'artist-asc';
@@ -5064,6 +5065,7 @@ function refreshArtistsCoversInPlace() {
 
 function openArtistSidebar(name) {
   if (!name) return;
+  rightSidebarMode = 'artist';
   activeArtistName = name;
   renderArtistSidebar(name);
   const sb = $('right-sidebar');
@@ -5072,6 +5074,7 @@ function openArtistSidebar(name) {
 }
 
 function closeArtistSidebar() {
+  rightSidebarMode = null;
   const sb = $('right-sidebar');
   if (sb) sb.hidden = true;
   document.body.classList.remove('sidebar-collapsed', 'right-sidebar-open');
@@ -5741,6 +5744,7 @@ function refreshAlbumsCoversInPlace() {
 
 function openAlbumSidebar(key) {
   if (!key) return;
+  rightSidebarMode = 'album';
   activeAlbumKey = key;
   renderAlbumSidebar(key);
   const sb = $('right-sidebar');
@@ -5995,6 +5999,26 @@ function triggerCrossfade(newStreamUrl, { manual = false } = {}) {
 
   activeChannel = nextKey;
   audio = nextChan;
+}
+
+function stopCrossfadeTail() {
+  const otherKey = activeChannel === 'A' ? 'B' : 'A';
+  const otherChan = otherKey === 'A' ? audioA : audioB;
+  if (otherChan && !otherChan.paused) {
+    try { otherChan.pause(); otherChan.src = ''; } catch (_) {}
+    delete otherChan.dataset?.trackPath;
+  }
+  if (eqCtx && channelGains) {
+    const now = eqCtx.currentTime;
+    if (channelGains[activeChannel]) {
+      channelGains[activeChannel].gain.cancelScheduledValues(now);
+      channelGains[activeChannel].gain.value = 1;
+    }
+    if (channelGains[otherKey]) {
+      channelGains[otherKey].gain.cancelScheduledValues(now);
+      channelGains[otherKey].gain.value = 0;
+    }
+  }
 }
 
 // ── Playback ──
@@ -6297,6 +6321,11 @@ function animateSwap(snap, direction, kind) {
 function updateNowPlayingUI(track) {
   // Repaint the backdrop when it follows the artwork of the playing track.
   if (settings.bgSource === 'cover') applyAppearance();
+  const sb = $('right-sidebar');
+  if (sb && !sb.hidden && track) {
+    if (rightSidebarMode === 'album') openAlbumSidebar(albumKeyFor(track));
+    else if (track.artist) openArtistSidebar(track.artist);
+  }
   const coverSrc = track.cover || null;
   const isTrackChange = lastNowPlayingPath !== null && lastNowPlayingPath !== track.path;
   const direction = isTrackChange ? trackChangeDirection : 0;
@@ -6341,14 +6370,12 @@ function updateNowPlayingUI(track) {
     $('fs-cover-letter').textContent = '';
     $('fs-backdrop').style.background = `url('${coverSrc}') center/cover`;
     if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', `url('${coverSrc}')`);
-    updateFsShaderTexture(coverSrc);
     if (jsNationViz) jsNationViz.setEmblem(coverSrc);
   } else {
     fsCover.style.backgroundImage = '';
     $('fs-cover-letter').textContent = (track.title || '?')[0];
     $('fs-backdrop').style.background = 'transparent';
     if (fsOverlay) fsOverlay.style.setProperty('--fs-cover-img', 'none');
-    updateFsShaderTexture(null);
     if (jsNationViz) jsNationViz.setEmblem(null);
   }
   $('fs-title').textContent = track.title;
@@ -7963,288 +7990,7 @@ function cancelCoverAnim() {
   fsCoverAnim = null;
 }
 
-// ── Fullscreen WebGL Kawarp Domain Warping Shader ──
-let fsGl = null, fsShaderProg = null, fsTex = null, fsShaderRaf = null;
-let fsShaderTimeLoc = null, fsShaderResLoc = null;
-let fsShaderWarpLoc = null, fsShaderSpeedLoc = null, fsShaderScaleLoc = null;
-let fsShaderSatLoc = null, fsShaderTintLoc = null, fsShaderTintIntLoc = null, fsShaderDitherLoc = null;
-
-let fsShaderParams = {
-  warpIntensity: 1.0,
-  animationSpeed: 1.0,
-  scale: 1.0,
-  saturation: 1.5,
-  tintColor: [0.16, 0.16, 0.24],
-  tintIntensity: 0.15,
-  dithering: 0.008,
-};
-
-function randomizeFsShaderParams() {
-  const r = (min, max) => min + Math.random() * (max - min);
-  fsShaderParams = {
-    warpIntensity: r(0.75, 1.25),
-    animationSpeed: r(0.8, 1.25),
-    scale: r(0.85, 1.15),
-    saturation: r(1.3, 1.7),
-    tintColor: [r(0.12, 0.22), r(0.12, 0.22), r(0.18, 0.28)],
-    tintIntensity: r(0.1, 0.2),
-    dithering: r(0.006, 0.012),
-  };
-}
-
-function initFsShader() {
-  const canvas = $('fs-canvas');
-  if (!canvas) return;
-  let gl = null;
-  try {
-    gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-  } catch {}
-  if (!gl) return;
-  fsGl = gl;
-
-  const vsSrc = `
-    attribute vec2 a_pos;
-    varying vec2 v_uv;
-    void main() {
-      v_uv = (a_pos + 1.0) * 0.5;
-      gl_Position = vec4(a_pos, 0.0, 1.0);
-    }
-  `;
-
-  const fsSrc = `
-    precision mediump float;
-    varying vec2 v_uv;
-    uniform vec2 u_resolution;
-    uniform sampler2D u_tex;
-
-    uniform float u_bassPhase;
-    uniform float u_midPhase;
-    uniform float u_highPhase;
-    uniform float u_bass;
-    uniform float u_mid;
-    uniform float u_high;
-    uniform float u_saturation;
-    uniform float u_dithering;
-
-    vec3 adjustSaturation(vec3 c, float sat) {
-      float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-      return mix(vec3(l), c, sat);
-    }
-
-    float rand(vec2 n) {
-      return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
-    }
-
-    void main() {
-      vec2 uv = v_uv;
-      float aspect = u_resolution.x / max(1.0, u_resolution.y);
-      vec2 p = (uv - 0.5) * vec2(aspect, 1.0) + 0.5;
-
-      // ── Lavalamp Blob Centers (Independent spectrum orbit phases) ──
-      // Bass: large, heavy blobs (speed driven by bass)
-      vec2 b1 = vec2(sin(u_bassPhase * 0.7) * 0.38 + 0.5, cos(u_bassPhase * 0.5) * 0.38 + 0.5);
-      vec2 b2 = vec2(cos(u_bassPhase * 0.6 + 2.0) * 0.35 + 0.5, sin(u_bassPhase * 0.8 + 1.0) * 0.35 + 0.5);
-
-      // Mids: buoyant flowing blobs (speed driven by mid)
-      vec2 m1 = vec2(sin(u_midPhase * 0.9 + 1.5) * 0.42 + 0.5, cos(u_midPhase * 0.7 + 3.0) * 0.42 + 0.5);
-      vec2 m2 = vec2(cos(u_midPhase * 0.8 + 4.0) * 0.4 + 0.5, sin(u_midPhase * 1.1 + 0.5) * 0.4 + 0.5);
-
-      // Highs: agile surface blobs (speed driven by high)
-      vec2 h1 = vec2(sin(u_highPhase * 1.3 + 2.5) * 0.44 + 0.5, cos(u_highPhase * 1.0 + 4.5) * 0.44 + 0.5);
-      vec2 h2 = vec2(cos(u_highPhase * 1.2 + 0.8) * 0.44 + 0.5, sin(u_highPhase * 1.4 + 2.2) * 0.44 + 0.5);
-
-      // Metaball field strengths
-      float rBass = 0.09 + 0.06 * u_bass;
-      float rMid  = 0.06 + 0.05 * u_mid;
-      float rHigh = 0.04 + 0.04 * u_high;
-
-      float wB = rBass / (dot(p - b1, p - b1) + 0.035) + rBass / (dot(p - b2, p - b2) + 0.035);
-      float wM = rMid  / (dot(p - m1, p - m1) + 0.028) + rMid  / (dot(p - m2, p - m2) + 0.028);
-      float wH = rHigh / (dot(p - h1, p - h1) + 0.022) + rHigh / (dot(p - h2, p - h2) + 0.022);
-
-      // Spectrum-mapped thumbnail regions
-      vec3 colBass = texture2D(u_tex, clamp(vec2(0.2, 0.25) + 0.15 * uv, 0.02, 0.98)).rgb;
-      vec3 colMid  = texture2D(u_tex, clamp(vec2(0.75, 0.35) + 0.15 * uv, 0.02, 0.98)).rgb;
-      vec3 colHigh = texture2D(u_tex, clamp(vec2(0.5, 0.8) + 0.15 * uv, 0.02, 0.98)).rgb;
-      vec3 colBase = texture2D(u_tex, clamp(uv * 0.6 + 0.2, 0.02, 0.98)).rgb * 0.45;
-
-      // Fluid metaball blend
-      float totalW = wB + wM + wH + 1.0;
-      vec3 col = (colBase + colBass * wB + colMid * wM + colHigh * wH) / totalW;
-
-      vec3 rgb = adjustSaturation(col, u_saturation);
-      rgb = (rgb - 0.5) * 1.25 + 0.5;
-      rgb += (rand(gl_FragCoord.xy) - 0.5) * u_dithering;
-
-      gl_FragColor = vec4(clamp(rgb, 0.0, 1.0), 1.0);
-    }
-  `;
-
-  function compile(type, src) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    return s;
-  }
-
-  const prog = gl.createProgram();
-  gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
-  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
-  fsShaderProg = prog;
-
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-    -1, -1,  1, -1, -1,  1,
-    -1,  1,  1, -1,  1,  1,
-  ]), gl.STATIC_DRAW);
-
-  const aPos = gl.getAttribLocation(prog, 'a_pos');
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-  fsShaderResLoc = gl.getUniformLocation(prog, 'u_resolution');
-  fsShaderBassPhaseLoc = gl.getUniformLocation(prog, 'u_bassPhase');
-  fsShaderMidPhaseLoc = gl.getUniformLocation(prog, 'u_midPhase');
-  fsShaderHighPhaseLoc = gl.getUniformLocation(prog, 'u_highPhase');
-  fsShaderBassLoc = gl.getUniformLocation(prog, 'u_bass');
-  fsShaderMidLoc = gl.getUniformLocation(prog, 'u_mid');
-  fsShaderHighLoc = gl.getUniformLocation(prog, 'u_high');
-  fsShaderSatLoc = gl.getUniformLocation(prog, 'u_saturation');
-  fsShaderDitherLoc = gl.getUniformLocation(prog, 'u_dithering');
-
-  fsTex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, fsTex);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([30, 30, 40, 255]));
-}
-
-function updateFsShaderTexture(imgSrc) {
-  randomizeFsShaderParams();
-  if (!fsGl) initFsShader();
-  if (!fsGl || !fsTex) return;
-  if (!imgSrc) return;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    if (!fsGl) return;
-    fsGl.bindTexture(fsGl.TEXTURE_2D, fsTex);
-    fsGl.texImage2D(fsGl.TEXTURE_2D, 0, fsGl.RGBA, fsGl.RGBA, fsGl.UNSIGNED_BYTE, img);
-  };
-  img.src = imgSrc;
-}
-
-let fsBassPhase = 0;
-let fsMidPhase = 0;
-let fsHighPhase = 0;
-let fsLastRenderNow = 0;
-let fsFps = 60, fsFrameTime = 16.6, fsFrameCount = 0, fsLastFpsUpdate = 0;
-let fsSmoothBass = 0.5;
-let fsSmoothMid = 0.5;
-let fsSmoothHigh = 0.2;
-
-function startFsShader() {
-  ensureAudioAnalyzer();
-  if (!fsGl) initFsShader();
-  if (!fsGl || fsShaderRaf) return;
-  fsLastRenderNow = performance.now();
-  fsLastFpsUpdate = fsLastRenderNow;
-  fsFrameCount = 0;
-  const render = (now) => {
-    if (!$('fullscreen-overlay')?.classList.contains('active')) {
-      fsShaderRaf = null;
-      return;
-    }
-    const canvas = $('fs-canvas');
-    if (canvas && fsGl) {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
-      const w = Math.floor(canvas.clientWidth * dpr);
-      const h = Math.floor(canvas.clientHeight * dpr);
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-        fsGl.viewport(0, 0, w, h);
-      }
-      const dt = Math.min(0.05, (now - fsLastRenderNow) * 0.001) || 0.016;
-      fsFrameTime = now - fsLastRenderNow;
-      fsLastRenderNow = now;
-      fsFrameCount++;
-
-      if (now - fsLastFpsUpdate >= 200) {
-        fsFps = Math.round((fsFrameCount * 1000) / (now - fsLastFpsUpdate));
-        fsFrameCount = 0;
-        fsLastFpsUpdate = now;
-        const dbg = $('fs-debug-panel');
-        if (dbg) {
-          if (settings.shaderDebug) {
-            dbg.hidden = false;
-            const f = lastAudioFeatures || {};
-            const spdBass = (0.3 + 3.6 * Math.pow(fsSmoothBass, 1.2) + 1.8 * (f.multiplier || f.energy || 0)).toFixed(2);
-            const spdMid = (0.45 + 1.8 * fsSmoothMid).toFixed(2);
-            const spdHigh = (0.75 + 2.2 * fsSmoothHigh).toFixed(2);
-            dbg.innerHTML = `<div>FPS: <b>${fsFps}</b> (${fsFrameTime.toFixed(1)}ms)</div>` +
-              `<div>Bass: <b>${fsSmoothBass.toFixed(2)}</b> (raw: ${(f.bass || 0).toFixed(2)})</div>` +
-              `<div>Mid: <b>${fsSmoothMid.toFixed(2)}</b> (raw: ${(f.mid || 0).toFixed(2)})</div>` +
-              `<div>High: <b>${fsSmoothHigh.toFixed(2)}</b> (raw: ${(f.high || 0).toFixed(2)})</div>` +
-              `<div>Lava Speed (Bass): <b>${spdBass}</b> (Mid: ${spdMid}, High: ${spdHigh})</div>` +
-              `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Mult: <b>${(f.multiplier || 0).toFixed(2)}</b></div>` +
-              `<div>BPM: <b>${f.bpm || '—'}</b>${f.beat ? ' [BEAT]' : ''}</div>`;
-          } else {
-            dbg.hidden = true;
-          }
-        }
-      }
-
-      const feats = lastAudioFeatures;
-      const tBass = feats ? (feats.bass || 0) : 0.0;
-      const tMid = feats ? (feats.mid || 0) : 0.0;
-      const tHigh = feats ? (feats.high || 0) : 0.0;
-      const mult = feats ? (feats.multiplier || feats.energy || 0) : 0.0;
-
-      // Smooth low-pass EMA filter for responsive fluid motion
-      fsSmoothBass += (tBass - fsSmoothBass) * 0.14;
-      fsSmoothMid += (tMid - fsSmoothMid) * 0.08;
-      fsSmoothHigh += (tHigh - fsSmoothHigh) * 0.08;
-
-      // More bass - quicker the lava
-      const spdBass = 0.3 + 3.6 * Math.pow(fsSmoothBass, 1.2) + 1.8 * mult;
-      const spdMid = 0.45 + 1.8 * fsSmoothMid;
-      const spdHigh = 0.75 + 2.2 * fsSmoothHigh;
-
-      fsBassPhase += dt * spdBass;
-      fsMidPhase  += dt * spdMid;
-      fsHighPhase += dt * spdHigh;
-
-      fsGl.uniform2f(fsShaderResLoc, w, h);
-      fsGl.uniform1f(fsShaderBassPhaseLoc, fsBassPhase);
-      fsGl.uniform1f(fsShaderMidPhaseLoc, fsMidPhase);
-      fsGl.uniform1f(fsShaderHighPhaseLoc, fsHighPhase);
-      fsGl.uniform1f(fsShaderBassLoc, fsSmoothBass);
-      fsGl.uniform1f(fsShaderMidLoc, fsSmoothMid);
-      fsGl.uniform1f(fsShaderHighLoc, fsSmoothHigh);
-      fsGl.uniform1f(fsShaderSatLoc, fsShaderParams.saturation);
-      fsGl.uniform1f(fsShaderDitherLoc, fsShaderParams.dithering);
-      fsGl.drawArrays(fsGl.TRIANGLES, 0, 6);
-    }
-    fsShaderRaf = requestAnimationFrame(render);
-  };
-  fsShaderRaf = requestAnimationFrame(render);
-}
-
-function stopFsShader() {
-  if (fsShaderRaf) {
-    cancelAnimationFrame(fsShaderRaf);
-    fsShaderRaf = null;
-  }
-  const dbg = $('fs-debug-panel');
-  if (dbg) dbg.hidden = true;
-}
-
+// ── Fullscreen Visualizer ──
 let jsNationViz = null;
 
 function getFsVisualizerMode() {
@@ -8265,47 +8011,48 @@ function updateFsVizButtonUI() {
 }
 
 function startFsVisualizer() {
-  if (!$('fullscreen-overlay')?.classList.contains('active')) return;
+  const overlay = $('fullscreen-overlay');
+  if (!overlay?.classList.contains('active')) return;
   const mode = getFsVisualizerMode();
-  const canvas = $('fs-canvas');
   const jsWrap = $('fs-jsnation-wrap');
+  const isViz = mode === 'shader' || mode === 'jsnation';
 
-  if (mode === 'shader') {
-    if (canvas) canvas.hidden = false;
-    if (jsWrap) jsWrap.hidden = true;
-    if (jsNationViz) jsNationViz.stop();
-    startFsShader();
-  } else if (mode === 'jsnation') {
-    if (canvas) canvas.hidden = true;
+  overlay.classList.toggle('is-jsnation', isViz);
+
+  if (isViz) {
     if (jsWrap) jsWrap.hidden = false;
-    stopFsShader();
-    if (!jsNationViz && typeof JsNationVisualizer !== 'undefined' && window.THREE) {
+    const vizType = mode === 'shader' ? 'lavalamp' : 'jsnation';
+    if (!jsNationViz && typeof JsNationVisualizer !== 'undefined' && (typeof THREE !== 'undefined' || window.THREE)) {
       jsNationViz = new JsNationVisualizer({
         container: jsWrap,
         background: 'transparent',
+        mode: vizType,
         glow: true,
         particles: true,
         spectrum: true,
         fovPunch: false,
+        // TODO: REVIEW THIS
+        loudness: 0.2,
         emblem: currentTrack ? (currentTrack.cover || null) : null
       });
       if (ensureEqGraph()) jsNationViz.connect(analyzerTapNode || masterGainNode);
+      else jsNationViz.connect(audio);
+    } else if (jsNationViz) {
+      jsNationViz.setMode(vizType);
     }
     if (jsNationViz) {
       if (currentTrack) jsNationViz.setEmblem(currentTrack.cover || null);
+      jsNationViz.resize();
       jsNationViz.start();
     }
   } else {
-    if (canvas) canvas.hidden = true;
     if (jsWrap) jsWrap.hidden = true;
-    stopFsShader();
     if (jsNationViz) jsNationViz.stop();
   }
   updateFsVizButtonUI();
 }
 
 function stopFsVisualizer() {
-  stopFsShader();
   if (jsNationViz) jsNationViz.stop();
 }
 
@@ -9223,7 +8970,7 @@ const PALETTE_ACTIONS = [
   { group: 'general', key: 'palette.action.clearLibrary',  kind: 'clear-library', icon: '#i-trash' },
   { group: 'nav', key: 'palette.action.gotoLibrary',   kind: 'goto-library',   icon: '#i-library' },
   { group: 'nav', key: 'palette.action.gotoDownloads', kind: 'goto-downloads', icon: '#i-download', nav: 'nav-downloads' },
-  { group: 'nav', key: 'palette.action.gotoYtMusic',   kind: 'goto-ytmusic',   icon: '#i-youtube',  nav: 'nav-ytmusic' },
+  { group: 'nav', key: 'palette.action.gotoYtMusic',   kind: 'goto-ytmusic',   icon: '#i-youtube' },
   { group: 'nav', key: 'palette.action.gotoArtists',   kind: 'goto-artists',   icon: '#i-mic' },
   { group: 'nav', key: 'palette.action.gotoAlbums',    kind: 'goto-albums',    icon: '#i-image' },
   { group: 'nav', key: 'palette.action.gotoFavorites', kind: 'goto-favorites', icon: '#i-heart' },
@@ -9249,9 +8996,8 @@ function paletteMatches(key, q) {
 
 function openPalette() {
   $('palette-overlay').classList.add('active');
-  $('palette-input').value = '';
-  renderPaletteResults('');
-  focusModalInput($('palette-input'));
+  renderPaletteResults($('palette-input').value);
+  focusModalInput($('palette-input'), { select: true });
 }
 function closePalette() {
   $('palette-overlay').classList.remove('active');
@@ -9369,7 +9115,7 @@ function renderPaletteResults(query) {
   }
 
   // Actions, one section per group
-  const available = PALETTE_ACTIONS.filter(a => (!a.nav || !$(a.nav).hidden) && paletteMatches(a.key, q));
+  const available = PALETTE_ACTIONS.filter(a => (!a.nav || !$(a.nav)?.hidden) && paletteMatches(a.key, q));
   PALETTE_GROUPS.forEach(([group, labelKey]) => {
     const items = available.filter(a => a.group === group);
     if (!items.length) return;
@@ -9646,6 +9392,22 @@ if (window.electronAPI && window.electronAPI.onGlobalHotkey) {
 
 let hotkeyCapture = null; // action id currently listening for a new combo
 
+function dismissTopOverlay() {
+  if ($('playlist-context-menu')?.classList.contains('open')) { closePlaylistContextMenu(); return true; }
+  if ($('track-context-menu')?.classList.contains('open')) { closeContextMenu(); return true; }
+  if (hotkeyCapture) { hotkeyCapture = null; renderHotkeys(); return true; }
+  if ($('palette-overlay')?.classList.contains('active')) { closePalette(); return true; }
+  if ($('text-prompt-modal')?.classList.contains('active')) { closeTextPromptModal(null); return true; }
+  const openModal = document.querySelector('.modal-overlay.active:not(#settings-modal)');
+  if (openModal) { openModal.classList.remove('active'); return true; }
+  if (isSettingsOpen()) { closeSettings(); return true; }
+  if ($('fullscreen-overlay')?.classList.contains('active')) { closeFullscreen(); return true; }
+  const sb = $('right-sidebar');
+  if (sb && !sb.hidden) { closeArtistSidebar(); return true; }
+  if (librarySelectMode) { setLibrarySelectMode(false); return true; }
+  return false;
+}
+
 // Global keyboard shortcuts
 document.addEventListener('keydown', e => {
   if (e.repeat) return;
@@ -9661,18 +9423,7 @@ document.addEventListener('keydown', e => {
   }
 
   if (e.key === 'Escape') {
-    if ($('fullscreen-overlay').classList.contains('active')) closeFullscreen();
-    else if (isSettingsOpen()) closeSettings();
-    // The text prompt owns a pending promise, so it has to be resolved rather
-    // than just hidden. Every other modal is plain markup — close whichever is
-    // open instead of naming them one by one (the old list had already drifted
-    // out of date and missed the edit-playlist and track-picker modals).
-    else if ($('text-prompt-modal').classList.contains('active')) closeTextPromptModal(null);
-    else {
-      const open = document.querySelector('.modal-overlay.active');
-      if (open) open.classList.remove('active');
-      else if (librarySelectMode) setLibrarySelectMode(false);
-    }
+    dismissTopOverlay();
     return;
   }
 

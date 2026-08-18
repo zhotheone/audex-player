@@ -1,3 +1,5 @@
+const FFT_SIZE = 1024;
+
 function calcJsNationMultiplier(spectrum) {
   let sum = 0;
   const count = spectrum.length || 40;

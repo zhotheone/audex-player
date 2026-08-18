@@ -3877,8 +3877,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transform: scale(1.15);
   transition: opacity var(--motion-expressive-default-spatial);
 }
-.fs-overlay.is-in .fs-canvas { opacity: 0.85; }
-
 .fs-jsnation-wrap {
   position: absolute;
   inset: 0;
@@ -3889,7 +3887,13 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   opacity: 0;
   transition: opacity var(--motion-expressive-default-spatial);
 }
-.fs-overlay.is-in .fs-jsnation-wrap { opacity: 0.95; }
+.fs-overlay.is-in .fs-jsnation-wrap { opacity: 1; }
+.fs-overlay.is-jsnation .fs-cover,
+.fs-overlay.is-jsnation .fs-backdrop,
+.fs-overlay.is-jsnation .fs-canvas {
+  opacity: 0 !important;
+  pointer-events: none;
+}
 
 .fs-backdrop {
   position: absolute;

@@ -214,6 +214,7 @@ assert.strictEqual(typeof sandbox.triggerCrossfade, 'function', 'triggerCrossfad
 assert.strictEqual(typeof sandbox.setSidebarTab, 'function', 'setSidebarTab must be defined');
 assert.strictEqual(typeof sandbox.renderRecents, 'function', 'renderRecents must be defined');
 assert.strictEqual(typeof sandbox.renderPlaybackQueue, 'function', 'renderPlaybackQueue must be defined');
+assert.strictEqual(typeof sandbox.stopCrossfadeTail, 'function', 'stopCrossfadeTail must be defined');
 
 // Run settings rendering cycle and sidebar tab switches
 try {
@@ -225,9 +226,12 @@ try {
   sandbox.setSidebarTab('main');
   sandbox.renderRecents();
   sandbox.renderPlaybackQueue();
+  sandbox.stopCrossfadeTail();
+  sandbox.togglePlay();
 } catch (e) {
   console.error('Runtime error in renderer.js functions:', e);
   process.exit(1);
 }
 
 console.log('renderer.js evaluation test passed cleanly (0 errors)');
+process.exit(0);

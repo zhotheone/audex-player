@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# scripts/build-win.sh: Builds the Windows version in the Windows folder via PowerShell
+# scripts/build-win.sh: Builds the Windows version in the Windows folder via powershell.exe
 
 WIN_DIR="${WIN_DIR:-/mnt/d/1.Projects/audex-player}"
 WSL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "==> Generating build info from git..."
+node "$WSL_DIR/scripts/build-info.js"
 
-if [ -d "$WIN_DIR" ]; then
-  echo "==> Syncing files to $WIN_DIR..."
-  rm -rf "$WIN_DIR/.git"
-  rsync -a --delete \
-    --exclude '.git' \
-    --exclude 'node_modules' \
-    --exclude 'release' \
-    --exclude 'yt-dlp-bundle' \
-    "$WSL_DIR/" "$WIN_DIR/"
-fi
+mkdir -p "$WIN_DIR"
+echo "==> Syncing files to $WIN_DIR..."
+rsync -rt --delete \
+  --no-perms --no-owner --no-group \
+  --exclude '.git' \
+  --exclude 'node_modules' \
+  --exclude 'release' \
+  --exclude 'yt-dlp-bundle' \
+  --exclude 'docs' \
+  --exclude 'tests' \
+  --exclude '.github' \
+  --exclude '.githooks' \
+  "$WSL_DIR/" "$WIN_DIR/"
 
 WIN_PATH=$(wslpath -w "$WIN_DIR" 2>/dev/null || echo "$WIN_DIR")
 
@@ -30,5 +34,4 @@ powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "
   }
   npm run build
 " </dev/null
-
 echo "==> Build complete! Output in: $WIN_PATH\release"
