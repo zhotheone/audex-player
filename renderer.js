@@ -5576,8 +5576,9 @@ function toggleMute() {
   updateVolumeUI();
 }
 
-function triggerCrossfade(newStreamUrl) {
-  const duration = Number(settings.crossfadeSec) || 3;
+function triggerCrossfade(newStreamUrl, { manual = false } = {}) {
+  const baseDur = Number(settings.crossfadeSec) || 3;
+  const duration = manual ? Math.min(0.35, baseDur) : baseDur;
   const currentKey = activeChannel;
   const nextKey = activeChannel === 'A' ? 'B' : 'A';
   const currentChan = currentKey === 'A' ? audioA : audioB;
@@ -5633,7 +5634,7 @@ function isTagEditingLocked(p) {
 }
 function srcFor(track) { return isRemotePath(track.path) ? track.path : 'file://' + track.path; }
 
-function playTrackByPath(path, queue) {
+function playTrackByPath(path, queue, { manual = true } = {}) {
   const q = queue && queue.length > 0 ? queue : library;
   const track = q.find(t => t.path === path) || trackByPath(path);
   if (!track) return;
@@ -5647,7 +5648,7 @@ function playTrackByPath(path, queue) {
   crossfadeArmed = false;
   const fade = !!settings.crossfade && isPlaying && !!audio.src;
   if (fade) {
-    triggerCrossfade(srcFor(track));
+    triggerCrossfade(srcFor(track), { manual });
   } else {
     if (ensureEqGraph()) {
       if (channelGains[activeChannel]) channelGains[activeChannel].gain.value = 1;
@@ -6116,8 +6117,10 @@ function getUpcomingQueue(limit = 8) {
 // Settings) it drops back to "repeat all" instead of trapping the next track
 // in the same loop.
 function nextTrack({ manual = true } = {}) {
-  const fsActive = $('fullscreen-overlay')?.classList.contains('active');
-  if (manual && typeof triggerButtonSquish === 'function') triggerButtonSquish(fsActive ? $('fs-btn-next') : $('btn-next'));
+  if (manual && typeof triggerButtonSquish === 'function') {
+    if ($('btn-next')) triggerButtonSquish($('btn-next'));
+    if ($('fs-btn-next')) triggerButtonSquish($('fs-btn-next'));
+  }
   if (currentQueue.length === 0) return;
   if (manual && repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = 1;
@@ -6131,12 +6134,14 @@ function nextTrack({ manual = true } = {}) {
     nextIdx = 0;
   }
   const next = (isShuffle && shuffledQueue.length === currentQueue.length ? shuffledQueue : currentQueue)[nextIdx];
-  if (next) playTrackByPath(next.path, currentQueue);
+  if (next) playTrackByPath(next.path, currentQueue, { manual });
 }
 
 function prevTrack() {
-  const fsActive = $('fullscreen-overlay')?.classList.contains('active');
-  if (typeof triggerButtonSquish === 'function') triggerButtonSquish(fsActive ? $('fs-btn-prev') : $('btn-prev'));
+  if (typeof triggerButtonSquish === 'function') {
+    if ($('btn-prev')) triggerButtonSquish($('btn-prev'));
+    if ($('fs-btn-prev')) triggerButtonSquish($('fs-btn-prev'));
+  }
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
   if (repeatMode === 2 && settings.repeatOneResetOnSkip) { repeatMode = 1; updateRepeatUI(); }
   trackChangeDirection = -1;
@@ -7519,54 +7524,17 @@ function initFsShader() {
   const fsSrc = `
     precision mediump float;
     varying vec2 v_uv;
-    uniform float u_time;
     uniform vec2 u_resolution;
     uniform sampler2D u_tex;
 
-    uniform float u_warpIntensity;
-    uniform float u_animationSpeed;
-    uniform float u_scale;
+    uniform float u_bassPhase;
+    uniform float u_midPhase;
+    uniform float u_highPhase;
+    uniform float u_bass;
+    uniform float u_mid;
+    uniform float u_high;
     uniform float u_saturation;
-    uniform vec3 u_tintColor;
-    uniform float u_tintIntensity;
     uniform float u_dithering;
-
-    vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
-
-    float snoise(vec2 v){
-      const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-      vec2 i  = floor(v + dot(v, C.yy) );
-      vec2 x0 = v -   i + dot(i, C.xx);
-      vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-      vec4 x12 = x0.xyxy + C.xxzz;
-      x12.xy -= i1;
-      i = mod(i, 289.0);
-      vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
-      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-      m = m*m ;
-      m = m*m ;
-      vec3 x = 2.0 * fract(p * C.www) - 1.0;
-      vec3 h = abs(x) - 0.5;
-      vec3 ox = floor(x + 0.5);
-      vec3 a0 = x - ox;
-      m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-      vec3 g;
-      g.x  = a0.x  * x0.x  + h.x  * x0.y;
-      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-      return 130.0 * dot(m, g);
-    }
-
-    vec2 domainWarp(vec2 p, float t, float intensity) {
-      vec2 q = vec2(
-        snoise(p + vec2(0.0, t * 0.18)),
-        snoise(p + vec2(5.2, 1.3 + t * 0.18))
-      );
-      vec2 r = vec2(
-        snoise(p + 3.0 * q + vec2(1.7, 9.2 + t * 0.12)),
-        snoise(p + 3.0 * q + vec2(8.3, 2.8 + t * 0.12))
-      );
-      return p + intensity * r * 0.35;
-    }
 
     vec3 adjustSaturation(vec3 c, float sat) {
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -7578,34 +7546,44 @@ function initFsShader() {
     }
 
     void main() {
-      vec2 uv = (v_uv - 0.5) * u_scale + 0.5;
-      float t = u_time * 0.35;
-      vec2 warpedUv = domainWarp(uv * 2.5, t, u_warpIntensity);
-      vec2 sampleUv = clamp(fract(warpedUv * 0.4 + 0.5), 0.02, 0.98);
+      vec2 uv = v_uv;
+      float aspect = u_resolution.x / max(1.0, u_resolution.y);
+      vec2 p = (uv - 0.5) * vec2(aspect, 1.0) + 0.5;
 
-      // Sample primary color from thumbnail
-      vec4 colA = texture2D(u_tex, sampleUv);
-      // Sample offset contrasting region of thumbnail for vibrant color interplay
-      vec2 altUv = clamp(fract(vec2(1.0 - sampleUv.y, sampleUv.x) + 0.25 * sin(t + warpedUv)), 0.02, 0.98);
-      vec4 colB = texture2D(u_tex, altUv);
+      // ── Lavalamp Blob Centers (Independent spectrum orbit phases) ──
+      // Bass: large, heavy blobs (speed driven by bass)
+      vec2 b1 = vec2(sin(u_bassPhase * 0.7) * 0.38 + 0.5, cos(u_bassPhase * 0.5) * 0.38 + 0.5);
+      vec2 b2 = vec2(cos(u_bassPhase * 0.6 + 2.0) * 0.35 + 0.5, sin(u_bassPhase * 0.8 + 1.0) * 0.35 + 0.5);
 
-      // Fluid color blending
-      float mixFactor = 0.5 + 0.5 * sin(warpedUv.x * 1.2 + warpedUv.y * 1.2 + t);
-      vec3 col = mix(colA.rgb, colB.rgb, mixFactor);
+      // Mids: buoyant flowing blobs (speed driven by mid)
+      vec2 m1 = vec2(sin(u_midPhase * 0.9 + 1.5) * 0.42 + 0.5, cos(u_midPhase * 0.7 + 3.0) * 0.42 + 0.5);
+      vec2 m2 = vec2(cos(u_midPhase * 0.8 + 4.0) * 0.4 + 0.5, sin(u_midPhase * 1.1 + 0.5) * 0.4 + 0.5);
 
-      // Chromatic RGB displacement across regions
-      vec2 chrOff = (sampleUv - 0.5) * (0.012 * u_warpIntensity);
-      col.r = texture2D(u_tex, clamp(sampleUv + chrOff, 0.02, 0.98)).r;
-      col.b = texture2D(u_tex, clamp(altUv - chrOff, 0.02, 0.98)).b;
+      // Highs: agile surface blobs (speed driven by high)
+      vec2 h1 = vec2(sin(u_highPhase * 1.3 + 2.5) * 0.44 + 0.5, cos(u_highPhase * 1.0 + 4.5) * 0.44 + 0.5);
+      vec2 h2 = vec2(cos(u_highPhase * 1.2 + 0.8) * 0.44 + 0.5, sin(u_highPhase * 1.4 + 2.2) * 0.44 + 0.5);
 
-      // Harmonic color expansion derived from fluid warping
-      vec3 colorShift = 0.5 + 0.5 * cos(vec3(0.0, 2.0, 4.0) + t * 0.4 + warpedUv.xyx * 0.35);
-      col = mix(col, col * colorShift * 1.35 + colorShift * 0.12, 0.32);
+      // Metaball field strengths
+      float rBass = 0.09 + 0.06 * u_bass;
+      float rMid  = 0.06 + 0.05 * u_mid;
+      float rHigh = 0.04 + 0.04 * u_high;
 
-      vec3 rgb = adjustSaturation(col, u_saturation * 1.35);
-      // S-curve contrast punch
-      rgb = (rgb - 0.5) * 1.3 + 0.5;
-      rgb = mix(rgb, u_tintColor, u_tintIntensity);
+      float wB = rBass / (dot(p - b1, p - b1) + 0.035) + rBass / (dot(p - b2, p - b2) + 0.035);
+      float wM = rMid  / (dot(p - m1, p - m1) + 0.028) + rMid  / (dot(p - m2, p - m2) + 0.028);
+      float wH = rHigh / (dot(p - h1, p - h1) + 0.022) + rHigh / (dot(p - h2, p - h2) + 0.022);
+
+      // Spectrum-mapped thumbnail regions
+      vec3 colBass = texture2D(u_tex, clamp(vec2(0.2, 0.25) + 0.15 * uv, 0.02, 0.98)).rgb;
+      vec3 colMid  = texture2D(u_tex, clamp(vec2(0.75, 0.35) + 0.15 * uv, 0.02, 0.98)).rgb;
+      vec3 colHigh = texture2D(u_tex, clamp(vec2(0.5, 0.8) + 0.15 * uv, 0.02, 0.98)).rgb;
+      vec3 colBase = texture2D(u_tex, clamp(uv * 0.6 + 0.2, 0.02, 0.98)).rgb * 0.45;
+
+      // Fluid metaball blend
+      float totalW = wB + wM + wH + 1.0;
+      vec3 col = (colBase + colBass * wB + colMid * wM + colHigh * wH) / totalW;
+
+      vec3 rgb = adjustSaturation(col, u_saturation);
+      rgb = (rgb - 0.5) * 1.25 + 0.5;
       rgb += (rand(gl_FragCoord.xy) - 0.5) * u_dithering;
 
       gl_FragColor = vec4(clamp(rgb, 0.0, 1.0), 1.0);
@@ -7637,14 +7615,14 @@ function initFsShader() {
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-  fsShaderTimeLoc = gl.getUniformLocation(prog, 'u_time');
   fsShaderResLoc = gl.getUniformLocation(prog, 'u_resolution');
-  fsShaderWarpLoc = gl.getUniformLocation(prog, 'u_warpIntensity');
-  fsShaderSpeedLoc = gl.getUniformLocation(prog, 'u_animationSpeed');
-  fsShaderScaleLoc = gl.getUniformLocation(prog, 'u_scale');
+  fsShaderBassPhaseLoc = gl.getUniformLocation(prog, 'u_bassPhase');
+  fsShaderMidPhaseLoc = gl.getUniformLocation(prog, 'u_midPhase');
+  fsShaderHighPhaseLoc = gl.getUniformLocation(prog, 'u_highPhase');
+  fsShaderBassLoc = gl.getUniformLocation(prog, 'u_bass');
+  fsShaderMidLoc = gl.getUniformLocation(prog, 'u_mid');
+  fsShaderHighLoc = gl.getUniformLocation(prog, 'u_high');
   fsShaderSatLoc = gl.getUniformLocation(prog, 'u_saturation');
-  fsShaderTintLoc = gl.getUniformLocation(prog, 'u_tintColor');
-  fsShaderTintIntLoc = gl.getUniformLocation(prog, 'u_tintIntensity');
   fsShaderDitherLoc = gl.getUniformLocation(prog, 'u_dithering');
 
   fsTex = gl.createTexture();
@@ -7671,11 +7649,13 @@ function updateFsShaderTexture(imgSrc) {
   img.src = imgSrc;
 }
 
-let fsShaderPhase = 0;
+let fsBassPhase = 0;
+let fsMidPhase = 0;
+let fsHighPhase = 0;
 let fsLastRenderNow = 0;
 let fsSmoothBass = 0.5;
-let fsSmoothEnergy = 0.5;
 let fsSmoothMid = 0.5;
+let fsSmoothHigh = 0.2;
 
 function startFsShader() {
   if (!fsGl) initFsShader();
@@ -7700,30 +7680,28 @@ function startFsShader() {
       fsLastRenderNow = now;
 
       const feats = lastAudioFeatures;
-      const tEnergy = feats ? feats.energy : 0.5;
       const tBass = feats ? feats.bass : 0.5;
       const tMid = feats ? feats.mid : 0.5;
+      const tHigh = feats ? feats.high : 0.2;
 
-      // Low-pass EMA smoothing to kill transient jitter
-      fsSmoothBass += (tBass - fsSmoothBass) * 0.08;
-      fsSmoothEnergy += (tEnergy - fsSmoothEnergy) * 0.08;
-      fsSmoothMid += (tMid - fsSmoothMid) * 0.08;
+      // Smooth low-pass EMA filter (0.06) for organic, flicker-free movement
+      fsSmoothBass += (tBass - fsSmoothBass) * 0.06;
+      fsSmoothMid += (tMid - fsSmoothMid) * 0.06;
+      fsSmoothHigh += (tHigh - fsSmoothHigh) * 0.06;
 
-      const speed = fsShaderParams.animationSpeed * (0.7 + 0.6 * fsSmoothEnergy);
-      fsShaderPhase += dt * speed;
+      // Lava blob speed accelerates with spectrum energy
+      fsBassPhase += dt * (0.35 + 1.5 * fsSmoothBass);
+      fsMidPhase  += dt * (0.55 + 2.0 * fsSmoothMid);
+      fsHighPhase += dt * (0.85 + 2.8 * fsSmoothHigh);
 
-      const warp = fsShaderParams.warpIntensity * (0.8 + 0.4 * fsSmoothBass);
-      const scale = fsShaderParams.scale * (1.0 - 0.05 * fsSmoothBass);
-      const sat = fsShaderParams.saturation * (0.9 + 0.25 * fsSmoothMid);
-
-      fsGl.uniform1f(fsShaderTimeLoc, fsShaderPhase);
       fsGl.uniform2f(fsShaderResLoc, w, h);
-      fsGl.uniform1f(fsShaderWarpLoc, warp);
-      fsGl.uniform1f(fsShaderSpeedLoc, speed);
-      fsGl.uniform1f(fsShaderScaleLoc, scale);
-      fsGl.uniform1f(fsShaderSatLoc, sat);
-      fsGl.uniform3f(fsShaderTintLoc, fsShaderParams.tintColor[0], fsShaderParams.tintColor[1], fsShaderParams.tintColor[2]);
-      fsGl.uniform1f(fsShaderTintIntLoc, fsShaderParams.tintIntensity);
+      fsGl.uniform1f(fsShaderBassPhaseLoc, fsBassPhase);
+      fsGl.uniform1f(fsShaderMidPhaseLoc, fsMidPhase);
+      fsGl.uniform1f(fsShaderHighPhaseLoc, fsHighPhase);
+      fsGl.uniform1f(fsShaderBassLoc, fsSmoothBass);
+      fsGl.uniform1f(fsShaderMidLoc, fsSmoothMid);
+      fsGl.uniform1f(fsShaderHighLoc, fsSmoothHigh);
+      fsGl.uniform1f(fsShaderSatLoc, fsShaderParams.saturation);
       fsGl.uniform1f(fsShaderDitherLoc, fsShaderParams.dithering);
       fsGl.drawArrays(fsGl.TRIANGLES, 0, 6);
     }
@@ -8873,8 +8851,8 @@ $('palette-overlay').addEventListener('click', e => {
 // is on top and would be a footgun to rebind.
 const HOTKEY_ACTIONS = [
   { id: 'playPause',    def: 'Space',           run: () => togglePlay() },
-  { id: 'nextTrack',    def: 'Ctrl+ArrowRight', run: () => nextTrack() },
-  { id: 'prevTrack',    def: 'Ctrl+ArrowLeft',  run: () => prevTrack() },
+  { id: 'nextTrack',    def: 'KeyD',            run: () => nextTrack() },
+  { id: 'prevTrack',    def: 'KeyA',            run: () => prevTrack() },
   { id: 'seekForward',  def: 'ArrowRight',      run: () => hkSeek(5) },
   { id: 'seekBackward', def: 'ArrowLeft',       run: () => hkSeek(-5) },
   { id: 'volumeUp',     def: 'ArrowUp',         run: () => setVolume(targetVolume + 0.05) },
@@ -9066,16 +9044,15 @@ let hotkeyCapture = null; // action id currently listening for a new combo
 
 // Global keyboard shortcuts
 document.addEventListener('keydown', e => {
+  if (e.repeat) return;
   const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
 
-  // Rebinding mode swallows everything until a combo lands or the user cancels.
+  // Rebinding mode swallows keydown until keyup releases the combo or user cancels.
   if (hotkeyCapture) {
     e.preventDefault();
     e.stopPropagation();
-    if (e.code === 'Escape') { hotkeyCapture = null; renderHotkeys(); return; }
-    if (e.code === 'Backspace') { hotkeySet(hotkeyCapture, ''); return; }
-    const combo = comboFromEvent(e);
-    if (combo) hotkeySet(hotkeyCapture, combo);
+    if (e.code === 'Escape') { hotkeyCapture = null; renderHotkeys(); }
+    else if (e.code === 'Backspace') { hotkeySet(hotkeyCapture, ''); }
     return;
   }
 
@@ -9110,6 +9087,15 @@ document.addEventListener('keydown', e => {
   // platform where the key still reaches the focused window.
   if (isGlobalOn(action.id) && !globalHotkeyFailures.has(action.id) && comboToAccelerator(combo)) return;
   action.run();
+});
+
+document.addEventListener('keyup', e => {
+  if (!hotkeyCapture) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.code === 'Escape' || e.code === 'Backspace') return;
+  const combo = comboFromEvent(e);
+  if (combo) hotkeySet(hotkeyCapture, combo);
 });
 
 // Mouse-button shortcuts. Bound on the capture phase so a side button still
