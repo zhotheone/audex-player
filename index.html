@@ -155,90 +155,128 @@
         </div>
       </div>
 
-      <!-- Grouped in pairs (see .nav-group in style.css). Every group keeps at
-           least one always-visible item, so a group can never collapse to an
-           empty box that still eats the inter-group gap. -->
-      <nav class="nav-menu">
-        <div class="nav-group">
-          <a href="#" class="nav-item active" data-view="library">
-            <svg class="i" width="14" height="14"><use href="#i-library"/></svg>
-            <span data-i18n="nav.library">Library</span>
-            <span class="nav-meta" id="count-library">0</span>
-          </a>
-          <a href="#" class="nav-item nav-downloads" data-view="downloads" id="nav-downloads" hidden>
-            <svg class="i" width="14" height="14"><use href="#i-download"/></svg>
-            <span data-i18n="nav.downloads">Downloads</span>
-            <span class="nav-meta" id="count-downloads" hidden>0</span>
-          </a>
-        </div>
-        <div class="nav-group">
-          <a href="#" class="nav-item" data-view="artists">
-            <svg class="i" width="14" height="14"><use href="#i-mic"/></svg>
-            <span data-i18n="nav.artists">Artists</span>
-            <span class="nav-meta" id="count-artists">0</span>
-          </a>
-          <a href="#" class="nav-item" data-view="albums">
-            <svg class="i" width="14" height="14"><use href="#i-image"/></svg>
-            <span data-i18n="nav.albums">Albums</span>
-            <span class="nav-meta" id="count-albums">0</span>
-          </a>
-          <a href="#" class="nav-item" data-view="favorites">
-            <svg class="i" width="14" height="14"><use href="#i-heart"/></svg>
-            <span data-i18n="nav.favorites">Favorites</span>
-            <span class="nav-meta" id="count-favorites">0</span>
-          </a>
-          <a href="#" class="nav-item" data-view="playlists">
-            <svg class="i" width="14" height="14"><use href="#i-list"/></svg>
-            <span data-i18n="nav.playlists">Playlists</span>
-            <span class="nav-meta" id="count-playlists">0</span>
-          </a>
-        </div>
-        <div class="nav-group">
-          <a href="#" class="nav-item" data-view="devices" id="nav-devices" hidden>
-            <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
-            <span data-i18n="nav.devices">Devices</span>
-            <span class="nav-meta" id="count-devices">0</span>
-          </a>
-          <a href="#" class="nav-item nav-search" data-action="open-palette">
-            <span class="nav-search-icon">
-              <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
-            </span>
-            <span data-i18n="nav.search">Search</span>
-            <span class="nav-shortcut nav-search-shortcut">⌘K</span>
-          </a>
-        </div>
-      </nav>
+      <div class="sidebar-panels-viewport">
+        <div class="sidebar-panels" id="sidebar-panels">
+          <!-- Main Tab Panel -->
+          <div class="sidebar-panel active" data-sidebar-panel="main" id="sidebar-panel-main">
+            <nav class="nav-menu">
+              <div class="nav-group">
+                <a href="#" class="nav-item active" data-view="library">
+                  <svg class="i" width="14" height="14"><use href="#i-library"/></svg>
+                  <span data-i18n="nav.library">Library</span>
+                  <span class="nav-meta" id="count-library">0</span>
+                </a>
+                <a href="#" class="nav-item nav-downloads" data-view="downloads" id="nav-downloads" hidden>
+                  <svg class="i" width="14" height="14"><use href="#i-download"/></svg>
+                  <span data-i18n="nav.downloads">Downloads</span>
+                  <span class="nav-meta" id="count-downloads" hidden>0</span>
+                </a>
+              </div>
+              <div class="nav-group">
+                <a href="#" class="nav-item" data-view="artists">
+                  <svg class="i" width="14" height="14"><use href="#i-mic"/></svg>
+                  <span data-i18n="nav.artists">Artists</span>
+                  <span class="nav-meta" id="count-artists">0</span>
+                </a>
+                <a href="#" class="nav-item" data-view="albums">
+                  <svg class="i" width="14" height="14"><use href="#i-image"/></svg>
+                  <span data-i18n="nav.albums">Albums</span>
+                  <span class="nav-meta" id="count-albums">0</span>
+                </a>
+                <a href="#" class="nav-item" data-view="favorites">
+                  <svg class="i" width="14" height="14"><use href="#i-heart"/></svg>
+                  <span data-i18n="nav.favorites">Favorites</span>
+                  <span class="nav-meta" id="count-favorites">0</span>
+                </a>
+                <a href="#" class="nav-item" data-view="playlists">
+                  <svg class="i" width="14" height="14"><use href="#i-list"/></svg>
+                  <span data-i18n="nav.playlists">Playlists</span>
+                  <span class="nav-meta" id="count-playlists">0</span>
+                </a>
+              </div>
+              <div class="nav-group">
+                <a href="#" class="nav-item" data-view="devices" id="nav-devices" hidden>
+                  <svg class="i" width="14" height="14"><use href="#i-monitor"/></svg>
+                  <span data-i18n="nav.devices">Devices</span>
+                  <span class="nav-meta" id="count-devices">0</span>
+                </a>
+                <a href="#" class="nav-item nav-search" data-action="open-palette">
+                  <span class="nav-search-icon">
+                    <svg class="i" width="14" height="14"><use href="#i-search"/></svg>
+                  </span>
+                  <span data-i18n="nav.search">Search</span>
+                  <span class="nav-shortcut nav-search-shortcut">⌘K</span>
+                </a>
+              </div>
+            </nav>
 
-      <div class="nav-section recents">
-        <div class="nav-label" data-i18n="nav.recents">Recent</div>
-        <div id="recents-list"></div>
+            <div class="nav-section tools" id="nav-tools-group" hidden>
+              <div class="nav-label" data-i18n="nav.tools">Tools</div>
+              <a href="#" class="nav-item" data-view="report" id="nav-report" hidden>
+                <svg class="i" width="14" height="14"><use href="#i-report"/></svg>
+                <span data-i18n="nav.report">Report</span>
+              </a>
+              <a href="#" class="nav-item" data-view="health" id="nav-health" hidden>
+                <svg class="i" width="14" height="14"><use href="#i-shield"/></svg>
+                <span data-i18n="nav.health">Health</span>
+              </a>
+              <a href="#" class="nav-item" data-view="editor" id="nav-editor" hidden>
+                <svg class="i" width="14" height="14"><use href="#i-scissors"/></svg>
+                <span data-i18n="nav.editor">Editor</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Recents Tab Panel -->
+          <div class="sidebar-panel" data-sidebar-panel="recents" id="sidebar-panel-recents">
+            <div class="sidebar-panel-header">
+              <span class="sidebar-panel-title" data-i18n="sidebar.tab.recents">Recents</span>
+            </div>
+            <div id="recents-list" class="sidebar-scroll-list"></div>
+            <div id="recents-empty" class="sidebar-empty-hint" hidden>
+              <span data-i18n="recents.empty">No recent tracks</span>
+            </div>
+          </div>
+
+          <!-- Queue Tab Panel -->
+          <div class="sidebar-panel" data-sidebar-panel="queue" id="sidebar-panel-queue">
+            <div class="sidebar-panel-header">
+              <span class="sidebar-panel-title" data-i18n="sidebar.tab.queue">Queue</span>
+              <span class="sidebar-panel-badge" id="playback-queue-count" hidden>0</span>
+            </div>
+            <div id="playback-queue-list" class="sidebar-scroll-list"></div>
+            <div id="playback-queue-empty" class="sidebar-empty-hint">
+              <span data-i18n="queue.empty">Queue is empty</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="nav-section tools" id="nav-tools-group" hidden>
-        <div class="nav-label" data-i18n="nav.tools">Tools</div>
-        <a href="#" class="nav-item" data-view="report" id="nav-report" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-report"/></svg>
-          <span data-i18n="nav.report">Report</span>
-        </a>
-        <a href="#" class="nav-item" data-view="health" id="nav-health" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-shield"/></svg>
-          <span data-i18n="nav.health">Health</span>
-        </a>
-        <a href="#" class="nav-item" data-view="editor" id="nav-editor" hidden>
-          <svg class="i" width="14" height="14"><use href="#i-scissors"/></svg>
-          <span data-i18n="nav.editor">Editor</span>
-        </a>
-      </div>
+      <!-- Bottom controls -->
+      <div class="sidebar-bottom">
+        <div class="sidebar-tab-carousel" id="sidebar-tab-carousel" role="tablist">
+          <button type="button" class="sidebar-tab-btn active" data-sidebar-tab="main" role="tab" aria-selected="true">
+            <span data-i18n="sidebar.tab.main">Main</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-sidebar-tab="recents" role="tab" aria-selected="false">
+            <span data-i18n="sidebar.tab.recents">Recents</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-sidebar-tab="queue" role="tab" aria-selected="false">
+            <span data-i18n="sidebar.tab.queue">Queue</span>
+          </button>
+          <div class="sidebar-tab-glider" id="sidebar-tab-glider"></div>
+        </div>
 
-      <div class="sidebar-actions">
-        <a href="#" class="nav-item nav-settings" data-action="open-settings">
-          <svg class="i" width="14" height="14"><use href="#i-settings"/></svg>
-          <span data-i18n="nav.settings">Settings</span>
-        </a>
-        <button id="btn-add-files" class="btn-primary">
-          <svg class="i" width="13" height="13"><use href="#i-plus"/></svg>
-          <span data-i18n="nav.openFiles">Open files</span>
-        </button>
+        <div class="sidebar-actions">
+          <a href="#" class="nav-item nav-settings" data-action="open-settings">
+            <svg class="i" width="14" height="14"><use href="#i-settings"/></svg>
+            <span data-i18n="nav.settings">Settings</span>
+          </a>
+          <button id="btn-open-folder" class="btn-primary">
+            <svg class="i" width="13" height="13"><use href="#i-folder"/></svg>
+            <span data-i18n="nav.openFolder">Open folder</span>
+          </button>
+        </div>
       </div>
     </aside>
 

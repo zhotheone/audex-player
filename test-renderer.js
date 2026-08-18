@@ -203,18 +203,25 @@ try {
   process.exit(1);
 }
 
-// Check key critical functions exist and run without errors
 assert.strictEqual(typeof sandbox.renderSettings, 'function', 'renderSettings must be defined');
 assert.strictEqual(typeof sandbox.sliderToGain, 'function', 'sliderToGain must be defined');
 assert.strictEqual(typeof sandbox.setVolume, 'function', 'setVolume must be defined');
 assert.strictEqual(typeof sandbox.updateVolumeUI, 'function', 'updateVolumeUI must be defined');
 assert.strictEqual(typeof sandbox.triggerCrossfade, 'function', 'triggerCrossfade must be defined');
+assert.strictEqual(typeof sandbox.setSidebarTab, 'function', 'setSidebarTab must be defined');
+assert.strictEqual(typeof sandbox.renderRecents, 'function', 'renderRecents must be defined');
+assert.strictEqual(typeof sandbox.renderPlaybackQueue, 'function', 'renderPlaybackQueue must be defined');
 
-// Run settings rendering cycle to ensure no missing variables (e.g. crossfadeMs)
+// Run settings rendering cycle and sidebar tab switches
 try {
   sandbox.renderSettings();
   sandbox.setVolume(0.5);
   sandbox.updateVolumeUI();
+  sandbox.setSidebarTab('recents');
+  sandbox.setSidebarTab('queue');
+  sandbox.setSidebarTab('main');
+  sandbox.renderRecents();
+  sandbox.renderPlaybackQueue();
 } catch (e) {
   console.error('Runtime error in renderer.js functions:', e);
   process.exit(1);

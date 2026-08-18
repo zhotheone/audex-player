@@ -499,7 +499,7 @@ function saveSettings() {
   localStorage.setItem(LS.settings, JSON.stringify(settings));
 }
 function saveRecents() {
-  localStorage.setItem(LS.recents, JSON.stringify(recents.slice(0, 4)));
+  localStorage.setItem(LS.recents, JSON.stringify(recents.slice(0, 50)));
 }
 function savePlayLog() {
   if (playLog.length > PLAYLOG_MAX) playLog = playLog.slice(-PLAYLOG_MAX);
@@ -623,7 +623,13 @@ const I18N = {
     'nav.recents': 'Recent',
     'nav.tools': 'Tools',
     'nav.openFiles': 'Open files',
+    'nav.openFolder': 'Open folder',
     'nav.settings': 'Settings',
+    'sidebar.tab.main': 'Main',
+    'sidebar.tab.recents': 'Recents',
+    'sidebar.tab.queue': 'Queue',
+    'recents.empty': 'No recent tracks',
+    'queue.empty': 'Queue is empty',
     'dlErr.geo': 'This track is blocked in your country and no alternative was found.',
     'dlErr.unavailable': 'The video was removed or is unavailable, and no alternative was found.',
     'dlErr.signin': 'YouTube requires a signed-in account for this track. Sign in from Settings → Downloads.',
@@ -1333,7 +1339,13 @@ const I18N = {
     'nav.recents': 'Нещодавнє',
     'nav.tools': 'Інструменти',
     'nav.openFiles': 'Відкрити файли',
+    'nav.openFolder': 'Відкрити папку',
     'nav.settings': 'Налаштування',
+    'sidebar.tab.main': 'Головна',
+    'sidebar.tab.recents': 'Нещодавнє',
+    'sidebar.tab.queue': 'Черга',
+    'recents.empty': 'Немає нещодавніх треків',
+    'queue.empty': 'Черга порожня',
     'dlErr.geo': 'Цей трек заблоковано для вашої країни, і заміни не знайдено.',
     'dlErr.unavailable': 'Відео видалено або недоступне, заміни не знайдено.',
     'dlErr.signin': 'YouTube вимагає вхід в акаунт для цього треку. Увійдіть у Налаштування → Завантаження.',
@@ -3868,10 +3880,12 @@ function renderCounts() {
 }
 function renderRecents() {
   const list = $('recents-list');
+  if (!list) return;
   list.innerHTML = '';
-  recents.slice(0, 4).forEach(path => {
-    const t = trackByPath(path);
-    if (!t) return;
+  const emptyEl = $('recents-empty');
+  const validRecents = recents.map(path => trackByPath(path)).filter(Boolean);
+  if (emptyEl) emptyEl.hidden = validRecents.length > 0;
+  validRecents.slice(0, 50).forEach(t => {
     if (!t.cover) ensureCoverFor(t);
     const el = document.createElement('div');
     el.className = 'recent-item';
@@ -3883,7 +3897,45 @@ function renderRecents() {
         <div class="recent-meta">${escapeHtml(t.artist)}</div>
       </div>
     `;
-    el.addEventListener('click', () => playTrackByPath(path, library));
+    el.addEventListener('click', () => playTrackByPath(t.path, library));
+    list.appendChild(el);
+  });
+}
+
+function renderPlaybackQueue() {
+  const list = $('playback-queue-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const emptyEl = $('playback-queue-empty');
+  const countEl = $('playback-queue-count');
+  const activeQ = (isShuffle && shuffledQueue.length === currentQueue.length) ? shuffledQueue : currentQueue;
+  if (!activeQ || activeQ.length === 0) {
+    if (emptyEl) emptyEl.hidden = false;
+    if (countEl) countEl.hidden = true;
+    return;
+  }
+  if (emptyEl) emptyEl.hidden = true;
+  if (countEl) {
+    countEl.hidden = false;
+    countEl.textContent = activeQ.length;
+  }
+  const curPath = currentTrack ? currentTrack.path : null;
+  activeQ.forEach(t => {
+    if (!t.cover && !isRemotePath(t.path)) ensureCoverFor(t);
+    const el = document.createElement('div');
+    const isCur = t.path === curPath;
+    el.className = 'queue-item' + (isCur ? ' active' : '');
+    const cover = t.cover ? `background-image:url('${t.cover}')` : '';
+    el.innerHTML = `
+      <div class="queue-swatch" style="${cover}">
+        ${isCur ? '<svg class="i queue-playing-icon" width="10" height="10"><use href="#i-play"/></svg>' : ''}
+      </div>
+      <div class="queue-body">
+        <div class="queue-name">${escapeHtml(t.title)}</div>
+        <div class="queue-meta">${escapeHtml(t.artist)}</div>
+      </div>
+    `;
+    el.addEventListener('click', () => playTrackByPath(t.path, currentQueue));
     list.appendChild(el);
   });
 }
@@ -5661,10 +5713,11 @@ function playTrackByPath(path, queue, { manual = true } = {}) {
   }
   isPlaying = true;
   if (!isRemotePath(path)) {
-    recents = [path, ...recents.filter(p => p !== path)].slice(0, 4);
+    recents = [path, ...recents.filter(p => p !== path)].slice(0, 50);
     saveRecents();
     renderRecents();
   }
+  renderPlaybackQueue();
   updatePlayButtonUI();
 }
 
@@ -6178,12 +6231,54 @@ function updateRepeatUI() {
   if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
 }
 
-// ── Open files ──
-$('btn-add-files').addEventListener('click', async () => {
-  const paths = await window.electronAPI.openFiles();
-  if (!paths || paths.length === 0) return;
-  await importPaths(paths);
+// ── Sidebar tabs & actions ──
+let currentSidebarTab = 'main';
+function setSidebarTab(tab) {
+  const tabs = ['main', 'recents', 'queue'];
+  if (!tabs.includes(tab)) tab = 'main';
+  currentSidebarTab = tab;
+  const idx = tabs.indexOf(tab);
+
+  const glider = $('sidebar-tab-glider');
+  if (glider) {
+    glider.style.transform = `translateX(${idx * 100}%)`;
+  }
+
+  document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
+    const isTarget = btn.dataset.sidebarTab === tab;
+    btn.classList.toggle('active', isTarget);
+    btn.setAttribute('aria-selected', String(isTarget));
+  });
+
+  const panels = $('sidebar-panels');
+  if (panels) {
+    panels.style.transform = `translateX(-${idx * 100}%)`;
+  }
+
+  document.querySelectorAll('.sidebar-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.sidebarPanel === tab);
+  });
+
+  if (tab === 'recents') renderRecents();
+  if (tab === 'queue') renderPlaybackQueue();
+}
+
+document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => setSidebarTab(btn.dataset.sidebarTab));
 });
+
+// ── Open folder / files ──
+const openFolderBtn = $('btn-open-folder') || $('btn-add-files');
+if (openFolderBtn) {
+  openFolderBtn.addEventListener('click', async () => {
+    const folder = await window.electronAPI.chooseFolder();
+    if (!folder) return;
+    const files = await window.electronAPI.scanFolder(folder);
+    if (files && files.length > 0) {
+      await importPaths(files);
+    }
+  });
+}
 
 // Health-check controls.
 {
@@ -8825,7 +8920,7 @@ function runPaletteAction(action) {
   closePalette();
   if (!action) return;
   if (action.kind === 'play-track') playTrackByPath(action.path, library);
-  else if (action.kind === 'open-files') $('btn-add-files').click();
+  else if (action.kind === 'open-files') ($('btn-open-folder') || $('btn-add-files'))?.click();
   else if (action.kind === 'goto-settings') openSettings();
   else if (action.kind === 'open-artist') { activeArtistName = action.name; setView('artist-detail'); }
   else if (action.kind === 'open-album') { activeAlbumKey = action.key; setView('album-detail'); }

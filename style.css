@@ -513,24 +513,11 @@ input { font-family: inherit; color: inherit; }
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  /* .nav-section.recents is the one flexible region (flex:1, min-height:0
-     below) and is meant to absorb a short window by shrinking down to 0.
-     Without min-height:0 here too, the sidebar itself can't shrink below its
-     content's natural height in a nested flex layout, so recents can't do
-     its job and everything below it — including Settings — gets pushed past
-     the bottom edge and clipped by body's overflow:hidden. overflow-y is a
-     last-resort fallback for when even a 0-height recents isn't enough
-     (many opt-in nav items + a very short window). */
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
-/* Only recents (below) is allowed to shrink — everything else (brand, main
-   nav, tools, and the pinned Open files/Settings actions) must stay full
-   size so Settings is never squeezed away. */
 .sidebar > .brand,
-.sidebar > .nav-menu,
-.sidebar > .nav-section.tools,
-.sidebar > .sidebar-actions {
+.sidebar > .sidebar-bottom {
   flex-shrink: 0;
 }
 
@@ -711,20 +698,72 @@ input { font-family: inherit; color: inherit; }
   .nav-search.is-pinging .nav-search-icon { animation: none; }
 }
 
-.nav-section {
-  margin-bottom: 22px;
-}
-/* Recents is the flexible scroll region so the bottom actions stay pinned
-   inside the sidebar (at high UI scale they'd otherwise overflow the playbar). */
-.nav-section.recents {
+/* ── Panels viewport & carousel ── */
+.sidebar-panels-viewport {
   flex: 1 1 auto;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-.nav-section.recents #recents-list {
-  overflow-y: auto;
+.sidebar-panels {
+  display: flex;
+  width: 100%;
+  height: 100%;
   min-height: 0;
+  transition: transform var(--motion-expressive-default-spatial, 0.28s cubic-bezier(0.2, 0, 0, 1));
+}
+.sidebar-panel {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.sidebar-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 8px;
+  flex-shrink: 0;
+}
+.sidebar-panel-title {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 500;
+}
+.sidebar-panel-badge {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.sidebar-scroll-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 40px 12px;
+}
+.sidebar-empty-hint[hidden] { display: none; }
+
+.nav-section {
+  margin-bottom: 22px;
 }
 .nav-label {
   font-size: 10.5px;
@@ -736,13 +775,10 @@ input { font-family: inherit; color: inherit; }
 }
 
 .nav-section.tools { display: flex; flex-direction: column; gap: 2px; }
-/* Report and Health are both opt-in and hidden by default — without this the
-   group's own [hidden] attribute would lose to the rule above (both are class
-   selectors of equal specificity; the later one in the cascade wins), leaving
-   an empty "Tools" heading floating in the sidebar when neither is enabled. */
 #nav-tools-group[hidden] { display: none; }
 
-.recents .recent-item {
+.recent-item,
+.queue-item {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -751,37 +787,116 @@ input { font-family: inherit; color: inherit; }
   color: var(--text-muted);
   font-size: 12.5px;
   cursor: pointer;
+  transition: background var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
 }
-.recents .recent-item:hover {
+.recent-item:hover,
+.queue-item:hover {
   background: var(--hover-bg);
   color: var(--text-strong);
 }
-.recent-swatch {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
+.queue-item.active {
+  background: var(--active-bg);
+  color: var(--text-strong);
+  font-weight: 500;
+}
+.recent-swatch,
+.queue-swatch {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
   flex-shrink: 0;
   background-size: cover;
   background-position: center;
   background-color: var(--panel-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.recent-body {
+.queue-playing-icon {
+  color: var(--text-strong);
+}
+.recent-body,
+.queue-body {
   flex: 1;
   min-width: 0;
 }
-.recent-name {
+.recent-name,
+.queue-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.recent-meta {
+.recent-meta,
+.queue-meta {
   font-size: 10.5px;
   color: var(--text-faint);
   margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Bottom sidebar controls ── */
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.sidebar-tab-carousel {
+  position: relative;
+  display: flex;
+  background: var(--hover-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  user-select: none;
+}
+.sidebar-tab-btn {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  padding: 5px 2px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: color var(--motion-standard-fast-effects);
+}
+.sidebar-tab-btn:hover {
+  color: var(--text-strong);
+}
+.sidebar-tab-btn.active {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+.sidebar-tab-glider {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / 3);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  pointer-events: none;
+  transition: transform var(--motion-expressive-default-spatial, 0.24s cubic-bezier(0.2, 0, 0, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-panels,
+  .sidebar-tab-glider { transition: none; }
 }
 
 .sidebar-actions {
-  margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
