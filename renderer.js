@@ -8041,6 +8041,65 @@ function cancelCoverAnim() {
 
 // ── Fullscreen Visualizer ──
 let jsNationViz = null;
+let fsDebugRaf = null;
+let fsDebugLastNow = 0;
+let fsDebugFrameCount = 0;
+let fsDebugLastFpsUpdate = 0;
+let fsDebugFps = 60;
+let fsDebugFrameTime = 16.6;
+
+function updateFsDebugPanel() {
+  const overlay = $('fullscreen-overlay');
+  const dbg = $('fs-debug-panel');
+  if (!dbg) return;
+  const isFs = !!overlay?.classList.contains('active');
+  if (!isFs || !settings.shaderDebug) {
+    dbg.hidden = true;
+    if (fsDebugRaf) {
+      cancelAnimationFrame(fsDebugRaf);
+      fsDebugRaf = null;
+    }
+    return;
+  }
+
+  dbg.hidden = false;
+  ensureAudioAnalyzer();
+  if (fsDebugRaf) return;
+
+  fsDebugLastNow = performance.now();
+  fsDebugLastFpsUpdate = fsDebugLastNow;
+  fsDebugFrameCount = 0;
+
+  const loop = (now) => {
+    if (!$('fullscreen-overlay')?.classList.contains('active') || !settings.shaderDebug) {
+      dbg.hidden = true;
+      fsDebugRaf = null;
+      return;
+    }
+
+    fsDebugFrameTime = now - fsDebugLastNow;
+    fsDebugLastNow = now;
+    fsDebugFrameCount++;
+
+    if (now - fsDebugLastFpsUpdate >= 200) {
+      fsDebugFps = Math.round((fsDebugFrameCount * 1000) / (now - fsDebugLastFpsUpdate));
+      fsDebugFrameCount = 0;
+      fsDebugLastFpsUpdate = now;
+
+      const f = lastAudioFeatures || {};
+      const mode = getFsVisualizerMode();
+      dbg.innerHTML = `<div>FPS: <b>${fsDebugFps}</b> (${fsDebugFrameTime.toFixed(1)}ms) | Mode: <b>${mode}</b></div>` +
+        `<div>Bass: <b>${(f.bass || 0).toFixed(2)}</b> | LowMid: <b>${(f.lowMid || 0).toFixed(2)}</b></div>` +
+        `<div>Mid: <b>${(f.mid || 0).toFixed(2)}</b> | HighMid: <b>${(f.highMid || 0).toFixed(2)}</b></div>` +
+        `<div>High: <b>${(f.high || 0).toFixed(2)}</b> | Mult: <b>${(f.multiplier || 0).toFixed(2)}</b></div>` +
+        `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Onset: <b>${(f.onset || 0).toFixed(2)}</b></div>` +
+        `<div>BPM: <b>${f.bpm || '—'}</b>${f.beat ? ' [BEAT]' : ''}</div>`;
+    }
+
+    fsDebugRaf = requestAnimationFrame(loop);
+  };
+  fsDebugRaf = requestAnimationFrame(loop);
+}
 
 function getFsVisualizerMode() {
   return settings.fsVisualizer || 'shader';
@@ -8099,10 +8158,12 @@ function startFsVisualizer() {
     if (jsNationViz) jsNationViz.stop();
   }
   updateFsVizButtonUI();
+  updateFsDebugPanel();
 }
 
 function stopFsVisualizer() {
   if (jsNationViz) jsNationViz.stop();
+  updateFsDebugPanel();
 }
 
 function toggleFsVisualizer() {
@@ -10337,10 +10398,7 @@ document.querySelectorAll('.toggle').forEach(t => {
         }
       }
     }
-    if (key === 'shaderDebug') {
-      const dbg = $('fs-debug-panel');
-      if (dbg && !settings.shaderDebug) dbg.hidden = true;
-    }
+    if (key === 'shaderDebug') updateFsDebugPanel();
     if (key === 'artistMinTracksEnabled') {
       renderArtistMinTracks();
       if (currentView === 'artists') renderArtists();
