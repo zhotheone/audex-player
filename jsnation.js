@@ -159,11 +159,10 @@
                 float inner = smoothstep(1.25, 2.4, totalField);
                 float glow = smoothstep(0.12, 0.7, totalField) * 0.45;
 
-                vec3 bg = mix(vec3(0.04, 0.03, 0.06), blobColor * 0.15, glow);
-                vec3 finalCol = mix(bg, blobColor, edge);
-                finalCol = mix(finalCol, min(blobColor * 1.3 + vec3(0.08), vec3(1.0)), inner * 0.35);
+                vec3 finalCol = mix(blobColor * 0.85, min(blobColor * 1.35 + vec3(0.1), vec3(1.0)), inner * 0.4);
+                float alpha = clamp(edge * 0.95 + glow * 0.6, 0.0, 0.95);
 
-                gl_FragColor = vec4(finalCol, 1.0);
+                gl_FragColor = vec4(finalCol, alpha);
             }
         `
     };
@@ -391,7 +390,7 @@
                 uniforms: this.lavaUniforms,
                 vertexShader: SHADERS.vertSpectrum,
                 fragmentShader: SHADERS.fragLava,
-                transparent: false,
+                transparent: true,
                 depthTest: false,
                 depthWrite: false
             });
@@ -527,7 +526,7 @@
 
         _updateLavaLamp(multiplier) {
             if (!this.blobs || !this.lavaMesh || !this.lavaMesh.visible) return;
-            const speed = 1.0 + multiplier * 5.5;
+            const speed = 0.2 + multiplier * 4.2;
             const dt = 1.0 / 60.0;
             for (let i = 0; i < this.blobCount; i++) {
                 const b = this.blobs[i];
@@ -536,7 +535,7 @@
 
                 const x = 0.5 + b.ampX * Math.sin(b.phaseX) + 0.04 * Math.sin(b.phaseX * 2.1);
                 const y = 0.5 + b.ampY * Math.cos(b.phaseY) + 0.04 * Math.cos(b.phaseY * 1.8);
-                const r = b.baseRadius * (1.0 + multiplier * 0.28 + 0.04 * Math.sin(b.phaseX * 1.4));
+                const r = b.baseRadius * (1.0 + multiplier * 0.38 + 0.04 * Math.sin(b.phaseX * 1.4));
 
                 this.blobUniformData[i].set(x, y, r);
 
@@ -598,6 +597,7 @@
                 ctx.drawImage(img, 0, 0, 32, 32);
                 const data = ctx.getImageData(0, 0, 32, 32).data;
                 const sampled = [];
+                let totalLum = 0, count = 0;
 
                 for (let i = 0; i < data.length; i += 16) {
                     const r = data[i] / 255;
@@ -609,13 +609,17 @@
                     const min = Math.min(r, g, b);
                     const lum = (max + min) / 2;
                     const sat = max === 0 ? 0 : (max - min) / max;
+                    totalLum += lum;
+                    count++;
 
-                    if (lum > 0.08 && lum < 0.92) {
+                    if (lum > 0.05 && lum < 0.95) {
                         sampled.push({ r, g, b, sat, lum });
                     }
                 }
 
                 if (sampled.length === 0) return;
+                const isLightBg = count > 0 && (totalLum / count) > 0.55;
+
                 sampled.sort((a, b) => b.sat - a.sat);
 
                 const picked = [sampled[0]];
@@ -630,10 +634,27 @@
 
                 while (picked.length < 3) {
                     const base = picked[0];
-                    picked.push({ r: base.g, g: base.b, b: base.r });
+                    picked.push({ r: base.g, g: base.b, b: base.r, lum: base.lum });
                 }
 
-                this.targetLavaColors = picked.slice(0, 3).map(c => new THREE.Vector3(c.r, c.g, c.b));
+                // Ensure contrast against background
+                this.targetLavaColors = picked.slice(0, 3).map(c => {
+                    let { r, g, b, lum } = c;
+                    if (isLightBg && lum > 0.42) {
+                        const s = 0.38 / Math.max(0.01, lum);
+                        r *= s; g *= s; b *= s;
+                    } else if (!isLightBg && lum < 0.48) {
+                        const s = 0.72 / Math.max(0.01, lum);
+                        r = Math.min(1, r * s);
+                        g = Math.min(1, g * s);
+                        b = Math.min(1, b * s);
+                    }
+                    return new THREE.Vector3(r, g, b);
+                });
+
+                if (this.particleMaterial && this.particleMaterial.uniforms && this.particleMaterial.uniforms.color) {
+                    this.particleMaterial.uniforms.color.value.setHex(isLightBg ? 0x111625 : 0xFFFFFF);
+                }
             } catch (_) {
                 // Ignore cross-origin canvas security errors
             }

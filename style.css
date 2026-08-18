@@ -3888,7 +3888,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   transition: opacity var(--motion-expressive-default-spatial);
 }
 .fs-overlay.is-in .fs-jsnation-wrap { opacity: 1; }
-.fs-overlay.is-viz .fs-backdrop,
 .fs-overlay.is-viz .fs-canvas {
   opacity: 0 !important;
   pointer-events: none;
