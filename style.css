@@ -6115,3 +6115,29 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   color: var(--text-dim);
   flex: 1;
 }
+
+/* ── Animation control toggles ── */
+html[data-animations="none"] *,
+html[data-animations="none"] *::before,
+html[data-animations="none"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+html[data-anim-transitions="false"] .view-section,
+html[data-anim-transitions="false"] .cover-slot,
+html[data-anim-transitions="false"] .title-slot,
+html[data-anim-transitions="false"] .fs-canvas,
+html[data-anim-transitions="false"] .fs-backdrop {
+  transition: none !important;
+  animation: none !important;
+}
+
+html[data-anim-effects="false"] .button-group .icon-btn,
+html[data-anim-effects="false"] .song-actions .icon-btn,
+html[data-anim-effects="false"] .nav-search::before,
+html[data-anim-effects="false"] .accent-swatch {
+  transition: none !important;
+  animation: none !important;
+}

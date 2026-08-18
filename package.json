@@ -1,7 +1,7 @@
 {
   "name": "audex-player",
   "productName": "Audex",
-  "version": "0.0.221",
+  "version": "0.0.223",
   "description": "Audex — minimal desktop music player",
   "main": "main.js",
   "scripts": {
@@ -24,6 +24,7 @@
       "lan.js",
       "musicbrainz.js",
       "preload.js",
+      "analyzer.js",
       "renderer.js",
       "index.html",
       "style.css",
@@ -88,13 +89,13 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-1ce1dab-${os}.${ext}"
+      "artifactName": "${productName}-9087365-${os}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-Setup-1ce1dab.${ext}"
+      "artifactName": "${productName}-Setup-9087365.${ext}"
     }
   },
   "keywords": [],

@@ -153,6 +153,10 @@ let settings = Object.assign({
   bgDim: 35,                 // % of the theme background laid over the image
   bgFit: 'cover',            // cover | contain | center | tile
   surfaceAlpha: 100,         // % opacity of sidebar/playbar/cards over the image
+  animations: true,          // master switch for interface animations & motion
+  animWavy: true,            // wavy progress bar animation
+  animTransitions: true,     // page and track crossfade transitions
+  animEffects: true,         // button squishes, tactile pops, and hover sheens
 }, JSON.parse(localStorage.getItem(LS.settings) || '{}'));
 // Shallow-merge above replaces `eq` wholesale — normalize so an old/partial
 // saved object still has a valid gains array of the right length.
@@ -453,8 +457,24 @@ function applyCornerRadius(r) {
   const val = ['sharp', 'subtle', 'default', 'round', 'pill'].includes(r) ? r : 'default';
   root.setAttribute('data-radius', val);
 }
+function applyAnimations() {
+  const on = settings.animations !== false;
+  root.setAttribute('data-animations', on ? 'all' : 'none');
+  root.setAttribute('data-anim-transitions', (on && settings.animTransitions !== false) ? 'true' : 'false');
+  root.setAttribute('data-anim-effects', (on && settings.animEffects !== false) ? 'true' : 'false');
+
+  ['anim-wavy', 'anim-transitions', 'anim-effects'].forEach(id => {
+    const row = $(id + '-row');
+    if (row) {
+      const btn = row.querySelector('.toggle');
+      if (btn) btn.classList.toggle('is-disabled', !on);
+      row.style.opacity = on ? '' : '0.5';
+    }
+  });
+}
 applyCornerRadius(settings.cornerRadius);
 applyUiScale(settings.uiScale);
+applyAnimations();
 applyAppearance();
 
 // ── Persistence ──
@@ -928,6 +948,14 @@ const I18N = {
     'setting.theme': 'Theme',
     'setting.themeDesc': 'Application color scheme.',
     'toast.saveFailed': "Couldn't save your changes to disk — they may be lost when the app closes.",
+    'setting.animations': 'Animations',
+    'setting.animationsDesc': 'Enable motion and interface transitions.',
+    'setting.animWavy': 'Wavy progress bar',
+    'setting.animWavyDesc': 'Audio-reactive wave motion on the progress bar.',
+    'setting.animTransitions': 'View & track transitions',
+    'setting.animTransitionsDesc': 'Smooth crossfades for views, artwork, and titles.',
+    'setting.animEffects': 'Tactile UI feedback',
+    'setting.animEffectsDesc': 'Micro-interactions, button squishes, and hover effects.',
     'setting.randomTheme': 'Random theme',
     'setting.randomThemeDesc': 'Pick a random palette every time the app starts.',
     'setting.accent': 'Accent color',
@@ -1630,6 +1658,14 @@ const I18N = {
     'setting.theme': 'Тема',
     'setting.themeDesc': 'Колірна схема застосунку.',
     'toast.saveFailed': 'Не вдалося зберегти зміни на диск — вони можуть втратитися після закриття застосунку.',
+    'setting.animations': 'Анімації',
+    'setting.animationsDesc': 'Увімкнути плавні рухи та переходи інтерфейсу.',
+    'setting.animWavy': 'Хвилястий прогрес-бар',
+    'setting.animWavyDesc': 'Аудіо-реактивні коливання на смузі прогресу.',
+    'setting.animTransitions': 'Переходи переглядів та треків',
+    'setting.animTransitionsDesc': 'Плавна зміна обкладинок, назв та сторінок.',
+    'setting.animEffects': 'Тактильний відгук UI',
+    'setting.animEffectsDesc': 'Мікро-анімації, натискання кнопок та ефекти наведення.',
     'setting.randomTheme': 'Випадкова тема',
     'setting.randomThemeDesc': 'Обирати випадкову палітру під час кожного запуску.',
     'setting.accent': 'Колір акценту',
@@ -6650,11 +6686,28 @@ $('fs-btn-repeat').addEventListener('click', () => {
 let wavePhase = 0;
 let waveAnimId = null;
 let waveAmp = 0;
+let audioAnalyzer = null;
+let lastAudioFeatures = null;
 const AMPLITUDE = 3.0;
 const WAVELENGTH = 24;
 const VIEW_W = 400;
 const VIEW_H = 14;
 const PAD = 4;
+
+async function ensureAudioAnalyzer() {
+  if (audioAnalyzer || typeof AudioAnalyzerNode === 'undefined') return;
+  if (!ensureEqGraph()) return;
+  try {
+    audioAnalyzer = new AudioAnalyzerNode(eqCtx);
+    await audioAnalyzer.init();
+    audioAnalyzer.connectSource(eqSource);
+    audioAnalyzer.subscribe(features => {
+      lastAudioFeatures = features;
+    });
+  } catch (err) {
+    console.warn('AudioAnalyzer failed to init:', err);
+  }
+}
 
 function buildWavyPath(progressX, progressRatio, phase) {
   const midY = VIEW_H / 2;
@@ -6749,7 +6802,8 @@ function setProgressUI() {
 }
 
 function waveTick() {
-  const targetAmp = isPlaying ? 1 : 0;
+  const animationsActive = settings.animations !== false && settings.animWavy !== false;
+  const targetAmp = (isPlaying && animationsActive) ? 1 : 0;
   const diff = targetAmp - waveAmp;
   if (Math.abs(diff) < 0.01) {
     waveAmp = targetAmp;
@@ -6758,7 +6812,8 @@ function waveTick() {
   }
 
   if (waveAmp > 0.001) {
-    wavePhase += 0.028;
+    const energy = lastAudioFeatures ? lastAudioFeatures.energy : 0.5;
+    wavePhase += 0.014 + 0.028 * energy;
   }
 
   setProgressUI();
@@ -7135,6 +7190,7 @@ audio.addEventListener('timeupdate', () => {
 // no playback path — button, keyboard, crossfade swap — comes out muted.
 audio.addEventListener('play', () => {
   if (eqCtx && eqCtx.state === 'suspended') eqCtx.resume().catch(() => {});
+  ensureAudioAnalyzer();
 });
 audio.addEventListener('ended', () => {
   plFinalize();
@@ -7631,12 +7687,25 @@ function startFsShader() {
         canvas.height = h;
         fsGl.viewport(0, 0, w, h);
       }
+      const feats = lastAudioFeatures;
+      const energy = feats ? feats.energy : 0.5;
+      const bass = feats ? feats.bass : 0.5;
+      const mid = feats ? feats.mid : 0.5;
+      const high = feats ? feats.high : 0.2;
+      const onset = feats ? feats.onset : 0;
+      const beat = feats?.beat ? 1 : 0;
+
+      const warp = fsShaderParams.warpIntensity * (0.6 + 0.8 * bass + 0.4 * energy);
+      const speed = fsShaderParams.animationSpeed * (0.5 + 1.2 * energy);
+      const scale = fsShaderParams.scale * (1.0 - 0.12 * onset - 0.08 * beat);
+      const sat = fsShaderParams.saturation * (0.8 + 0.4 * mid + 0.3 * high);
+
       fsGl.uniform1f(fsShaderTimeLoc, (now - startTime) * 0.001);
       fsGl.uniform2f(fsShaderResLoc, w, h);
-      fsGl.uniform1f(fsShaderWarpLoc, fsShaderParams.warpIntensity);
-      fsGl.uniform1f(fsShaderSpeedLoc, fsShaderParams.animationSpeed);
-      fsGl.uniform1f(fsShaderScaleLoc, fsShaderParams.scale);
-      fsGl.uniform1f(fsShaderSatLoc, fsShaderParams.saturation);
+      fsGl.uniform1f(fsShaderWarpLoc, warp);
+      fsGl.uniform1f(fsShaderSpeedLoc, speed);
+      fsGl.uniform1f(fsShaderScaleLoc, scale);
+      fsGl.uniform1f(fsShaderSatLoc, sat);
       fsGl.uniform3f(fsShaderTintLoc, fsShaderParams.tintColor[0], fsShaderParams.tintColor[1], fsShaderParams.tintColor[2]);
       fsGl.uniform1f(fsShaderTintIntLoc, fsShaderParams.tintIntensity);
       fsGl.uniform1f(fsShaderDitherLoc, fsShaderParams.dithering);
@@ -9160,6 +9229,10 @@ document.querySelectorAll('#albums-view-seg .seg-btn').forEach(btn => {
 // ── Settings UI ──
 const TOGGLE_KEY_MAP = {
   'random-theme': 'randomTheme',
+  'animations': 'animations',
+  'anim-wavy': 'animWavy',
+  'anim-transitions': 'animTransitions',
+  'anim-effects': 'animEffects',
   'scan-subdirs': 'scanSubdirs',
   'artist-min-tracks': 'artistMinTracksEnabled',
   'health-check': 'healthCheck',
@@ -9790,6 +9863,7 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'crossfade') renderCrossfadeLen();
     if (key === 'randomTheme') applyTheme(settings.randomTheme ? randomThemeId() : settings.theme);
     if (key === 'lanSharing') applyLanSharingVisibility();
+    if (key === 'animations' || key === 'animWavy' || key === 'animTransitions' || key === 'animEffects') applyAnimations();
     if (key === 'artistMinTracksEnabled') {
       renderArtistMinTracks();
       if (currentView === 'artists') renderArtists();

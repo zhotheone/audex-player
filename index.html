@@ -1273,6 +1273,37 @@
             </div>
           </div>
         </div>
+
+        <div class="setting-card setting-card-tight" id="animations-card">
+          <div class="setting-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.animations">Animations</div>
+              <div class="setting-desc" data-i18n="setting.animationsDesc">Enable motion and interface transitions.</div>
+            </div>
+            <button class="toggle" data-setting="animations"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row" id="anim-wavy-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.animWavy">Wavy progress bar</div>
+              <div class="setting-desc" data-i18n="setting.animWavyDesc">Audio-reactive wave motion on the progress bar.</div>
+            </div>
+            <button class="toggle" data-setting="anim-wavy"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row" id="anim-transitions-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.animTransitions">View & track transitions</div>
+              <div class="setting-desc" data-i18n="setting.animTransitionsDesc">Smooth crossfades for views, artwork, and titles.</div>
+            </div>
+            <button class="toggle" data-setting="anim-transitions"><div class="toggle-knob"></div></button>
+          </div>
+          <div class="setting-row" id="anim-effects-row">
+            <div class="setting-text">
+              <div class="setting-label" data-i18n="setting.animEffects">Tactile UI feedback</div>
+              <div class="setting-desc" data-i18n="setting.animEffectsDesc">Micro-interactions, button squishes, and hover effects.</div>
+            </div>
+            <button class="toggle" data-setting="anim-effects"><div class="toggle-knob"></div></button>
+          </div>
+        </div>
       </section>
 
       <section class="setting-section">
@@ -1967,6 +1998,7 @@
   <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 
   <audio id="audio-player"></audio>
+  <script src="analyzer.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
