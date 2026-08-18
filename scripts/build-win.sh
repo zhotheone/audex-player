@@ -7,7 +7,6 @@ WIN_DIR="${WIN_DIR:-/mnt/d/1.Projects/audex-player}"
 WSL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "==> Generating build info from git..."
-node "$WSL_DIR/scripts/build-info.js"
 
 if [ -d "$WIN_DIR" ]; then
   echo "==> Syncing files to $WIN_DIR..."
