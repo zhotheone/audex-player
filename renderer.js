@@ -7269,7 +7269,7 @@ async function ensureAudioAnalyzer() {
   }
 }
 
-function buildWavyPath(progressX, progressRatio, phase) {
+function buildWavyPath(progressX, progressRatio, phase, mult = 0) {
   const midY = VIEW_H / 2;
   if (progressX <= PAD + 0.8) {
     return `M ${PAD} ${midY}`;
@@ -7279,7 +7279,8 @@ function buildWavyPath(progressX, progressRatio, phase) {
   }
 
   const ampScale = Math.min(1, progressRatio * 10);
-  const amp = AMPLITUDE * ampScale * waveAmp;
+  const beatPunch = 0.5 + mult * 1.5;
+  const amp = AMPLITUDE * ampScale * waveAmp * beatPunch;
   const steps = Math.max(16, Math.ceil((progressX - PAD) / 2));
   const pts = [];
 
@@ -7403,12 +7404,15 @@ function updateProgressSvg(trackId, activeId, trackPathId, dotId, stopId, ratio)
   const svg = trackEl.querySelector('svg');
   if (svg) svg.setAttribute('viewBox', `0 0 ${w} ${VIEW_H}`);
 
+  const mult = lastAudioFeatures ? Math.max(lastAudioFeatures.multiplier || 0, lastAudioFeatures.bass || 0) : 0;
   const progressX = PAD + ratio * (w - PAD * 2);
   const midY = VIEW_H / 2;
-  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * Math.min(1, ratio * 10) * waveAmp;
+  const ampScale = Math.min(1, ratio * 10);
+  const beatPunch = 0.5 + mult * 1.5;
+  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * ampScale * waveAmp * beatPunch;
   const progressY = midY + (amp ? Math.sin((progressX / WAVELENGTH) * Math.PI * 2 + wavePhase) * amp : 0);
 
-  const pathD = buildWavyPath(progressX, ratio, wavePhase);
+  const pathD = buildWavyPath(progressX, ratio, wavePhase, mult);
   const endX = w - PAD;
   const remainingStart = Math.min(endX, progressX + 8);
   const trackD = remainingStart < endX ? `M ${remainingStart.toFixed(1)} 7 L ${endX} 7` : `M ${endX} 7`;
@@ -7458,7 +7462,7 @@ function waveTick() {
 
   if (waveAmp > 0.001) {
     const mult = lastAudioFeatures ? Math.max(lastAudioFeatures.multiplier || 0, lastAudioFeatures.bass || 0) : 0;
-    wavePhase += 0.006 + mult * 0.08;
+    wavePhase += 0.012 + mult * 0.12;
   }
 
   setProgressUI();
@@ -8088,12 +8092,12 @@ function updateFsDebugPanel() {
 
       const f = lastAudioFeatures || {};
       const mode = getFsVisualizerMode();
-      dbg.innerHTML = `<div>FPS: <b>${fsDebugFps}</b> (${fsDebugFrameTime.toFixed(1)}ms) | Mode: <b>${mode}</b></div>` +
-        `<div>Bass: <b>${(f.bass || 0).toFixed(2)}</b> | LowMid: <b>${(f.lowMid || 0).toFixed(2)}</b></div>` +
-        `<div>Mid: <b>${(f.mid || 0).toFixed(2)}</b> | HighMid: <b>${(f.highMid || 0).toFixed(2)}</b></div>` +
-        `<div>High: <b>${(f.high || 0).toFixed(2)}</b> | Mult: <b>${(f.multiplier || 0).toFixed(2)}</b></div>` +
-        `<div>Energy: <b>${(f.energy || 0).toFixed(2)}</b> | Onset: <b>${(f.onset || 0).toFixed(2)}</b></div>` +
-        `<div>BPM: <b>${f.bpm || '—'}</b>${f.beat ? ' [BEAT]' : ''}</div>`;
+      dbg.innerHTML = `<div><b class="active">FPS: ${fsDebugFps}</b> (${fsDebugFrameTime.toFixed(1)}ms) | <b class="active">Mode: ${mode}</b></div>` +
+        `<div><b class="active">Mult: ${(f.multiplier || 0).toFixed(2)}</b> <span class="dim">(emblem/particles/lava)</span></div>` +
+        `<div><b class="active">Bass: ${(f.bass || 0).toFixed(2)}</b>${f.beat ? ' <b class="active">[BEAT]</b>' : ''}</div>` +
+        `<div class="dim">LowMid: ${(f.lowMid || 0).toFixed(2)} | Mid: ${(f.mid || 0).toFixed(2)}</div>` +
+        `<div class="dim">HighMid: ${(f.highMid || 0).toFixed(2)} | High: ${(f.high || 0).toFixed(2)}</div>` +
+        `<div class="dim">Energy: ${(f.energy || 0).toFixed(2)} | Onset: ${(f.onset || 0).toFixed(2)} | BPM: ${f.bpm || '—'}</div>`;
     }
 
     fsDebugRaf = requestAnimationFrame(loop);

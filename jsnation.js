@@ -186,7 +186,7 @@
                 glowRadius: 25,
                 loudness: 1.0,
                 fovPunch: true,
-                particleCount: 2400
+                particleCount: 7200
             }, options);
 
             this.isLavaLamp = this.options.mode === 'lavalamp';
@@ -403,8 +403,8 @@
         }
 
         _initParticles() {
-            this.maxParticles = this.options.maxParticles || 10000;
-            this.particleCount = Math.min(this.options.particleCount || 2400, this.maxParticles);
+            this.maxParticles = this.options.maxParticles || 30000;
+            this.particleCount = Math.min(this.options.particleCount || 7200, this.maxParticles);
             
             if (this.particleSystem && this.scene) {
                 this.scene.remove(this.particleSystem);

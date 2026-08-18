@@ -6593,6 +6593,8 @@ button.tag-pill:hover, button.lfm-tag-chip:hover, button.lfm-similar-chip:hover 
   user-select: none;
 }
 .fs-debug-panel b { color: #fff; }
+.fs-debug-panel b.active { color: #f9e2af; text-shadow: 0 0 6px rgba(249, 226, 175, 0.4); }
+.fs-debug-panel .dim { opacity: 0.5; }
 
 /* MusicBrainz matches in Metadata Editor */
 .mb-results {
