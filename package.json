@@ -1,7 +1,7 @@
 {
   "name": "audex-player",
   "productName": "Audex",
-  "version": "0.0.230",
+  "version": "0.0.232",
   "description": "Audex — minimal desktop music player",
   "main": "main.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "build:win": "bash scripts/build-win.sh",
     "postinstall": "node scripts/fetch-ytdlp.js",
     "prepare": "git config core.hooksPath .githooks",
-    "test": "node test-audex.js && node test-lan.js && node test-renderer.js && node test-analyzer.js"
+    "test": "node tests/test-audex.js && node tests/test-lan.js && node tests/test-renderer.js && node tests/test-analyzer.js"
   },
   "build": {
     "appId": "com.audex.player",
@@ -90,13 +90,13 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-f99346b-${os}.${ext}"
+      "artifactName": "${productName}-0c8e281-${os}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-Setup-f99346b.${ext}"
+      "artifactName": "${productName}-Setup-0c8e281.${ext}"
     }
   },
   "keywords": [],

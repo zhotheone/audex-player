@@ -117,7 +117,7 @@ class AudioAnalyzerProcessor extends AudioWorkletProcessor {
 
       const db = 20 * Math.log10(energy + 1e-5);
       const norm = Math.max(0, Math.min(1.0, (db + 45) / 45));
-      const alpha = norm > b.val ? 0.25 : 0.82;
+      const alpha = norm > b.val ? 0.25 : 0.75;
       b.val = b.val * alpha + norm * (1 - alpha);
       bandResults[key] = Math.round(b.val * 100) / 100;
     }
