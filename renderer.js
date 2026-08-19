@@ -7470,9 +7470,9 @@ function waveTick() {
     waveLastMultiplier = curMult;
 
     if (delta > 0.02) {
-      waveInertia += delta * 0.45;
+      waveInertia += delta * 0.18;
     }
-    waveInertia *= 0.88;
+    waveInertia = Math.min(0.024, waveInertia * 0.88);
 
     wavePhase += 0.008 + waveInertia;
   }
