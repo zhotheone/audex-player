@@ -590,6 +590,7 @@ const I18N = {
     'ytm.loadingReleases': 'Loading releases…',
     'ytm.releasesFailed': 'Failed to load releases',
     'ytm.noReleases': 'No releases found',
+    'ytm.topTracks': 'Top 5 listened tracks',
     'ytm.albums': 'Albums',
     'ytm.singles': 'Singles & EPs',
     'ytm.loading': 'Loading…',
@@ -1316,6 +1317,7 @@ const I18N = {
     'ytm.loadingReleases': 'Завантажуємо релізи…',
     'ytm.releasesFailed': 'Не вдалося завантажити релізи',
     'ytm.noReleases': 'Релізів не знайдено',
+    'ytm.topTracks': 'Топ-5 прослуховуваних треків',
     'ytm.albums': 'Альбоми',
     'ytm.singles': 'Сингли та EP',
     'ytm.loading': 'Завантаження…',
@@ -2209,9 +2211,7 @@ function scheduleCoverRefresh() {
     refreshPlayingHighlight();
     renderRecents();
     if (currentView === 'artists') refreshArtistsCoversInPlace();
-    else if (currentView === 'artist-detail') renderArtistDetail(activeArtistName);
     else if (currentView === 'albums') refreshAlbumsCoversInPlace();
-    else if (currentView === 'album-detail') renderAlbumDetail(activeAlbumKey);
     if ($('fullscreen-overlay').classList.contains('active')) updateFullscreenQueue();
     if ($('palette-overlay').classList.contains('active')) renderPaletteResults($('palette-input').value);
   });
@@ -2320,7 +2320,6 @@ function setView(view) {
   else if (view === 'playlist-detail') renderPlaylistDetail(activePlaylistId);
   else if (view === 'artists') renderArtists();
   else if (view === 'albums') renderAlbums();
-  else if (view === 'album-detail') renderAlbumDetail(activeAlbumKey);
   else if (view === 'report') renderReport();
   else if (view === 'health') renderHealth();
   else if (view === 'devices') { renderDevices(); lanRefresh(); }
@@ -4601,15 +4600,13 @@ function renderTrackRow(track, displayIndex, queue) {
     el.addEventListener('click', e => {
       if (currentView === 'library' && librarySelectMode) return;
       e.stopPropagation();
-      activeArtistName = el.dataset.artist;
-      setView('artist-detail');
+      openArtistSidebar(el.dataset.artist);
     });
   });
   tr.querySelector('[data-link="album"]').addEventListener('click', e => {
     if (currentView === 'library' && librarySelectMode) return;
     e.stopPropagation();
-    activeAlbumKey = albumKeyFor(track);
-    setView('album-detail');
+    openAlbumSidebar(albumKeyFor(track));
   });
   tr.addEventListener('click', e => {
     if (currentView === 'library') {
@@ -4986,8 +4983,7 @@ function buildArtistCard(a) {
     </div>
   `;
   card.addEventListener('click', () => {
-    activeArtistName = a.name;
-    setView('artist-detail');
+    openArtistSidebar(a.name);
   });
   return card;
 }
@@ -5228,347 +5224,11 @@ function renderArtistSidebar(name) {
     `;
     card.onclick = () => {
       if (alb.tracks.length > 0) {
-        activeAlbumKey = albumKeyFor(alb.tracks[0]);
-        setView('album-detail');
+        openAlbumSidebar(albumKeyFor(alb.tracks[0]));
       }
     };
     albBox.appendChild(card);
   });
-}
-
-function renderArtistDetail(name) {
-  const all = buildArtistsIndex();
-  const artist = all.find(a => a.name === name);
-  if (!artist) { setView('artists'); return; }
-
-  $('artist-detail-crumb').textContent = artist.name;
-  $('artist-detail-title').textContent = artist.name;
-  const avatar = $('artist-hero-avatar');
-  if (artist.cover) {
-    avatar.style.backgroundImage = `url('${artist.cover}')`;
-    $('artist-hero-letter').textContent = '';
-  } else {
-    avatar.style.backgroundImage = '';
-    $('artist-hero-letter').textContent = artistInitials(artist.name);
-    // Try to populate a cover from any track for next render.
-    const t = artist.tracks.find(t => !t.cover);
-    if (t) ensureCoverFor(t);
-  }
-  $('artist-detail-meta').innerHTML = `
-    <span>${artist.trackCount} ${pluralTracks(artist.trackCount)}</span>
-    <span>·</span>
-    <span>${artist.albumCount} ${pluralAlbums(artist.albumCount)}</span>
-    <span>·</span>
-    <span>${formatTotalDuration(artist.tracks)}</span>
-  `;
-
-  // Filter by search input
-  const q = ($('artist-detail-search').value || '').trim().toLowerCase();
-  const tracks = q
-    ? artist.tracks.filter(t =>
-        t.title.toLowerCase().includes(q) ||
-        (t.album || '').toLowerCase().includes(q))
-    : artist.tracks;
-
-  // Group by album, preserving insertion order.
-  const byAlbum = [];
-  const seen = new Map();
-  tracks.forEach(t => {
-    const key = t.album || '';
-    if (!seen.has(key)) {
-      seen.set(key, byAlbum.length);
-      byAlbum.push({ album: t.album || tr('label.noAlbum'), year: t.year, cover: t.cover, tracks: [] });
-    }
-    const slot = byAlbum[seen.get(key)];
-    slot.tracks.push(t);
-    if (!slot.cover && t.cover) slot.cover = t.cover;
-  });
-
-  byAlbum.forEach(alb => { alb.tracks = sortAlbumTracks(alb.tracks); });
-
-  // Sort the album blocks by release year; missing years sort to the bottom
-  // either way (0 vs Infinity depending on direction).
-  const yr = a => parseInt(a.year, 10) || 0;
-  byAlbum.sort((a, b) => artistAlbumsSort === 'year-asc'
-    ? (yr(a) || Infinity) - (yr(b) || Infinity)
-    : yr(b) - yr(a));
-
-  const container = $('artist-albums');
-  container.innerHTML = '';
-
-  const makeBlock = (alb, playLabel) => {
-    const block = document.createElement('div');
-    block.className = 'artist-album';
-    const coverStyle = alb.cover ? `background-image:url('${alb.cover}')` : '';
-    const head = document.createElement('div');
-    head.className = 'artist-album-head';
-    head.innerHTML = `
-      <div class="artist-album-cover pl-meta-link" style="${coverStyle}" title="${escapeHtml(alb.album)}"></div>
-      <div class="artist-album-info">
-        <div class="artist-album-name pl-meta-link" title="${escapeHtml(alb.album)}">${escapeHtml(alb.album)}</div>
-        <div class="artist-album-meta">
-          ${alb.year ? `<span>${escapeHtml(String(alb.year))}</span><span>·</span>` : ''}
-          <span>${alb.tracks.length} ${pluralTracks(alb.tracks.length)}</span>
-        </div>
-      </div>
-      <button class="artist-album-play">
-        <svg class="i" width="10" height="10"><use href="#i-play"/></svg>
-        ${escapeHtml(playLabel)}
-      </button>
-    `;
-    const gotoAlbum = e => {
-      e.stopPropagation();
-      if (!alb.tracks.length) return;
-      activeAlbumKey = albumKeyFor(alb.tracks[0]);
-      setView('album-detail');
-    };
-    head.querySelector('.artist-album-cover').addEventListener('click', gotoAlbum);
-    head.querySelector('.artist-album-name').addEventListener('click', gotoAlbum);
-    head.querySelector('.artist-album-play').addEventListener('click', e => {
-      e.stopPropagation();
-      if (alb.tracks.length > 0) playTrackByPath(alb.tracks[0].path, artist.tracks);
-    });
-    block.appendChild(head);
-
-    const list = document.createElement('div');
-    list.className = 'artist-album-tracks';
-    alb.tracks.forEach((t, j) => {
-      list.appendChild(renderTrackRow(t, j, artist.tracks));
-    });
-    block.appendChild(list);
-    return block;
-  };
-
-  const sectionLabel = text => {
-    const el = document.createElement('div');
-    el.className = 'artist-section-label';
-    el.textContent = text;
-    return el;
-  };
-
-  // Cards mode: a compact cover grid instead of the expanded track lists.
-  const makeCard = alb => {
-    const card = document.createElement('div');
-    card.className = 'aa-card';
-    card.innerHTML = `
-      <div class="aa-card-cover" style="${alb.cover ? `background-image:url('${alb.cover}')` : ''}"></div>
-      <div class="aa-card-name" title="${escapeHtml(alb.album)}">${escapeHtml(alb.album)}</div>
-      <div class="aa-card-meta">${[alb.year ? String(alb.year) : '', `${alb.tracks.length} ${pluralTracks(alb.tracks.length)}`].filter(Boolean).map(escapeHtml).join(' · ')}</div>
-    `;
-    card.addEventListener('click', () => {
-      if (!alb.tracks.length) return;
-      activeAlbumKey = albumKeyFor(alb.tracks[0]);
-      setView('album-detail');
-    });
-    return card;
-  };
-  const cardsMode = artistView === 'cards';
-  container.classList.toggle('cards-mode', cardsMode);
-  const renderRelease = (alb, isSingle) =>
-    cardsMode ? makeCard(alb) : makeBlock(alb, isSingle ? tr('btn.single') : tr('btn.album'));
-
-  // A release with 1–2 tracks is a single/EP, not a full album — group them
-  // under their own heading so a one-song release stops masquerading as an
-  // album block. Both lists stay in the byAlbum year order.
-  const albums = byAlbum.filter(a => a.tracks.length >= 3);
-  const singles = byAlbum.filter(a => a.tracks.length <= 2);
-  // Heading over albums only earns its keep when there's a singles group to
-  // divide it from; a lone list needs no label.
-  if (albums.length && singles.length) container.appendChild(sectionLabel(tr('artist.albums')));
-  albums.forEach(alb => container.appendChild(renderRelease(alb, false)));
-  if (singles.length) {
-    container.appendChild(sectionLabel(tr('artist.singles')));
-    singles.forEach(alb => container.appendChild(renderRelease(alb, true)));
-  }
-
-  renderArtistTops(artist);
-
-  $('btn-artist-play').onclick = () => {
-    if (artist.tracks.length > 0) playTrackByPath(artist.tracks[0].path, artist.tracks);
-  };
-  $('btn-artist-shuffle').onclick = () => {
-    if (artist.tracks.length > 0) {
-      isShuffle = true;
-      updateShuffleUI();
-      const random = artist.tracks[Math.floor(Math.random() * artist.tracks.length)];
-      playTrackByPath(random.path, artist.tracks);
-    }
-  };
-  $('btn-artist-fix-tags').onclick = (e) => openFixTagsMenu(e, artist.tracks, 'fixTags.progress', { name: artist.name });
-
-  renderArtistSimilar(artist.name);
-}
-
-// ── Similar artists from YouTube Music ──
-// Cached per artist so re-renders (search typing, sort) don't re-hit the API.
-const ytmSimilarCache = readStore('ytm-similar', 'audex-ytm-similar') || {};
-$('artist-similar-list')?.addEventListener('wheel', e => {
-  if (e.deltaY) {
-    e.preventDefault();
-    $('artist-similar-list').scrollLeft += e.deltaY;
-  }
-}, { passive: false });
-async function renderArtistSimilar(name) {
-  const simList = $('artist-similar-list');
-  if (!simList) return;
-  simList.hidden = true; simList.innerHTML = '';
-  if (!settings.ytSimilarArtists || !name || !window.electronAPI || !window.electronAPI.ytmArtistSimilar) return;
-
-  const key = name.toLowerCase();
-  let similar = ytmSimilarCache[key];
-  if (!similar) {
-    const res = await window.electronAPI.ytmArtistSimilar(name);
-    if (res && res.success && Array.isArray(res.artists)) {
-      similar = res.artists;
-      ytmSimilarCache[key] = similar;
-      writeStore('ytm-similar', ytmSimilarCache, 'audex-ytm-similar');
-    }
-  }
-  if (activeArtistName !== name || currentView !== 'artist-detail') return;  // navigated away
-
-  if (similar && similar.length) {
-    const known = new Set(buildArtistsIndex().map(a => a.name.toLowerCase()));
-    similar.forEach(a => {
-      const aName = typeof a === 'string' ? a : a.name;
-      if (!aName) return;
-      const inLib = known.has(aName.toLowerCase());
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'tag-pill';
-      chip.innerHTML = inLib
-        ? escapeHtml(aName)
-        : `<svg class="i" width="11" height="11"><use href="#i-youtube"/></svg><span>${escapeHtml(aName)}</span>`;
-      chip.title = inLib ? aName : tr('ytm.browseArtist');
-      chip.addEventListener('click', () => {
-        if (inLib) {
-          activeArtistName = aName;
-          setView('artist-detail');
-        } else {
-          ytmBrowser.open(aName, a.browseId);
-        }
-      });
-      simList.appendChild(chip);
-    });
-    simList.hidden = false;
-  }
-}
-
-// ── Artist top-tracks columns (local plays | YouTube Music popularity) ──
-const mmss = sec => { sec = Math.round(sec || 0); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
-
-function renderArtistTops(artist) {
-  renderArtistTopLocal(artist);
-  const col = $('artist-ytm-col');
-  if (!settings.ytMusic || !settings.ytPopular) { if (col) col.hidden = true; return; }
-  if (col) col.hidden = false;
-  renderArtistTopYtm(artist);
-}
-
-function renderArtistTopLocal(artist) {
-  const box = $('artist-top-local');
-  const paths = new Set(artist.tracks.map(t => t.path));
-  const counts = new Map();
-  for (const e of playLog) { if (paths.has(e.p)) counts.set(e.p, (counts.get(e.p) || 0) + 1); }
-  const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  box.innerHTML = '';
-  if (!top.length) { box.innerHTML = `<div class="rk-note">${escapeHtml(tr('artist.noPlays'))}</div>`; return; }
-  const max = top[0][1];
-  top.forEach(([p, c], i) => {
-    const t = artist.tracks.find(x => x.path === p);
-    if (!t) return;
-    const row = document.createElement('div');
-    row.className = 'rankrow';
-    row.innerHTML = `
-      <span class="rk">${i + 1}</span>
-      <span class="rk-cover" style="${t.cover ? `background-image:url('${t.cover}')` : ''}"></span>
-      <span class="rk-body">
-        <div class="rk-title">${escapeHtml(t.title)}</div>
-        <div class="rk-sub">${escapeHtml([t.album, mmss(t.duration)].filter(Boolean).join(' · '))}</div>
-      </span>
-      <span class="rk-stat">${c} ${escapeHtml(tr('report.plays'))}<span class="rk-bar"><i style="width:${Math.round(c / max * 100)}%"></i></span></span>
-    `;
-    row.addEventListener('click', () => playTrackByPath(t.path, artist.tracks));
-    box.appendChild(row);
-  });
-}
-
-// Session cache for the "Popular on YT Music" column: one fetch per artist per
-// run. Crucially the in-flight promise is cached too, so rapid re-renders (a
-// keystroke in the track search, a List/Cards toggle) reuse the pending request
-// instead of firing a duplicate. A resolved entry has `.state`; an entry with
-// only `.promise` is a fetch still in flight.
-async function renderArtistTopYtm(artist) {
-  const box = $('artist-top-ytm');
-  const name = artist.name;
-  const entry = artistYtmCache.get(name);
-  if (entry && entry.state) { paintArtistYtm(box, entry, artist); return; }   // resolved — no network
-  box.innerHTML = '<div class="rk-skeleton"></div>'.repeat(4);
-  const pending = (entry && entry.promise) || fetchArtistTopYtm(name);
-  if (!entry) artistYtmCache.set(name, { promise: pending });
-  const r = await pending;
-  artistYtmCache.set(name, r);   // replace the in-flight marker with the result
-  if (activeArtistName === name) paintArtistYtm(box, r, artist);
-}
-
-// One round-trip: resolve the artist's YT Music browseId, then its top songs.
-// Returns a resolved cache entry ({ state, songs? }); never throws.
-async function fetchArtistTopYtm(name) {
-  try {
-    const s = await window.electronAPI.ytmSearchArtists(name);
-    const browseId = s && s.success && s.artists[0] && s.artists[0].browseId;
-    if (!browseId) return { state: 'empty' };
-    const res = await window.electronAPI.ytmArtistTopSongs(browseId);
-    return (res && res.success && res.songs.length) ? { state: 'ok', songs: res.songs } : { state: 'empty' };
-  } catch (_) {
-    return { state: 'error' };
-  }
-}
-
-function paintArtistYtm(box, result, artist) {
-  box.innerHTML = '';
-  if (result.state !== 'ok') {
-    box.innerHTML = `<div class="rk-note">${escapeHtml(tr(result.state === 'error' ? 'artist.ytmError' : 'artist.ytmEmpty'))}</div>`;
-    return;
-  }
-  const libTitles = new Set(artist.tracks.map(t => normTitle(t.title)));
-  result.songs.forEach((song, i) => {
-    const inLib = libTitles.has(normTitle(song.title));
-    const row = document.createElement('div');
-    row.className = 'rankrow';
-    row.innerHTML = `
-      <span class="rk">${i + 1}</span>
-      <span class="rk-cover" style="${song.thumb ? `background-image:url('${song.thumb}')` : ''}"></span>
-      <span class="rk-body">
-        <div class="rk-title">${escapeHtml(song.title)}</div>
-        <div class="rk-sub">${escapeHtml(song.sub || 'YouTube Music')}</div>
-      </span>
-      ${inLib
-        ? `<span class="rk-inlib"><svg class="i" width="12" height="12"><use href="#i-check"/></svg>${escapeHtml(tr('artist.inLibrary'))}</span>`
-        : `<button class="rk-add"><svg class="i" width="11" height="11"><use href="#i-plus"/></svg>${escapeHtml(tr('artist.queue'))}</button>`}
-    `;
-    if (!inLib) {
-      const btn = row.querySelector('.rk-add');
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        if (queueArtistYtmSong(song, artist.name) !== false) {
-          btn.classList.add('is-queued');
-          btn.innerHTML = `<svg class="i" width="11" height="11"><use href="#i-check"/></svg>${escapeHtml(tr('artist.queued'))}`;
-        }
-      });
-    }
-    box.appendChild(row);
-  });
-}
-
-// Enqueue one YT Music song through the same download path the Parsing tab uses.
-function queueArtistYtmSong(song, artistName) {
-  const t = { id: song.videoId, title: song.title, artist: artistName, url: `https://music.youtube.com/watch?v=${song.videoId}` };
-  if (isYtmTrackInQueue(t)) return false;
-  downloadQueue.push(buildQueueItemFromYtm(t, 1));
-  renderQueue();
-  updateQueueTabBadge();
-  startQueueWorker();
-  return true;
 }
 
 // ── Albums ──
@@ -5690,7 +5350,7 @@ function renderAlbums() {
         <span>${formatTotalDuration(a.tracks)}</span>
       </div>
     `;
-    card.addEventListener('click', () => { activeAlbumKey = a.key; setView('album-detail'); });
+    card.addEventListener('click', () => { openAlbumSidebar(a.key); });
     return card;
   };
 
@@ -5718,7 +5378,7 @@ function renderAlbums() {
         ${escapeHtml(tr('btn.album'))}
       </button>
     `;
-    const goto = e => { e.stopPropagation(); activeAlbumKey = a.key; setView('album-detail'); };
+    const goto = e => { e.stopPropagation(); openAlbumSidebar(a.key); };
     head.querySelector('.artist-album-cover').addEventListener('click', goto);
     head.querySelector('.artist-album-name').addEventListener('click', goto);
     head.querySelector('.artist-album-play').addEventListener('click', e => {
@@ -5857,62 +5517,6 @@ function renderAlbumSidebar(key) {
     row.onclick = () => playTrackByPath(t.path, tracks);
     trackBox.appendChild(row);
   });
-}
-
-function renderAlbumDetail(key) {
-  const all = buildAlbumsIndex();
-  const album = all.find(a => a.key === key);
-  if (!album) { setView('albums'); return; }
-
-  $('album-detail-crumb').textContent = album.name;
-  const artistCrumb = $('album-detail-artist-crumb');
-  artistCrumb.textContent = album.artist;
-  artistCrumb.onclick = () => { activeArtistName = album.artist; setView('artist-detail'); };
-  $('album-detail-title').textContent = album.name;
-  if (album.cover) {
-    $('album-hero-letter').textContent = '';
-    $('album-hero-cover').style.background = `url('${album.cover}') center/cover`;
-  } else {
-    $('album-hero-letter').textContent = (album.name || '?')[0];
-    $('album-hero-cover').style.background = PL_COVERS[0];
-    const t = album.tracks.find(t => !t.cover);
-    if (t) ensureCoverFor(t);
-  }
-  $('album-detail-meta').innerHTML = `
-    <span class="pl-meta-link" id="album-detail-artist-link">${escapeHtml(album.artist)}</span>
-    <span>·</span>
-    <span>${album.trackCount} ${pluralTracks(album.trackCount)}</span>
-    <span>·</span>
-    <span>${formatTotalDuration(album.tracks)}</span>
-    ${album.year ? `<span>·</span><span>${escapeHtml(String(album.year))}</span>` : ''}
-  `;
-  $('album-detail-artist-link').addEventListener('click', () => {
-    activeArtistName = album.artist;
-    setView('artist-detail');
-  });
-
-  const tracks = sortAlbumTracks(album.tracks);
-  const list = $('album-detail-list');
-  if (tracks.length === 0) {
-    list.innerHTML = '';
-    list.style.height = '';
-  } else {
-    if (!albumVList) albumVList = createVirtualList({ listEl: list, scrollEl });
-    albumVList.setItems(tracks, (t, i, queue) => renderTrackRow(t, i, queue));
-  }
-
-  $('btn-album-play').onclick = () => {
-    if (tracks.length > 0) playTrackByPath(tracks[0].path, tracks);
-  };
-  $('btn-album-shuffle').onclick = () => {
-    if (tracks.length > 0) {
-      isShuffle = true;
-      updateShuffleUI();
-      const random = tracks[Math.floor(Math.random() * tracks.length)];
-      playTrackByPath(random.path, tracks);
-    }
-  };
-  $('btn-album-fix-tags').onclick = (e) => openFixTagsMenu(e, tracks, 'fixTags.progress', { albumActions: true, name: album.name });
 }
 
 // ── Volume & Crossfade (Web Audio Dual-Channel) ──
@@ -6225,8 +5829,7 @@ function refreshCurrentViewRows() {
   else if (currentView === 'favorites') renderFavorites();
   else if (currentView === 'playlist-detail') renderPlaylistDetail(activePlaylistId);
   else if (currentView === 'artists') renderArtists();
-  else if (currentView === 'artist-detail') renderArtistDetail(activeArtistName);
-  else if (currentView === 'album-detail') renderAlbumDetail(activeAlbumKey);
+  else if (currentView === 'albums') renderAlbums();
 }
 
 // Cheap path: only the .playing/equalizer indicator changes — repaint visible rows in place.
@@ -6236,9 +5839,7 @@ function refreshCurrentViewRows() {
 // the "forgot to wire in the new view" trap that let a new detail view's
 // highlight go stale silently (as Album's briefly did).
 function refreshPlayingHighlight() {
-  [libraryVList, favoritesVList, playlistVList, albumVList].forEach(v => v && v.refreshVisible());
-  // Artist detail renders rows directly (no virtual list) — patch them in place.
-  refreshPlainListHighlight($('artist-albums'));
+  [libraryVList, favoritesVList, playlistVList].forEach(v => v && v.refreshVisible());
 }
 
 function refreshPlainListHighlight(container) {
@@ -7172,26 +6773,13 @@ $('btn-close-mb-release').addEventListener('click', () => $('mb-release-modal').
 // ── Mini-player navigation ──
 function gotoCurrentTrackInAlbum() {
   if (!currentTrack) return;
-  const track = currentTrack;
-  activeAlbumKey = albumKeyFor(track);
-  setView('album-detail');
-  requestAnimationFrame(() => {
-    if (!albumVList) return;
-    const idx = albumVList.findIndex(t => t.path === track.path);
-    if (idx < 0) return;
-    const listEl = $('album-detail-list');
-    const listOffset = listEl.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
-    scrollEl.scrollTop = Math.max(0, listOffset + idx * ROW_HEIGHT - scrollEl.clientHeight / 2 + ROW_HEIGHT / 2);
-  });
+  openAlbumSidebar(albumKeyFor(currentTrack));
 }
 
 function gotoCurrentTrackArtist() {
   if (!currentTrack) return;
-  const track = currentTrack;
-  const artists = splitArtists(track.artist);
-  if (!artists.length) return;
-  activeArtistName = artists[0];
-  setView('artist-detail');
+  const artists = splitArtists(currentTrack.artist);
+  if (artists.length) openArtistSidebar(artists[0]);
 }
 
 $('track-title').addEventListener('click', gotoCurrentTrackInAlbum);
@@ -8157,6 +7745,7 @@ function startFsVisualizer() {
         spectrum: true,
         fovPunch: false,
         loudness: 0.2, // Pleasing to the eye, 1.0 is way too much junkiness
+        particleCount: 1200,
         emblem: currentTrack ? (currentTrack.cover || null) : null
       });
       if (ensureEqGraph()) jsNationViz.connect(analyzerTapNode || masterGainNode);
@@ -8770,7 +8359,7 @@ function openContextMenu(e, path) {
   // Only offered from inside the album whose covers a marked track can then
   // be stamped across — and only once that track actually has art to copy.
   const track = trackByPath(path);
-  $('cm-use-cover').hidden = remote || currentView !== 'album-detail' || !(track && track.cover);
+  $('cm-use-cover').hidden = remote || rightSidebarMode !== 'album' || !(track && track.cover);
   // Everything below is a local-file operation — a peer's track only has a
   // stream URL, nothing on disk here to tag, reveal, or delete.
   ['reveal', 'edit-tags', 'fix-tags', 'delete'].forEach(a => {
@@ -9290,8 +8879,8 @@ function runPaletteAction(action) {
   if (action.kind === 'play-track') playTrackByPath(action.path, library);
   else if (action.kind === 'open-files') ($('btn-open-folder') || $('btn-add-files'))?.click();
   else if (action.kind === 'goto-settings') openSettings();
-  else if (action.kind === 'open-artist') { activeArtistName = action.name; setView('artist-detail'); }
-  else if (action.kind === 'open-album') { activeAlbumKey = action.key; setView('album-detail'); }
+  else if (action.kind === 'open-artist') openArtistSidebar(action.name);
+  else if (action.kind === 'open-album') openAlbumSidebar(action.key);
   else if (action.kind === 'goto-ytmusic') ytmBrowser.open();
   else if (action.kind === 'goto-library') { clearHealthFilter(); setView('library'); }
   // Every remaining goto-* names its view directly.
@@ -9710,25 +9299,6 @@ $('library-search').addEventListener('input', () => {
 
 // Artists search
 $('artists-search').addEventListener('input', () => renderArtists());
-$('artist-detail-search').addEventListener('input', () => {
-  if (activeArtistName) renderArtistDetail(activeArtistName);
-});
-document.querySelectorAll('#view-artist-detail .chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#view-artist-detail .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    artistAlbumsSort = chip.dataset.artistAlbumsSort;
-    if (activeArtistName) renderArtistDetail(activeArtistName);
-  });
-});
-document.querySelectorAll('#artist-view-seg .seg-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#artist-view-seg .seg-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    artistView = btn.dataset.artistView;
-    if (activeArtistName) renderArtistDetail(activeArtistName);
-  });
-});
 
 // Albums search & view mode
 $('albums-search').addEventListener('input', () => renderAlbums());
@@ -10405,15 +9975,6 @@ document.querySelectorAll('.toggle').forEach(t => {
     if (key === 'lanSharing') applyLanSharingVisibility();
     if (key === 'animations' || key === 'animWavy' || key === 'animTransitions' || key === 'animEffects') applyAnimations();
     if (key === 'condensedTracks') applyCondensedTracks();
-    if (key === 'ytSimilarArtists' || key === 'ytPopular') {
-      if (currentView === 'artist-detail' && activeArtistName) {
-        const artist = buildArtistsIndex().find(a => a.name.toLowerCase() === activeArtistName.toLowerCase());
-        if (artist) {
-          if (key === 'ytSimilarArtists') renderArtistSimilar(artist.name);
-          if (key === 'ytPopular') renderArtistTops(artist);
-        }
-      }
-    }
     if (key === 'shaderDebug') updateFsDebugPanel();
     if (key === 'artistMinTracksEnabled') {
       renderArtistMinTracks();
@@ -12204,12 +11765,37 @@ const ytmBrowser = (function () {
       row.addEventListener('click', () => openArtist(res.artists[+row.dataset.i])));
   }
 
+  let artistTopSongs = [];
+
   function renderReleases() {
     const totalAlbumPages = Math.max(1, Math.ceil(artistAlbums.length / PAGE_SIZE));
     const totalSinglePages = Math.max(1, Math.ceil(artistSingles.length / PAGE_SIZE));
 
     const pagedAlbums = artistAlbums.slice((albumPage - 1) * PAGE_SIZE, albumPage * PAGE_SIZE);
     const pagedSingles = artistSingles.slice((singlesPage - 1) * PAGE_SIZE, singlesPage * PAGE_SIZE);
+
+    const topSection = !artistTopSongs.length ? '' : `
+      <div class="ytm-group-head">
+        <div class="ytm-group-title" data-i18n="ytm.topTracks">${escapeHtml(tr('ytm.topTracks'))}</div>
+      </div>
+      <div class="ytm-top-tracks">
+        ${artistTopSongs.map((s, i) => {
+          const inLib = isTrackInLibrary(s.title, curArtist && curArtist.name);
+          const queued = isYtmTrackInQueue({ id: s.videoId });
+          const rowCls = ['ytm-track', queued ? 'queued' : '', inLib ? 'in-lib' : ''].filter(Boolean).join(' ');
+          return `
+          <div class="${rowCls}" data-top-i="${i}">
+            <div class="ytm-track-no">${i + 1}</div>
+            ${s.thumb ? `<div class="ytm-track-thumb" style="background-image:url('${escapeHtml(s.thumb)}')"></div>` : ''}
+            <div class="ytm-track-title">
+              ${escapeHtml(s.title)}
+              ${inLib ? `<span class="ytm-inlib-badge"><svg class="i" width="11" height="11"><use href="#i-check"/></svg>${escapeHtml(tr('artist.inLibrary'))}</span>` : ''}
+            </div>
+            <div class="ytm-track-dur">${escapeHtml(s.sub || '')}</div>
+            <button class="btn-ic ytm-add" ${inLib ? 'disabled ' : ''}title="${escapeHtml(inLib ? tr('artist.inLibrary') : tr('ytm.addOne'))}"><svg class="i" width="14" height="14"><use href="${inLib ? '#i-check' : '#i-plus'}"/></svg></button>
+          </div>`;
+        }).join('')}
+      </div>`;
 
     const section = (title, list, fullList, page, totalPages, kind) => {
       if (!fullList.length) return '';
@@ -12243,8 +11829,25 @@ const ytmBrowser = (function () {
         </div>`;
     };
 
-    body().innerHTML = section(tr('ytm.albums'), pagedAlbums, artistAlbums, albumPage, totalAlbumPages, 'album') +
+    body().innerHTML = topSection +
+      section(tr('ytm.albums'), pagedAlbums, artistAlbums, albumPage, totalAlbumPages, 'album') +
       section(tr('ytm.singles'), pagedSingles, artistSingles, singlesPage, totalSinglePages, 'single');
+
+    body().querySelectorAll('.ytm-top-tracks .ytm-track').forEach(row => {
+      const btn = row.querySelector('.ytm-add');
+      if (btn && !btn.disabled) {
+        btn.addEventListener('click', async e => {
+          e.stopPropagation();
+          spawnDownloadParticles(btn);
+          const song = artistTopSongs[+row.dataset.topI];
+          if (!song) return;
+          setStatus(tr('ytm.adding'));
+          const track = { id: song.videoId, title: song.title, artist: (curArtist && curArtist.name) || '', url: `https://music.youtube.com/watch?v=${song.videoId}` };
+          if (enqueueParsed([track])) { row.classList.add('queued'); setStatus(tr('ytm.addedOne')); }
+          else setStatus(tr('ytm.already'));
+        });
+      }
+    });
 
     body().querySelectorAll('.ytm-prev').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -12279,14 +11882,19 @@ const ytmBrowser = (function () {
     setHeader(artist.name, tr('ytm.releases'), true);
     setStatus(tr('ytm.loadingReleases'));
     body().innerHTML = '';
-    let res;
-    try { res = await window.electronAPI.ytmArtistReleases(artist.browseId); }
-    catch (e) { setStatus(String(e), 'error'); return; }
+    let res, topRes;
+    try {
+      [res, topRes] = await Promise.all([
+        window.electronAPI.ytmArtistReleases(artist.browseId),
+        window.electronAPI.ytmArtistTopSongs(artist.browseId)
+      ]);
+    } catch (e) { setStatus(String(e), 'error'); return; }
     if (!res || !res.success) { setStatus((res && res.error) || tr('ytm.releasesFailed'), 'error'); return; }
-    if (!res.releases.length) { setStatus(tr('ytm.noReleases')); return; }
+    if (!res.releases.length && (!topRes || !topRes.songs || !topRes.songs.length)) { setStatus(tr('ytm.noReleases')); return; }
     setStatus('');
-    artistAlbums = res.releases.filter(r => releaseKind(r.kind) === 'album');
-    artistSingles = res.releases.filter(r => releaseKind(r.kind) !== 'album');
+    artistTopSongs = (topRes && topRes.success && Array.isArray(topRes.songs)) ? topRes.songs.slice(0, 5) : [];
+    artistAlbums = (res.releases || []).filter(r => releaseKind(r.kind) === 'album');
+    artistSingles = (res.releases || []).filter(r => releaseKind(r.kind) !== 'album');
     albumPage = 1; singlesPage = 1;
     renderReleases();
   }
@@ -12422,7 +12030,7 @@ const ytmBrowser = (function () {
     input.addEventListener('input', () => { clearTimeout(searchTimer); const v = input.value; searchTimer = setTimeout(() => runSearch(v), 350); });
     input.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(input.value); } });
     const btn = el('btn-artist-ytm');
-    if (btn) btn.addEventListener('click', () => open(activeArtistName || el('artist-detail-title').textContent || ''));
+    if (btn) btn.addEventListener('click', () => open(activeArtistName || ''));
   })();
 
   return { open };

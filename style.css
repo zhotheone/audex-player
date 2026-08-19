@@ -2712,82 +2712,6 @@ html.is-playing .equalizer > span { animation-play-state: running; }
   margin-bottom: 16px;
 }
 /* The album page leads with its artwork: a bigger hero cover than the shared
-   .pl-hero default, with the title/meta scaled up so the block stays balanced.
-   Scoped to #view-album-detail — playlist and artist heroes keep 168px. Sized
-   off the viewport so it keeps its presence on a wide window without crowding
-   the metadata at the 1024px minimum. */
-#view-album-detail .pl-hero { padding-bottom: 24px; }
-#view-album-detail .pl-hero-cover {
-  position: relative;
-  width: clamp(260px, 32vw, 420px);
-  height: auto;
-  aspect-ratio: 1;
-  max-width: 100%;
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 12px;
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-}
-#view-album-detail .pl-hero-cover::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.35) 55%, rgba(0, 0, 0, 0.1) 100%);
-  pointer-events: none;
-}
-#view-album-detail .pl-hero-cover > * {
-  position: relative;
-  z-index: 1;
-}
-#view-album-detail .pl-hero-cover #album-hero-letter {
-  position: absolute;
-  font-family: 'Roboto Serif', serif;
-  font-weight: 700;
-  font-size: clamp(64px, 10vw, 120px);
-  color: rgba(255, 255, 255, 0.18);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 0;
-}
-#view-album-detail .pl-title {
-  font-size: clamp(22px, 3vw, 36px);
-  margin-bottom: 6px;
-  line-height: 1.15;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.95);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-#view-album-detail .pl-meta {
-  font-size: 12px;
-  gap: 8px;
-  margin-bottom: 12px;
-  color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-  flex-wrap: wrap;
-}
-#view-album-detail .pl-meta .pl-meta-link {
-  color: #fff;
-}
-#view-album-detail .pl-eyebrow {
-  font-size: 11px;
-  margin-bottom: 6px;
-  color: rgba(255, 255, 255, 0.75);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-#view-album-detail .pl-actions {
-  display: flex;
-  gap: 8px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-}
-
 /* ─── Settings ─── */
 /* Settings is a modal dialog. The card is a fixed-height flex column: a static
    header, then a row of [vertical tabs | scrolling panel]. Only the panel
@@ -4459,6 +4383,8 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .ytm-album-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
 .ytm-track { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; }
 .ytm-track:hover { background: var(--panel-alt); }
+.ytm-track-thumb { width: 32px; height: 32px; border-radius: 6px; background: var(--panel-alt) center/cover no-repeat; flex: 0 0 auto; }
+.ytm-top-tracks { margin-bottom: 18px; display: flex; flex-direction: column; gap: 2px; }
 .ytm-track-no { width: 20px; text-align: right; font-size: 12px; color: var(--text-dim); flex: 0 0 auto; }
 .ytm-track-title { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ytm-track.in-lib { opacity: 0.5; }

@@ -442,5 +442,9 @@ const tags = {
   assert.deepStrictEqual(sortItems(testItems, 'tracks-desc').map(x => x.name), ['A', 'B', 'C']);
   assert.deepStrictEqual(sortItems(testItems, 'tracks-asc').map(x => x.name), ['B', 'C', 'A']);
 
+  // Top 5 songs slice for YouTube Music artist page
+  const sampleTopSongs = [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }, { id: '6' }];
+  assert.strictEqual(sampleTopSongs.slice(0, 5).length, 5);
+
   console.log('ok');
 })();

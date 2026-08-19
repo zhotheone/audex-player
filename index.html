@@ -484,55 +484,6 @@
         </div>
       </section>
 
-      <!-- Album Detail -->
-      <section id="view-album-detail" class="view-section">
-        <header class="topbar">
-          <div class="crumb">
-            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
-            <span class="crumb-sep">/</span>
-            <span class="crumb-item link" id="album-detail-artist-crumb"></span>
-            <span class="crumb-sep">/</span>
-            <span class="crumb-item active" id="album-detail-crumb"></span>
-          </div>
-        </header>
-
-        <div class="pl-hero">
-          <div class="pl-hero-cover" id="album-hero-cover">
-            <span id="album-hero-letter"></span>
-            <div class="pl-hero-body">
-              <div class="pl-eyebrow" data-i18n="eyebrow.album">Album</div>
-              <div class="pl-title" id="album-detail-title"></div>
-              <div class="pl-meta" id="album-detail-meta"></div>
-              <div class="pl-actions">
-                <button class="btn-solid" id="btn-album-play">
-                  <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                  <span data-i18n="btn.playAll">Play all</span>
-                </button>
-                <button class="btn-ghost" id="btn-album-shuffle">
-                  <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-                  <span data-i18n="btn.shuffle">Shuffle</span>
-                </button>
-                <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-album-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
-                  <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="track-table">
-          <div class="thead">
-            <div>#</div>
-            <div data-i18n="table.title">Title</div>
-            <div data-i18n="table.artist">Artist</div>
-            <div data-i18n="table.album">Album</div>
-            <div class="ta-right" data-i18n="table.time">Time</div>
-            <div></div>
-          </div>
-          <div class="tbody" id="album-detail-list"></div>
-        </div>
-      </section>
-
       <!-- Artists Grid -->
       <section id="view-artists" class="view-section">
         <header class="topbar">
@@ -582,77 +533,6 @@
           <div class="empty-title" data-i18n="empty.artists.title">No artists yet</div>
           <div class="empty-text" data-i18n="empty.artists.text">Add tracks to the library to see artists here.</div>
         </div>
-      </section>
-
-      <!-- Artist Detail -->
-      <section id="view-artist-detail" class="view-section">
-        <header class="topbar">
-          <div class="crumb">
-            <span class="crumb-item link" data-view="artists" data-i18n="crumb.collection">Collection</span>
-            <span class="crumb-sep">/</span>
-            <span class="crumb-item active" id="artist-detail-crumb"></span>
-          </div>
-          <div class="searchbox">
-            <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-            <input type="text" placeholder="Search track…" data-i18n-placeholder="search.trackPlaceholder" id="artist-detail-search">
-          </div>
-        </header>
-
-        <div class="artist-hero">
-          <div class="artist-hero-avatar" id="artist-hero-avatar"><span id="artist-hero-letter"></span></div>
-          <div class="artist-hero-body">
-            <div class="pl-eyebrow" data-i18n="eyebrow.artist">Artist</div>
-            <div class="pl-title" id="artist-detail-title"></div>
-            <div class="pl-meta" id="artist-detail-meta"></div>
-            <div class="artist-similar-list" id="artist-similar-list" hidden></div>
-            <div class="pl-actions">
-              <button class="btn-solid" id="btn-artist-play">
-                <svg class="i" width="12" height="12"><use href="#i-play"/></svg>
-                <span data-i18n="btn.playAll">Play all</span>
-              </button>
-              <button class="btn-ghost" id="btn-artist-shuffle">
-                <svg class="i" width="13" height="13"><use href="#i-shuffle"/></svg>
-                <span data-i18n="btn.shuffle">Shuffle</span>
-              </button>
-              <button class="btn-ghost" id="btn-artist-ytm" data-i18n-title="ytm.browseArtist" title="Browse this artist on YouTube Music">
-                <svg class="i" width="13" height="13"><use href="#i-search"/></svg>
-                <span>YouTube Music</span>
-              </button>
-              <button class="btn-ghost icon-only btn-fix-tags-trigger" id="btn-artist-fix-tags" data-i18n-title="btn.albumMenuTooltip" title="Fix tags, cover, release year & track numbers…">
-                <svg class="i" width="13" height="13"><use href="#i-more"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Top tracks: local plays vs YouTube Music popularity, side by side. -->
-        <div class="artist-cols">
-          <section class="artist-col">
-            <div class="artist-col-head">
-              <h3 data-i18n="artist.mostPlayed">Most played</h3>
-              <span class="tag-chip local" data-i18n="artist.yourLibrary">Your library</span>
-            </div>
-            <div id="artist-top-local" class="rankcol"></div>
-          </section>
-          <section class="artist-col" id="artist-ytm-col" hidden>
-            <div class="artist-col-head">
-              <h3 data-i18n="artist.popularYtm">Popular on YT Music</h3>
-              <span class="tag-chip yt" data-i18n="artist.fetched">Fetched</span>
-            </div>
-            <div id="artist-top-ytm" class="rankcol"></div>
-          </section>
-        </div>
-
-        <div class="filters">
-          <button class="chip active" data-artist-albums-sort="year-desc" data-i18n="sort.yearDesc">Newest first</button>
-          <button class="chip" data-artist-albums-sort="year-asc" data-i18n="sort.yearAsc">Oldest first</button>
-          <div class="seg artist-view-seg" id="artist-view-seg">
-            <button class="seg-btn active" data-artist-view="list" data-i18n="view.list">List</button>
-            <button class="seg-btn" data-artist-view="cards" data-i18n="view.cards">Cards</button>
-          </div>
-        </div>
-
-        <div id="artist-albums"></div>
       </section>
 
       <!-- Favorites -->
