@@ -3544,6 +3544,7 @@ async function processQueueItem(item) {
   item.requestId = item.id; // reuse our item id as requestId for progress routing
   queueByRequestId.set(item.requestId, item.id);
   renderQueue();
+  window.api?.logError?.('queue:input', JSON.stringify({ song: item.suggestedName || item.query || item.id, source: item.source, artist: item.artist || '', album: item.album || '', explicit: !!item.explicit, thumb: item.thumbnail || item.cover || null }));
   try {
     let res;
     if (item.source === 'youtube' && (item.videoId || item.url)) {
@@ -3577,6 +3578,10 @@ async function processQueueItem(item) {
       try {
         await importPaths([res.filePath]);
         if (item.albumTrackNo) await fillPredictedTrackNo(res.filePath, item.albumTrackNo);
+        const imported = library.find(t => t.path === res.filePath);
+        if (imported) {
+          window.api?.logError?.('queue:imported', JSON.stringify({ song: imported.title, artist: imported.artist, album: imported.album, trackNo: imported.trackNo, duration: imported.duration, hasCover: imported.hasCover, cover: imported.cover ? 'present' : null }));
+        }
       } catch (_) { /* ignore */ }
     }
   } catch (err) {

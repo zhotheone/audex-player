@@ -2227,16 +2227,20 @@ async function runYtDownload(event, payload, target) {
     return { success: false, error: 'Downloaded file not found' };
   }
 
+  appendLog('app.log', 'queue:meta:input', JSON.stringify({ song: suggestedName || filePath, artist: folderArtist, album: ytmAlbum, suggestedName }));
+  appendLog('app.log', 'queue:meta:yt-dlp', JSON.stringify({ song: suggestedName || filePath, artist: meta[0] || '', album: meta[1] || '' }));
+
   // Preferred cover + genre come from MusicBrainz / Cover Art Archive, matched
   // on artist+album. The YouTube thumbnail yt-dlp wrote stays only as a fallback
   // for whatever MB can't match (singles, missing album, obscure tracks). Genre
   // has no YouTube source at all, so it is MB-only.
   let mbGenre = null;
   let usedCover = null; // the picture actually embedded — also dropped as the album folder cover
+  let info = null;
   try {
     const prefix = folderArtist ? `${folderArtist} - ` : '';
     const title = prefix && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName;
-    const info = await lookupAlbumInfo({ artist: folderArtist, album, title });
+    info = await lookupAlbumInfo({ artist: folderArtist, album, title });
     mbGenre = info.genre || null;
     // MusicBrainz only fills gaps — the YT Music album (and the renderer's
     // artist) are already in the right script and match what the user saw, so
@@ -2250,10 +2254,14 @@ async function runYtDownload(event, payload, target) {
     }
   } catch (err) { logAppError('runYtDownload:musicbrainz', err); }
 
+  appendLog('app.log', 'queue:meta:musicbrainz', JSON.stringify({ song: suggestedName || filePath, artist: info?.artistName || null, album: info?.albumName || null, genre: mbGenre }));
+  appendLog('app.log', 'queue:thumb:musicbrainz', JSON.stringify({ song: suggestedName || filePath, cover: info?.cover ? `${info.cover.format} (${info.cover.data?.length || 0}b)` : null }));
+
+  let thumbFile = null;
   if (THUMBNAIL_FORMATS.has(format)) {
     try {
       const base = path.basename(filePath, path.extname(filePath));
-      const thumbFile = fs.readdirSync(downloadsDir).find(f => f.startsWith(base) && /\.(webp|jpe?g|png)$/i.test(f));
+      thumbFile = fs.readdirSync(downloadsDir).find(f => f.startsWith(base) && /\.(webp|jpe?g|png)$/i.test(f));
       if (thumbFile) {
         const thumbPath = path.join(downloadsDir, thumbFile);
         if (!usedCover) {
@@ -2275,6 +2283,9 @@ async function runYtDownload(event, payload, target) {
     } catch (err) { logAppError('runYtDownload:embedCover', err); }
   }
 
+  appendLog('app.log', 'queue:thumb:yt-dlp', JSON.stringify({ song: suggestedName || filePath, thumb: thumbFile || null }));
+  appendLog('app.log', 'queue:thumb:embedded', JSON.stringify({ song: suggestedName || filePath, source: usedCover ? (usedCover === info?.cover ? 'MusicBrainz' : 'yt-dlp') : null }));
+
   // Write the tags we hold an authoritative value for. The album especially:
   // the renderer's YT Music album (native script, the release the user picked)
   // must land in the embedded tag, not just the folder name — the library
@@ -2287,6 +2298,8 @@ async function runYtDownload(event, payload, target) {
     const r = await writeMetadataToFile(filePath, tagsToWrite);
     if (!r.success) logAppError('runYtDownload:tags', r.error);
   }
+
+  appendLog('app.log', 'queue:meta:writtenTags', JSON.stringify({ song: suggestedName || filePath, tags: tagsToWrite }));
 
   try {
     filePath = placeDownload(filePath, downloadsDir, { artist: folderArtist, album, suggestedName, format });
@@ -2301,6 +2314,8 @@ async function runYtDownload(event, payload, target) {
       if (!fs.existsSync(coverPath)) fs.writeFileSync(coverPath, Buffer.from(usedCover.data));
     } catch (err) { logAppError('runYtDownload:folderCover', err); }
   }
+
+  appendLog('app.log', 'queue:thumb:folder', JSON.stringify({ song: suggestedName || filePath, file: usedCover ? `cover.${coverExt(usedCover.format)}` : null }));
 
   await stripCoverIfCorrupt(filePath);
 
