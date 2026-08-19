@@ -5207,7 +5207,9 @@ function renderArtistSidebar(name) {
   const topBox = $('artist-sb-top-tracks');
   topTracks.forEach((t, i) => {
     const row = document.createElement('div');
-    row.className = 'artist-sb-track';
+    const isPlayingRow = !!currentTrack && currentTrack.path === t.path;
+    row.className = 'artist-sb-track' + (isPlayingRow ? ' playing' : '');
+    row.dataset.path = t.path;
     row.innerHTML = `
       <span class="artist-sb-track-num">${i + 1}</span>
       <span class="artist-sb-track-cover" style="${t.cover ? `background-image:url('${t.cover}')` : ''}"></span>
@@ -5522,7 +5524,9 @@ function renderAlbumSidebar(key) {
   const trackBox = $('album-sb-tracks');
   tracks.forEach((t, i) => {
     const row = document.createElement('div');
-    row.className = 'artist-sb-track';
+    const isPlayingRow = !!currentTrack && currentTrack.path === t.path;
+    row.className = 'artist-sb-track' + (isPlayingRow ? ' playing' : '');
+    row.dataset.path = t.path;
     row.innerHTML = `
       <span class="artist-sb-track-num">${t.trackNo || (i + 1)}</span>
       <span class="artist-sb-track-body">
@@ -5857,6 +5861,13 @@ function refreshCurrentViewRows() {
 // highlight go stale silently (as Album's briefly did).
 function refreshPlayingHighlight() {
   [libraryVList, favoritesVList, playlistVList].forEach(v => v && v.refreshVisible());
+  const sb = $('right-sidebar');
+  if (sb && !sb.hidden) {
+    const curPath = currentTrack ? currentTrack.path : null;
+    sb.querySelectorAll('.artist-sb-track').forEach(row => {
+      row.classList.toggle('playing', !!curPath && row.dataset.path === curPath);
+    });
+  }
 }
 
 function refreshPlainListHighlight(container) {
@@ -7075,9 +7086,9 @@ function waveTick() {
     waveLastMultiplier = curMult;
 
     if (delta > 0.02) {
-      waveInertia += delta * 0.18;
+      waveInertia += delta * 0.35;
     }
-    waveInertia = Math.min(0.024, waveInertia * 0.88);
+    waveInertia = Math.min(0.065, waveInertia * 0.89);
 
     wavePhase += 0.008 + waveInertia;
   }

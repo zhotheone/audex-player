@@ -1154,6 +1154,14 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
 .artist-sb-track:hover {
   background: var(--hover-bg);
 }
+.artist-sb-track.playing {
+  background: var(--row-active-bg);
+}
+.artist-sb-track.playing .artist-sb-track-title,
+.artist-sb-track.playing .artist-sb-track-num {
+  color: var(--accent);
+  font-weight: 600;
+}
 .artist-sb-track-num {
   font-size: 11px;
   color: var(--text-dim);
