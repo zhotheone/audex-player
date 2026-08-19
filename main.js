@@ -1731,6 +1731,9 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
       id: j.id,
       title,
       artist,
+      album: j.album || (isRelease ? playlistTitle : '') || '',
+      year: j.release_year || (j.upload_date ? String(j.upload_date).slice(0, 4) : ''),
+      trackNo: j.track_number || j.playlist_index || null,
       duration: fmtDuration(dur),
       cover,
       url: entryUrl || `https://music.youtube.com/watch?v=${j.id}`,
@@ -2188,7 +2191,7 @@ async function runYtDownload(event, payload, target) {
     '--audio-quality', audioQuality,
     '--add-metadata',
     '--output', outPattern,
-    '--print', `${META_TAG}%(track,title|)s\t%(artist,creator,uploader,channel|)s\t%(album|)s\t%(release_year,upload_date>%Y|)s`,
+    '--print', `${META_TAG}%(track,title|)s\t%(artist,creator,uploader,channel|)s\t%(album|)s\t%(release_year,upload_date>%Y|)s\t%(track_number|)s\t%(genre|)s`,
     '--print', 'after_move:[audexpath]%(filepath)s',
     target,
   ];
@@ -2234,12 +2237,14 @@ async function runYtDownload(event, payload, target) {
     return { success: false, error: errLine, reason: classifyYtDlpError(stderr || stdout) };
   }
 
-  // track \t artist \t album \t year
+  // track \t artist \t album \t year \t trackNo \t genre
   const meta = (stdout.split('\n').map(l => l.trim()).filter(l => l.startsWith(META_TAG)).pop() || '').slice(META_TAG.length).split('\t');
-  const ytTitle = (meta.length >= 4 ? meta[0] : '').trim();
-  const ytArtist = (meta.length >= 4 ? meta[1] : '').trim();
-  const ytAlbum = (meta.length >= 4 ? meta[2] : '').trim();
+  const ytTitle = (meta.length >= 1 ? meta[0] : '').trim();
+  const ytArtist = (meta.length >= 2 ? meta[1] : '').trim();
+  const ytAlbum = (meta.length >= 3 ? meta[2] : '').trim();
   const ytYear = (meta.length >= 4 ? meta[3] : '').trim();
+  const ytTrackNo = (meta.length >= 5 ? meta[4] : '').trim();
+  const ytGenre = (meta.length >= 6 ? meta[5] : '').trim();
 
   const folderArtist = ytArtist || artist || '';
   const album = ytAlbum || ytmAlbum || '';
@@ -2261,7 +2266,7 @@ async function runYtDownload(event, payload, target) {
     return { success: false, error: 'Downloaded file not found' };
   }
 
-  appendLog('app.log', 'queue:meta:yt-dlp', JSON.stringify({ song: suggestedNameFinal || filePath, artist: folderArtist, album, title: finalTitle, year: ytYear }));
+  appendLog('app.log', 'queue:meta:yt-dlp', JSON.stringify({ song: suggestedNameFinal || filePath, artist: folderArtist, album, title: finalTitle, year: ytYear, trackNo: ytTrackNo, genre: ytGenre }));
 
   let usedCover = null;
   let thumbFile = null;
@@ -2289,6 +2294,8 @@ async function runYtDownload(event, payload, target) {
   if (folderArtist) tagsToWrite.artist = folderArtist;
   if (album) tagsToWrite.album = album;
   if (ytYear) tagsToWrite.year = ytYear;
+  if (ytTrackNo) tagsToWrite.trackNo = ytTrackNo;
+  if (ytGenre) tagsToWrite.genre = ytGenre;
   if (Object.keys(tagsToWrite).length) {
     const r = await writeMetadataToFile(filePath, tagsToWrite);
     if (!r.success) logAppError('runYtDownload:tags', r.error);
