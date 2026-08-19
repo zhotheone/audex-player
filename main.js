@@ -1694,6 +1694,8 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
     if (/\/shorts\//i.test(entryUrl)) continue;
     if (!playlistTitle) playlistTitle = j.playlist_title || j.playlist || '';
 
+    const listId = urlListId || j.playlist_id || '';
+    const isRelease = /^OLAK5uy_/i.test(listId);
     let title = j.title || '';
     let artist = '';
     if (Array.isArray(j.artists) && j.artists.length) artist = j.artists.filter(Boolean).join(', ');
@@ -1702,10 +1704,8 @@ ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
     // but there the playlist-level uploader/channel *is* the release artist. Use it
     // only for releases (OLAK5uy_… list ids) and artist pages — never for
     // user-curated playlists, where it would wrongly show the playlist's owner.
-    if (!artist) {
-      const listId = urlListId || j.playlist_id || '';
-      const isRelease = /^OLAK5uy_/i.test(listId);
-      if (isRelease || isArtistPage) artist = j.playlist_uploader || j.playlist_channel || '';
+    if (!artist && (isRelease || isArtistPage)) {
+      artist = j.playlist_uploader || j.playlist_channel || '';
     }
     artist = artist.replace(/\s*-\s*topic\s*$/i, '').trim(); // strip auto-channel " - Topic"
     // Last resort: recover an artist from a "Artist - Title" title (used for bare
