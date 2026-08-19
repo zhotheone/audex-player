@@ -2188,7 +2188,7 @@ async function runYtDownload(event, payload, target) {
     '--audio-quality', audioQuality,
     '--add-metadata',
     '--output', outPattern,
-    '--print', `after_move:${META_TAG}%(track,title|)s\t%(artist,creator,uploader,channel|)s\t%(album|)s\t%(release_year,upload_date>%Y|)s\t%(filepath)s`,
+    '--print', `${META_TAG}%(track,title|)s\t%(artist,creator,uploader,channel|)s\t%(album|)s\t%(release_year,upload_date>%Y|)s`,
     target,
   ];
   // yt-dlp's own --embed-thumbnail goes through mutagen for every one of our
@@ -2233,19 +2233,19 @@ async function runYtDownload(event, payload, target) {
     return { success: false, error: errLine, reason: classifyYtDlpError(stderr || stdout) };
   }
 
-  // track \t artist \t album \t year \t path
+  // track \t artist \t album \t year
   const meta = (stdout.split('\n').map(l => l.trim()).filter(l => l.startsWith(META_TAG)).pop() || '').slice(META_TAG.length).split('\t');
-  const ytTitle = (meta.length >= 5 ? meta[0] : '').trim();
-  const ytArtist = (meta.length >= 5 ? meta[1] : (meta.length >= 3 ? meta[0] : '')).trim();
-  const ytAlbum = (meta.length >= 5 ? meta[2] : (meta.length >= 3 ? meta[1] : '')).trim();
-  const ytYear = (meta.length >= 5 ? meta[3] : '').trim();
-  let filePath = meta.length >= 5 ? meta.slice(4).join('\t') : (meta.length >= 3 ? meta.slice(2).join('\t') : '');
+  const ytTitle = (meta.length >= 4 ? meta[0] : '').trim();
+  const ytArtist = (meta.length >= 4 ? meta[1] : '').trim();
+  const ytAlbum = (meta.length >= 4 ? meta[2] : '').trim();
+  const ytYear = (meta.length >= 4 ? meta[3] : '').trim();
 
   const folderArtist = ytArtist || artist || '';
   const album = ytAlbum || ytmAlbum || '';
   const finalTitle = ytTitle || (suggestedName ? (artist && suggestedName.startsWith(artist + ' - ') ? suggestedName.slice(artist.length + 3) : suggestedName) : '');
-  const suggestedNameFinal = folderArtist && finalTitle ? `${folderArtist} - ${finalTitle}` : (suggestedName || finalTitle || path.basename(filePath, path.extname(filePath)));
+  const suggestedNameFinal = folderArtist && finalTitle ? `${folderArtist} - ${finalTitle}` : (suggestedName || finalTitle || 'track');
 
+  let filePath = '';
   if (!filePath || !fs.existsSync(filePath)) {
     try {
       const files = fs.readdirSync(downloadsDir)
