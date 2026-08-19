@@ -5090,15 +5090,29 @@ function openArtistSidebar(name) {
   activeArtistName = name;
   renderArtistSidebar(name);
   const sb = $('right-sidebar');
-  if (sb) sb.hidden = false;
+  if (sb) {
+    sb.classList.remove('closing');
+    sb.hidden = false;
+  }
   document.body.classList.add('sidebar-collapsed', 'right-sidebar-open');
 }
 
 function closeArtistSidebar() {
   rightSidebarMode = null;
   const sb = $('right-sidebar');
-  if (sb) sb.hidden = true;
   document.body.classList.remove('sidebar-collapsed', 'right-sidebar-open');
+  if (!sb || sb.hidden) return;
+  if (settings.animations === false) {
+    sb.hidden = true;
+    return;
+  }
+  sb.classList.add('closing');
+  setTimeout(() => {
+    if (!rightSidebarMode) {
+      sb.hidden = true;
+      sb.classList.remove('closing');
+    }
+  }, 350);
 }
 
 function renderArtistSidebar(name) {
@@ -5433,7 +5447,10 @@ function openAlbumSidebar(key) {
   activeAlbumKey = key;
   renderAlbumSidebar(key);
   const sb = $('right-sidebar');
-  if (sb) sb.hidden = false;
+  if (sb) {
+    sb.classList.remove('closing');
+    sb.hidden = false;
+  }
   document.body.classList.add('sidebar-collapsed', 'right-sidebar-open');
 }
 

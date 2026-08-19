@@ -516,6 +516,7 @@ input { font-family: inherit; color: inherit; }
   flex-shrink: 0;
   min-height: 0;
   overflow: hidden;
+  transition: width var(--motion-standard-default-spatial), padding var(--motion-standard-default-spatial);
 }
 .sidebar > .brand,
 .sidebar > .sidebar-bottom {
@@ -1016,8 +1017,24 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
   gap: 20px;
   overflow-y: auto;
   flex-shrink: 0;
+  animation: rightSidebarIn var(--motion-expressive-default-spatial);
 }
 .right-sidebar[hidden] { display: none; }
+.right-sidebar.closing {
+  animation: rightSidebarOut var(--motion-standard-fast-spatial) forwards;
+  pointer-events: none;
+}
+
+@keyframes rightSidebarIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes rightSidebarOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(24px); }
+}
+
 .artist-sb-header {
   position: absolute;
   top: 20px;
@@ -1033,6 +1050,10 @@ body.sidebar-collapsed .sidebar .sidebar-actions .btn-primary {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  animation: fadeIn var(--motion-standard-default-effects);
+}
+.artist-sb-section {
+  animation: fadeIn var(--motion-standard-default-effects);
 }
 .artist-sb-avatar {
   position: relative;
