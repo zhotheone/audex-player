@@ -414,11 +414,11 @@
         _initParticles() {
             this.maxParticles = this.options.maxParticles || 30000;
             this.particleCount = Math.min(this.options.particleCount || 7200, this.maxParticles);
-            
+
             if (this.particleSystem && this.scene) {
                 this.scene.remove(this.particleSystem);
             }
-            
+
             this.particlesGeom = new THREE.BufferGeometry();
             const max = this.maxParticles;
             const posArr = new Float32Array(max * VERTEX_SIZE);
