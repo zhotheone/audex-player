@@ -7748,10 +7748,10 @@ function updateFsVizButtonUI() {
   const icon = $('fsVizIcon');
   if (btn) {
     btn.classList.toggle('active', mode !== 'off');
-    btn.title = `Visualizer: ${mode === 'jsnation' ? 'JsNation' : mode === 'shader' ? 'Fluid Lava' : 'Off'}`;
+    btn.title = `Visualizer: ${mode === 'jsnation' ? 'JsNation' : mode === 'bars' ? '48 Bars' : mode === 'shader' ? 'Fluid Lava' : 'Off'}`;
   }
   if (icon) {
-    icon.textContent = mode === 'jsnation' ? 'equalizer' : mode === 'shader' ? 'blur_on' : 'blur_off';
+    icon.textContent = mode === 'jsnation' ? 'equalizer' : mode === 'bars' ? 'bar_chart' : mode === 'shader' ? 'blur_on' : 'blur_off';
   }
 }
 
@@ -7764,10 +7764,13 @@ function startFsVisualizer() {
   overlay.classList.toggle('is-viz', isViz);
   overlay.classList.toggle('is-jsnation', mode === 'jsnation');
   overlay.classList.toggle('is-lavalamp', mode === 'shader');
+  overlay.classList.toggle('is-bars', mode === 'bars');
+
+  if (mode === 'jsnation' && fsLyricsOpen) closeFsLyricsPanel();
 
   if (isViz) {
     if (jsWrap) jsWrap.hidden = false;
-    const vizType = mode === 'shader' ? 'lavalamp' : 'jsnation';
+    const vizType = mode === 'shader' ? 'lavalamp' : mode === 'bars' ? 'bars' : 'jsnation';
     if (!jsNationViz && typeof JsNationVisualizer !== 'undefined' && (typeof THREE !== 'undefined' || window.THREE)) {
       jsNationViz = new JsNationVisualizer({
         container: jsWrap,
@@ -7805,12 +7808,12 @@ function stopFsVisualizer() {
 }
 
 function toggleFsVisualizer() {
-  const modes = ['shader', 'jsnation', 'off'];
+  const modes = ['shader', 'jsnation', 'bars', 'off'];
   const curIdx = modes.indexOf(getFsVisualizerMode());
   settings.fsVisualizer = modes[(curIdx + 1) % modes.length];
   saveSettings();
   startFsVisualizer();
-  toast(`Visualizer: ${settings.fsVisualizer === 'jsnation' ? 'JsNation' : settings.fsVisualizer === 'shader' ? 'Fluid Lava' : 'Off'}`);
+  toast(`Visualizer: ${settings.fsVisualizer === 'jsnation' ? 'JsNation' : settings.fsVisualizer === 'bars' ? '48 Bars' : settings.fsVisualizer === 'shader' ? 'Fluid Lava' : 'Off'}`);
 }
 
 function openFullscreen() {
@@ -7994,14 +7997,35 @@ async function loadFsLyrics(track) {
   renderFsLyrics();
 }
 
+function updateFsSyncLyricsUI() {
+  const isSynced = settings.syncedLyrics !== false;
+  const btn = $('fs-btn-sync-lyrics');
+  const icon = $('fsSyncIcon');
+  if (btn) btn.classList.toggle('active', isSynced);
+  if (icon) icon.textContent = isSynced ? 'sync' : 'sync_disabled';
+}
+
 function updateFsLyricsActive(cur) {
   if (!fsLyrics || fsLyrics === 'loading' || !fsLyrics.lines.length) return;
+  const isSynced = settings.syncedLyrics !== false;
+  const list = $('fs-lyrics-list');
+  if (!list) return;
+
+  if (!isSynced) {
+    if (fsLyricsActiveLine !== -999) {
+      Array.from(list.children).forEach(el => {
+        el.classList.remove('active');
+        el.style.opacity = '0.85';
+      });
+      fsLyricsActiveLine = -999;
+    }
+    return;
+  }
+
   let idx = 0;
   for (let i = 0; i < fsLyrics.lines.length; i++) {
     if (fsLyrics.lines[i].time <= cur) idx = i; else break;
   }
-  const list = $('fs-lyrics-list');
-  if (!list) return;
 
   if (idx !== fsLyricsActiveLine) {
     Array.from(list.children).forEach((el, i) => {
@@ -8026,11 +8050,13 @@ function updateFsLyricsActive(cur) {
 }
 
 function openFsLyricsPanel() {
+  if (getFsVisualizerMode() === 'jsnation' && $('fullscreen-overlay')?.classList.contains('active')) return;
   fsLyricsOpen = true;
   $('fs-lyrics-panel')?.classList.add('active');
   $('fullscreen-overlay')?.classList.add('is-lyrics');
   $('btn-fs-lyrics')?.classList.add('is-active');
   $('fs-btn-lyrics')?.classList.add('selected', 'active');
+  updateFsSyncLyricsUI();
   if (currentTrack) loadFsLyrics(currentTrack);
 }
 function closeFsLyricsPanel() {
@@ -8043,6 +8069,12 @@ function closeFsLyricsPanel() {
 function toggleFsLyricsPanel() { if (fsLyricsOpen) closeFsLyricsPanel(); else openFsLyricsPanel(); }
 $('btn-fs-lyrics')?.addEventListener('click', toggleFsLyricsPanel);
 $('fs-btn-lyrics')?.addEventListener('click', toggleFsLyricsPanel);
+$('fs-btn-sync-lyrics')?.addEventListener('click', () => {
+  settings.syncedLyrics = settings.syncedLyrics === false;
+  saveSettings();
+  updateFsSyncLyricsUI();
+  updateFsLyricsActive(audio.currentTime || 0);
+});
 
 // Playbar shortcut: jumps straight to fullscreen + lyrics in one click instead
 // of opening fullscreen first and hunting for the lyrics toggle inside it.

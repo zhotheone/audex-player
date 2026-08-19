@@ -157,7 +157,7 @@
 
                 float edge = smoothstep(0.7, 1.25, totalField);
                 float inner = smoothstep(1.25, 2.4, totalField);
-                float glow = smoothstep(0.12, 0.7, totalField) * 0.45;
+                float glow = smoothstep(0.35, 0.9, totalField) * 0.18;
 
                 vec3 finalCol = mix(blobColor * 0.85, min(blobColor * 1.35 + vec3(0.1), vec3(1.0)), inner * 0.4);
                 float alpha = clamp(edge * 0.95 + glow * 0.6, 0.0, 0.95);
@@ -356,15 +356,16 @@
 
         _initLavaLamp() {
             this.blobCount = 3;
+            this.lastMultiplier = 0;
             this.blobs = [
-                { baseRadius: 0.32, phaseX: 0.0, phaseY: 1.2, freqX: 0.45, freqY: 0.35, ampX: 0.35, ampY: 0.28 },
-                { baseRadius: 0.36, phaseX: 2.1, phaseY: 3.5, freqX: 0.32, freqY: 0.48, ampX: 0.38, ampY: 0.32 },
-                { baseRadius: 0.28, phaseX: 4.3, phaseY: 0.8, freqX: 0.55, freqY: 0.38, ampX: 0.30, ampY: 0.34 }
+                { baseRadius: 0.28, phaseX: 0.0, phaseY: 1.8, freqX: 0.28, freqY: 0.22, ampX: 0.44, ampY: 0.36, deltaReact: 1.6, inertia: 0 },
+                { baseRadius: 0.32, phaseX: 2.4, phaseY: 4.1, freqX: 0.20, freqY: 0.30, ampX: 0.46, ampY: 0.38, deltaReact: 0.9, inertia: 0 },
+                { baseRadius: 0.25, phaseX: 4.8, phaseY: 0.6, freqX: 0.34, freqY: 0.26, ampX: 0.40, ampY: 0.44, deltaReact: 2.2, inertia: 0 }
             ];
             this.blobUniformData = [
-                new THREE.Vector3(0.5, 0.5, 0.32),
-                new THREE.Vector3(0.3, 0.7, 0.36),
-                new THREE.Vector3(0.7, 0.3, 0.28)
+                new THREE.Vector3(0.5, 0.5, 0.28),
+                new THREE.Vector3(0.3, 0.7, 0.32),
+                new THREE.Vector3(0.7, 0.3, 0.25)
             ];
 
             const DEFAULT_PALETTE = [
@@ -524,16 +525,24 @@
 
         _updateLavaLamp(multiplier) {
             if (!this.blobs || !this.lavaMesh || !this.lavaMesh.visible) return;
-            const speed = 0.2 + multiplier * 4.2;
+            const delta = Math.max(0, multiplier - (this.lastMultiplier || 0));
+            this.lastMultiplier = multiplier;
+
+            const speed = 0.18 + multiplier * 3.6;
             const dt = 1.0 / 60.0;
             for (let i = 0; i < this.blobCount; i++) {
                 const b = this.blobs[i];
+                if (delta > 0.015) {
+                    b.inertia = Math.min(0.6, (b.inertia || 0) + delta * b.deltaReact);
+                }
+                b.inertia = (b.inertia || 0) * 0.88;
+
                 b.phaseX += b.freqX * dt * speed;
                 b.phaseY += b.freqY * dt * speed;
 
-                const x = 0.5 + b.ampX * Math.sin(b.phaseX) + 0.04 * Math.sin(b.phaseX * 2.1);
-                const y = 0.5 + b.ampY * Math.cos(b.phaseY) + 0.04 * Math.cos(b.phaseY * 1.8);
-                const r = b.baseRadius * (1.0 + multiplier * 0.38 + 0.04 * Math.sin(b.phaseX * 1.4));
+                const x = 0.5 + b.ampX * Math.sin(b.phaseX) + 0.03 * Math.sin(b.phaseX * 2.1);
+                const y = 0.5 + b.ampY * Math.cos(b.phaseY) + 0.03 * Math.cos(b.phaseY * 1.8);
+                const r = b.baseRadius * (1.0 + b.inertia * 0.5 + multiplier * 0.15 + 0.03 * Math.sin(b.phaseX * 1.4));
 
                 this.blobUniformData[i].set(x, y, r);
 
@@ -560,11 +569,12 @@
         setMode(mode) {
             this.options.mode = mode;
             this.isLavaLamp = mode === 'lavalamp';
-            this.setParticleCount(this.isLavaLamp ? 140 : (this.defaultParticleCount || 7200));
-            if (this.spectrumMesh) this.spectrumMesh.visible = !this.isLavaLamp;
-            if (this.particleSystem) this.particleSystem.visible = !this.isLavaLamp;
+            this.isBars = mode === 'bars';
+            this.setParticleCount(this.isLavaLamp || this.isBars ? 140 : (this.defaultParticleCount || 7200));
+            if (this.spectrumMesh) this.spectrumMesh.visible = !this.isLavaLamp && !this.isBars;
+            if (this.particleSystem) this.particleSystem.visible = !this.isLavaLamp && !this.isBars;
             if (this.lavaMesh) this.lavaMesh.visible = this.isLavaLamp;
-            if (this.isLavaLamp && this.ctx2d) {
+            if ((this.isLavaLamp || this.isBars) && this.ctx2d) {
                 this.ctx2d.clearRect(0, 0, this.canvas2d.width, this.canvas2d.height);
             }
         }
@@ -829,8 +839,76 @@
             // Render WebGL
             this.renderer.render(this.scene, this.camera);
 
-            // Render Emblem on 2D Overlay
-            this._drawEmblem(multiplier);
+            // Render Emblem or 48 Bars on 2D Overlay
+            if (this.isBars) {
+                this._drawBars();
+            } else {
+                this._drawEmblem(multiplier);
+            }
+        }
+
+        _drawBars() {
+            let w = this.canvas2d.width;
+            let h = this.canvas2d.height;
+            this.ctx2d.clearRect(0, 0, w, h);
+
+            if (!this.barHeights) this.barHeights = new Float32Array(48);
+            if (!this.barVelocities) this.barVelocities = new Float32Array(48);
+
+            const BARS = 48;
+            const freq = this.freqData;
+            const len = freq ? freq.length : 0;
+
+            for (let i = 0; i < BARS; i++) {
+                let target = 0;
+                if (len > 0) {
+                    const logMin = Math.log(2);
+                    const logMax = Math.log(Math.min(len * 0.75, 450));
+                    const startIdx = Math.floor(Math.exp(logMin + (i / BARS) * (logMax - logMin)));
+                    const endIdx = Math.max(startIdx + 1, Math.floor(Math.exp(logMin + ((i + 1) / BARS) * (logMax - logMin))));
+                    let sum = 0, count = 0;
+                    for (let j = startIdx; j < endIdx && j < len; j++) {
+                        sum += freq[j];
+                        count++;
+                    }
+                    target = count > 0 ? (sum / count) / 255 : 0;
+                    target *= (1 + (i / BARS) * 0.75);
+                    target = Math.min(1.0, target);
+                }
+                const diff = target - this.barHeights[i];
+                this.barVelocities[i] = this.barVelocities[i] * 0.74 + diff * 0.26;
+                this.barHeights[i] = Math.max(0, this.barHeights[i] + this.barVelocities[i]);
+            }
+
+            const totalWidth = Math.min(w * 0.85, 780);
+            const gap = Math.max(2, Math.min(5, (totalWidth / BARS) * 0.22));
+            const barWidth = (totalWidth - (BARS - 1) * gap) / BARS;
+            const startX = (w - totalWidth) / 2;
+            const maxBarH = Math.min(h * 0.35, 200);
+            const bottomY = h * 0.58;
+            const rad = barWidth / 2;
+            const ctx = this.ctx2d;
+
+            for (let i = 0; i < BARS; i++) {
+                const val = this.barHeights[i];
+                const barH = Math.max(3, val * maxBarH);
+                const x = startX + i * (barWidth + gap);
+                const y = bottomY - barH;
+
+                const grad = ctx.createLinearGradient(x, y, x, bottomY);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                grad.addColorStop(0.5, 'rgba(230, 230, 255, 0.70)');
+                grad.addColorStop(1, 'rgba(180, 190, 255, 0.25)');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                if (ctx.roundRect) {
+                    ctx.roundRect(x, y, barWidth, barH, rad);
+                } else {
+                    ctx.rect(x, y, barWidth, barH);
+                }
+                ctx.fill();
+            }
         }
 
         _drawEmblem(multiplier) {
