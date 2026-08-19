@@ -11,7 +11,7 @@ if (typeof AudioWorkletProcessor === 'undefined') {
 let registered = null;
 global.registerProcessor = (name, cls) => { registered = cls; };
 
-const { AudioAnalyzerNode, PROCESSOR_CODE } = require('../analyzer.js');
+const { AudioAnalyzerNode, PROCESSOR_CODE, calculateTrackEnergy } = require('../analyzer.js');
 eval(PROCESSOR_CODE);
 
 // 1. Instantiation test
@@ -96,5 +96,19 @@ for (let p = 0; p <= 1; p += 0.1) {
   const power = gOut * gOut + gIn * gIn;
   assert(Math.abs(power - 1.0) < 1e-6, `Equal-power sum failed at p=${p}: ${power}`);
 }
+
+// 4. Test calculateTrackEnergy
+(async () => {
+  const mockAudioBuffer = {
+    length: 2048,
+    sampleRate: 48000,
+    getChannelData: () => testBuffer
+  };
+  const energyScore = await calculateTrackEnergy(mockAudioBuffer);
+  assert(typeof energyScore === 'number', 'Energy score must be number');
+  assert(energyScore >= 0 && energyScore <= 1, 'Energy score must be in [0, 1]');
+  assert(energyScore > 0, 'Energy score for non-silent buffer should be > 0');
+  console.log('calculateTrackEnergy test passed! Output:', energyScore);
+})();
 
 console.log('Analyzer self-test passed! Output sample:', lastFeatures);

@@ -24,11 +24,18 @@ const grabConst = (name) => {
   assert.ok(start > 0, `${name} not found in main.js`);
   return src.slice(start, src.indexOf(';\n', start) + 2); // literals here have no inner semicolons
 };
-const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS } = new Function('fs', 'path',
+const { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS, toMusicYoutubeUrl } = new Function('fs', 'path',
   grab('sanitizeFsName') + grab('safeRenameSync') + grab('placeDownload') + grabConst('FFMPEG_TAG_KEYS') + grab('isOggContainer') +
   grab('oggCoverMetaFile') + grab('toFfmpegPath') + grab('ffmpegTagArgs') +
-  grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') +
-  'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS };')(fs, path);
+  grabConst('REENCODE_BITRATE') + grab('ffmpegTrimArgs') + grabConst('PARSE_OPTS') + grab('toMusicYoutubeUrl') +
+  'return { sanitizeFsName, placeDownload, ffmpegTagArgs, ffmpegTrimArgs, oggCoverMetaFile, PARSE_OPTS, toMusicYoutubeUrl };')(fs, path);
+
+assert.strictEqual(toMusicYoutubeUrl('https://www.youtube.com/watch?v=123'), 'https://music.youtube.com/watch?v=123');
+assert.strictEqual(toMusicYoutubeUrl('http://youtube.com/watch?v=123'), 'https://music.youtube.com/watch?v=123');
+assert.strictEqual(toMusicYoutubeUrl('https://youtu.be/123'), 'https://music.youtube.com/watch?v=123');
+assert.strictEqual(toMusicYoutubeUrl('https://youtu.be/123?list=PL456'), 'https://music.youtube.com/watch?list=PL456&v=123');
+assert.strictEqual(toMusicYoutubeUrl('https://music.youtube.com/playlist?list=PL456'), 'https://music.youtube.com/playlist?list=PL456');
+assert.strictEqual(toMusicYoutubeUrl('http://www.music.youtube.com/watch?v=123'), 'https://music.youtube.com/watch?v=123');
 
 // Sign-in detection: an anonymous YouTube jar must not read as a session.
 // youtubeCookiesPath() is stubbed to a temp file so hasYtAuthCookie() can be

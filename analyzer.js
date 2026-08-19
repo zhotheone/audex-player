@@ -60,7 +60,19 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
   }
   const peakNorm = maxVal / 255;
   const avgLevel = sum / (len * 255);
-  const energy = Math.min(1.0, Math.max(peakNorm, avgLevel * 2.5, multiplier));
+
+  // Perceptual frequency weighting (RMS energy approach)
+  const W_LOW = 0.8;
+  const W_MID = 1.3;
+  const W_HIGH = 1.0;
+  const lowEnergy = bass * W_LOW;
+  const midEnergy = ((lowMid + mid) / 2) * W_MID;
+  const highEnergy = ((highMid + high) / 2) * W_HIGH;
+  const weightedEnergy = (lowEnergy + midEnergy + highEnergy) / 3;
+
+  const overallLevel = Math.max(peakNorm, avgLevel * 2.5);
+  const rawEnergyScore = (overallLevel * 0.4) + (weightedEnergy * 0.6);
+  const energy = Math.min(1.0, Math.max(rawEnergyScore * 2.0, multiplier));
 
   const prevBass = state.prevBass || 0;
   const bassFlux = Math.max(0, bass - prevBass);
@@ -79,6 +91,83 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
     bpm: 120,
     spectrum
   };
+}
+
+/**
+ * Calculates a normalized energy score (0.0 to 1.0) for an AudioBuffer using RMS and 3-band filter separation.
+ * @param {AudioBuffer} audioBuffer 
+ * @returns {Promise<number>}
+ */
+async function calculateTrackEnergy(audioBuffer) {
+  if (!audioBuffer || audioBuffer.length === 0) return 0;
+  const rawData = audioBuffer.getChannelData(0);
+  const sampleRate = audioBuffer.sampleRate;
+
+  const computeRMS = (samples) => {
+    if (!samples || samples.length === 0) return 0;
+    let sum = 0;
+    for (let i = 0; i < samples.length; i++) {
+      sum += samples[i] * samples[i];
+    }
+    return Math.sqrt(sum / samples.length);
+  };
+
+  const overallRMS = computeRMS(rawData);
+
+  const W_LOW = 0.8;
+  const W_MID = 1.3;
+  const W_HIGH = 1.0;
+
+  const OfflineCtxClass = typeof OfflineAudioContext !== 'undefined'
+    ? OfflineAudioContext
+    : (typeof window !== 'undefined' ? (window.OfflineAudioContext || window.webkitOfflineAudioContext) : null);
+
+  if (!OfflineCtxClass) {
+    const rawEnergyScore = overallRMS;
+    const normalizedEnergy = Math.min(Math.max(rawEnergyScore * 4.0, 0.0), 1.0);
+    return parseFloat(normalizedEnergy.toFixed(3));
+  }
+
+  const offlineCtx = new OfflineCtxClass(3, rawData.length, sampleRate);
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+
+  const lowpass = offlineCtx.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  lowpass.frequency.value = 250;
+
+  const bandpass = offlineCtx.createBiquadFilter();
+  bandpass.type = 'bandpass';
+  bandpass.frequency.value = 1500;
+  bandpass.Q.value = 0.5;
+
+  const highpass = offlineCtx.createBiquadFilter();
+  highpass.type = 'highpass';
+  highpass.frequency.value = 4000;
+
+  const merger = offlineCtx.createChannelMerger(3);
+  source.connect(lowpass);
+  source.connect(bandpass);
+  source.connect(highpass);
+
+  lowpass.connect(merger, 0, 0);
+  bandpass.connect(merger, 0, 1);
+  highpass.connect(merger, 0, 2);
+
+  merger.connect(offlineCtx.destination);
+  if (source.start) source.start(0);
+
+  const renderedBuffer = await offlineCtx.startRendering();
+
+  const lowRMS = computeRMS(renderedBuffer.getChannelData(0)) * W_LOW;
+  const midRMS = computeRMS(renderedBuffer.getChannelData(1)) * W_MID;
+  const highRMS = computeRMS(renderedBuffer.getChannelData(2)) * W_HIGH;
+
+  const weightedEnergy = (lowRMS + midRMS + highRMS) / 3;
+  const rawEnergyScore = (overallRMS * 0.4) + (weightedEnergy * 0.6);
+  const normalizedEnergy = Math.min(Math.max(rawEnergyScore * 4.0, 0.0), 1.0);
+
+  return parseFloat(normalizedEnergy.toFixed(3));
 }
 
 const PROCESSOR_CODE = `
@@ -218,7 +307,7 @@ class AudioAnalyzerNode {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AudioAnalyzerNode, PROCESSOR_CODE, computeJsNationFeatures, calcJsNationMultiplier };
+  module.exports = { AudioAnalyzerNode, PROCESSOR_CODE, computeJsNationFeatures, calcJsNationMultiplier, calculateTrackEnergy };
 }
 
 

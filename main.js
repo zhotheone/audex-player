@@ -1622,6 +1622,32 @@ async function ytmExplicitByPlaylist(listId) {
   catch (_) { return {}; }
 }
 
+function toMusicYoutubeUrl(v) {
+  if (!v) return v;
+  let str = String(v).trim();
+  if (!/^https?:\/\//i.test(str)) str = 'https://' + str;
+  try {
+    const u = new URL(str);
+    const host = u.hostname.toLowerCase();
+    if (host === 'youtu.be') {
+      const videoId = u.pathname.replace(/^\/+/, '');
+      u.hostname = 'music.youtube.com';
+      u.pathname = '/watch';
+      if (videoId) u.searchParams.set('v', videoId);
+      u.protocol = 'https:';
+      return u.toString();
+    }
+    if (host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'www.music.youtube.com') {
+      u.hostname = 'music.youtube.com';
+      u.protocol = 'https:';
+      return u.toString();
+    }
+    return v;
+  } catch (_) {
+    return v;
+  }
+}
+
 // ── YouTube Music parser ──────────────────────────────────────────────────────
 // Enumerates an album / single / artist page on music.youtube.com into a flat
 // track list via yt-dlp's --flat-playlist. Unlike the Spotify parser this needs
@@ -1631,8 +1657,9 @@ async function ytmExplicitByPlaylist(listId) {
 // the YouTube search downloader. Flat mode keeps it fast on large artist pages at
 // the cost of sparse per-track artist data — the embedded tags fill that in.
 ipcMain.handle('downloads:ytMusicParse', async (event, payload) => {
-  const url = String((payload && payload.url) || '').trim();
-  if (!url) return { success: false, error: 'No URL' };
+  const rawUrl = String((payload && payload.url) || '').trim();
+  if (!rawUrl) return { success: false, error: 'No URL' };
+  const url = toMusicYoutubeUrl(rawUrl);
   const isYtUrl = /^https?:\/\/([\w-]+\.)*youtube\.com\//i.test(url) || /^https?:\/\/youtu\.be\//i.test(url);
   if (!isYtUrl) return { success: false, error: 'Not a YouTube / YouTube Music URL' };
   const args = [
@@ -2237,9 +2264,9 @@ async function runYtDownload(event, payload, target) {
   let mbGenre = null;
   let usedCover = null; // the picture actually embedded — also dropped as the album folder cover
   let info = null;
+  const prefix = folderArtist ? `${folderArtist} - ` : '';
+  const title = (prefix && suggestedName && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName) || '';
   try {
-    const prefix = folderArtist ? `${folderArtist} - ` : '';
-    const title = prefix && suggestedName.startsWith(prefix) ? suggestedName.slice(prefix.length) : suggestedName;
     info = await lookupAlbumInfo({ artist: folderArtist, album, title });
     mbGenre = info.genre || null;
     // MusicBrainz only fills gaps — the YT Music album (and the renderer's
@@ -2292,8 +2319,10 @@ async function runYtDownload(event, payload, target) {
   // groups by the tag, and yt-dlp's %(album)s is often empty for these ids, so
   // without this the track reads as "Unknown Album" no matter the folder.
   const tagsToWrite = {};
-  if (mbGenre) tagsToWrite.genre = mbGenre;
+  if (title && title.trim()) tagsToWrite.title = title.trim();
+  if (folderArtist && folderArtist.trim()) tagsToWrite.artist = folderArtist.trim();
   if (album && album.trim()) tagsToWrite.album = album.trim();
+  if (mbGenre) tagsToWrite.genre = mbGenre;
   if (Object.keys(tagsToWrite).length) {
     const r = await writeMetadataToFile(filePath, tagsToWrite);
     if (!r.success) logAppError('runYtDownload:tags', r.error);

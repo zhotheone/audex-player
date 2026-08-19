@@ -569,12 +569,11 @@
         setMode(mode) {
             this.options.mode = mode;
             this.isLavaLamp = mode === 'lavalamp';
-            this.isBars = mode === 'bars';
-            this.setParticleCount(this.isLavaLamp || this.isBars ? 140 : (this.defaultParticleCount || 7200));
-            if (this.spectrumMesh) this.spectrumMesh.visible = !this.isLavaLamp && !this.isBars;
-            if (this.particleSystem) this.particleSystem.visible = !this.isLavaLamp && !this.isBars;
+            this.setParticleCount(this.isLavaLamp ? 140 : (this.defaultParticleCount || 7200));
+            if (this.spectrumMesh) this.spectrumMesh.visible = !this.isLavaLamp;
+            if (this.particleSystem) this.particleSystem.visible = !this.isLavaLamp;
             if (this.lavaMesh) this.lavaMesh.visible = this.isLavaLamp;
-            if ((this.isLavaLamp || this.isBars) && this.ctx2d) {
+            if (this.isLavaLamp && this.ctx2d) {
                 this.ctx2d.clearRect(0, 0, this.canvas2d.width, this.canvas2d.height);
             }
         }
@@ -839,76 +838,8 @@
             // Render WebGL
             this.renderer.render(this.scene, this.camera);
 
-            // Render Emblem or 48 Bars on 2D Overlay
-            if (this.isBars) {
-                this._drawBars();
-            } else {
-                this._drawEmblem(multiplier);
-            }
-        }
-
-        _drawBars() {
-            let w = this.canvas2d.width;
-            let h = this.canvas2d.height;
-            this.ctx2d.clearRect(0, 0, w, h);
-
-            if (!this.barHeights) this.barHeights = new Float32Array(48);
-            if (!this.barVelocities) this.barVelocities = new Float32Array(48);
-
-            const BARS = 48;
-            const freq = this.freqData;
-            const len = freq ? freq.length : 0;
-
-            for (let i = 0; i < BARS; i++) {
-                let target = 0;
-                if (len > 0) {
-                    const logMin = Math.log(2);
-                    const logMax = Math.log(Math.min(len * 0.75, 450));
-                    const startIdx = Math.floor(Math.exp(logMin + (i / BARS) * (logMax - logMin)));
-                    const endIdx = Math.max(startIdx + 1, Math.floor(Math.exp(logMin + ((i + 1) / BARS) * (logMax - logMin))));
-                    let sum = 0, count = 0;
-                    for (let j = startIdx; j < endIdx && j < len; j++) {
-                        sum += freq[j];
-                        count++;
-                    }
-                    target = count > 0 ? (sum / count) / 255 : 0;
-                    target *= (1 + (i / BARS) * 0.75);
-                    target = Math.min(1.0, target);
-                }
-                const diff = target - this.barHeights[i];
-                this.barVelocities[i] = this.barVelocities[i] * 0.74 + diff * 0.26;
-                this.barHeights[i] = Math.max(0, this.barHeights[i] + this.barVelocities[i]);
-            }
-
-            const totalWidth = Math.min(w * 0.85, 780);
-            const gap = Math.max(2, Math.min(5, (totalWidth / BARS) * 0.22));
-            const barWidth = (totalWidth - (BARS - 1) * gap) / BARS;
-            const startX = (w - totalWidth) / 2;
-            const maxBarH = Math.min(h * 0.35, 200);
-            const bottomY = h * 0.58;
-            const rad = barWidth / 2;
-            const ctx = this.ctx2d;
-
-            for (let i = 0; i < BARS; i++) {
-                const val = this.barHeights[i];
-                const barH = Math.max(3, val * maxBarH);
-                const x = startX + i * (barWidth + gap);
-                const y = bottomY - barH;
-
-                const grad = ctx.createLinearGradient(x, y, x, bottomY);
-                grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-                grad.addColorStop(0.5, 'rgba(230, 230, 255, 0.70)');
-                grad.addColorStop(1, 'rgba(180, 190, 255, 0.25)');
-
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                if (ctx.roundRect) {
-                    ctx.roundRect(x, y, barWidth, barH, rad);
-                } else {
-                    ctx.rect(x, y, barWidth, barH);
-                }
-                ctx.fill();
-            }
+            // Render Emblem on 2D Overlay
+            this._drawEmblem(multiplier);
         }
 
         _drawEmblem(multiplier) {

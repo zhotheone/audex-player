@@ -3822,17 +3822,25 @@ html.is-playing .equalizer > span { animation-play-state: running; }
 .fs-overlay .fs-title,
 .fs-overlay .fs-artist,
 .fs-overlay .fs-album,
+.fs-overlay .time-label,
 .fs-overlay .fs-lyrics-line,
 .fs-overlay .fs-lyrics-word,
-.fs-overlay .fs-lyrics-head,
-.fs-overlay .time-label {
+.fs-overlay .fs-lyrics-empty,
+.fs-overlay .icon-btn .material-symbols-rounded,
+.fs-overlay .btn-ghost .material-symbols-rounded,
+.time-label {
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .fs-overlay .fs-button-group .icon-btn,
 .fs-overlay .fs-song-actions .icon-btn,
 .fs-overlay .fs-progress-row,
-.fs-overlay .fs-volume {
+.fs-overlay .fs-volume,
+.fs-overlay .seek-bar,
+.seek-bar,
+.seek-progress,
+.fs-vol-track,
+.volume-slider {
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
 }
 
@@ -4204,14 +4212,28 @@ html.is-playing .fs-overlay.is-jsnation:hover .fs-info {
   align-items: center;
   gap: 8px;
 }
-.fs-lyrics-toolbar .fs-sync-btn {
-  opacity: 0.55;
-  transition: opacity var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
+.fs-lyrics-toolbar .fs-sync-btn,
+.fs-lyrics-panel .btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  border-radius: var(--radius-btn, 8px);
+  cursor: pointer;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--motion-standard-fast-effects), color var(--motion-standard-fast-effects);
+}
+.fs-lyrics-toolbar .fs-sync-btn:hover,
+.fs-lyrics-panel .btn-ghost:hover {
+  background: var(--hover-bg);
+  color: var(--text);
 }
 .fs-lyrics-toolbar .fs-sync-btn.active {
-  opacity: 1;
   color: var(--accent);
 }
+
 /* Karaoke-style focus: the list gets scroll padding so the first/last line
    can still center in the viewport, and a mask fades lines out near the
    top/bottom edge so attention pulls toward the middle. */
@@ -4242,7 +4264,7 @@ html.is-playing .fs-overlay.is-jsnation:hover .fs-info {
   opacity: 0.35;
   transform: scale(0.94);
   transform-origin: left center;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95), 0 1px 4px rgba(0, 0, 0, 0.98);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
   transition:
     opacity var(--motion-expressive-fast-spatial),
     color var(--motion-expressive-slow-effects),
@@ -4257,13 +4279,22 @@ html.is-playing .fs-overlay.is-jsnation:hover .fs-info {
   transform: scale(1.08);
   text-shadow: 0 0 24px rgba(0, 0, 0, 0.98), 0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 30px rgba(0, 0, 0, 0.9);
 }
+.fs-lyrics-panel.is-unsynced .fs-lyrics-line,
+.fs-lyrics-panel.is-unsynced .fs-lyrics-word {
+  opacity: 1 !important;
+  color: var(--text-strong) !important;
+  transform: none !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
 .fs-lyrics-line.is-word-synced .fs-lyrics-word {
   opacity: 0.35;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
   transition: opacity var(--motion-expressive-default-effects), color var(--motion-expressive-default-effects);
 }
 .fs-lyrics-line.active.is-word-synced .fs-lyrics-word {
   opacity: 0.4;
   color: var(--text);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .fs-lyrics-line.active.is-word-synced .fs-lyrics-word.word-active {
   opacity: 1;

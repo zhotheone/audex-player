@@ -2836,6 +2836,32 @@ document.querySelectorAll('.dl-tabs .dl-tab').forEach(btn => {
   });
 });
 
+function toMusicYoutubeUrl(v) {
+  if (!v) return v;
+  let str = String(v).trim();
+  if (!/^https?:\/\//i.test(str)) str = 'https://' + str;
+  try {
+    const u = new URL(str);
+    const host = u.hostname.toLowerCase();
+    if (host === 'youtu.be') {
+      const videoId = u.pathname.replace(/^\/+/, '');
+      u.hostname = 'music.youtube.com';
+      u.pathname = '/watch';
+      if (videoId) u.searchParams.set('v', videoId);
+      u.protocol = 'https:';
+      return u.toString();
+    }
+    if (host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'www.music.youtube.com') {
+      u.hostname = 'music.youtube.com';
+      u.protocol = 'https:';
+      return u.toString();
+    }
+    return v;
+  } catch (_) {
+    return v;
+  }
+}
+
 // A youtube.com / youtu.be link that isn't the music.youtube.com variant —
 // those miss the 256kbps Premium audio tier that only music.youtube.com URLs
 // expose, so warn the user to grab the YouTube Music link instead.
@@ -2846,7 +2872,11 @@ function isPlainYoutubeUrl(v) {
   return host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'youtu.be';
 }
 function updatePlainYtWarning(value, setStatus, statusId) {
-  if (isPlainYoutubeUrl(value)) { setStatus(tr('downloads.warnPlainYoutube'), 'warn'); return; }
+  const norm = toMusicYoutubeUrl(value);
+  if (norm !== value && $('dl-ytm-url') && $('dl-ytm-url').value === value) {
+    $('dl-ytm-url').value = norm;
+    saveYtmState();
+  }
   const el = $(statusId);
   if (el && el.classList.contains('is-warn')) setStatus(null);
 }
@@ -3177,8 +3207,10 @@ async function runYtmParse() {
   const urlEl = $('dl-ytm-url');
   const startBtn = $('dl-ytm-parse-btn');
   if (!urlEl) return;
-  const url = urlEl.value.trim();
-  if (!url) { urlEl.focus(); return; }
+  const rawUrl = urlEl.value.trim();
+  if (!rawUrl) { urlEl.focus(); return; }
+  const url = toMusicYoutubeUrl(rawUrl);
+  if (url !== rawUrl) { urlEl.value = url; saveYtmState(); }
   ytmParseActive = true;
   if (startBtn) startBtn.disabled = true;
   renderYtmResults([]);
@@ -7748,10 +7780,10 @@ function updateFsVizButtonUI() {
   const icon = $('fsVizIcon');
   if (btn) {
     btn.classList.toggle('active', mode !== 'off');
-    btn.title = `Visualizer: ${mode === 'jsnation' ? 'JsNation' : mode === 'bars' ? '48 Bars' : mode === 'shader' ? 'Fluid Lava' : 'Off'}`;
+    btn.title = `Visualizer: ${mode === 'jsnation' ? 'JsNation' : mode === 'shader' ? 'Fluid Lava' : 'Off'}`;
   }
   if (icon) {
-    icon.textContent = mode === 'jsnation' ? 'equalizer' : mode === 'bars' ? 'bar_chart' : mode === 'shader' ? 'blur_on' : 'blur_off';
+    icon.textContent = mode === 'jsnation' ? 'equalizer' : mode === 'shader' ? 'blur_on' : 'blur_off';
   }
 }
 
@@ -7764,13 +7796,12 @@ function startFsVisualizer() {
   overlay.classList.toggle('is-viz', isViz);
   overlay.classList.toggle('is-jsnation', mode === 'jsnation');
   overlay.classList.toggle('is-lavalamp', mode === 'shader');
-  overlay.classList.toggle('is-bars', mode === 'bars');
 
   if (mode === 'jsnation' && fsLyricsOpen) closeFsLyricsPanel();
 
   if (isViz) {
     if (jsWrap) jsWrap.hidden = false;
-    const vizType = mode === 'shader' ? 'lavalamp' : mode === 'bars' ? 'bars' : 'jsnation';
+    const vizType = mode === 'shader' ? 'lavalamp' : 'jsnation';
     if (!jsNationViz && typeof JsNationVisualizer !== 'undefined' && (typeof THREE !== 'undefined' || window.THREE)) {
       jsNationViz = new JsNationVisualizer({
         container: jsWrap,
@@ -7808,12 +7839,12 @@ function stopFsVisualizer() {
 }
 
 function toggleFsVisualizer() {
-  const modes = ['shader', 'jsnation', 'bars', 'off'];
+  const modes = ['shader', 'jsnation', 'off'];
   const curIdx = modes.indexOf(getFsVisualizerMode());
   settings.fsVisualizer = modes[(curIdx + 1) % modes.length];
   saveSettings();
   startFsVisualizer();
-  toast(`Visualizer: ${settings.fsVisualizer === 'jsnation' ? 'JsNation' : settings.fsVisualizer === 'bars' ? '48 Bars' : settings.fsVisualizer === 'shader' ? 'Fluid Lava' : 'Off'}`);
+  toast(`Visualizer: ${settings.fsVisualizer === 'jsnation' ? 'JsNation' : settings.fsVisualizer === 'shader' ? 'Fluid Lava' : 'Off'}`);
 }
 
 function openFullscreen() {
@@ -8003,6 +8034,7 @@ function updateFsSyncLyricsUI() {
   const icon = $('fsSyncIcon');
   if (btn) btn.classList.toggle('active', isSynced);
   if (icon) icon.textContent = isSynced ? 'sync' : 'sync_disabled';
+  $('fs-lyrics-panel')?.classList.toggle('is-unsynced', !isSynced);
 }
 
 function updateFsLyricsActive(cur) {
