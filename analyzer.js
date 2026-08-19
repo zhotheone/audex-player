@@ -31,7 +31,7 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
 
   const multiplier = calcJsNationMultiplier(spectrum);
 
-  // Band calculations
+  // Band calculations (blends band average and dominant peak)
   const getSlice = (sFrac, eFrac) => {
     let s = 0, max = 0;
     const sIdx = Math.floor(sFrac * len);
@@ -42,7 +42,7 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
       s += v;
       if (v > max) max = v;
     }
-    return span > 0 ? Math.min(1.0, Math.max(max / 255, (s / (span * 255)) * 4.0)) : 0;
+    return span > 0 ? Math.min(1.0, (max / 255) * 0.7 + (s / (span * 255)) * 0.6) : 0;
   };
 
   // Frequency bands (bass: ~20-250Hz, lowMid: ~250-500Hz, mid: ~500-2000Hz, highMid: ~2-6kHz, high: ~6-20kHz)
@@ -61,18 +61,15 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
   const peakNorm = maxVal / 255;
   const avgLevel = sum / (len * 255);
 
-  // Perceptual frequency weighting (RMS energy approach)
-  const W_LOW = 0.8;
-  const W_MID = 1.3;
-  const W_HIGH = 1.0;
-  const lowEnergy = bass * W_LOW;
-  const midEnergy = ((lowMid + mid) / 2) * W_MID;
-  const highEnergy = ((highMid + high) / 2) * W_HIGH;
+  // Perceptual frequency weighting
+  const lowEnergy = bass * 0.8;
+  const midEnergy = ((lowMid + mid) / 2) * 1.2;
+  const highEnergy = ((highMid + high) / 2) * 1.0;
   const weightedEnergy = (lowEnergy + midEnergy + highEnergy) / 3;
 
-  const overallLevel = Math.max(peakNorm, avgLevel * 2.5);
-  const rawEnergyScore = (overallLevel * 0.4) + (weightedEnergy * 0.6);
-  const energy = Math.min(1.0, Math.max(rawEnergyScore * 2.0, multiplier));
+  const bandMax = Math.max(bass, lowMid, mid, highMid, high);
+  const rawEnergy = (peakNorm * 0.35) + (bandMax * 0.4) + (weightedEnergy * 0.35);
+  const energy = Math.min(1.0, Math.max(0.0, rawEnergy));
 
   const prevBass = state.prevBass || 0;
   const bassFlux = Math.max(0, bass - prevBass);
@@ -87,7 +84,7 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
     highMid: Math.round(highMid * 100) / 100,
     high: Math.round(high * 100) / 100,
     onset: Math.round(bassFlux * 100) / 100,
-    beat: bass > 0.35,
+    beat: bassFlux > 0.12 && bass > 0.35,
     bpm: 120,
     spectrum
   };
@@ -251,8 +248,8 @@ class AudioAnalyzerNode {
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = FFT_SIZE;
       this.analyser.smoothingTimeConstant = 0.1;
-      this.analyser.minDecibels = -40;
-      this.analyser.maxDecibels = -30;
+      this.analyser.minDecibels = -90;
+      this.analyser.maxDecibels = -25;
       this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
       this._startLoop();
     }

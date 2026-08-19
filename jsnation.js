@@ -264,15 +264,24 @@
             this.sourceNode = null;
         }
 
+        setFeatures(features) {
+            this.features = features;
+        }
+
         connect(source) {
+            if (source && typeof source.subscribe === 'function') {
+                source.subscribe(features => { this.features = features; });
+                return;
+            }
+
             if (!this.audioCtx) {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
                 this.audioCtx = (source && source.context) || new AudioContextClass();
                 this.analyser = this.audioCtx.createAnalyser();
                 this.analyser.fftSize = FFT_SIZE;
                 this.analyser.smoothingTimeConstant = 0.1;
-                this.analyser.minDecibels = -40;
-                this.analyser.maxDecibels = -30;
+                this.analyser.minDecibels = -90;
+                this.analyser.maxDecibels = -25;
                 this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
             }
 
@@ -778,7 +787,10 @@
             let multiplier = 0;
             let spectrum = new Array(KEEP_BINS).fill(0);
 
-            if (this.analyser && this.freqData) {
+            if (this.features) {
+                multiplier = this.features.multiplier || 0;
+                spectrum = this.features.spectrum || spectrum;
+            } else if (this.analyser && this.freqData) {
                 this.analyser.getByteFrequencyData(this.freqData);
                 let raw = Array.from(this.freqData.subarray(START_BIN, START_BIN + KEEP_BINS));
                 // Savitzky-Golay 3-point smoothing
