@@ -7457,8 +7457,11 @@ function waveTick() {
   }
 
   if (waveAmp > 0.001) {
-    const mult = lastAudioFeatures ? Math.max(lastAudioFeatures.multiplier || 0, lastAudioFeatures.bass || 0) : 0;
-    wavePhase += 0.006 + mult * 0.08;
+    const f = lastAudioFeatures;
+    const isBeat = !!f?.beat;
+    const bass = f?.bass || 0;
+    const onset = f?.onset || 0;
+    wavePhase += 0.006 + (isBeat ? 0.04 : 0) + bass * 0.03 + onset * 0.04;
   }
 
   setProgressUI();
