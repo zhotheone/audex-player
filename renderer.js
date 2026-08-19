@@ -6924,7 +6924,6 @@ async function ensureAudioAnalyzer() {
     audioAnalyzer.connectSource(analyzerTapNode || masterGainNode);
     audioAnalyzer.subscribe(features => {
       lastAudioFeatures = features;
-      if (jsNationViz) jsNationViz.setFeatures(features);
     });
   } catch (err) {
     console.warn('AudioAnalyzer failed to init:', err);
@@ -7759,7 +7758,11 @@ function updateFsDebugPanel() {
       const f = lastAudioFeatures || {};
       const mode = getFsVisualizerMode();
       dbg.innerHTML = `<div><b class="active">FPS: ${fsDebugFps}</b> (${fsDebugFrameTime.toFixed(1)}ms) | <b class="active">Mode: ${mode}</b></div>` +
-        `<div><b class="active">Multiplier: ${(f.multiplier || 0).toFixed(2)}</b></div>`;
+        `<div><b class="active">Mult: ${(f.multiplier || 0).toFixed(2)}</b> <span class="dim">(emblem/particles/lava)</span></div>` +
+        `<div><b class="active">Bass: ${(f.bass || 0).toFixed(2)}</b>${f.beat ? ' <b class="active">[BEAT]</b>' : ''}</div>` +
+        `<div class="dim">LowMid: ${(f.lowMid || 0).toFixed(2)} | Mid: ${(f.mid || 0).toFixed(2)}</div>` +
+        `<div class="dim">HighMid: ${(f.highMid || 0).toFixed(2)} | High: ${(f.high || 0).toFixed(2)}</div>` +
+        `<div class="dim">Energy: ${(f.energy || 0).toFixed(2)} | Onset: ${(f.onset || 0).toFixed(2)} | BPM: ${f.bpm || '—'}</div>`;
     }
 
     fsDebugRaf = requestAnimationFrame(loop);
@@ -7812,8 +7815,7 @@ function startFsVisualizer() {
         particleCount: 1200,
         emblem: currentTrack ? (currentTrack.cover || null) : null
       });
-      if (audioAnalyzer) jsNationViz.connect(audioAnalyzer);
-      else if (ensureEqGraph()) jsNationViz.connect(analyzerTapNode || masterGainNode);
+      if (ensureEqGraph()) jsNationViz.connect(analyzerTapNode || masterGainNode);
       else jsNationViz.connect(audio);
     } else if (jsNationViz) {
       jsNationViz.setMode(vizType);
