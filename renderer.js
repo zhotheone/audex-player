@@ -237,6 +237,7 @@ settings.lastfm = Object.assign({}, LASTFM_DEFAULTS, settings.lastfm || {});
 
 const coverCache = {};
 let library = libraryMeta.map(t => ({ ...t, cover: coverCache[t.path] || null }));
+let revalidatingLibrary = false;
 
 // Read by saveLibrary() below (called from the top-level backfill IIFE right
 // after this, i.e. before any function runs) and by lanPublish() to know when
@@ -11030,6 +11031,9 @@ async function restoreCovers() {
 // paths already in the library, so re-running this is idempotent.
 async function rescanFolders() {
   lastRescan = Date.now();   // also at the end: a slow scan shouldn't let a re-focus start a second one
+  // A rescan reconciles removals as well as new files, so tracks deleted outside
+  // the app do not remain until one of them happens to be played.
+  await revalidateLibrary();
   const folders = [];
   try {
     const downloadsDir = await window.electronAPI.getDownloadsDir();
