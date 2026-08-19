@@ -418,11 +418,9 @@
             this.particleData = [];
             this.baseSizes = [];
 
-            for (let i = 0; i < max / 2; i++) {
+            for (let i = 0; i < max; i++) {
                 this.baseSizes[i] = 8 + Math.random() * 5;
-                let alpha = 0.9 + Math.random() * 0.1;
-                alphaArr[i] = alpha;
-                alphaArr[i + max / 2] = alpha;
+                alphaArr[i] = 0.9 + Math.random() * 0.1;
                 this._resetParticleVelocity(i);
             }
 

@@ -7269,7 +7269,7 @@ async function ensureAudioAnalyzer() {
   }
 }
 
-function buildWavyPath(progressX, progressRatio, phase, mult = 0) {
+function buildWavyPath(progressX, progressRatio, phase) {
   const midY = VIEW_H / 2;
   if (progressX <= PAD + 0.8) {
     return `M ${PAD} ${midY}`;
@@ -7279,8 +7279,7 @@ function buildWavyPath(progressX, progressRatio, phase, mult = 0) {
   }
 
   const ampScale = Math.min(1, progressRatio * 10);
-  const beatPunch = 0.5 + mult * 1.5;
-  const amp = AMPLITUDE * ampScale * waveAmp * beatPunch;
+  const amp = AMPLITUDE * ampScale * waveAmp;
   const steps = Math.max(16, Math.ceil((progressX - PAD) / 2));
   const pts = [];
 
@@ -7404,15 +7403,12 @@ function updateProgressSvg(trackId, activeId, trackPathId, dotId, stopId, ratio)
   const svg = trackEl.querySelector('svg');
   if (svg) svg.setAttribute('viewBox', `0 0 ${w} ${VIEW_H}`);
 
-  const mult = lastAudioFeatures ? Math.max(lastAudioFeatures.multiplier || 0, lastAudioFeatures.bass || 0) : 0;
   const progressX = PAD + ratio * (w - PAD * 2);
   const midY = VIEW_H / 2;
-  const ampScale = Math.min(1, ratio * 10);
-  const beatPunch = 0.5 + mult * 1.5;
-  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * ampScale * waveAmp * beatPunch;
+  const amp = progressX <= PAD + 0.8 ? 0 : AMPLITUDE * Math.min(1, ratio * 10) * waveAmp;
   const progressY = midY + (amp ? Math.sin((progressX / WAVELENGTH) * Math.PI * 2 + wavePhase) * amp : 0);
 
-  const pathD = buildWavyPath(progressX, ratio, wavePhase, mult);
+  const pathD = buildWavyPath(progressX, ratio, wavePhase);
   const endX = w - PAD;
   const remainingStart = Math.min(endX, progressX + 8);
   const trackD = remainingStart < endX ? `M ${remainingStart.toFixed(1)} 7 L ${endX} 7` : `M ${endX} 7`;
@@ -7462,7 +7458,7 @@ function waveTick() {
 
   if (waveAmp > 0.001) {
     const mult = lastAudioFeatures ? Math.max(lastAudioFeatures.multiplier || 0, lastAudioFeatures.bass || 0) : 0;
-    wavePhase += 0.012 + mult * 0.12;
+    wavePhase += 0.006 + mult * 0.08;
   }
 
   setProgressUI();
