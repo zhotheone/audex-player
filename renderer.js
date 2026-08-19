@@ -5643,13 +5643,15 @@ function triggerCrossfade(newStreamUrl, { manual = false } = {}) {
   const curGainNode = channelGains[currentKey];
   const nxtGainNode = channelGains[nextKey];
 
-  if (nextChan.dataset.trackPath !== currentTrack?.path && nextChan.src !== newStreamUrl) {
-    nextChan.src = newStreamUrl;
-  }
+  const shouldLoad = nextChan.dataset.trackPath !== currentTrack?.path && nextChan.src !== newStreamUrl;
   nextChan.dataset.trackPath = currentTrack ? currentTrack.path : '';
+  if (shouldLoad) nextChan.src = newStreamUrl;
   nextChan.currentTime = 0;
   nextChan.volume = 1.0;
-  nextChan.play().catch(e => console.warn('play error:', e));
+  nextChan.play().catch(e => {
+    console.warn('play error:', e);
+    handlePlaybackFailure(nextChan.dataset.trackPath);
+  });
 
   if (ensureEqGraph() && curGainNode && nxtGainNode && duration > 0 && isPlaying) {
     const now = eqCtx.currentTime;
@@ -5792,7 +5794,10 @@ function playTrackByPath(path, queue, { manual = true } = {}) {
       }
       activeChannel = nextKey;
       audio = nextChan;
-      audio.play().catch(e => console.warn('play error:', e));
+      audio.play().catch(e => {
+        console.warn('play error:', e);
+        handlePlaybackFailure(track.path);
+      });
       try { currentChan.pause(); currentChan.src = ''; } catch (_) {}
       delete currentChan.dataset.trackPath;
     } else {
@@ -5805,7 +5810,10 @@ function playTrackByPath(path, queue, { manual = true } = {}) {
       audio.dataset.trackPath = track.path;
       audio.currentTime = 0;
       audio.volume = 1.0;
-      audio.play().catch(e => console.warn('play error:', e));
+      audio.play().catch(e => {
+        console.warn('play error:', e);
+        handlePlaybackFailure(track.path);
+      });
     }
     preloadNextTrack();
   }
@@ -7000,12 +7008,8 @@ function buildWavyPath(progressX, progressRatio, phase) {
     pushDiscordActivity(true);
     if (isSettingsOpen()) renderDiscordPreviewOnly();
   });
-  el.addEventListener('error', async (e) => {
-    if (e.target !== audio || revalidatingLibrary || !currentTrack || isRemotePath(currentTrack.path)) return;
-    revalidatingLibrary = true;
-    const removed = await revalidateLibrary();
-    revalidatingLibrary = false;
-    if (removed > 0) toast(tr('library.ghostsRemoved', { count: removed }));
+  el.addEventListener('error', e => {
+    handlePlaybackFailure(e.target.dataset.trackPath);
   });
   el.addEventListener('timeupdate', (e) => {
     if (e.target !== audio) return;
@@ -8226,6 +8230,19 @@ async function revalidateLibrary() {
   const ghosts = new Set(local.filter((t, i) => !exists[i]).map(t => t.path));
   if (ghosts.size > 0) removeTracksFromState(ghosts);
   return ghosts.size;
+}
+
+async function handlePlaybackFailure(path) {
+  if (!path || revalidatingLibrary || isRemotePath(path)) return;
+  revalidatingLibrary = true;
+  try {
+    const removed = await revalidateLibrary();
+    if (removed > 0) toast(tr('library.ghostsRemoved', { count: removed }));
+  } catch (_) {
+    // Revalidation is best-effort; retain the track when the disk check fails.
+  } finally {
+    revalidatingLibrary = false;
+  }
 }
 
 // A metadata/cover write (ffmpeg under the hood) can fail for many reasons —
