@@ -189,10 +189,9 @@
                 particleCount: 7200
             }, options);
 
+            this.defaultParticleCount = options.particleCount || 7200;
             this.isLavaLamp = this.options.mode === 'lavalamp';
-            if (this.isLavaLamp && !options.particleCount) {
-                this.options.particleCount = 140;
-            }
+            this.options.particleCount = this.isLavaLamp ? 140 : this.defaultParticleCount;
 
             this.running = false;
             this.spectrumCache = [];
@@ -474,6 +473,7 @@
             this.options.particleCount = this.particleCount;
             if (this.particlesGeom) {
                 this.particlesGeom.setDrawRange(0, this.particleCount);
+                this._updateParticleSizes();
             }
         }
 
@@ -560,6 +560,7 @@
         setMode(mode) {
             this.options.mode = mode;
             this.isLavaLamp = mode === 'lavalamp';
+            this.setParticleCount(this.isLavaLamp ? 140 : (this.defaultParticleCount || 7200));
             if (this.spectrumMesh) this.spectrumMesh.visible = !this.isLavaLamp;
             if (this.particleSystem) this.particleSystem.visible = !this.isLavaLamp;
             if (this.lavaMesh) this.lavaMesh.visible = this.isLavaLamp;

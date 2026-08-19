@@ -6761,11 +6761,14 @@ function setProgressBanner(done, total, labelKey) {
 
 // ── Toasts ──
 // In-app, non-blocking replacement for native alert()/confirm() — bulk actions
-// report their result here instead of popping an OS window. Persistent by
-// default (a close button, no auto-timeout); pass { duration } to auto-dismiss.
-function toast(message, { type = 'info', duration = 0 } = {}) {
+// report their result here instead of popping an OS window. Default 10s timeout,
+// capped to at most 3 toasts on screen at once.
+function toast(message, { type = 'info', duration = 10000 } = {}) {
   const stack = $('toast-stack');
   if (!stack) return null;
+  while (stack.children.length >= 3) {
+    stack.firstElementChild.remove();
+  }
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
   el.setAttribute('role', type === 'error' ? 'alert' : 'status');
@@ -6790,6 +6793,9 @@ function confirmToast(message, { type = 'warn' } = {}) {
   return new Promise(resolve => {
     const stack = $('toast-stack');
     if (!stack) { resolve(false); return; }
+    while (stack.children.length >= 3) {
+      stack.firstElementChild.remove();
+    }
     const el = document.createElement('div');
     el.className = `toast toast-${type} toast-confirm`;
     const body = document.createElement('div');
