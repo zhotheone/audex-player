@@ -7252,6 +7252,8 @@ $('fs-btn-repeat').addEventListener('click', () => {
 let wavePhase = 0;
 let waveAnimId = null;
 let waveAmp = 0;
+let waveInertia = 0;
+let waveLastMultiplier = 0;
 let audioAnalyzer = null;
 let lastAudioFeatures = null;
 const AMPLITUDE = 3.0;
@@ -7463,11 +7465,16 @@ function waveTick() {
   }
 
   if (waveAmp > 0.001) {
-    const f = lastAudioFeatures;
-    const isBeat = !!f?.beat;
-    const bass = f?.bass || 0;
-    const onset = f?.onset || 0;
-    wavePhase += 0.006 + (isBeat ? 0.04 : 0) + bass * 0.03 + onset * 0.04;
+    const curMult = lastAudioFeatures ? (lastAudioFeatures.multiplier || 0) : 0;
+    const delta = curMult - waveLastMultiplier;
+    waveLastMultiplier = curMult;
+
+    if (delta > 0.02) {
+      waveInertia += delta * 0.45;
+    }
+    waveInertia *= 0.88;
+
+    wavePhase += 0.008 + waveInertia;
   }
 
   setProgressUI();
