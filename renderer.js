@@ -7759,10 +7759,7 @@ function updateFsDebugPanel() {
       const f = lastAudioFeatures || {};
       const mode = getFsVisualizerMode();
       dbg.innerHTML = `<div><b class="active">FPS: ${fsDebugFps}</b> (${fsDebugFrameTime.toFixed(1)}ms) | <b class="active">Mode: ${mode}</b></div>` +
-        `<div><b class="active">Energy: ${(f.energy || 0).toFixed(2)}</b> | <b class="active">Mult: ${(f.multiplier || 0).toFixed(2)}</b></div>` +
-        `<div><b class="active">Bass: ${(f.bass || 0).toFixed(2)}</b>${f.beat ? ' <b class="active">[BEAT]</b>' : ''} | <b class="active">Onset: ${(f.onset || 0).toFixed(2)}</b></div>` +
-        `<div class="dim">LowMid: ${(f.lowMid || 0).toFixed(2)} | Mid: ${(f.mid || 0).toFixed(2)}</div>` +
-        `<div class="dim">HighMid: ${(f.highMid || 0).toFixed(2)} | High: ${(f.high || 0).toFixed(2)}</div>`;
+        `<div><b class="active">Multiplier: ${(f.multiplier || 0).toFixed(2)}</b></div>`;
     }
 
     fsDebugRaf = requestAnimationFrame(loop);

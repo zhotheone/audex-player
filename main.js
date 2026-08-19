@@ -2189,6 +2189,7 @@ async function runYtDownload(event, payload, target) {
     '--add-metadata',
     '--output', outPattern,
     '--print', `${META_TAG}%(track,title|)s\t%(artist,creator,uploader,channel|)s\t%(album|)s\t%(release_year,upload_date>%Y|)s`,
+    '--print', 'after_move:[audexpath]%(filepath)s',
     target,
   ];
   // yt-dlp's own --embed-thumbnail goes through mutagen for every one of our
@@ -2245,7 +2246,8 @@ async function runYtDownload(event, payload, target) {
   const finalTitle = ytTitle || (suggestedName ? (artist && suggestedName.startsWith(artist + ' - ') ? suggestedName.slice(artist.length + 3) : suggestedName) : '');
   const suggestedNameFinal = folderArtist && finalTitle ? `${folderArtist} - ${finalTitle}` : (suggestedName || finalTitle || 'track');
 
-  let filePath = '';
+  const pathLine = stdout.split('\n').map(l => l.trim()).filter(l => l.startsWith('[audexpath]')).pop();
+  let filePath = pathLine ? pathLine.slice('[audexpath]'.length).trim() : '';
   if (!filePath || !fs.existsSync(filePath)) {
     try {
       const files = fs.readdirSync(downloadsDir)

@@ -1,19 +1,20 @@
 const FFT_SIZE = 1024;
+const KEEP_BINS = 40;
+const START_BIN = 8;
 
-function calcJsNationMultiplier(spectrum) {
+function calcJsNationMultiplier(spectrum, loudness = 1.0) {
   let sum = 0;
-  const count = spectrum.length || 40;
+  const count = spectrum.length || KEEP_BINS;
   for (let i = 0; i < count; i++) sum += (spectrum[i] || 0);
   const intermediate = sum / count / 256;
   const t = 1.2;
   const rawMult = (1 / (t - 1)) * (-Math.pow(intermediate, t) + t * intermediate);
-  return Math.pow(Math.max(0, rawMult), 0.8);
+  const mult = Math.pow(Math.max(0, rawMult), 0.8);
+  return Math.round(mult * loudness * 100) / 100;
 }
 
-function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, state = {}) {
+function computeJsNationFeatures(freqData) {
   const len = freqData.length;
-  const START_BIN = 8;
-  const KEEP_BINS = 40;
   const isLarge = len >= 2048;
   const start = isLarge ? START_BIN : Math.min(1, len - 1);
   const count = Math.min(KEEP_BINS, len - start);
@@ -31,195 +32,11 @@ function computeJsNationFeatures(freqData, sampleRate = 48000, currentTime = 0, 
 
   const multiplier = calcJsNationMultiplier(spectrum);
 
-  // Band calculations (blends band average and dominant peak)
-  const getSlice = (sFrac, eFrac) => {
-    let s = 0, max = 0;
-    const sIdx = Math.floor(sFrac * len);
-    const eIdx = Math.min(len - 1, Math.floor(eFrac * len));
-    const span = eIdx - sIdx + 1;
-    for (let i = sIdx; i <= eIdx; i++) {
-      const v = freqData[i];
-      s += v;
-      if (v > max) max = v;
-    }
-    return span > 0 ? Math.min(1.0, (max / 255) * 0.7 + (s / (span * 255)) * 0.6) : 0;
-  };
-
-  // Frequency bands (bass: ~20-250Hz, lowMid: ~250-500Hz, mid: ~500-2000Hz, highMid: ~2-6kHz, high: ~6-20kHz)
-  const bass = isLarge ? getSlice(0.0005, 0.015) : getSlice(0.001, 0.015);
-  const lowMid = isLarge ? getSlice(0.015, 0.035) : getSlice(0.015, 0.035);
-  const mid = isLarge ? getSlice(0.035, 0.12) : getSlice(0.035, 0.12);
-  const highMid = isLarge ? getSlice(0.12, 0.35) : getSlice(0.12, 0.35);
-  const high = isLarge ? getSlice(0.35, 0.95) : getSlice(0.35, 0.95);
-
-  let sum = 0, maxVal = 0;
-  for (let i = 0; i < len; i++) {
-    const v = freqData[i];
-    sum += v;
-    if (v > maxVal) maxVal = v;
-  }
-  const peakNorm = maxVal / 255;
-  const avgLevel = sum / (len * 255);
-
-  // Perceptual frequency weighting
-  const lowEnergy = bass * 0.8;
-  const midEnergy = ((lowMid + mid) / 2) * 1.2;
-  const highEnergy = ((highMid + high) / 2) * 1.0;
-  const weightedEnergy = (lowEnergy + midEnergy + highEnergy) / 3;
-
-  const bandMax = Math.max(bass, lowMid, mid, highMid, high);
-  const rawEnergy = (peakNorm * 0.35) + (bandMax * 0.4) + (weightedEnergy * 0.35);
-  const energy = Math.min(1.0, Math.max(0.0, rawEnergy));
-
-  const prevBass = state.prevBass || 0;
-  const bassFlux = Math.max(0, bass - prevBass);
-  state.prevBass = bass;
-
   return {
-    energy: Math.round(energy * 100) / 100,
-    multiplier: Math.round(multiplier * 100) / 100,
-    bass: Math.round(bass * 100) / 100,
-    lowMid: Math.round(lowMid * 100) / 100,
-    mid: Math.round(mid * 100) / 100,
-    highMid: Math.round(highMid * 100) / 100,
-    high: Math.round(high * 100) / 100,
-    onset: Math.round(bassFlux * 100) / 100,
-    beat: bassFlux > 0.12 && bass > 0.35,
-    bpm: 120,
+    multiplier,
     spectrum
   };
 }
-
-/**
- * Calculates a normalized energy score (0.0 to 1.0) for an AudioBuffer using RMS and 3-band filter separation.
- * @param {AudioBuffer} audioBuffer 
- * @returns {Promise<number>}
- */
-async function calculateTrackEnergy(audioBuffer) {
-  if (!audioBuffer || audioBuffer.length === 0) return 0;
-  const rawData = audioBuffer.getChannelData(0);
-  const sampleRate = audioBuffer.sampleRate;
-
-  const computeRMS = (samples) => {
-    if (!samples || samples.length === 0) return 0;
-    let sum = 0;
-    for (let i = 0; i < samples.length; i++) {
-      sum += samples[i] * samples[i];
-    }
-    return Math.sqrt(sum / samples.length);
-  };
-
-  const overallRMS = computeRMS(rawData);
-
-  const W_LOW = 0.8;
-  const W_MID = 1.3;
-  const W_HIGH = 1.0;
-
-  const OfflineCtxClass = typeof OfflineAudioContext !== 'undefined'
-    ? OfflineAudioContext
-    : (typeof window !== 'undefined' ? (window.OfflineAudioContext || window.webkitOfflineAudioContext) : null);
-
-  if (!OfflineCtxClass) {
-    const rawEnergyScore = overallRMS;
-    const normalizedEnergy = Math.min(Math.max(rawEnergyScore * 4.0, 0.0), 1.0);
-    return parseFloat(normalizedEnergy.toFixed(3));
-  }
-
-  const offlineCtx = new OfflineCtxClass(3, rawData.length, sampleRate);
-  const source = offlineCtx.createBufferSource();
-  source.buffer = audioBuffer;
-
-  const lowpass = offlineCtx.createBiquadFilter();
-  lowpass.type = 'lowpass';
-  lowpass.frequency.value = 250;
-
-  const bandpass = offlineCtx.createBiquadFilter();
-  bandpass.type = 'bandpass';
-  bandpass.frequency.value = 1500;
-  bandpass.Q.value = 0.5;
-
-  const highpass = offlineCtx.createBiquadFilter();
-  highpass.type = 'highpass';
-  highpass.frequency.value = 4000;
-
-  const merger = offlineCtx.createChannelMerger(3);
-  source.connect(lowpass);
-  source.connect(bandpass);
-  source.connect(highpass);
-
-  lowpass.connect(merger, 0, 0);
-  bandpass.connect(merger, 0, 1);
-  highpass.connect(merger, 0, 2);
-
-  merger.connect(offlineCtx.destination);
-  if (source.start) source.start(0);
-
-  const renderedBuffer = await offlineCtx.startRendering();
-
-  const lowRMS = computeRMS(renderedBuffer.getChannelData(0)) * W_LOW;
-  const midRMS = computeRMS(renderedBuffer.getChannelData(1)) * W_MID;
-  const highRMS = computeRMS(renderedBuffer.getChannelData(2)) * W_HIGH;
-
-  const weightedEnergy = (lowRMS + midRMS + highRMS) / 3;
-  const rawEnergyScore = (overallRMS * 0.4) + (weightedEnergy * 0.6);
-  const normalizedEnergy = Math.min(Math.max(rawEnergyScore * 4.0, 0.0), 1.0);
-
-  return parseFloat(normalizedEnergy.toFixed(3));
-}
-
-const PROCESSOR_CODE = `
-${calcJsNationMultiplier.toString()}
-${computeJsNationFeatures.toString()}
-
-class AudioAnalyzerProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    this.fftSize = 1024;
-    this.halfSize = 512;
-    this.ringBuffer = new Float32Array(this.fftSize);
-    this.ringIndex = 0;
-    this.real = new Float32Array(this.fftSize);
-    this.imag = new Float32Array(this.fftSize);
-    this.hann = new Float32Array(this.fftSize);
-    for (let i = 0; i < this.fftSize; i++) {
-      this.hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (this.fftSize - 1)));
-    }
-    this.state = {};
-  }
-
-  process(inputs, outputs) {
-    const input = inputs[0];
-    if (!input || !input[0]) return true;
-    const channelData = input[0];
-    const len = channelData.length;
-
-    for (let i = 0; i < len; i++) {
-      this.ringBuffer[this.ringIndex] = channelData[i];
-      this.ringIndex = (this.ringIndex + 1) % this.fftSize;
-    }
-
-    // Direct FFT on ringBuffer
-    const freqData = new Uint8Array(this.halfSize);
-    for (let k = 0; k < this.halfSize; k++) {
-      let real = 0, imag = 0;
-      const step = 2;
-      const angle = (k * 2 * Math.PI) / this.fftSize;
-      for (let n = 0; n < this.fftSize; n += step) {
-        const val = this.ringBuffer[n] * this.hann[n];
-        real += val * Math.cos(angle * n);
-        imag -= val * Math.sin(angle * n);
-      }
-      const mag = Math.sqrt(real * real + imag * imag) * (2 / (this.fftSize / step));
-      freqData[k] = Math.min(255, Math.floor(mag * 255 * 1.5));
-    }
-
-    const features = computeJsNationFeatures(freqData, 48000, 0, this.state);
-    this.port?.postMessage({ type: 'features', data: features });
-    return true;
-  }
-}
-registerProcessor('analyzer-processor', AudioAnalyzerProcessor);
-`;
 
 class AudioAnalyzerNode {
   constructor(audioCtx) {
@@ -228,18 +45,10 @@ class AudioAnalyzerNode {
     this.freqData = null;
     this.listeners = new Set();
     this.animId = null;
-    this.state = {};
+    this.intervalId = null;
     this.latestFeatures = {
-      energy: 0,
       multiplier: 0,
-      bass: 0,
-      lowMid: 0,
-      mid: 0,
-      highMid: 0,
-      high: 0,
-      onset: 0,
-      beat: false,
-      bpm: 120
+      spectrum: new Float32Array(KEEP_BINS)
     };
   }
 
@@ -260,7 +69,7 @@ class AudioAnalyzerNode {
     const update = () => {
       if (!this.analyser || !this.freqData) return;
       this.analyser.getByteFrequencyData(this.freqData);
-      this.latestFeatures = computeJsNationFeatures(this.freqData, this.audioCtx?.sampleRate || 48000, this.audioCtx?.currentTime || 0, this.state);
+      this.latestFeatures = computeJsNationFeatures(this.freqData);
       for (const cb of this.listeners) cb(this.latestFeatures);
 
       if (typeof requestAnimationFrame !== 'undefined') {
@@ -304,7 +113,5 @@ class AudioAnalyzerNode {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AudioAnalyzerNode, PROCESSOR_CODE, computeJsNationFeatures, calcJsNationMultiplier, calculateTrackEnergy };
+  module.exports = { AudioAnalyzerNode, computeJsNationFeatures, calcJsNationMultiplier };
 }
-
-
